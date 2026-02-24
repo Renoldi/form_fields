@@ -1,0 +1,23 @@
+name: form_fields
+description: A comprehensive and reusable Flutter form field widget with support for multiple input types including text, email, phone, password, date, time, and more.
+version: 1.0.0
+homepage: https://github.com/enerren/form_fields
+repository: https://github.com/enerren/form_fields
+issue_tracker: https://github.com/enerren/form_fields/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.0
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
