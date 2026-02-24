@@ -25,18 +25,20 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Custom border radius
 - Custom input decoration
 - Custom validators
-- Locale support for date/time pickers
+- Custom error messages and hint text
+- Locale support for date/time pickers (string format: 'en_US', 'id_ID', etc.)
 - Custom date/time formatting
 - Automatic number formatting with thousands separators
 
 ✨ **Developer Experience**
-- Generic type support for type safety
+- Generic type support for type safety (`FormFields<String>`, `FormFields<int>`, `FormFields<DateTime>`, etc.)
 - Built-in validators with custom message support
-- Debounced input handling (500ms)
+- Debounced input handling (500ms) for optimized performance
 - Automatic value parsing for numeric types
 - Focus node support for keyboard navigation
-- Comprehensive error messages
+- Comprehensive error messages with customization options
 - Provider-based state management
+- Text input prefix customization (`enterText`, `invalidIntegerText`, `invalidNumberText`)
 
 ## Installation
 
@@ -216,7 +218,10 @@ FormFields<String>(
 | `multiLine` | `int` | `0` | Number of lines (0 = single line) |
 | `customFormat` | `String?` | `null` | Custom date/time format |
 | `stripSeparators` | `bool` | `true` | Format large numbers with separators |
-| `pickerLocale` | `Locale?` | `Locale('id', 'ID')` | Locale for date/time pickers |
+| `pickerLocale` | `String?` | `'id_ID'` | Locale for date/time pickers |
+| `enterText` | `String` | `'Enter '` | Custom text prefix for input hints |
+| `invalidIntegerText` | `String` | `'Enter valid integer for'` | Custom error text for invalid integer |
+| `invalidNumberText` | `String` | `'Enter valid number for'` | Custom error text for invalid number |
 
 ## FormType Enum
 
@@ -366,6 +371,29 @@ FormFields<DateTime>(
 )
 ```
 
+## Custom Error Messages
+
+Customize validation messages and text hints:
+
+```dart
+FormFields<int>(
+  label: 'Age',
+  enterText: 'Please enter ',  // Changes hint text
+  invalidIntegerText: 'Invalid number for',  // Changes error for invalid integers
+  onChanged: (value) {
+    setState(() => _age = value ?? 0);
+  },
+)
+
+FormFields<double>(
+  label: 'Price',
+  invalidNumberText: 'Please provide a valid number for',  // Changes error for invalid numbers
+  onChanged: (value) {
+    setState(() => _price = value ?? 0.0);
+  },
+)
+```
+
 ## Focus Navigation
 
 ```dart
@@ -433,7 +461,7 @@ Color success = ColorUtil.color329E36;
 FormFields<DateTime>(
   label: 'Date',
   formType: FormType.date,
-  pickerLocale: const Locale('en', 'US'),
+  pickerLocale: 'en_US',  // Use locale string format
   onChanged: (value) => setState(() => _date = value),
 )
 ```
@@ -475,7 +503,8 @@ Set the `pickerLocale` parameter:
 ```dart
 FormFields<DateTime>(
   label: 'Date',
-  pickerLocale: const Locale('en', 'US'),
+  formType: FormType.date,
+  pickerLocale: 'en_US',
   onChanged: (value) => setState(() => _date = value),
 )
 ```

@@ -485,14 +485,14 @@ Set language/region for date/time pickers:
 FormFields<DateTime>(
   label: 'Date',
   formType: FormType.date,
-  pickerLocale: const Locale('id', 'ID'),  // Indonesian
+  pickerLocale: 'id_ID',  // Indonesian
   onChanged: (value) {},
 )
 
 FormFields<DateTime>(
   label: 'Date',
   formType: FormType.date,
-  pickerLocale: const Locale('en', 'US'),  // English (US)
+  pickerLocale: 'en_US',  // English (US)
   onChanged: (value) {},
 )
 ```
@@ -512,6 +512,29 @@ FormFields<DateTime>(
   formType: FormType.time,
   customFormat: 'HH:mm',
   onChanged: (value) {},
+)
+```
+
+### Custom Error Messages and Hint Text
+
+Customize validation messages and hint text for numeric fields:
+
+```dart
+FormFields<int>(
+  label: 'Age',
+  enterText: 'Please enter ',  // Changes hint text prefix
+  invalidIntegerText: 'Invalid number for',  // Custom error for invalid integers
+  onChanged: (value) {
+    setState(() => _age = value ?? 0);
+  },
+)
+
+FormFields<double>(
+  label: 'Price',
+  invalidNumberText: 'Please provide a valid number for',  // Custom error for invalid numbers
+  onChanged: (value) {
+    setState(() => _price = value ?? 0.0);
+  },
 )
 ```
 
@@ -831,7 +854,7 @@ FormFields<int>(
 ```dart
 FormFields<DateTime>(
   label: 'Date',
-  pickerLocale: const Locale('en', 'US'),  // English
+  pickerLocale: 'en_US',  // English
   onChanged: (value) {},
 )
 ```

@@ -27,7 +27,10 @@ FormFields<T>({
   int multiLine = 0,
   String? customFormat,
   bool stripSeparators = true,
-  Locale? pickerLocale = const Locale('id', 'ID'),
+  String? pickerLocale = 'id_ID',
+  String enterText = 'Enter ',
+  String invalidIntegerText = 'Enter valid integer for',
+  String invalidNumberText = 'Enter valid number for',
 })
 ```
 
@@ -61,7 +64,10 @@ FormFields<T>({
 | `multiLine` | `int` | `0` | Lines for text area |
 | `customFormat` | `String?` | `null` | Custom date format |
 | `stripSeparators` | `bool` | `true` | Format numbers |
-| `pickerLocale` | `Locale?` | `Locale('id', 'ID')` | Picker locale |
+| `pickerLocale` | `String?` | `'id_ID'` | Picker locale |
+| `enterText` | `String` | `'Enter '` | Custom input hint prefix |
+| `invalidIntegerText` | `String` | `'Enter valid integer for'` | Error for invalid integer |
+| `invalidNumberText` | `String` | `'Enter valid number for'` | Error for invalid number |
 
 ## Enums
 
