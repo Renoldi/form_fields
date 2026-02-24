@@ -80,6 +80,23 @@ FormFields<DateTime>(
 )
 ```
 
+### Time Picker
+```dart
+// Using TimeOfDay (time-only)
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (value) {},
+)
+
+// Using DateTime (full date-time)
+FormFields<DateTime>(
+  label: 'Appointment Time',
+  formType: FormType.time,
+  onChanged: (value) {},
+)
+```
+
 ## 5. Add Validation
 
 ```dart

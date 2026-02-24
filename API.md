@@ -79,9 +79,9 @@ enum FormType {
   email,       // Email with validation
   phone,       // Phone with validation
   password,    // Password with toggle
-  date,        // Date picker
-  time,        // Time picker
-  dateTime,    // DateTime picker
+  date,        // Date picker (returns DateTime)
+  time,        // Time picker (supports DateTime or TimeOfDay)
+  dateTime,    // DateTime picker (returns DateTime)
 }
 ```
 
@@ -276,6 +276,58 @@ ColorUtil.whiteColor            // Colors.white
 ColorUtil.colorC7C7C7           // #C7C7C7
 // ... many more colors available
 ```
+
+## Type Support
+
+### Supported Generic Types
+
+FormFields supports the following generic types:
+
+- `FormFields<String>` - Text input, email, phone, password
+- `FormFields<int>` - Integer number input with optional formatting
+- `FormFields<double>` - Decimal number input with optional formatting
+- `FormFields<DateTime>` - Date, time, or datetime pickers
+- `FormFields<TimeOfDay>` - Time picker (time-only values)
+- `FormFields<DateTimeRange>` - Date range picker
+
+### TimeOfDay vs DateTime for Time Pickers
+
+#### Using TimeOfDay
+```dart
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (TimeOfDay? value) {
+    if (value != null) {
+      print('Hour: ${value.hour}, Minute: ${value.minute}');
+      String formatted = value.format(context);
+    }
+  },
+)
+```
+
+**Use TimeOfDay when:**
+- You only need time (hour and minute)
+- You want a lightweight time representation
+- You don't need date context
+
+#### Using DateTime for Time
+```dart
+FormFields<DateTime>(
+  label: 'Appointment Time',
+  formType: FormType.time,
+  onChanged: (DateTime? value) {
+    if (value != null) {
+      String formatted = DateFormat.jm().format(value);
+    }
+  },
+)
+```
+
+**Use DateTime when:**
+- You need full date-time context
+- You're working with APIs that expect DateTime
+- You need date arithmetic capabilities
 
 ## Formats Enum (for DateTime)
 

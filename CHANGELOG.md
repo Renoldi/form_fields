@@ -14,7 +14,7 @@ All notable changes to the FormFields package will be documented in this file.
   - Phone (FormType.phone)
   - Password (FormType.password)
   - Date (FormType.date)
-  - Time (FormType.time)
+  - Time (FormType.time) - supports both DateTime and TimeOfDay types
   - DateTime (FormType.dateTime)
   - Integer and Double numeric fields
   - Date range picker
@@ -68,7 +68,8 @@ All notable changes to the FormFields package will be documented in this file.
   - Prefix and suffix widgets
   - Custom border radius
   - Focus node support for keyboard navigation
-  - Locale support for date/time pickers
+  - Locale support for date/time pickers (string format: 'en_US', 'id_ID', etc.)
+  - Custom error messages (enterText, invalidIntegerText, invalidNumberText)
 
 - Number formatting:
   - Automatic thousands separator formatting
@@ -80,7 +81,8 @@ All notable changes to the FormFields package will be documented in this file.
   - Automatic keyboard type selection
   - Validation feedback
   - Clear/reset button for fields
-  - Multiline text support
+  - Multiline text suppor
+  - TimeOfDay support for time-only valuest
   - DateTimeRange support
 
 - Documentation:

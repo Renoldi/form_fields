@@ -23,7 +23,7 @@ Your FormFields package has been successfully created as a complete, production-
 - Integer (with thousands separator formatting)
 - Double (decimal numbers)
 - Date picker
-- Time picker
+- Time picker (supports both DateTime and TimeOfDay types)
 - DateTime picker
 - DateTimeRange picker
 - Multiline text areas
@@ -123,10 +123,11 @@ form_fields_package/
 
 ### Type Safety
 ```dart
-FormFields<String>(...)     // String fields
-FormFields<int>(...)        // Integer fields
-FormFields<double>(...)     // Decimal fields
-FormFields<DateTime>(...)   // Date/time fields
+FormFields<String>(...)      // String fields
+FormFields<int>(...)         // Integer fields
+FormFields<double>(...)      // Decimal fields
+FormFields<DateTime>(...)    // Date/time fields
+FormFields<TimeOfDay>(...)   // Time-only fields
 ```
 
 ### Built-in Validation

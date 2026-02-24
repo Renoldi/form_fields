@@ -14,7 +14,7 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Password fields with visibility toggle
 - Integer and decimal number input with automatic formatting
 - Date picker
-- Time picker
+- Time picker (supports both `DateTime` and `TimeOfDay` types)
 - DateTime picker
 - DateRange picker
 - Multiline text areas
@@ -155,12 +155,21 @@ FormFields<DateTime>(
   },
 )
 
-// Time picker
+// Time picker (DateTime)
 FormFields<DateTime>(
   label: 'Time',
   formType: FormType.time,
   onChanged: (value) {
     setState(() => _time = value);
+  },
+)
+
+// Time picker (TimeOfDay)
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (value) {
+    setState(() => _meetingTime = value);
   },
 )
 
@@ -229,9 +238,9 @@ FormFields<String>(
 - `FormType.email` - Email input with validation
 - `FormType.phone` - Phone input with validation
 - `FormType.password` - Password input with visibility toggle
-- `FormType.date` - Date picker
-- `FormType.time` - Time picker
-- `FormType.dateTime` - DateTime picker
+- `FormType.date` - Date picker (returns `DateTime`)
+- `FormType.time` - Time picker (supports `DateTime` or `TimeOfDay`)
+- `FormType.dateTime` - DateTime picker (returns `DateTime`)
 
 ## LabelPosition Enum
 

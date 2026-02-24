@@ -254,7 +254,9 @@ FormFields<DateTime>(
 
 ### Time Picker
 
-Clock time selection.
+Clock time selection with support for both `DateTime` and `TimeOfDay` types.
+
+#### Using DateTime Type
 
 ```dart
 FormFields<DateTime>(
@@ -268,8 +270,26 @@ FormFields<DateTime>(
 
 **Features:**
 - Shows time picker dialog
-- Customizable time format (default: `h:mm a`)
 - Returns DateTime with current date and selected time
+- Customizable time format (default: `h:mm a`)
+
+#### Using TimeOfDay Type
+
+```dart
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (value) {
+    setState(() => _meetingTime = value);
+  },
+)
+```
+
+**Features:**
+- Shows time picker dialog
+- Returns TimeOfDay object directly
+- More lightweight than DateTime for time-only values
+- Customizable format via `customFormat`
 
 ### DateTime Picker
 
@@ -671,6 +691,92 @@ ValueListenableBuilder<String>(
 ```
 
 ## Advanced Usage
+
+### Working with TimeOfDay vs DateTime for Time Pickers
+
+The `FormType.time` picker supports both `DateTime` and `TimeOfDay` generic types. Choose based on your use case:
+
+#### When to Use TimeOfDay
+
+Use `FormFields<TimeOfDay>` when you only need the time component:
+
+```dart
+TimeOfDay? _meetingTime;
+
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (value) {
+    setState(() => _meetingTime = value);
+  },
+  currrentValue: _meetingTime,
+)
+
+// Access time components
+if (_meetingTime != null) {
+  int hour = _meetingTime.hour;      // 0-23
+  int minute = _meetingTime.minute;  // 0-59
+  String formatted = _meetingTime.format(context); // 12-hour format with AM/PM
+}
+```
+
+**Benefits:**
+- Lightweight - only stores hour and minute
+- Native Flutter type for time-only values
+- Easy integration with Material time pickers
+- Clear intent that only time matters
+
+#### When to Use DateTime for Time
+
+Use `FormFields<DateTime>` when you need a full date-time value:
+
+```dart
+DateTime? _appointmentTime;
+
+FormFields<DateTime>(
+  label: 'Appointment Time',
+  formType: FormType.time,
+  onChanged: (value) {
+    setState(() => _appointmentTime = value);
+  },
+  currrentValue: _appointmentTime,
+)
+
+// Access as DateTime
+if (_appointmentTime != null) {
+  int hour = _appointmentTime.hour;
+  int minute = _appointmentTime.minute;
+  // Date components use current date
+  String formatted = DateFormat.jm().format(_appointmentTime);
+}
+```
+
+**Benefits:**
+- Includes full date context (uses current date)
+- Direct compatibility with APIs expecting DateTime
+- Built-in formatting via DateFormat
+- Easier date arithmetic if needed later
+
+#### Converting Between Types
+
+```dart
+// TimeOfDay to DateTime (using current date)
+TimeOfDay timeOfDay = TimeOfDay(hour: 14, minute: 30);
+DateTime dateTime = DateTime(
+  DateTime.now().year,
+  DateTime.now().month,
+  DateTime.now().day,
+  timeOfDay.hour,
+  timeOfDay.minute,
+);
+
+// DateTime to TimeOfDay
+DateTime dateTime = DateTime.now();
+TimeOfDay timeOfDay = TimeOfDay(
+  hour: dateTime.hour,
+  minute: dateTime.minute,
+);
+```
 
 ### Form Validation
 
