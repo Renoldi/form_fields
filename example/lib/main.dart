@@ -55,6 +55,8 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
   TimeOfDay? _selectedTimeOfDay;
   DateTime? _selectedDateTime;
   DateTimeRange? _dateRange;
+  DateTimeRange? _vacationDates;
+  DateTimeRange? _projectTimeline;
 
   // Nullable/Optional fields
   String? _optionalNotes;
@@ -142,7 +144,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
                   multiLine: 3,
-                  stripSeparators: false,
                   onChanged: (value) {
                     setState(() => _bio = value);
                   },
@@ -155,7 +156,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
                   multiLine: 2,
-                  stripSeparators: false,
                   enterText: 'Please input ',
                   onChanged: (value) {
                     setState(() => _bio = value);
@@ -170,24 +170,24 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Integer Field (Quantity)
+                // Integer Field (Quantity) with thousand separators
                 FormFields<int>(
                   label: 'Quantity',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true,
+                  stripSeparators: true, // Shows 1,000 instead of 1000
                   onChanged: (value) {
                     setState(() => _quantity = value);
                   },
                   currrentValue: _quantity == 0 ? null : _quantity,
                 ),
 
-                // Double Field (Price)
+                // Double Field (Price) with thousand separators
                 FormFields<double>(
                   label: 'Price',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true,
+                  stripSeparators: true, // Shows 1,234.56 instead of 1234.56
                   onChanged: (value) {
                     setState(() => _price = value);
                   },
@@ -199,38 +199,197 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   'Date & Time Fields',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'DateTime vs TimeOfDay for Time Pickers',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic),
+                ),
                 const SizedBox(height: 16),
 
-                // Date Field
+                // Date Field with custom range (past dates)
                 FormFields<DateTime>(
                   label: 'Birth Date',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
+                  firstDate: DateTime(1924, 1, 1),
+                  lastDate: DateTime.now(),
                   onChanged: (value) {
                     setState(() => _birthDate = value);
                   },
                   currrentValue: _birthDate,
                 ),
 
-                // Time Field
+                const SizedBox(height: 8),
+                const Text(
+                  '📅 Future dates only (booking example)',
+                  style: TextStyle(fontSize: 13, color: Colors.blue),
+                ),
+                const SizedBox(height: 4),
+
+                // Date Field with future dates only
                 FormFields<DateTime>(
-                  label: 'Selected Time',
+                  label: 'Appointment Date',
+                  formType: FormType.date,
+                  labelPosition: LabelPosition.top,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(Duration(days: 365)),
+                  onChanged: (value) {
+                    setState(() => _birthDate = value);
+                  },
+                  currrentValue: _birthDate,
+                ),
+
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+
+                // DateTime Time Picker
+                const Text(
+                  'Time Picker with DateTime',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Returns DateTime with current date + selected time',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                FormFields<DateTime>(
+                  label: 'Appointment Time (DateTime)',
                   formType: FormType.time,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   onChanged: (value) {
                     setState(() => _selectedTime = value);
                   },
                   currrentValue: _selectedTime,
                 ),
 
-                // Time Field with Custom Locale
-                FormFields<DateTime>(
-                  label: 'Selected Time (US Locale)',
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+
+                // TimeOfDay Time Picker
+                const Text(
+                  'Time Picker with TimeOfDay',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Returns TimeOfDay object (hour and minute only)',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                FormFields<TimeOfDay>(
+                  label: 'Meeting Time (TimeOfDay)',
                   formType: FormType.time,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
+                  onChanged: (value) {
+                    setState(() => _selectedTimeOfDay = value);
+                  },
+                  currrentValue: _selectedTimeOfDay,
+                ),
+
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 12),
+
+                // Conversion Examples
+                if (_selectedTime != null || _selectedTimeOfDay != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '🔄 Type Conversions',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_selectedTime != null) ...[
+                          Text(
+                            'DateTime → TimeOfDay:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          Text(
+                            '  ${_selectedTime.toString()} →',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            '  ${_selectedTime!.toTimeOfDay()!.hour}:${_selectedTime!.toTimeOfDay()!.minute.toString().padLeft(2, '0')}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        if (_selectedTimeOfDay != null) ...[
+                          Text(
+                            'TimeOfDay → DateTime:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          Text(
+                            '  ${_selectedTimeOfDay!.hour}:${_selectedTimeOfDay!.minute.toString().padLeft(2, '0')} →',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            '  ${_selectedTimeOfDay!.toDateTime().toString()}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '  With specific date (Christmas 2026):',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          Text(
+                            '  ${_selectedTimeOfDay!.toDateTimeWithDate(DateTime(2026, 12, 25)).toString()}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                ],
+
+                // Time Field with Custom Locale
+                FormFields<DateTime>(
+                  label: 'Time with Custom Locale (en_US)',
+                  formType: FormType.time,
+                  labelPosition: LabelPosition.top,
                   pickerLocale: 'en_US',
                   onChanged: (value) {
                     setState(() => _selectedTime = value);
@@ -238,22 +397,10 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   currrentValue: _selectedTime,
                 ),
 
-                // TimeOfDay Field
-                FormFields<TimeOfDay>(
-                  label: 'TimeOfDay Example',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: false,
-                  onChanged: (value) {
-                    setState(() => _selectedTimeOfDay = value);
-                  },
-                  currrentValue: _selectedTimeOfDay,
-                ),
                 FormFields<DateTime>(
                   label: 'Selected DateTime',
                   formType: FormType.dateTime,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   onChanged: (value) {
                     setState(() => _selectedDateTime = value);
                   },
@@ -265,11 +412,36 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Date Range',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   onChanged: (value) {
                     setState(() => _dateRange = value);
                   },
                   currrentValue: _dateRange,
+                ),
+
+                // Vacation Dates (Future dates only, next 2 years)
+                FormFields<DateTimeRange>(
+                  label: 'Vacation Dates',
+                  formType: FormType.date,
+                  labelPosition: LabelPosition.top,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 730)),
+                  onChanged: (value) {
+                    setState(() => _vacationDates = value);
+                  },
+                  currrentValue: _vacationDates,
+                ),
+
+                // Project Timeline (2020-2030 range)
+                FormFields<DateTimeRange>(
+                  label: 'Project Timeline',
+                  formType: FormType.date,
+                  labelPosition: LabelPosition.top,
+                  firstDate: DateTime(2020, 1, 1),
+                  lastDate: DateTime(2030, 12, 31),
+                  onChanged: (value) {
+                    setState(() => _projectTimeline = value);
+                  },
+                  currrentValue: _projectTimeline,
                 ),
 
                 const SizedBox(height: 24),
@@ -292,12 +464,12 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   currrentValue: _optionalNotes,
                 ),
 
-                // Optional Quantity Field (Nullable Int)
+                // Optional Quantity Field (Nullable Int) with thousand separators
                 FormFields<int?>(
                   label: 'Optional Quantity',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true,
+                  stripSeparators: true, // Shows 1,000 instead of 1000
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalQuantity = value);
@@ -305,12 +477,13 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   currrentValue: _optionalQuantity,
                 ),
 
-                // Optional Discount Field (Nullable Double)
+                // Optional Discount Field (Nullable Double - no thousand separators)
                 FormFields<double?>(
                   label: 'Discount Percentage (Optional)',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true,
+                  stripSeparators:
+                      false, // No commas: 1234.56 instead of 1,234.56
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalDiscount = value);
@@ -323,7 +496,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional Phone Number',
                   formType: FormType.phone,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalPhone = value);
@@ -336,7 +508,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional Email Address',
                   formType: FormType.email,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalEmail = value);
@@ -344,12 +515,11 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   currrentValue: _optionalEmail,
                 ),
 
-                // Optional Price Field (Nullable Double with separators)
+                // Optional Price Field (Nullable Double without separators)
                 FormFields<double?>(
-                  label: 'Optional Price (with separators)',
-                  formType: FormType.string,
+                  label: 'Optional Price (without separators)',
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
+                  stripSeparators: false, // Only accepts numbers, no formatting
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalPrice = value);
@@ -375,7 +545,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
                   multiLine: 3,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalBio = value);
@@ -388,7 +557,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional Birth Date',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalBirthDate = value);
@@ -401,7 +569,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional Selected DateTime',
                   formType: FormType.dateTime,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalSelectedDateTime = value);
@@ -414,7 +581,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional TimeOfDay',
                   formType: FormType.time,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalSelectedTimeOfDay = value);
@@ -427,7 +593,6 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   label: 'Optional Date Range',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: false,
                   isRequired: false,
                   onChanged: (value) {
                     setState(() => _optionalDateRange = value);
@@ -485,13 +650,36 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                         _buildDataRow('Price', _price.toString()),
                         if (_birthDate != null)
                           _buildDataRow('Birth Date', _birthDate.toString()),
-                        if (_selectedTimeOfDay != null)
+                        if (_selectedTimeOfDay != null) ...[
                           _buildDataRow('TimeOfDay',
                               '${_selectedTimeOfDay!.hour}:${_selectedTimeOfDay!.minute.toString().padLeft(2, '0')}'),
+                          _buildDataRow(
+                            'TimeOfDay → DateTime',
+                            _selectedTimeOfDay!.toDateTime().toString(),
+                          ),
+                        ],
+                        if (_selectedTime != null) ...[
+                          _buildDataRow(
+                              'DateTime Time', _selectedTime.toString()),
+                          _buildDataRow(
+                            'DateTime → TimeOfDay',
+                            '${_selectedTime!.toTimeOfDay()!.hour}:${_selectedTime!.toTimeOfDay()!.minute.toString().padLeft(2, '0')}',
+                          ),
+                        ],
                         if (_dateRange != null)
                           _buildDataRow(
                             'Date Range',
                             '${_dateRange!.start} - ${_dateRange!.end}',
+                          ),
+                        if (_vacationDates != null)
+                          _buildDataRow(
+                            'Vacation Dates',
+                            '${_vacationDates!.start} - ${_vacationDates!.end}',
+                          ),
+                        if (_projectTimeline != null)
+                          _buildDataRow(
+                            'Project Timeline',
+                            '${_projectTimeline!.start} - ${_projectTimeline!.end}',
                           ),
                         if (_optionalNotes != null)
                           _buildDataRow('Additional Notes', _optionalNotes!),

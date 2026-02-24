@@ -28,10 +28,12 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Custom error messages and hint text
 - Locale support for date/time pickers (string format: 'en_US', 'id_ID', etc.)
 - Custom date/time formatting
-- Automatic number formatting with thousands separators
+- Date range customization (`firstDate`, `lastDate`) for date/datetime/daterange pickers
+- Automatic number formatting with thousands separators (numeric types only)
+- Numeric-only input validation for int/double fields
 
 ✨ **Developer Experience**
-- Generic type support for type safety (`FormFields<String>`, `FormFields<int>`, `FormFields<DateTime>`, etc.)
+- Generic type support for type safety (`FormFields<String>`, `FormFields<int>`, `FormFields<DateTime>`, `FormFields<TimeOfDay>`, etc.)
 - Built-in validators with custom message support
 - Debounced input handling (500ms) for optimized performance
 - Automatic value parsing for numeric types
@@ -39,6 +41,7 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Comprehensive error messages with customization options
 - Provider-based state management
 - Text input prefix customization (`enterText`, `invalidIntegerText`, `invalidNumberText`)
+- TimeOfDay/DateTime conversion extension methods
 
 ## Installation
 
@@ -226,11 +229,13 @@ FormFields<String>(
 | `borderType` | `BorderType` | `BorderType.outlineInputBorder` | Border style |
 | `multiLine` | `int` | `0` | Number of lines (0 = single line) |
 | `customFormat` | `String?` | `null` | Custom date/time format |
-| `stripSeparators` | `bool` | `true` | Format large numbers with separators |
+| `stripSeparators` | `bool` | `true` | Format numbers with thousand separators (int/double only) |
 | `pickerLocale` | `String?` | `'id_ID'` | Locale for date/time pickers |
 | `enterText` | `String` | `'Enter '` | Custom text prefix for input hints |
 | `invalidIntegerText` | `String` | `'Enter valid integer for'` | Custom error text for invalid integer |
 | `invalidNumberText` | `String` | `'Enter valid number for'` | Custom error text for invalid number |
+| `firstDate` | `DateTime?` | `null` (100 years ago) | First selectable date for date pickers |
+| `lastDate` | `DateTime?` | `null` (today) | Last selectable date for date pickers |
 
 ## FormType Enum
 
@@ -322,6 +327,24 @@ final num = '12345';
 num.isValidNumber  // true
 ```
 
+## TimeOfDay/DateTime Extensions
+
+Easily convert between TimeOfDay and DateTime:
+
+```dart
+// DateTime to TimeOfDay
+DateTime dateTime = DateTime.now();
+TimeOfDay? timeOfDay = dateTime.toTimeOfDay();
+
+// TimeOfDay to DateTime (uses current date)
+TimeOfDay time = TimeOfDay(hour: 14, minute: 30);
+DateTime? dateTime = time.toDateTime();
+
+// TimeOfDay to DateTime with specific date
+DateTime specificDate = DateTime(2026, 12, 25);
+DateTime? christmas2pm = time.toDateTimeWithDate(specificDate);
+```
+
 ## Custom Validators
 
 ```dart
@@ -345,27 +368,38 @@ FormFields<String>(
 
 ## Number Formatting
 
-By default, numbers display with thousands separators:
+The `stripSeparators` parameter controls thousand separator formatting **for numeric types only** (`FormFields<int>` and `FormFields<double>`). It also restricts input to numbers only, preventing non-numeric characters.
 
 ```dart
-// Shows: 1,000,000
+// With thousand separators: 1,000,000
 FormFields<int>(
   label: 'Amount',
-  stripSeparators: true,  // Enable formatting
+  stripSeparators: true,  // Shows: 1,000,000 (default)
   onChanged: (value) {
-    print(value);  // Access clean value: 1000000
+    print(value);  // Value is clean: 1000000
   },
 )
 
-// Disable formatting
+// Without thousand separators: 1000000
 FormFields<int>(
   label: 'Amount',
-  stripSeparators: false,
+  stripSeparators: false,  // Shows: 1000000 (no commas)
   onChanged: (value) {
-    print(value);
+    print(value);  // Value is: 1000000
+  },
+)
+
+// For double/decimal numbers
+FormFields<double>(
+  label: 'Price',
+  stripSeparators: true,  // Shows: 1,234.56
+  onChanged: (value) {
+    print(value);  // Value is: 1234.56
   },
 )
 ```
+
+**Note:** Both `true` and `false` restrict input to numeric characters only. The difference is only in the visual formatting (whether commas are displayed).
 
 ## Custom Date Format
 
@@ -377,6 +411,48 @@ FormFields<DateTime>(
   onChanged: (value) {
     print(value);
   },
+)
+```
+
+## Custom Date Range
+
+```dart
+// Future dates only (e.g., booking system)
+FormFields<DateTime>(
+  label: 'Appointment Date',
+  formType: FormType.date,
+  firstDate: DateTime.now(),
+  lastDate: DateTime.now().add(Duration(days: 365)),
+  onChanged: (value) {},
+)
+
+// Specific year only
+FormFields<DateTime>(
+  label: 'Event Date 2026',
+  formType: FormType.date,
+  firstDate: DateTime(2026, 1, 1),
+  lastDate: DateTime(2026, 12, 31),
+  onChanged: (value) {},
+)
+
+// DateTimeRange with custom range (e.g., vacation dates in next 2 years)
+FormFields<DateTimeRange>(
+  label: 'Vacation Dates',
+  formType: FormType.date,
+  firstDate: DateTime.now(),
+  lastDate: DateTime.now().add(Duration(days: 730)),
+  onChanged: (value) {
+    print('Start: ${value.start}, End: ${value.end}');
+  },
+)
+
+// DateTimeRange with historical range (e.g., project timeline 2020-2030)
+FormFields<DateTimeRange>(
+  label: 'Project Timeline',
+  formType: FormType.date,
+  firstDate: DateTime(2020, 1, 1),
+  lastDate: DateTime(2030, 12, 31),
+  onChanged: (value) {},
 )
 ```
 
@@ -518,17 +594,34 @@ FormFields<DateTime>(
 )
 ```
 
-### Numbers not formatting
+### Numbers not formatting with thousand separators
 
-Enable `stripSeparators`:
+The `stripSeparators` parameter only works with numeric types (`FormFields<int>` and `FormFields<double>`):
 
 ```dart
+// ✅ Correct - shows thousand separators
 FormFields<int>(
   label: 'Amount',
-  stripSeparators: true,  // Must be true for formatting
+  stripSeparators: true,  // Shows: 1,000,000
   onChanged: (value) => setState(() => _amount = value ?? 0),
 )
+
+// ✅ Also correct - no thousand separators but still numeric-only input
+FormFields<double>(
+  label: 'Price',
+  stripSeparators: false,  // Shows: 1234.56 (no commas)
+  onChanged: (value) => setState(() => _price = value ?? 0.0),
+)
+
+// ❌ Wrong - stripSeparators has no effect on String types
+FormFields<String>(
+  label: 'Text',
+  stripSeparators: true,  // Has no effect on String
+  onChanged: (value) => setState(() => _text = value ?? ''),
+)
 ```
+
+**Note:** Both `stripSeparators: true` and `stripSeparators: false` restrict input to numeric characters only for int/double types. The only difference is whether thousand separators (commas) are displayed.
 
 ## Contributing
 

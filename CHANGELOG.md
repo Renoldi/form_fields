@@ -55,6 +55,11 @@ All notable changes to the FormFields package will be documented in this file.
 - DateTime extensions:
   - Date comparison helpers
   - Flexible date formatting
+  - TimeOfDay conversion (toTimeOfDay)
+
+- TimeOfDay extensions:
+  - DateTime conversion (toDateTime)
+  - DateTime conversion with specific date (toDateTimeWithDate)
 
 - State management:
   - FormFieldsController for field state
@@ -70,15 +75,16 @@ All notable changes to the FormFields package will be documented in this file.
   - Focus node support for keyboard navigation
   - Locale support for date/time pickers (string format: 'en_US', 'id_ID', etc.)
   - Custom error messages (enterText, invalidIntegerText, invalidNumberText)
+  - Custom date range (firstDate, lastDate) for date pickers
 
 - Number formatting:
   - Automatic thousands separator formatting
   - Configurable with stripSeparators parameter
   - Support for both integer and decimal numbers
 
-- User experience features:
-  - Password visibility toggle
-  - Automatic keyboard type selection
+- User experience featuret
+  - DateTimeRange support
+  - TimeOfDay support for time-only valuespe selection
   - Validation feedback
   - Clear/reset button for fields
   - Multiline text suppor

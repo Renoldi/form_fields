@@ -1,4 +1,5 @@
 /// Extensions for String and DateTime utilities used in FormFields package
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 enum Formats { date, dayDate, time, dayDateTime, dateTime, month, string }
@@ -59,6 +60,40 @@ extension ExtDate on DateTime? {
         return DateFormat.yMMMd().format(this!);
       }
     }
+  }
+
+  /// Convert DateTime to TimeOfDay
+  TimeOfDay? toTimeOfDay() {
+    if (this == null) return null;
+    return TimeOfDay(hour: this!.hour, minute: this!.minute);
+  }
+}
+
+/// Extensions for TimeOfDay
+extension ExtTimeOfDay on TimeOfDay? {
+  /// Convert TimeOfDay to DateTime (using current date)
+  DateTime? toDateTime() {
+    if (this == null) return null;
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      this!.hour,
+      this!.minute,
+    );
+  }
+
+  /// Convert TimeOfDay to DateTime with a specific date
+  DateTime? toDateTimeWithDate(DateTime date) {
+    if (this == null) return null;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      this!.hour,
+      this!.minute,
+    );
   }
 }
 

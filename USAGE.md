@@ -535,6 +535,61 @@ FormFields<DateTime>(
 )
 ```
 
+### Custom Date Range
+
+Control the selectable date range for date pickers:
+
+```dart
+// Future dates only (e.g., appointment booking)
+FormFields<DateTime>(
+  label: 'Appointment Date',
+  formType: FormType.date,
+  firstDate: DateTime.now(),
+  lastDate: DateTime.now().add(Duration(days: 365)),
+  onChanged: (value) {},
+)
+
+// Past dates only (default: last 100 years to today)
+FormFields<DateTime>(
+  label: 'Birth Date',
+  formType: FormType.date,
+  firstDate: DateTime(1924, 1, 1),
+  lastDate: DateTime.now(),
+  onChanged: (value) {},
+)
+
+// Specific date range
+FormFields<DateTime>(
+  label: 'Event Date',
+  formType: FormType.date,
+  firstDate: DateTime(2026, 1, 1),
+  lastDate: DateTime(2026, 12, 31),
+  onChanged: (value) {},
+)
+
+// DateRange with custom limits
+FormFields<DateTimeRange>(
+  label: 'Vacation Period',
+  firstDate: DateTime.now(),
+  lastDate: DateTime.now().add(Duration(days: 730)), // 2 years ahead
+  onChanged: (value) {},
+)
+
+// DateTime picker with date range
+FormFields<DateTime>(
+  label: 'Meeting DateTime',
+  formType: FormType.dateTime,
+  firstDate: DateTime.now(),
+  lastDate: DateTime.now().add(Duration(days: 90)),
+  onChanged: (value) {},
+)
+```
+
+**Default Behavior:**
+- `firstDate`: If not specified, defaults to 100 years ago
+- `lastDate`: If not specified, defaults to today
+- `initialDate`: Automatically adjusted to be within the valid range
+
 ### Custom Error Messages and Hint Text
 
 Customize validation messages and hint text for numeric fields:
@@ -759,8 +814,26 @@ if (_appointmentTime != null) {
 
 #### Converting Between Types
 
+The package provides convenient extension methods for converting between TimeOfDay and DateTime:
+
 ```dart
-// TimeOfDay to DateTime (using current date)
+// DateTime to TimeOfDay (using extension)
+DateTime dateTime = DateTime.now();
+TimeOfDay? timeOfDay = dateTime.toTimeOfDay();
+
+// TimeOfDay to DateTime (using current date - extension)
+TimeOfDay time = TimeOfDay(hour: 14, minute: 30);
+DateTime? dateTime = time.toDateTime();
+
+// TimeOfDay to DateTime with specific date (extension)
+DateTime specificDate = DateTime(2026, 12, 25);
+DateTime? christmas2pm = time.toDateTimeWithDate(specificDate);
+```
+
+**Manual Conversion (if needed):**
+
+```dart
+// TimeOfDay to DateTime (manual)
 TimeOfDay timeOfDay = TimeOfDay(hour: 14, minute: 30);
 DateTime dateTime = DateTime(
   DateTime.now().year,
@@ -770,7 +843,7 @@ DateTime dateTime = DateTime(
   timeOfDay.minute,
 );
 
-// DateTime to TimeOfDay
+// DateTime to TimeOfDay (manual)
 DateTime dateTime = DateTime.now();
 TimeOfDay timeOfDay = TimeOfDay(
   hour: dateTime.hour,

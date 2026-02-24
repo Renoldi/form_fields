@@ -46,12 +46,19 @@ class FormFieldsController extends ChangeNotifier {
     commit();
   }
 
+  /// Set controller text without notifying listeners (for initialization)
+  void setControllerSilent(String value) {
+    controller.text = value;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.text.length),
+    );
+  }
+
   /// Form type
   FormType _formType = FormType.string;
   FormType get formType => _formType;
   set formType(FormType formType) {
     _formType = formType;
-    commit();
   }
 
   /// Field label
@@ -59,7 +66,6 @@ class FormFieldsController extends ChangeNotifier {
   String get label => _label;
   set label(String label) {
     _label = label;
-    commit();
   }
 
   /// Label display state
@@ -67,7 +73,6 @@ class FormFieldsController extends ChangeNotifier {
   bool get isLabel => _isLabel;
   set isLabel(bool isLabel) {
     _isLabel = isLabel;
-    commit();
   }
 
   /// 100 years duration (used for date picker)
@@ -75,7 +80,6 @@ class FormFieldsController extends ChangeNotifier {
   Duration get d100YEARS => _d100YEARS;
   set d100YEARS(Duration d100YEARS) {
     _d100YEARS = d100YEARS;
-    commit();
   }
 
   /// Validity state

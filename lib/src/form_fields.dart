@@ -82,6 +82,12 @@ class FormFields<T> extends StatefulWidget {
   /// Custom error text for invalid number (default: 'Enter valid number for')
   final String invalidNumberText;
 
+  /// First selectable date for date pickers (default: 100 years ago)
+  final DateTime? firstDate;
+
+  /// Last selectable date for date pickers (default: today)
+  final DateTime? lastDate;
+
   const FormFields({
     super.key,
     required this.onChanged,
@@ -107,6 +113,8 @@ class FormFields<T> extends StatefulWidget {
     this.enterText = 'Enter ',
     this.invalidIntegerText = 'Enter valid integer for',
     this.invalidNumberText = 'Enter valid number for',
+    this.firstDate,
+    this.lastDate,
   });
 
   @override
@@ -136,24 +144,31 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         oldWidget.stripSeparators != widget.stripSeparators;
 
     if (valueChanged || formatChanged || stripSeparatorsChanged) {
-      if (widget.currrentValue == null) {
-        model.setController = "";
-      } else if (_isDateTimeType()) {
-        model.setController = _formatDateTime(widget.currrentValue as DateTime);
-      } else if (_isTimeOfDayType()) {
-        model.setController =
-            _formatTimeOfDay(widget.currrentValue as TimeOfDay);
-      } else if (_isDateTimeRangeType()) {
-        model.setController = _formatDateRange(
-          widget.currrentValue as DateTimeRange,
-        );
-      } else if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
-        model.setController = _formatNumber(widget.currrentValue as num);
-      } else if (_isIntType() || _isDoubleType()) {
-        model.setController = widget.currrentValue.toString();
-      } else {
-        model.setController = widget.currrentValue.toString();
-      }
+      // Use post-frame callback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        if (widget.currrentValue == null) {
+          model.setController = "";
+        } else if (_isDateTimeType()) {
+          model.setController =
+              _formatDateTime(widget.currrentValue as DateTime);
+        } else if (_isTimeOfDayType()) {
+          model.setController =
+              _formatTimeOfDay(widget.currrentValue as TimeOfDay);
+        } else if (_isDateTimeRangeType()) {
+          model.setController = _formatDateRange(
+            widget.currrentValue as DateTimeRange,
+          );
+        } else if ((_isIntType() || _isDoubleType()) &&
+            widget.stripSeparators) {
+          model.setController = _formatNumber(widget.currrentValue as num);
+        } else if (_isIntType() || _isDoubleType()) {
+          model.setController = widget.currrentValue.toString();
+        } else {
+          model.setController = widget.currrentValue.toString();
+        }
+      });
     }
   }
 
@@ -168,19 +183,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     if (widget.currrentValue == null) return;
 
     if (_isDateTimeType()) {
-      model.setController = _formatDateTime(widget.currrentValue as DateTime);
+      model.setControllerSilent(
+          _formatDateTime(widget.currrentValue as DateTime));
     } else if (_isTimeOfDayType()) {
-      model.setController = _formatTimeOfDay(widget.currrentValue as TimeOfDay);
+      model.setControllerSilent(
+          _formatTimeOfDay(widget.currrentValue as TimeOfDay));
     } else if (_isDateTimeRangeType()) {
-      model.setController = _formatDateRange(
+      model.setControllerSilent(_formatDateRange(
         widget.currrentValue as DateTimeRange,
-      );
+      ));
     } else if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
-      model.setController = _formatNumber(widget.currrentValue as num);
+      model.setControllerSilent(_formatNumber(widget.currrentValue as num));
     } else if (_isIntType() || _isDoubleType()) {
-      model.setController = widget.currrentValue.toString();
+      model.setControllerSilent(widget.currrentValue.toString());
     } else {
-      model.setController = widget.currrentValue.toString();
+      model.setControllerSilent(widget.currrentValue.toString());
     }
   }
 
@@ -220,21 +237,31 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // ============================================================================
 
   String _formatNumber(num value) {
+    // stripSeparators only works for numeric types (int, double)
+    if (!_isIntType() && !_isDoubleType()) {
+      return value.toString();
+    }
+
     if (!widget.stripSeparators) return value.toString();
-    if (_isIntType() && widget.stripSeparators) {
+
+    if (_isIntType()) {
       return NumberFormat('#,###', 'en_US').format(value);
-    } else if (_isDoubleType() && widget.stripSeparators) {
+    } else if (_isDoubleType()) {
       return NumberFormat('#,##0.##########', 'en_US').format(value);
     }
     return value.toString();
   }
 
   String _stripSeparators(String value) {
-    if (!widget.stripSeparators ||
-        (!(_isIntType() && widget.stripSeparators) &&
-            !(_isDoubleType() && widget.stripSeparators))) {
+    // stripSeparators only works for numeric types (int, double)
+    if (!_isIntType() && !_isDoubleType()) {
       return value;
     }
+
+    if (!widget.stripSeparators) {
+      return value;
+    }
+
     return value.replaceAll(',', '');
   }
 
@@ -243,69 +270,78 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   List<TextInputFormatter> _getInputFormatters() {
-    if (!widget.stripSeparators) return [];
-    if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
-      return [
-        TextInputFormatter.withFunction((oldValue, newValue) {
-          if (newValue.text.isEmpty) {
-            return newValue;
-          }
+    // For numeric types, always restrict to numeric input
+    if (!_isIntType() && !_isDoubleType()) {
+      return [];
+    }
 
-          final cleaned = _stripSeparators(newValue.text);
+    return [
+      TextInputFormatter.withFunction((oldValue, newValue) {
+        if (newValue.text.isEmpty) {
+          return newValue;
+        }
 
-          if (_isIntType() && widget.stripSeparators) {
-            if (!RegExp(r'^-?[0-9]*$').hasMatch(cleaned)) {
-              return oldValue;
-            }
-          } else if (_isDoubleType() && widget.stripSeparators) {
-            if (!RegExp(r'^-?[0-9]*\.?[0-9]*$').hasMatch(cleaned)) {
-              return oldValue;
-            }
-          }
+        final cleaned = widget.stripSeparators
+            ? _stripSeparators(newValue.text)
+            : newValue.text;
 
-          if (cleaned.isEmpty || cleaned == '-') {
-            return newValue;
-          }
-
-          try {
-            if (_isIntType() && widget.stripSeparators) {
-              final number = int.parse(cleaned);
-              final formatted = _formatNumber(number);
-              return TextEditingValue(
-                text: formatted,
-                selection: TextSelection.collapsed(offset: formatted.length),
-              );
-            } else if (_isDoubleType() && widget.stripSeparators) {
-              if (cleaned.endsWith('.')) {
-                final intPart = cleaned.substring(0, cleaned.length - 1);
-                if (intPart.isEmpty || intPart == '-') {
-                  return newValue.copyWith(text: cleaned);
-                }
-                final number = double.parse(intPart);
-                final formatted = _formatNumber(number);
-                return TextEditingValue(
-                  text: '$formatted.',
-                  selection: TextSelection.collapsed(
-                    offset: formatted.length + 1,
-                  ),
-                );
-              }
-              final number = double.parse(cleaned);
-              final formatted = _formatNumber(number);
-              return TextEditingValue(
-                text: formatted,
-                selection: TextSelection.collapsed(offset: formatted.length),
-              );
-            }
-          } catch (e) {
+        // Validate numeric input
+        if (_isIntType()) {
+          if (!RegExp(r'^-?[0-9]*$').hasMatch(cleaned)) {
             return oldValue;
           }
+        } else if (_isDoubleType()) {
+          if (!RegExp(r'^-?[0-9]*\.?[0-9]*$').hasMatch(cleaned)) {
+            return oldValue;
+          }
+        }
 
+        if (cleaned.isEmpty || cleaned == '-') {
           return newValue;
-        }),
-      ];
-    }
-    return [];
+        }
+
+        // Apply formatting only if stripSeparators is true
+        if (!widget.stripSeparators) {
+          return newValue;
+        }
+
+        try {
+          if (_isIntType()) {
+            final number = int.parse(cleaned);
+            final formatted = _formatNumber(number);
+            return TextEditingValue(
+              text: formatted,
+              selection: TextSelection.collapsed(offset: formatted.length),
+            );
+          } else if (_isDoubleType()) {
+            if (cleaned.endsWith('.')) {
+              final intPart = cleaned.substring(0, cleaned.length - 1);
+              if (intPart.isEmpty || intPart == '-') {
+                return newValue.copyWith(text: cleaned);
+              }
+              final number = double.parse(intPart);
+              final formatted = _formatNumber(number);
+              return TextEditingValue(
+                text: '$formatted.',
+                selection: TextSelection.collapsed(
+                  offset: formatted.length + 1,
+                ),
+              );
+            }
+            final number = double.parse(cleaned);
+            final formatted = _formatNumber(number);
+            return TextEditingValue(
+              text: formatted,
+              selection: TextSelection.collapsed(offset: formatted.length),
+            );
+          }
+        } catch (e) {
+          return oldValue;
+        }
+
+        return newValue;
+      }),
+    ];
   }
 
   // ============================================================================
@@ -354,11 +390,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    final now = DateTime.now();
+    final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
+    final last = widget.lastDate ?? now;
+
     final date = await showDatePicker(
       context: ctx,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now().subtract(vm.d100YEARS),
-      lastDate: DateTime.now(),
+      initialDate:
+          now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
+      firstDate: first,
+      lastDate: last,
       locale: _parseLocale(),
     );
 
@@ -428,11 +469,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    final now = DateTime.now();
+    final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
+    final last = widget.lastDate ?? now;
+
     final date = await showDatePicker(
       context: ctx,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now().subtract(vm.d100YEARS),
-      lastDate: DateTime.now(),
+      initialDate:
+          now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
+      firstDate: first,
+      lastDate: last,
       locale: _parseLocale(),
     );
 
@@ -470,10 +516,42 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    final now = DateTime.now();
+    final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
+    final last = widget.lastDate ?? now;
+
+    // Calculate smart initial date range
+    DateTime initialStart;
+    DateTime initialEnd;
+
+    if (widget.currrentValue != null) {
+      // Use current value if available
+      final currentRange = widget.currrentValue as DateTimeRange;
+      initialStart = currentRange.start;
+      initialEnd = currentRange.end;
+    } else {
+      // Create default 7-day range respecting constraints
+      initialStart = now.isAfter(last)
+          ? last.subtract(const Duration(days: 7))
+          : (now.isBefore(first) ? first : now);
+      initialEnd = initialStart.add(const Duration(days: 7));
+
+      // Ensure end date doesn't exceed lastDate
+      if (initialEnd.isAfter(last)) {
+        initialEnd = last;
+      }
+
+      // Ensure start date is not before firstDate
+      if (initialStart.isBefore(first)) {
+        initialStart = first;
+      }
+    }
+
     final dateRange = await showDateRangePicker(
       context: ctx,
-      firstDate: DateTime.now().subtract(vm.d100YEARS),
-      lastDate: DateTime.now(),
+      firstDate: first,
+      lastDate: last,
+      initialDateRange: DateTimeRange(start: initialStart, end: initialEnd),
       locale: _parseLocale(),
     );
 
@@ -700,8 +778,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             onChanged: (v) {
               if (debounce.isActive) debounce.cancel();
               debounce = Timer(const Duration(milliseconds: 500), () {
-                if (_isIntType() && widget.stripSeparators) {
-                  final cleaned = _stripSeparatorsForParse(v);
+                // Handle numeric types - stripSeparators only affects formatting, not parsing
+                if (_isIntType()) {
+                  final cleaned =
+                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -712,8 +792,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   if (parsed != null) {
                     widget.onChanged(parsed as T);
                   }
-                } else if (_isDoubleType() && widget.stripSeparators) {
-                  final cleaned = _stripSeparatorsForParse(v);
+                } else if (_isDoubleType()) {
+                  final cleaned =
+                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
                   if (cleaned.isEmpty ||
                       cleaned == '-' ||
                       cleaned.endsWith('.')) {
@@ -727,12 +808,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     widget.onChanged(parsed as T);
                   }
                 } else {
+                  // Non-numeric types
                   widget.onChanged(v as T);
                 }
               });
             },
             onEditingComplete: () {
-              if (widget.stripSeparators && (_isIntType() || _isDoubleType())) {
+              // stripSeparators only works for numeric types (int, double)
+              if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
                 final text = vm.controller.text;
                 if (text.isEmpty) return;
                 final cleaned = _stripSeparatorsForParse(text);
@@ -742,12 +825,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   return;
                 }
 
-                if (_isIntType() && widget.stripSeparators) {
+                if (_isIntType()) {
                   final parsed = int.tryParse(cleaned);
                   if (parsed != null) {
                     vm.setController = _formatNumber(parsed);
                   }
-                } else if (_isDoubleType() && widget.stripSeparators) {
+                } else if (_isDoubleType()) {
                   final parsed = double.tryParse(cleaned);
                   if (parsed != null) {
                     vm.setController = _formatNumber(parsed);

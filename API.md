@@ -31,6 +31,8 @@ FormFields<T>({
   String enterText = 'Enter ',
   String invalidIntegerText = 'Enter valid integer for',
   String invalidNumberText = 'Enter valid number for',
+  DateTime? firstDate,
+  DateTime? lastDate,
 })
 ```
 
@@ -68,6 +70,8 @@ FormFields<T>({
 | `enterText` | `String` | `'Enter '` | Custom input hint prefix |
 | `invalidIntegerText` | `String` | `'Enter valid integer for'` | Error for invalid integer |
 | `invalidNumberText` | `String` | `'Enter valid number for'` | Error for invalid number |
+| `firstDate` | `DateTime?` | `null` | First selectable date (default: 100 years ago) |
+| `lastDate` | `DateTime?` | `null` | Last selectable date (default: today) |
 
 ## Enums
 
@@ -239,6 +243,51 @@ date.toStrings(format: Formats.date)       // Date only
 date.toStrings(format: Formats.time)       // Time only
 date.toStrings(format: Formats.dateTime)   // DateTime
 date.toStrings(stringFormat: 'dd/MM/yyyy') // Custom format
+```
+
+### Conversion Methods
+
+```dart
+DateTime? dateTime = DateTime.now();
+
+// Convert to TimeOfDay
+TimeOfDay? timeOfDay = dateTime.toTimeOfDay();
+// Returns: TimeOfDay(hour: dateTime.hour, minute: dateTime.minute)
+```
+
+## TimeOfDay Extensions
+
+### Conversion Methods
+
+```dart
+TimeOfDay? time = TimeOfDay(hour: 14, minute: 30);
+
+// Convert to DateTime (uses current date)
+DateTime? dateTime = time.toDateTime();
+
+// Convert to DateTime with specific date
+DateTime specificDate = DateTime(2026, 12, 25);
+DateTime? christmas2pm = time.toDateTimeWithDate(specificDate);
+```
+
+**Example Usage:**
+
+```dart
+// Get TimeOfDay from FormFields
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (TimeOfDay? value) {
+    if (value != null) {
+      // Convert to DateTime for API submission
+      DateTime meetingDateTime = value.toDateTime()!;
+      
+      // Or with specific date
+      DateTime eventDate = DateTime(2026, 3, 15);
+      DateTime fullDateTime = value.toDateTimeWithDate(eventDate)!;
+    }
+  },
+)
 ```
 
 ## Controller: FormFieldsController

@@ -148,6 +148,24 @@ Form(
 )
 ```
 
+## 8. Converting Between TimeOfDay and DateTime
+
+Use built-in extension methods for easy conversion:
+
+```dart
+// DateTime to TimeOfDay
+DateTime dateTime = DateTime.now();
+TimeOfDay? timeOfDay = dateTime.toTimeOfDay();
+
+// TimeOfDay to DateTime
+TimeOfDay time = TimeOfDay(hour: 14, minute: 30);
+DateTime? dateTime = time.toDateTime();
+
+// TimeOfDay to DateTime with specific date
+DateTime eventDate = DateTime(2026, 12, 25);
+DateTime? fullDateTime = time.toDateTimeWithDate(eventDate);
+```
+
 ## Need Help?
 
 - **Documentation**: See [README.md](README.md)
