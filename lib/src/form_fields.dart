@@ -124,6 +124,15 @@ class FormFields<T> extends StatefulWidget {
 class _FormFieldsState<T> extends State<FormFields<T>> {
   late FormFieldsController model;
   late Timer debounce;
+  FocusNode? _internalFocusNode;
+
+  FocusNode get _effectiveFocusNode {
+    if (widget.focusNode != null) {
+      return widget.focusNode!;
+    }
+    _internalFocusNode ??= FocusNode();
+    return _internalFocusNode!;
+  }
 
   @override
   void initState() {
@@ -148,25 +157,43 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
+        // Skip updates during active typing for non-separator numeric fields
+        // to prevent cursor jumping, but only for value changes
+        // (format/separator changes should still update)
+        if (valueChanged && !formatChanged && !stripSeparatorsChanged) {
+          final hasFocus = _effectiveFocusNode.hasFocus;
+          final isNonSeparatorNumeric =
+              (_isIntType() || _isDoubleType()) && !widget.stripSeparators;
+          if (hasFocus && isNonSeparatorNumeric) {
+            return;
+          }
+        }
+
+        String newControllerText;
         if (widget.currrentValue == null) {
-          model.setController = "";
+          newControllerText = "";
         } else if (_isDateTimeType()) {
-          model.setController =
-              _formatDateTime(widget.currrentValue as DateTime);
+          newControllerText = _formatDateTime(widget.currrentValue as DateTime);
         } else if (_isTimeOfDayType()) {
-          model.setController =
+          newControllerText =
               _formatTimeOfDay(widget.currrentValue as TimeOfDay);
         } else if (_isDateTimeRangeType()) {
-          model.setController = _formatDateRange(
+          newControllerText = _formatDateRange(
             widget.currrentValue as DateTimeRange,
           );
         } else if ((_isIntType() || _isDoubleType()) &&
             widget.stripSeparators) {
-          model.setController = _formatNumber(widget.currrentValue as num);
+          newControllerText = _formatNumber(widget.currrentValue as num);
         } else if (_isIntType() || _isDoubleType()) {
-          model.setController = widget.currrentValue.toString();
+          newControllerText = widget.currrentValue.toString();
         } else {
-          model.setController = widget.currrentValue.toString();
+          newControllerText = widget.currrentValue.toString();
+        }
+
+        // Only update controller if the text actually changed
+        // This prevents cursor jumping during active typing
+        if (model.controller.text != newControllerText) {
+          model.setController = newControllerText;
         }
       });
     }
@@ -176,6 +203,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void dispose() {
     model.dispose();
     debounce.cancel();
+    _internalFocusNode?.dispose();
     super.dispose();
   }
 
@@ -287,11 +315,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
         // Validate numeric input
         if (_isIntType()) {
-          if (!RegExp(r'^-?[0-9,]*$').hasMatch(cleaned)) {
+          final pattern =
+              widget.stripSeparators ? r'^-?[0-9,]*$' : r'^-?[0-9]*$';
+          if (!RegExp(pattern).hasMatch(cleaned)) {
             return oldValue;
           }
         } else if (_isDoubleType()) {
-          if (!RegExp(r'^-?[0-9,]*\.?[0-9]*$').hasMatch(cleaned)) {
+          final pattern = widget.stripSeparators
+              ? r'^-?[0-9,]*\.?[0-9]*$'
+              : r'^-?[0-9]*\.?[0-9]*$';
+          if (!RegExp(pattern).hasMatch(cleaned)) {
             return oldValue;
           }
         }
@@ -302,6 +335,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
         // Apply formatting only if stripSeparators is true
         if (!widget.stripSeparators) {
+          // No formatting - just validate and return as-is
           return newValue;
         }
 
@@ -659,7 +693,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     if (_isIntType()) {
       if (value != null && !value.isWhiteSpace) {
-        final cleaned = _stripSeparatorsForParse(value);
+        final cleaned =
+            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
         final parsed = int.tryParse(cleaned);
         if (parsed == null) {
           return '${widget.invalidIntegerText} ${vm.label}';
@@ -669,7 +704,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       }
     } else if (_isDoubleType()) {
       if (value != null && !value.isWhiteSpace) {
-        final cleaned = _stripSeparatorsForParse(value);
+        final cleaned =
+            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
         final parsed = double.tryParse(cleaned);
         if (parsed == null) {
           return '${widget.invalidNumberText} ${vm.label}';
@@ -759,7 +795,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 : widget.multiLine,
             obscureText: vm.formType == FormType.password ? vm.obscure : false,
             autovalidateMode: AutovalidateMode.always,
-            focusNode: widget.focusNode,
+            focusNode: _effectiveFocusNode,
             onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
             keyboardType: _isDateTimeType() ||
                     _isTimeOfDayType() ||
@@ -777,10 +813,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             inputFormatters: _getInputFormatters(),
             onChanged: (v) {
               if (debounce.isActive) debounce.cancel();
-              debounce = Timer(const Duration(milliseconds: 500), () {
+
+              // For non-separator numeric fields, respond immediately for smoother UX
+              final useDebounce =
+                  widget.stripSeparators || !(_isIntType() || _isDoubleType());
+              final delay = useDebounce
+                  ? const Duration(milliseconds: 500)
+                  : const Duration(milliseconds: 50);
+
+              debounce = Timer(delay, () {
                 // Handle numeric types - stripSeparators only affects formatting, not parsing
                 if (_isIntType()) {
-                  final cleaned = _stripSeparatorsForParse(v);
+                  final cleaned =
+                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -792,7 +837,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     widget.onChanged(parsed as T);
                   }
                 } else if (_isDoubleType()) {
-                  final cleaned = _stripSeparatorsForParse(v);
+                  final cleaned =
+                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -800,6 +846,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     return;
                   }
                   if (cleaned.endsWith('.')) {
+                    // Don't wait, emit null or keep previous value
                     return;
                   }
                   final parsed = double.tryParse(cleaned);
