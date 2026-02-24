@@ -9,8 +9,8 @@ import 'package:provider/provider.dart';
 import 'controller.dart';
 import 'enums.dart';
 import 'validators.dart';
-import 'utilities/extensions.dart';
 import 'utilities/colors.dart';
+import 'utilities/extensions.dart';
 
 class FormFields<T> extends StatefulWidget {
   /// Callback when field value changes

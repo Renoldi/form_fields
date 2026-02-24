@@ -1,67 +1,74 @@
-/// Extensions for String and DateTime utilities used in FormFields package
+/// String extensions for validation and manipulation
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-enum Formats { date, dayDate, time, dayDateTime, dateTime, month, string }
-
-/// Extensions for DateTime
-extension ExtDate on DateTime? {
-  /// Check if this DateTime is before another
-  bool isBefore(DateTime? other) {
-    if (this == null) {
-      return false;
-    } else {
-      return this!.isBefore(other ?? DateTime.now());
-    }
+extension StringExtensions on String? {
+  /// Check if string is empty or contains only whitespace
+  bool get isWhiteSpace {
+    if (this == null) return true;
+    return this!.trim().isEmpty;
   }
 
-  /// Check if this DateTime is after another
-  bool isAfter(DateTime? other) {
-    if (this == null) {
-      return false;
-    } else {
-      return this!.isAfter(other ?? DateTime.now());
-    }
+  /// Check if email is valid
+  bool get isValidEmail {
+    if (this == null) return false;
+    final emailRegExp = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    );
+    return emailRegExp.hasMatch(this!);
   }
 
-  /// Check if this DateTime is at the same moment as another
-  bool isAtSameMomentAs(DateTime? other) {
-    if (this == null) {
-      return false;
-    } else {
-      return this!.isAtSameMomentAs(other ?? DateTime.now());
-    }
+  /// Check if password is valid (minimum 6 characters)
+  bool get isValidPassword {
+    if (this == null) return false;
+    return this!.length >= 6;
   }
 
-  /// Convert DateTime to formatted string
-  String toStrings({Formats format = Formats.date, String stringFormat = ""}) {
-    if (this == null) {
-      return "";
-    } else {
-      if (format == Formats.string) {
-        if (stringFormat.isNotEmpty) {
-          return DateFormat(stringFormat).format(this!);
-        } else {
-          return DateFormat.Hm().format(this!);
-        }
-      } else if (format == Formats.date) {
-        return DateFormat.yMMMd().format(this!);
-      } else if (format == Formats.dayDate) {
-        return DateFormat.E().add_yMd().format(this!);
-      } else if (format == Formats.dayDateTime) {
-        return DateFormat.E().add_yMd().add_Hm().format(this!);
-      } else if (format == Formats.dateTime) {
-        return DateFormat.yMMMd().add_Hm().format(this!);
-      } else if (format == Formats.time) {
-        return DateFormat.Hm().format(this!);
-      } else if (format == Formats.month) {
-        return DateFormat.MMM().format(this!);
-      } else {
-        return DateFormat.yMMMd().format(this!);
-      }
-    }
+  /// Check if phone number is valid (Indonesian format: +0 followed by 11 digits)
+  bool get isValidPhone {
+    if (this == null) return false;
+    final phoneRegExp = RegExp(r"^\+?0[0-9]{11}$");
+    return phoneRegExp.hasMatch(this!);
   }
 
+  /// Check if string is a valid number
+  bool get isValidNumber {
+    if (this == null) return false;
+    final phoneRegExp = RegExp(r'^-?[0-9]+$');
+    return phoneRegExp.hasMatch(this!);
+  }
+
+  /// Convert string to title case
+  String get toTitleCase {
+    if (this == null || this!.isEmpty) return this ?? '';
+    return this!
+        .split(' ')
+        .map((word) => word.isEmpty
+            ? word
+            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  /// Check if string is numeric (including decimals)
+  bool get isNumeric {
+    if (this == null) return false;
+    return double.tryParse(this!) != null;
+  }
+
+  /// Capitalize first letter
+  String get capitalize {
+    if (this == null || this!.isEmpty) return this ?? '';
+    return this![0].toUpperCase() + this!.substring(1);
+  }
+
+  /// Remove all whitespace
+  String get removeWhitespace {
+    if (this == null) return '';
+    return this!.replaceAll(RegExp(r'\s+'), '');
+  }
+}
+
+/// DateTime extensions for time conversion
+extension DateTimeExtensions on DateTime? {
   /// Convert DateTime to TimeOfDay
   TimeOfDay? toTimeOfDay() {
     if (this == null) return null;
@@ -69,108 +76,18 @@ extension ExtDate on DateTime? {
   }
 }
 
-/// Extensions for TimeOfDay
-extension ExtTimeOfDay on TimeOfDay? {
-  /// Convert TimeOfDay to DateTime (using current date)
+/// TimeOfDay extensions for datetime conversion
+extension TimeOfDayExtensions on TimeOfDay? {
+  /// Convert TimeOfDay to DateTime with current date
   DateTime? toDateTime() {
     if (this == null) return null;
     final now = DateTime.now();
-    return DateTime(
-      now.year,
-      now.month,
-      now.day,
-      this!.hour,
-      this!.minute,
-    );
+    return DateTime(now.year, now.month, now.day, this!.hour, this!.minute);
   }
 
-  /// Convert TimeOfDay to DateTime with a specific date
+  /// Convert TimeOfDay to DateTime with specific date
   DateTime? toDateTimeWithDate(DateTime date) {
     if (this == null) return null;
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      this!.hour,
-      this!.minute,
-    );
-  }
-}
-
-/// Extensions for String validation and manipulation
-extension ExtString on String {
-  /// Check if email is valid
-  bool get isValidEmail {
-    return RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(this);
-  }
-
-  /// Check if string is whitespace or empty
-  bool get isWhiteSpace => trim().isEmpty;
-
-  /// Check if password is valid (minimum 6 characters)
-  bool get isValidPassword => length > 5;
-
-  /// Check if string is a valid verification code
-  bool get isValidVerification => length >= 1;
-
-  /// Hide phone number (show only last 4 digits)
-  String get hidePhone {
-    List<String> result = split("");
-    String phone = "";
-    int leftChar = 4;
-    int t = result.length - leftChar;
-    int n = 1;
-    for (var e in result) {
-      if (n > t) {
-        phone += e;
-      } else {
-        phone += "*";
-      }
-      n++;
-    }
-    return phone;
-  }
-
-  /// Add leading zero if phone doesn't start with 0
-  String get is0Phone {
-    String p = "";
-    if (isNotEmpty && substring(0, 1) != "0") {
-      p += "0$this";
-    } else {
-      p = this;
-    }
-    return p;
-  }
-
-  /// Check if phone number is valid (Indonesian format: +0 followed by 11 digits)
-  bool get isValidPhone {
-    final phoneRegExp = RegExp(r"^\+?0[0-9]{11}$");
-    return phoneRegExp.hasMatch(this);
-  }
-
-  /// Check if string is a valid number
-  bool get isValidNumber {
-    final phoneRegExp = RegExp(r'^-?[0-9]+$');
-    return phoneRegExp.hasMatch(this);
-  }
-
-  /// Convert string to title case
-  String get toTitleCase {
-    if (length <= 1) {
-      return toUpperCase();
-    }
-    final List<String> words = split(' ');
-
-    final capitalizedWords = words.map((word) {
-      if (word.trim().isNotEmpty) {
-        final String firstLetter = word.trim().substring(0, 1).toUpperCase();
-        final String remainingLetters = word.trim().substring(1);
-
-        return '$firstLetter$remainingLetters';
-      }
-      return '';
-    });
-
-    return capitalizedWords.join(' ');
+    return DateTime(date.year, date.month, date.day, this!.hour, this!.minute);
   }
 }
