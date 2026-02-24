@@ -287,11 +287,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
         // Validate numeric input
         if (_isIntType()) {
-          if (!RegExp(r'^-?[0-9]*$').hasMatch(cleaned)) {
+          if (!RegExp(r'^-?[0-9,]*$').hasMatch(cleaned)) {
             return oldValue;
           }
         } else if (_isDoubleType()) {
-          if (!RegExp(r'^-?[0-9]*\.?[0-9]*$').hasMatch(cleaned)) {
+          if (!RegExp(r'^-?[0-9,]*\.?[0-9]*$').hasMatch(cleaned)) {
             return oldValue;
           }
         }
@@ -780,8 +780,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
               debounce = Timer(const Duration(milliseconds: 500), () {
                 // Handle numeric types - stripSeparators only affects formatting, not parsing
                 if (_isIntType()) {
-                  final cleaned =
-                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
+                  final cleaned = _stripSeparatorsForParse(v);
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -793,14 +792,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     widget.onChanged(parsed as T);
                   }
                 } else if (_isDoubleType()) {
-                  final cleaned =
-                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
-                  if (cleaned.isEmpty ||
-                      cleaned == '-' ||
-                      cleaned.endsWith('.')) {
+                  final cleaned = _stripSeparatorsForParse(v);
+                  if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
                     }
+                    return;
+                  }
+                  if (cleaned.endsWith('.')) {
                     return;
                   }
                   final parsed = double.tryParse(cleaned);
