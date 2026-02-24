@@ -48,6 +48,7 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
   // Numeric fields
   int _quantity = 0;
   double _price = 0.0;
+  double? _prices = 0.0;
 
   // Date/time fields
   DateTime? _birthDate;
@@ -89,6 +90,20 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
+
+                FormFields<double?>(
+                  label: '_prices (Double with separators)',
+                  formType: FormType.string,
+                  labelPosition: LabelPosition.top,
+                  stripSeparators: true, // Shows 1,000 instead of 1000
+                  onChanged: (value) {
+                    setState(() {
+                      _prices = value;
+                      debugPrint('Updated _prices: $_prices');
+                    });
+                  },
+                  currrentValue: _prices,
+                ),
 
                 // Full Name Field
                 FormFields<String>(

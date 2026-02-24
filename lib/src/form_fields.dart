@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'controller.dart';
 import 'enums.dart';
 import 'validators.dart';
-import 'utilities/colors.dart';
 import 'utilities/extensions.dart';
 
 class FormFields<T> extends StatefulWidget {
@@ -88,6 +87,12 @@ class FormFields<T> extends StatefulWidget {
   /// Last selectable date for date pickers (default: today)
   final DateTime? lastDate;
 
+  /// Border color for normal state (default: Color(0xFFC7C7C7))
+  final Color borderColor;
+
+  /// Border color for error state (default: Colors.red)
+  final Color errorBorderColor;
+
   const FormFields({
     super.key,
     required this.onChanged,
@@ -115,6 +120,8 @@ class FormFields<T> extends StatefulWidget {
     this.invalidNumberText = 'Enter valid number for',
     this.firstDate,
     this.lastDate,
+    this.borderColor = const Color(0xFFC7C7C7),
+    this.errorBorderColor = Colors.red,
   });
 
   @override
@@ -938,9 +945,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(widget.radius),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 width: 1,
-                                color: ColorUtil.redColor,
+                                color: widget.errorBorderColor,
                               ),
                             ),
                   focusedBorder: widget.borderType == BorderType.none
@@ -950,9 +957,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(widget.radius),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 width: 1,
-                                color: ColorUtil.colorC7C7C7,
+                                color: widget.borderColor,
                               ),
                             ),
                   enabledBorder: widget.borderType == BorderType.none
@@ -962,9 +969,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(widget.radius),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 width: 1,
-                                color: ColorUtil.colorC7C7C7,
+                                color: widget.borderColor,
                               ),
                             ),
                   border: widget.borderType == BorderType.none
@@ -974,9 +981,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(widget.radius),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 width: 1,
-                                color: ColorUtil.colorC7C7C7,
+                                color: widget.borderColor,
                               ),
                             ),
                   disabledBorder: widget.borderType == BorderType.none
@@ -986,9 +993,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(widget.radius),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 width: 1,
-                                color: ColorUtil.colorC7C7C7,
+                                color: widget.borderColor,
                               ),
                             ),
                 ),
