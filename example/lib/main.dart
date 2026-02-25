@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FormFields Example',
+      title: 'FormFields - All Parameters Example',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -37,46 +37,45 @@ class FormFieldsExamplePage extends StatefulWidget {
 
 class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
   final _formKey = GlobalKey<FormState>();
+  final _focusNode1 = FocusNode();
+  final _focusNode2 = FocusNode();
 
-  // Text fields
-  String _fullName = '';
+  // STRING - All variations
+  String _string1 = '';
+  String? _string2;
+  String _stringCustom = '';
   String _email = '';
   String _phone = '';
   String _password = '';
-  String _bio = '';
 
-  // Numeric fields
-  int _quantity = 0;
-  double _price = 0.0;
-  double? _prices = 0.0;
+  // INT - All variations
+  int _int1 = 0;
+  int? _int2;
 
-  // Date/time fields
-  DateTime? _birthDate;
-  DateTime? _selectedTime;
-  TimeOfDay? _selectedTimeOfDay;
-  DateTime? _selectedDateTime;
-  DateTimeRange? _dateRange;
-  DateTimeRange? _vacationDates;
-  DateTimeRange? _projectTimeline;
+  // DOUBLE - All variations
+  double _double1 = 0.0;
+  double? _double2;
 
-  // Nullable/Optional fields
-  String? _optionalNotes;
-  int? _optionalQuantity;
-  double? _optionalDiscount;
-  String? _optionalPhone;
-  String? _optionalEmail;
-  double? _optionalPrice;
-  String? _optionalFullName;
-  String? _optionalBio;
-  DateTime? _optionalBirthDate;
-  DateTime? _optionalSelectedDateTime;
-  TimeOfDay? _optionalSelectedTimeOfDay;
-  DateTimeRange? _optionalDateRange;
+  // DATETIME - All variations
+  DateTime _date1 = DateTime.now();
+  DateTime? _date2;
+
+  // TIMEOFDAY - All variations
+  TimeOfDay _time1 = TimeOfDay.now();
+  TimeOfDay? _time2;
+
+  // DATETIMERANGE - All variations
+  DateTimeRange _range1 =
+      DateTimeRange(start: DateTime.now(), end: DateTime.now());
+  DateTimeRange? _range2;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('FormFields Example'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('FormFields - All Parameters Example'),
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -85,537 +84,322 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Basic Text Fields',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
+                // ========== STRING TYPE ==========
+                _buildSectionTitle('STRING TYPE - All Parameters'),
 
-                FormFields<double?>(
-                  label: '_prices (Double with separators)',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: true, // Shows 1,000 instead of 1000
-                  onChanged: (value) {
-                    setState(() {
-                      _prices = value;
-                      debugPrint('Updated _prices: $_prices');
-                    });
-                  },
-                  currrentValue: _prices,
-                ),
-
-                // Full Name Field
+                // Non-Nullable String - Basic
+                _buildFieldTitle('String (Non-Null) - Basic'),
                 FormFields<String>(
                   label: 'Full Name',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
                   isRequired: true,
-                  onChanged: (value) {
-                    setState(() => _fullName = value);
-                  },
-                  currrentValue: _fullName.isEmpty ? null : _fullName,
+                  onChanged: (value) => setState(() => _string1 = value),
+                  currrentValue: _string1,
                 ),
 
-                // Email Field
+                // Nullable String - Optional
+                _buildFieldTitle('String (Nullable) - Optional'),
+                FormFields<String?>(
+                  label: 'Middle Name',
+                  formType: FormType.string,
+                  labelPosition: LabelPosition.top,
+                  isRequired: false,
+                  onChanged: (value) => setState(() => _string2 = value),
+                  currrentValue: _string2,
+                ),
+
+                // String with All Custom Parameters
+                _buildFieldTitle('String - All Custom Parameters'),
+                FormFields<String>(
+                  label: 'Description',
+                  formType: FormType.string,
+                  labelPosition: LabelPosition.top,
+                  isRequired: true,
+                  multiLine: 4,
+                  radius: 15,
+                  borderType: BorderType.outlineInputBorder,
+                  borderColor: Colors.green,
+                  errorBorderColor: Colors.red,
+                  enterText: 'Please enter ',
+                  labelTextStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                  prefixIcon:
+                      const Icon(Icons.description, color: Colors.green),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Required';
+                    if (value.length < 10) return 'Min 10 characters';
+                    return null;
+                  },
+                  onChanged: (value) => setState(() => _stringCustom = value),
+                  currrentValue: _stringCustom,
+                  focusNode: _focusNode1,
+                  nextFocusNode: _focusNode2,
+                ),
+
+                // Email with Parameters
+                _buildFieldTitle('String - Email FormType'),
                 FormFields<String>(
                   label: 'Email Address',
                   formType: FormType.email,
                   labelPosition: LabelPosition.top,
                   isRequired: true,
-                  onChanged: (value) {
-                    setState(() => _email = value);
-                  },
-                  currrentValue: _email.isEmpty ? null : _email,
+                  borderColor: Colors.blue,
+                  prefixIcon: const Icon(Icons.email),
+                  onChanged: (value) => setState(() => _email = value),
+                  currrentValue: _email,
                 ),
 
-                // Phone Field
+                // Phone with Parameters
+                _buildFieldTitle('String - Phone FormType'),
                 FormFields<String>(
                   label: 'Phone Number',
                   formType: FormType.phone,
                   labelPosition: LabelPosition.top,
                   isRequired: true,
-                  onChanged: (value) {
-                    setState(() => _phone = value);
-                  },
-                  currrentValue: _phone.isEmpty ? null : _phone,
+                  borderColor: Colors.orange,
+                  prefixIcon: const Icon(Icons.phone),
+                  onChanged: (value) => setState(() => _phone = value),
+                  currrentValue: _phone,
                 ),
 
-                // Password Field
+                // Password with All Parameters
+                _buildFieldTitle('String - Password with Custom Validation'),
                 FormFields<String>(
                   label: 'Password',
                   formType: FormType.password,
                   labelPosition: LabelPosition.top,
                   isRequired: true,
-                  onChanged: (value) {
-                    setState(() => _password = value);
+                  minLengthPassword: 8,
+                  minLengthPasswordErrorText:
+                      'Password must be at least 8 characters long',
+                  borderColor: Colors.purple,
+                  customPasswordValidator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (value.length < 8) {
+                      return 'Password must be 8+ characters';
+                    }
+                    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                      return 'Must contain uppercase letter';
+                    }
+                    if (!RegExp(r'[0-9]').hasMatch(value)) {
+                      return 'Must contain a number';
+                    }
+                    return null;
                   },
-                  currrentValue: _password.isEmpty ? null : _password,
+                  onChanged: (value) => setState(() => _password = value),
+                  currrentValue: _password,
+                  focusNode: _focusNode2,
                 ),
 
-                // Bio Field (Multiline)
-                FormFields<String>(
-                  label: 'Bio',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  multiLine: 3,
-                  onChanged: (value) {
-                    setState(() => _bio = value);
-                  },
-                  currrentValue: _bio.isEmpty ? null : _bio,
-                ),
+                // ========== INTEGER TYPE ==========
+                _buildSectionTitle('INTEGER TYPE - All Parameters'),
 
-                // Bio Field with Custom Enter Text
-                FormFields<String>(
-                  label: 'Custom Message',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  multiLine: 2,
-                  enterText: 'Please input ',
-                  onChanged: (value) {
-                    setState(() => _bio = value);
-                  },
-                  currrentValue: _bio.isEmpty ? null : _bio,
-                ),
-
-                const SizedBox(height: 24),
-                const Text(
-                  'Numeric Fields',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                // Integer Field (Quantity) with thousand separators
+                // Non-Nullable Int - Basic
+                _buildFieldTitle('Int (Non-Null) - Basic'),
                 FormFields<int>(
-                  label: 'Quantity',
+                  label: 'Age',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true, // Shows 1,000 instead of 1000
-                  onChanged: (value) {
-                    setState(() => _quantity = value);
-                  },
-                  currrentValue: _quantity == 0 ? null : _quantity,
+                  stripSeparators: false,
+                  isRequired: true,
+                  onChanged: (value) => setState(() => _int1 = value),
+                  currrentValue: _int1,
                 ),
 
-                // Double Field (Price) with thousand separators
+                // Nullable Int - With All Parameters
+                _buildFieldTitle(
+                    'Int (Nullable) - With Separators & Custom Styling'),
+                FormFields<int?>(
+                  label: 'Stock Quantity',
+                  formType: FormType.string,
+                  labelPosition: LabelPosition.top,
+                  stripSeparators: true,
+                  isRequired: false,
+                  borderColor: Colors.teal,
+                  radius: 12,
+                  invalidIntegerText: 'Please enter valid integer for',
+                  prefixIcon: const Icon(Icons.inventory, color: Colors.teal),
+                  labelTextStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.teal,
+                  ),
+                  onChanged: (value) => setState(() => _int2 = value),
+                  currrentValue: _int2,
+                ),
+
+                // ========== DOUBLE TYPE ==========
+                _buildSectionTitle('DOUBLE TYPE - All Parameters'),
+
+                // Non-Nullable Double - With Separators
+                _buildFieldTitle('Double (Non-Null) - With Separators'),
                 FormFields<double>(
-                  label: 'Price',
+                  label: 'Product Price',
                   formType: FormType.string,
                   labelPosition: LabelPosition.top,
-                  stripSeparators: true, // Shows 1,234.56 instead of 1234.56
-                  onChanged: (value) {
-                    setState(() => _price = value);
-                  },
-                  currrentValue: _price == 0.0 ? null : _price,
+                  stripSeparators: true,
+                  isRequired: true,
+                  borderColor: Colors.green,
+                  prefix: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('\$',
+                        style: TextStyle(fontSize: 16, color: Colors.green)),
+                  ),
+                  onChanged: (value) => setState(() => _double1 = value),
+                  currrentValue: _double1,
                 ),
 
-                const SizedBox(height: 24),
-                const Text(
-                  'Date & Time Fields',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // Nullable Double - All Parameters
+                _buildFieldTitle(
+                    'Double (Nullable) - Without Separators & Custom'),
+                FormFields<double?>(
+                  label: 'Discount Percentage',
+                  formType: FormType.string,
+                  labelPosition: LabelPosition.top,
+                  stripSeparators: false,
+                  isRequired: false,
+                  radius: 20,
+                  borderType: BorderType.outlineInputBorder,
+                  borderColor: Colors.amber,
+                  errorBorderColor: Colors.deepOrange,
+                  invalidNumberText: 'Invalid number for',
+                  suffix: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('%', style: TextStyle(fontSize: 16)),
+                  ),
+                  labelTextStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.amber,
+                  ),
+                  onChanged: (value) => setState(() => _double2 = value),
+                  currrentValue: _double2,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'DateTime vs TimeOfDay for Time Pickers',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic),
-                ),
-                const SizedBox(height: 16),
 
-                // Date Field with custom range (past dates)
+                // ========== DATETIME TYPE ==========
+                _buildSectionTitle('DATETIME TYPE - All Parameters'),
+
+                // Non-Nullable DateTime - Date with Custom Range
+                _buildFieldTitle(
+                    'DateTime (Non-Null) - Date with Custom Range'),
                 FormFields<DateTime>(
                   label: 'Birth Date',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  firstDate: DateTime(1924, 1, 1),
+                  isRequired: true,
+                  firstDate: DateTime(1950, 1, 1),
                   lastDate: DateTime.now(),
-                  onChanged: (value) {
-                    setState(() => _birthDate = value);
-                  },
-                  currrentValue: _birthDate,
-                ),
-
-                const SizedBox(height: 8),
-                const Text(
-                  '📅 Future dates only (booking example)',
-                  style: TextStyle(fontSize: 13, color: Colors.blue),
-                ),
-                const SizedBox(height: 4),
-
-                // Date Field with future dates only
-                FormFields<DateTime>(
-                  label: 'Appointment Date',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(Duration(days: 365)),
-                  onChanged: (value) {
-                    setState(() => _birthDate = value);
-                  },
-                  currrentValue: _birthDate,
-                ),
-
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-
-                // DateTime Time Picker
-                const Text(
-                  'Time Picker with DateTime',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Returns DateTime with current date + selected time',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                FormFields<DateTime>(
-                  label: 'Appointment Time (DateTime)',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  onChanged: (value) {
-                    setState(() => _selectedTime = value);
-                  },
-                  currrentValue: _selectedTime,
-                ),
-
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-
-                // TimeOfDay Time Picker
-                const Text(
-                  'Time Picker with TimeOfDay',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Returns TimeOfDay object (hour and minute only)',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                FormFields<TimeOfDay>(
-                  label: 'Meeting Time (TimeOfDay)',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  onChanged: (value) {
-                    setState(() => _selectedTimeOfDay = value);
-                  },
-                  currrentValue: _selectedTimeOfDay,
-                ),
-
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 12),
-
-                // Conversion Examples
-                if (_selectedTime != null || _selectedTimeOfDay != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '🔄 Type Conversions',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_selectedTime != null) ...[
-                          Text(
-                            'DateTime → TimeOfDay:',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          Text(
-                            '  ${_selectedTime.toString()} →',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            '  ${_selectedTime!.toTimeOfDay()!.hour}:${_selectedTime!.toTimeOfDay()!.minute.toString().padLeft(2, '0')}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        if (_selectedTimeOfDay != null) ...[
-                          Text(
-                            'TimeOfDay → DateTime:',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          Text(
-                            '  ${_selectedTimeOfDay!.hour}:${_selectedTimeOfDay!.minute.toString().padLeft(2, '0')} →',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            '  ${_selectedTimeOfDay!.toDateTime().toString()}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '  With specific date (Christmas 2026):',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          Text(
-                            '  ${_selectedTimeOfDay!.toDateTimeWithDate(DateTime(2026, 12, 25)).toString()}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                ],
-
-                // Time Field with Custom Locale
-                FormFields<DateTime>(
-                  label: 'Time with Custom Locale (en_US)',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
+                  customFormat: 'dd/MM/yyyy',
                   pickerLocale: 'en_US',
-                  onChanged: (value) {
-                    setState(() => _selectedTime = value);
-                  },
-                  currrentValue: _selectedTime,
+                  borderColor: Colors.indigo,
+                  prefixIcon: const Icon(Icons.cake, color: Colors.indigo),
+                  onChanged: (value) => setState(() => _date1 = value),
+                  currrentValue: _date1,
                 ),
 
-                FormFields<DateTime>(
-                  label: 'Selected DateTime',
+                // Nullable DateTime - With All Parameters
+                _buildFieldTitle(
+                    'DateTime (Nullable) - DateTime with Custom Format'),
+                FormFields<DateTime?>(
+                  label: 'Appointment',
                   formType: FormType.dateTime,
                   labelPosition: LabelPosition.top,
-                  onChanged: (value) {
-                    setState(() => _selectedDateTime = value);
-                  },
-                  currrentValue: _selectedDateTime,
+                  isRequired: false,
+                  customFormat: 'MMM dd, yyyy - hh:mm a',
+                  pickerLocale: 'en_GB',
+                  radius: 10,
+                  borderColor: Colors.deepPurple,
+                  labelTextStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.deepPurple,
+                  ),
+                  onChanged: (value) => setState(() => _date2 = value),
+                  currrentValue: _date2,
                 ),
 
-                // DateRange Field
+                // ========== TIMEOFDAY TYPE ==========
+                _buildSectionTitle('TIMEOFDAY TYPE - All Parameters'),
+
+                // Non-Nullable TimeOfDay
+                _buildFieldTitle('TimeOfDay (Non-Null) - Basic'),
+                FormFields<TimeOfDay>(
+                  label: 'Work Start Time',
+                  formType: FormType.time,
+                  labelPosition: LabelPosition.top,
+                  isRequired: true,
+                  borderColor: Colors.cyan,
+                  prefixIcon: const Icon(Icons.access_time, color: Colors.cyan),
+                  onChanged: (value) => setState(() => _time1 = value),
+                  currrentValue: _time1,
+                ),
+
+                // Nullable TimeOfDay - With Custom Parameters
+                _buildFieldTitle('TimeOfDay (Nullable) - Custom Styling'),
+                FormFields<TimeOfDay?>(
+                  label: 'Break Time',
+                  formType: FormType.time,
+                  labelPosition: LabelPosition.top,
+                  isRequired: false,
+                  radius: 15,
+                  borderType: BorderType.outlineInputBorder,
+                  borderColor: Colors.pink,
+                  errorBorderColor: Colors.redAccent,
+                  pickerLocale: 'en_US',
+                  labelTextStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.pink,
+                  ),
+                  onChanged: (value) => setState(() => _time2 = value),
+                  currrentValue: _time2,
+                ),
+
+                // ========== DATETIMERANGE TYPE ==========
+                _buildSectionTitle('DATETIMERANGE TYPE - All Parameters'),
+
+                // Non-Nullable DateTimeRange
+                _buildFieldTitle('DateTimeRange (Non-Null) - Basic'),
                 FormFields<DateTimeRange>(
-                  label: 'Date Range',
+                  label: 'Project Duration',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
-                  onChanged: (value) {
-                    setState(() => _dateRange = value);
-                  },
-                  currrentValue: _dateRange,
+                  isRequired: true,
+                  borderColor: Colors.brown,
+                  prefixIcon: const Icon(Icons.date_range, color: Colors.brown),
+                  onChanged: (value) => setState(() => _range1 = value),
+                  currrentValue: _range1,
                 ),
 
-                // Vacation Dates (Future dates only, next 2 years)
-                FormFields<DateTimeRange>(
+                // Nullable DateTimeRange - All Parameters
+                _buildFieldTitle(
+                    'DateTimeRange (Nullable) - Custom Range & Format'),
+                FormFields<DateTimeRange?>(
                   label: 'Vacation Dates',
                   formType: FormType.date,
                   labelPosition: LabelPosition.top,
+                  isRequired: false,
                   firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 730)),
-                  onChanged: (value) {
-                    setState(() => _vacationDates = value);
-                  },
-                  currrentValue: _vacationDates,
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  customFormat: 'MMM dd, yyyy',
+                  radius: 12,
+                  borderColor: Colors.lightGreen,
+                  labelTextStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.lightGreen,
+                  ),
+                  onChanged: (value) => setState(() => _range2 = value),
+                  currrentValue: _range2,
                 ),
 
-                // Project Timeline (2020-2030 range)
-                FormFields<DateTimeRange>(
-                  label: 'Project Timeline',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  firstDate: DateTime(2020, 1, 1),
-                  lastDate: DateTime(2030, 12, 31),
-                  onChanged: (value) {
-                    setState(() => _projectTimeline = value);
-                  },
-                  currrentValue: _projectTimeline,
-                ),
-
-                const SizedBox(height: 24),
-                const Text(
-                  'Nullable/Optional Fields',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                // Optional Notes Field (Nullable String)
-                FormFields<String?>(
-                  label: 'Additional Notes (Optional)',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  multiLine: 2,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalNotes = value);
-                  },
-                  currrentValue: _optionalNotes,
-                ),
-
-                // Optional Quantity Field (Nullable Int) with thousand separators
-                FormFields<int?>(
-                  label: 'Optional Quantity',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: true, // Shows 1,000 instead of 1000
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalQuantity = value);
-                  },
-                  currrentValue: _optionalQuantity,
-                ),
-
-                // Optional Discount Field (Nullable Double - no thousand separators)
-                FormFields<double?>(
-                  label: 'Discount Percentage (Optional)',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators:
-                      false, // No commas: 1234.56 instead of 1,234.56
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalDiscount = value);
-                  },
-                  currrentValue: _optionalDiscount,
-                ),
-
-                // Optional Phone Field (Nullable String with formatters)
-                FormFields<String?>(
-                  label: 'Optional Phone Number',
-                  formType: FormType.phone,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalPhone = value);
-                  },
-                  currrentValue: _optionalPhone,
-                ),
-
-                // Optional Email Field (Nullable String with formatters)
-                FormFields<String?>(
-                  label: 'Optional Email Address',
-                  formType: FormType.email,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalEmail = value);
-                  },
-                  currrentValue: _optionalEmail,
-                ),
-
-                // Optional Price Field (Nullable Double without separators)
-                FormFields<double?>(
-                  label: 'Optional Price (without separators)',
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: false, // Only accepts numbers, no formatting
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalPrice = value);
-                  },
-                  currrentValue: _optionalPrice,
-                ),
-
-                // Optional Full Name Field (Nullable String)
-                FormFields<String?>(
-                  label: 'Optional Full Name',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalFullName = value);
-                  },
-                  currrentValue: _optionalFullName,
-                ),
-
-                // Optional Bio Field (Nullable String - Multiline)
-                FormFields<String?>(
-                  label: 'Optional Bio',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  multiLine: 3,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalBio = value);
-                  },
-                  currrentValue: _optionalBio,
-                ),
-
-                // Optional Birth Date Field (Nullable DateTime)
-                FormFields<DateTime?>(
-                  label: 'Optional Birth Date',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalBirthDate = value);
-                  },
-                  currrentValue: _optionalBirthDate,
-                ),
-
-                // Optional DateTime Field (Nullable DateTime)
-                FormFields<DateTime?>(
-                  label: 'Optional Selected DateTime',
-                  formType: FormType.dateTime,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalSelectedDateTime = value);
-                  },
-                  currrentValue: _optionalSelectedDateTime,
-                ),
-
-                // Optional TimeOfDay Field (Nullable TimeOfDay)
-                FormFields<TimeOfDay?>(
-                  label: 'Optional TimeOfDay',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalSelectedTimeOfDay = value);
-                  },
-                  currrentValue: _optionalSelectedTimeOfDay,
-                ),
-
-                // Optional DateRange Field (Nullable DateTimeRange)
-                FormFields<DateTimeRange?>(
-                  label: 'Optional Date Range',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) {
-                    setState(() => _optionalDateRange = value);
-                  },
-                  currrentValue: _optionalDateRange,
-                ),
-
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Submit Button
                 SizedBox(
@@ -626,114 +410,21 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
                         _showFormData();
                       }
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text(
-                        'Submit Form',
-                        style: TextStyle(fontSize: 16),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                    ),
+                    child: const Text(
+                      'SUBMIT FORM',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
-
-                // Display submitted data
-                if (_fullName.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Submitted Data:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDataRow('Full Name', _fullName),
-                        _buildDataRow('Email', _email),
-                        _buildDataRow('Phone', _phone),
-                        _buildDataRow('Quantity', _quantity.toString()),
-                        _buildDataRow('Price', _price.toString()),
-                        if (_birthDate != null)
-                          _buildDataRow('Birth Date', _birthDate.toString()),
-                        if (_selectedTimeOfDay != null) ...[
-                          _buildDataRow('TimeOfDay',
-                              '${_selectedTimeOfDay!.hour}:${_selectedTimeOfDay!.minute.toString().padLeft(2, '0')}'),
-                          _buildDataRow(
-                            'TimeOfDay → DateTime',
-                            _selectedTimeOfDay!.toDateTime().toString(),
-                          ),
-                        ],
-                        if (_selectedTime != null) ...[
-                          _buildDataRow(
-                              'DateTime Time', _selectedTime.toString()),
-                          _buildDataRow(
-                            'DateTime → TimeOfDay',
-                            '${_selectedTime!.toTimeOfDay()!.hour}:${_selectedTime!.toTimeOfDay()!.minute.toString().padLeft(2, '0')}',
-                          ),
-                        ],
-                        if (_dateRange != null)
-                          _buildDataRow(
-                            'Date Range',
-                            '${_dateRange!.start} - ${_dateRange!.end}',
-                          ),
-                        if (_vacationDates != null)
-                          _buildDataRow(
-                            'Vacation Dates',
-                            '${_vacationDates!.start} - ${_vacationDates!.end}',
-                          ),
-                        if (_projectTimeline != null)
-                          _buildDataRow(
-                            'Project Timeline',
-                            '${_projectTimeline!.start} - ${_projectTimeline!.end}',
-                          ),
-                        if (_optionalNotes != null)
-                          _buildDataRow('Additional Notes', _optionalNotes!),
-                        if (_optionalQuantity != null)
-                          _buildDataRow('Optional Quantity',
-                              _optionalQuantity.toString()),
-                        if (_optionalDiscount != null)
-                          _buildDataRow('Discount Percentage',
-                              _optionalDiscount.toString()),
-                        if (_optionalPhone != null)
-                          _buildDataRow('Optional Phone', _optionalPhone!),
-                        if (_optionalEmail != null)
-                          _buildDataRow('Optional Email', _optionalEmail!),
-                        if (_optionalPrice != null)
-                          _buildDataRow(
-                              'Optional Price', _optionalPrice.toString()),
-                        // New nullable field displays
-                        if (_optionalFullName != null)
-                          _buildDataRow(
-                              'Optional Full Name', _optionalFullName!),
-                        if (_optionalBio != null)
-                          _buildDataRow('Optional Bio', _optionalBio!),
-                        if (_optionalBirthDate != null)
-                          _buildDataRow('Optional Birth Date',
-                              _optionalBirthDate!.toString().split(' ')[0]),
-                        if (_optionalSelectedDateTime != null)
-                          _buildDataRow('Optional Selected DateTime',
-                              _optionalSelectedDateTime.toString()),
-                        if (_optionalSelectedTimeOfDay != null)
-                          _buildDataRow('Optional Selected TimeOfDay',
-                              '${_optionalSelectedTimeOfDay!.hour}:${_optionalSelectedTimeOfDay!.minute.toString().padLeft(2, '0')}'),
-                        if (_optionalDateRange != null)
-                          _buildDataRow(
-                            'Optional Date Range',
-                            '${_optionalDateRange!.start} - ${_optionalDateRange!.end}',
-                          ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -742,18 +433,27 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
     );
   }
 
-  Widget _buildDataRow(String label, String value) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.only(top: 32, bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(color: Colors.grey.shade700),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 3,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.blue.shade100],
+              ),
             ),
           ),
         ],
@@ -761,12 +461,28 @@ class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
     );
   }
 
+  Widget _buildFieldTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
   void _showFormData() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Form submitted successfully!'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text('✅ Form validated successfully!'),
         backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

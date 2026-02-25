@@ -19,7 +19,7 @@ class FormFields<T> extends StatefulWidget {
   final FormFieldValidator<String>? validator;
 
   /// Current value
-  final T? currrentValue;
+  final T currrentValue;
 
   /// Next focus node for keyboard navigation
   final FocusNode? nextFocusNode;
@@ -96,12 +96,21 @@ class FormFields<T> extends StatefulWidget {
   /// Custom text style for label (default: fontSize 14, fontWeight w500)
   final TextStyle? labelTextStyle;
 
+  /// Minimum length for password field (default: 6)
+  final int minLengthPassword;
+
+  /// Custom password validator function
+  final FormFieldValidator<String>? customPasswordValidator;
+
+  /// Error text for minimum password length (default: 'Password must be at least X characters')
+  final String? minLengthPasswordErrorText;
+
   const FormFields({
     super.key,
     required this.onChanged,
     required this.label,
+    required this.currrentValue,
     this.validator,
-    this.currrentValue,
     this.nextFocusNode,
     this.focusNode,
     this.prefix,
@@ -126,6 +135,9 @@ class FormFields<T> extends StatefulWidget {
     this.borderColor = const Color(0xFFC7C7C7),
     this.errorBorderColor = Colors.red,
     this.labelTextStyle,
+    this.minLengthPassword = 6,
+    this.customPasswordValidator,
+    this.minLengthPasswordErrorText,
   });
 
   @override
@@ -697,7 +709,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       case FormType.email:
         return FormFieldValidators.email(vm.label)(value);
       case FormType.password:
-        return FormFieldValidators.password(vm.label)(value);
+        // Use custom validator if provided
+        if (widget.customPasswordValidator != null) {
+          return widget.customPasswordValidator!(value);
+        }
+        // Default validation: check minimum length
+        if (value != null && value.isNotEmpty) {
+          if (value.length < widget.minLengthPassword) {
+            final errorText = widget.minLengthPasswordErrorText ??
+                'Password must be at least ${widget.minLengthPassword} characters';
+            return errorText;
+          }
+        } else {
+          return FormFieldValidators.password(vm.label)(value);
+        }
+        break;
       default:
         break;
     }
@@ -739,7 +765,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       return const SizedBox.shrink();
     }
 
-    final labelText = '${widget.enterText}${vm.label}';
+    final labelText = vm.label;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -834,10 +860,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   : const Duration(milliseconds: 50);
 
               debounce = Timer(delay, () {
+                // Trim whitespace from input
+                final trimmed = v.trim();
+
                 // Handle numeric types - stripSeparators only affects formatting, not parsing
                 if (_isIntType()) {
-                  final cleaned =
-                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
+                  final cleaned = widget.stripSeparators
+                      ? _stripSeparatorsForParse(trimmed)
+                      : trimmed;
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -849,8 +879,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     widget.onChanged(parsed as T);
                   }
                 } else if (_isDoubleType()) {
-                  final cleaned =
-                      widget.stripSeparators ? _stripSeparatorsForParse(v) : v;
+                  final cleaned = widget.stripSeparators
+                      ? _stripSeparatorsForParse(trimmed)
+                      : trimmed;
                   if (cleaned.isEmpty || cleaned == '-') {
                     if (_isNullable()) {
                       widget.onChanged(null as T);
@@ -867,11 +898,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   }
                 } else {
                   // Non-numeric types
-                  widget.onChanged(v as T);
+                  widget.onChanged(trimmed as T);
                 }
               });
             },
             onEditingComplete: () {
+              // Trim whitespace from input
+              vm.controller.text = vm.controller.text.trim();
+
               // stripSeparators only works for numeric types (int, double)
               if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
                 final text = vm.controller.text;

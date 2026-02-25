@@ -55,32 +55,16 @@ class FormFieldsController extends ChangeNotifier {
   }
 
   /// Form type
-  FormType _formType = FormType.string;
-  FormType get formType => _formType;
-  set formType(FormType formType) {
-    _formType = formType;
-  }
+  FormType formType = FormType.string;
 
   /// Field label
-  String _label = "";
-  String get label => _label;
-  set label(String label) {
-    _label = label;
-  }
+  String label = "";
 
   /// Label display state
-  bool _isLabel = false;
-  bool get isLabel => _isLabel;
-  set isLabel(bool isLabel) {
-    _isLabel = isLabel;
-  }
+  bool isLabel = false;
 
   /// 100 years duration (used for date picker)
-  Duration _d100YEARS = const Duration(days: 365 * 100);
-  Duration get d100YEARS => _d100YEARS;
-  set d100YEARS(Duration d100YEARS) {
-    _d100YEARS = d100YEARS;
-  }
+  Duration d100YEARS = const Duration(days: 365 * 100);
 
   /// Validity state
   bool _isValid = true;
