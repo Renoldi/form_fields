@@ -11,11 +11,9 @@ class CheckboxExamplesPage extends StatefulWidget {
 class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Checkbox values - Single selection
-  String _checkbox1 = '';
-  String _checkbox2 = '';
-
-  // Checkbox values - Multiple selection
+  // Checkbox values - All checkboxes use List<String>
+  List<String> _checkbox1 = [];
+  List<String> _checkbox2 = [];
   List<String> _checkbox3 = [];
   List<String> _checkbox4 = [];
   List<String> _checkbox5 = [];
@@ -36,11 +34,10 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           _buildFieldTitle('Single Selection - Vertical Layout'),
           FormFieldsCheckbox<String>(
             label: 'Terms & Conditions',
-            currentValue: _checkbox1,
-            options: const ['I agree to the Terms and Conditions'],
+            initialValue: _checkbox1,
+            items: const ['I agree to the Terms and Conditions'],
             isRequired: true,
-            isMultiple: false,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             onChanged: (value) => setState(() => _checkbox1 = value),
           ),
 
@@ -48,13 +45,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           _buildFieldTitle('Single Selection - Horizontal Layout'),
           FormFieldsCheckbox<String>(
             label: 'Newsletter Subscription',
-            currentValue: _checkbox2,
-            options: const ['Subscribe to weekly newsletter'],
+            initialValue: _checkbox2,
+            items: const ['Subscribe to weekly newsletter'],
             isRequired: false,
-            isMultiple: false,
-            itemDirection: Axis.horizontal,
+            direction: Axis.horizontal,
             borderColor: Colors.blue,
-            activeIconColor: Colors.blue,
+            activeColor: Colors.blue,
             onChanged: (value) => setState(() => _checkbox2 = value),
           ),
 
@@ -62,10 +58,10 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
           // Example 3: Multiple Selection - Vertical
           _buildFieldTitle('Multiple Selection - Vertical Layout'),
-          FormFieldsCheckbox<List<String>>(
+          FormFieldsCheckbox<String>(
             label: 'Hobbies',
-            currentValue: _checkbox3,
-            options: const [
+            initialValue: _checkbox3,
+            items: const [
               'Reading',
               'Gaming',
               'Sports',
@@ -74,22 +70,20 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Photography',
             ],
             isRequired: true,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             onChanged: (value) => setState(() => _checkbox3 = value),
           ),
 
           // Example 4: Multiple Selection - Horizontal
           _buildFieldTitle('Multiple Selection - Horizontal Layout'),
-          FormFieldsCheckbox<List<String>>(
+          FormFieldsCheckbox<String>(
             label: 'Programming Languages',
-            currentValue: _checkbox4,
-            options: const ['Dart', 'JavaScript', 'Python', 'Java', 'C++'],
+            initialValue: _checkbox4,
+            items: const ['Dart', 'JavaScript', 'Python', 'Java', 'C++'],
             isRequired: true,
-            isMultiple: true,
-            itemDirection: Axis.horizontal,
+            direction: Axis.horizontal,
             borderColor: Colors.teal,
-            activeIconColor: Colors.teal,
+            activeColor: Colors.teal,
             onChanged: (value) => setState(() => _checkbox4 = value),
           ),
 
@@ -97,10 +91,10 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
           // Example 5: Custom Border & Colors
           _buildFieldTitle('Custom Border & Active Color'),
-          FormFieldsCheckbox<List<String>>(
+          FormFieldsCheckbox<String>(
             label: 'Skills',
-            currentValue: _checkbox5,
-            options: const [
+            initialValue: _checkbox5,
+            items: const [
               'Leadership',
               'Communication',
               'Problem Solving',
@@ -108,33 +102,24 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Teamwork',
             ],
             isRequired: true,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.purple,
             errorBorderColor: Colors.red.shade700,
-            activeIconColor: Colors.purple,
-            activeCheckboxColor: Colors.purple,
+            activeColor: Colors.purple,
             radius: 15,
-            labelTextStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.purple,
-            ),
             onChanged: (value) => setState(() => _checkbox5 = value),
           ),
 
-          // Example 6: Custom Item Spacing & Padding
-          _buildFieldTitle('Custom Item Spacing & Padding'),
-          FormFieldsCheckbox<List<String>>(
+          // Example 6: Custom Item Padding
+          _buildFieldTitle('Custom Item Padding'),
+          FormFieldsCheckbox<String>(
             label: 'Preferred Contact Methods',
-            currentValue: _checkbox6,
-            options: const ['Email', 'Phone', 'SMS', 'WhatsApp'],
+            initialValue: _checkbox6,
+            items: const ['Email', 'Phone', 'SMS', 'WhatsApp'],
             isRequired: false,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.orange,
-            activeIconColor: Colors.orange,
-            itemSpacing: 16,
+            activeColor: Colors.orange,
             itemPadding:
                 const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             onChanged: (value) => setState(() => _checkbox6 = value),
@@ -142,33 +127,29 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
           _buildSectionTitle('CHECKBOX - Layout Variations'),
 
-          // Example 7: Horizontal with Fill Items
-          _buildFieldTitle('Horizontal - Fill Items'),
-          FormFieldsCheckbox<List<String>>(
+          // Example 7: Horizontal Layout
+          _buildFieldTitle('Horizontal Layout - Days of Week'),
+          FormFieldsCheckbox<String>(
             label: 'Days of the Week',
-            currentValue: _checkbox7,
-            options: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            initialValue: _checkbox7,
+            items: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             isRequired: true,
-            isMultiple: true,
-            itemDirection: Axis.horizontal,
-            fillItems: true,
+            direction: Axis.horizontal,
             borderColor: Colors.indigo,
-            activeIconColor: Colors.indigo,
+            activeColor: Colors.indigo,
             onChanged: (value) => setState(() => _checkbox7 = value),
           ),
 
-          // Example 8: Different Label Positions
-          _buildFieldTitle('Label Position: Left'),
-          FormFieldsCheckbox<List<String>>(
+          // Example 8: Vertical Layout with Custom Colors
+          _buildFieldTitle('Vertical Layout - Features'),
+          FormFieldsCheckbox<String>(
             label: 'Features',
-            labelPosition: LabelPosition.left,
-            currentValue: _checkbox8,
-            options: const ['WiFi', 'Parking', 'Gym', 'Pool'],
+            initialValue: _checkbox8,
+            items: const ['WiFi', 'Parking', 'Gym', 'Pool'],
             isRequired: false,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.cyan,
-            activeIconColor: Colors.cyan,
+            activeColor: Colors.cyan,
             onChanged: (value) => setState(() => _checkbox8 = value),
           ),
 
@@ -176,20 +157,19 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
           // Example 9: Custom Validation
           _buildFieldTitle('Custom Validation - Minimum Selections'),
-          FormFieldsCheckbox<List<String>>(
+          FormFieldsCheckbox<String>(
             label: 'Select at least 2 preferences',
-            currentValue: _checkbox3,
-            options: const ['Option A', 'Option B', 'Option C', 'Option D'],
+            initialValue: _checkbox3,
+            items: const ['Option A', 'Option B', 'Option C', 'Option D'],
             isRequired: true,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.red,
-            activeIconColor: Colors.red,
+            activeColor: Colors.red,
             validator: (value) {
-              if (_checkbox3.isEmpty) {
+              if (value == null || value.isEmpty) {
                 return 'Please select at least 2 options';
               }
-              if (_checkbox3.length < 2) {
+              if (value.length < 2) {
                 return 'Please select at least 2 options';
               }
               return null;
@@ -197,12 +177,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             onChanged: (value) => setState(() => _checkbox3 = value),
           ),
 
-          // Example 10: With Custom Icon Size
-          _buildFieldTitle('Custom Icon Size'),
-          FormFieldsCheckbox<List<String>>(
+          // Example 10: Custom Styling
+          _buildFieldTitle('Custom Item Padding'),
+          FormFieldsCheckbox<String>(
             label: 'Dietary Restrictions',
-            currentValue: _checkbox4,
-            options: const [
+            initialValue: _checkbox4,
+            items: const [
               'Vegetarian',
               'Vegan',
               'Gluten-Free',
@@ -210,42 +190,33 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Nut Allergy',
             ],
             isRequired: false,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.green,
-            activeIconColor: Colors.green,
-            iconSize: 28,
+            activeColor: Colors.green,
             itemPadding:
                 const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            labelTextStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.green,
-            ),
             onChanged: (value) => setState(() => _checkbox4 = value),
           ),
 
-          // Example 11: Underline Border Type
-          _buildFieldTitle('Underline Border Type'),
-          FormFieldsCheckbox<List<String>>(
+          // Example 11: Horizontal Layout with Custom Border
+          _buildFieldTitle('Horizontal Layout - Notifications'),
+          FormFieldsCheckbox<String>(
             label: 'Notifications',
-            currentValue: _checkbox5,
-            options: const ['Push', 'Email', 'SMS', 'In-App'],
+            initialValue: _checkbox5,
+            items: const ['Push', 'Email', 'SMS', 'In-App'],
             isRequired: false,
-            isMultiple: true,
-            itemDirection: Axis.horizontal,
-            borderType: BorderType.underlineInputBorder,
+            direction: Axis.horizontal,
             borderColor: Colors.deepPurple,
-            activeIconColor: Colors.deepPurple,
+            activeColor: Colors.deepPurple,
             onChanged: (value) => setState(() => _checkbox5 = value),
           ),
 
           // Example 12: Many Options
           _buildFieldTitle('Many Options - Scrollable'),
-          FormFieldsCheckbox<List<String>>(
+          FormFieldsCheckbox<String>(
             label: 'Countries Visited',
-            currentValue: _checkbox6,
-            options: const [
+            initialValue: _checkbox6,
+            items: const [
               'United States',
               'United Kingdom',
               'Canada',
@@ -260,10 +231,9 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Italy',
             ],
             isRequired: false,
-            isMultiple: true,
-            itemDirection: Axis.vertical,
+            direction: Axis.vertical,
             borderColor: Colors.amber,
-            activeIconColor: Colors.amber,
+            activeColor: Colors.amber,
             itemPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             onChanged: (value) => setState(() => _checkbox6 = value),
           ),

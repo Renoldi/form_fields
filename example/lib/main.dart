@@ -3,8 +3,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'pages/form_fields_examples_page.dart';
 import 'pages/dropdown_examples_page.dart';
+import 'pages/dropdown_multi_examples_page.dart';
 import 'pages/radio_button_examples_page.dart';
 import 'pages/checkbox_examples_page.dart';
+import 'pages/custom_class_examples_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,12 +30,20 @@ final GoRouter _router = GoRouter(
           builder: (context, state) => const DropdownExamplesPage(),
         ),
         GoRoute(
+          path: '/dropdown-multi',
+          builder: (context, state) => const DropdownMultiExamplesPage(),
+        ),
+        GoRoute(
           path: '/radio-button',
           builder: (context, state) => const RadioButtonExamplesPage(),
         ),
         GoRoute(
           path: '/checkbox',
           builder: (context, state) => const CheckboxExamplesPage(),
+        ),
+        GoRoute(
+          path: '/custom-class',
+          builder: (context, state) => const CustomClassExamplesPage(),
         ),
       ],
     ),
@@ -81,10 +91,14 @@ class ScaffoldWithDrawer extends StatelessWidget {
         return 'FormFields Examples';
       case '/dropdown':
         return 'Dropdown Examples';
+      case '/dropdown-multi':
+        return 'Multi-Select Dropdown Examples';
       case '/radio-button':
         return 'Radio Button Examples';
       case '/checkbox':
         return 'Checkbox Examples';
+      case '/custom-class':
+        return 'Custom Class Examples';
       default:
         return 'FormFields Examples';
     }
@@ -197,10 +211,20 @@ class AppDrawer extends StatelessWidget {
               context: context,
               icon: Icons.arrow_drop_down_circle,
               title: 'Dropdown',
-              subtitle: 'All Dropdown Examples',
+              subtitle: 'Single Select Dropdown',
               route: '/dropdown',
               isSelected: currentLocation == '/dropdown',
               color: Colors.green,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.library_add_check,
+              title: 'Dropdown Multi',
+              subtitle: 'Multi-Select Dropdown',
+              route: '/dropdown-multi',
+              isSelected: currentLocation == '/dropdown-multi',
+              color: Colors.purple,
             ),
             const Divider(color: Colors.white24, height: 1),
             _buildDrawerItem(
@@ -221,6 +245,16 @@ class AppDrawer extends StatelessWidget {
               route: '/checkbox',
               isSelected: currentLocation == '/checkbox',
               color: Colors.pink,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.class_,
+              title: 'Custom Class',
+              subtitle: 'Generic Types with Models',
+              route: '/custom-class',
+              isSelected: currentLocation == '/custom-class',
+              color: Colors.teal,
             ),
             const SizedBox(height: 16),
             Padding(

@@ -12,6 +12,7 @@ enum FormType {
   dateTimeRange,
   timeOfDay,
   dropdown,
+  dropdownMulti,
   radioButton,
   checkbox,
 }

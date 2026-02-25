@@ -57,27 +57,21 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           _buildFieldTitle('Basic Dropdown - Required'),
           FormFieldsDropdown<String>(
             label: 'Country',
-            currentValue: _dropdown1,
-            options: _countries,
+            initialValue: _dropdown1,
+            items: _countries,
             isRequired: true,
-            onChanged: (value) => setState(() => _dropdown1 = value),
+            onChanged: (value) => setState(() => _dropdown1 = value ?? ''),
           ),
 
           // Example 2: Optional Dropdown
           _buildFieldTitle('Optional Dropdown - Not Required'),
           FormFieldsDropdown<String>(
             label: 'Preferred Language',
-            currentValue: _dropdown2,
-            options: const [
-              'English',
-              'Spanish',
-              'French',
-              'German',
-              'Chinese'
-            ],
+            initialValue: _dropdown2,
+            items: const ['English', 'Spanish', 'French', 'German', 'Chinese'],
             isRequired: false,
-            dropdownHint: 'Select your preferred language',
-            onChanged: (value) => setState(() => _dropdown2 = value),
+            hintText: 'Select your preferred language',
+            onChanged: (value) => setState(() => _dropdown2 = value ?? ''),
           ),
 
           _buildSectionTitle('DROPDOWN - Custom Styling'),
@@ -86,33 +80,28 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           _buildFieldTitle('Custom Border & Colors'),
           FormFieldsDropdown<String>(
             label: 'Favorite Color',
-            currentValue: _dropdown3,
-            options: _colors,
+            initialValue: _dropdown3,
+            items: _colors,
             isRequired: true,
             borderColor: Colors.purple,
             focusedBorderColor: Colors.deepPurple,
             errorBorderColor: Colors.red.shade700,
             radius: 15,
-            labelTextStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.purple,
-            ),
-            onChanged: (value) => setState(() => _dropdown3 = value),
+            onChanged: (value) => setState(() => _dropdown3 = value ?? ''),
           ),
 
           // Example 4: With Icons
           _buildFieldTitle('With Prefix & Suffix Icons'),
           FormFieldsDropdown<String>(
             label: 'T-Shirt Size',
-            currentValue: _dropdown4,
-            options: _sizes,
+            initialValue: _dropdown4,
+            items: _sizes,
             isRequired: true,
             borderColor: Colors.teal,
             prefixIcon: const Icon(Icons.shopping_bag, color: Colors.teal),
             suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.teal),
-            dropdownHint: 'Choose your size',
-            onChanged: (value) => setState(() => _dropdown4 = value),
+            hintText: 'Choose your size',
+            onChanged: (value) => setState(() => _dropdown4 = value ?? ''),
           ),
 
           _buildSectionTitle('DROPDOWN - Different Label Positions'),
@@ -122,16 +111,11 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           FormFieldsDropdown<String>(
             label: 'Shipping Method',
             labelPosition: LabelPosition.top,
-            currentValue: _dropdown5,
-            options: const [
-              'Standard',
-              'Express',
-              'Overnight',
-              'International'
-            ],
+            initialValue: _dropdown5,
+            items: const ['Standard', 'Express', 'Overnight', 'International'],
             isRequired: true,
             borderColor: Colors.orange,
-            onChanged: (value) => setState(() => _dropdown5 = value),
+            onChanged: (value) => setState(() => _dropdown5 = value ?? ''),
           ),
 
           // Example 6: Label at Left
@@ -139,11 +123,11 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           FormFieldsDropdown<String>(
             label: 'Payment',
             labelPosition: LabelPosition.left,
-            currentValue: _dropdown6,
-            options: const ['Credit Card', 'PayPal', 'Bank Transfer', 'Cash'],
+            initialValue: _dropdown6,
+            items: const ['Credit Card', 'PayPal', 'Bank Transfer', 'Cash'],
             isRequired: true,
             borderColor: Colors.green,
-            onChanged: (value) => setState(() => _dropdown6 = value),
+            onChanged: (value) => setState(() => _dropdown6 = value ?? ''),
           ),
 
           _buildSectionTitle('DROPDOWN - Advanced Features'),
@@ -152,8 +136,8 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           _buildFieldTitle('Custom Validation'),
           FormFieldsDropdown<String>(
             label: 'Priority Level',
-            currentValue: _dropdown7,
-            options: const ['Low', 'Medium', 'High', 'Critical'],
+            initialValue: _dropdown7,
+            items: const ['Low', 'Medium', 'High', 'Critical'],
             isRequired: true,
             borderColor: Colors.red,
             validator: (value) {
@@ -165,31 +149,20 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               }
               return null;
             },
-            onChanged: (value) => setState(() => _dropdown7 = value),
+            onChanged: (value) => setState(() => _dropdown7 = value ?? ''),
           ),
 
           // Example 8: Underline Border Type
           _buildFieldTitle('Underline Border Type'),
           FormFieldsDropdown<String>(
             label: 'Department',
-            currentValue: _dropdown8,
-            options: const [
-              'Sales',
-              'Marketing',
-              'Engineering',
-              'HR',
-              'Finance'
-            ],
+            initialValue: _dropdown8,
+            items: const ['Sales', 'Marketing', 'Engineering', 'HR', 'Finance'],
             isRequired: true,
             borderType: BorderType.underlineInputBorder,
             borderColor: Colors.indigo,
             focusedBorderColor: Colors.indigoAccent,
-            labelTextStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.indigo,
-            ),
-            onChanged: (value) => setState(() => _dropdown8 = value),
+            onChanged: (value) => setState(() => _dropdown8 = value ?? ''),
           ),
 
           _buildSectionTitle('DROPDOWN - Custom Input Decoration'),
@@ -198,10 +171,10 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           _buildFieldTitle('Custom Input Decoration'),
           FormFieldsDropdown<String>(
             label: 'Theme',
-            currentValue: _dropdown9,
-            options: const ['Light', 'Dark', 'Auto', 'System'],
+            initialValue: _dropdown9,
+            items: const ['Light', 'Dark', 'Auto', 'System'],
             isRequired: false,
-            inputDecoration: InputDecoration(
+            decoration: InputDecoration(
               hintText: 'Select app theme',
               filled: true,
               fillColor: Colors.grey.shade100,
@@ -223,7 +196,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
                 vertical: 16,
               ),
             ),
-            onChanged: (value) => setState(() => _dropdown9 = value),
+            onChanged: (value) => setState(() => _dropdown9 = value ?? ''),
           ),
 
           const SizedBox(height: 32),

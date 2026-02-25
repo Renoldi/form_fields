@@ -1,6 +1,6 @@
 # FormFields
 
-A comprehensive and reusable Flutter form field widget package with support for multiple input types including text, email, phone, password, date, time, and more.
+A comprehensive and reusable Flutter form field widget package with support for multiple input types including text, email, phone, password, date, time, dropdowns, radio buttons, checkboxes, and more.
 
 [![Pub Package](https://img.shields.io/pub/v/form_fields.svg)](https://pub.dev/packages/form_fields)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -18,6 +18,10 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - DateTime picker
 - DateRange picker
 - Multiline text areas
+- **Dropdown selection (single-select)**
+- **Multi-select dropdown with chips**
+- **Radio buttons (single selection)**
+- **Checkboxes (multi-selection)**
 
 ✨ **Customization**
 - Flexible label positioning (top, bottom, left, right, inline, hidden)
@@ -42,6 +46,30 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Provider-based state management
 - Text input prefix customization (`enterText`, `invalidIntegerText`, `invalidNumberText`)
 - TimeOfDay/DateTime conversion extension methods
+
+## Widget Overview
+
+| Widget | Purpose | Value Type | Use Case |
+|--------|---------|------------|----------|
+| `FormFields<T>` | General text/date/time input | String, int, double, DateTime, TimeOfDay, DateTimeRange | Text input, numbers, dates, times |
+| `FormFieldsDropdown<T>` | Single-select dropdown | Any type T | Selecting one item from a list |
+| `FormFieldsDropdownMulti<T>` | Multi-select dropdown | List\<T\> | Selecting multiple items with chip display |
+| `FormFieldsRadioButton<T>` | Radio button group | Any type T | Single selection from visible options |
+| `FormFieldsCheckbox<T>` | Checkbox group | List\<T\> | Multi-selection from visible options |
+| `FormFieldsSelect<T>` | Generic selector | T or List\<T\> | Delegating to specific widget based on FormType |
+
+### Choosing the Right Widget
+
+**For Single Selection:**
+- **Dropdown** - Best for 5+ options, saves space
+- **Radio Button** - Best for 2-5 options, shows all choices
+
+**For Multiple Selection:**
+- **Dropdown Multi** - Best for 5+ options, shows selected as chips
+- **Checkbox** - Best for 2-10 options, shows all choices immediately
+
+**For Text/Numbers/Dates:**
+- **FormFields\<T\>** - Use with appropriate FormType
 
 ## Installation
 
@@ -207,7 +235,70 @@ FormFields<String>(
 )
 ```
 
-## Properties
+### Dropdown (Single-Select)
+
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Australia'],
+  initialValue: _selectedCountry,
+  isRequired: true,
+  onChanged: (value) {
+    setState(() => _selectedCountry = value ?? '');
+  },
+)
+```
+
+### Dropdown Multi-Select
+
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Select Programming Languages',
+  items: ['Dart', 'Java', 'Kotlin', 'Swift', 'JavaScript'],
+  initialValues: _selectedLanguages,
+  isRequired: true,
+  minSelections: 1,
+  maxSelections: 3,
+  chipBackgroundColor: Colors.blue.shade100,
+  onChanged: (values) {
+    setState(() => _selectedLanguages = values);
+  },
+)
+```
+
+### Radio Button
+
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender,
+  isRequired: true,
+  direction: Axis.horizontal,
+  onChanged: (value) {
+    setState(() => _gender = value ?? '');
+  },
+)
+```
+
+### Checkbox
+
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Select Hobbies',
+  items: ['Reading', 'Sports', 'Music', 'Travel'],
+  initialValue: _hobbies,
+  isRequired: true,
+  direction: Axis.vertical,
+  onChanged: (values) {
+    setState(() => _hobbies = values);
+  },
+)
+```
+
+## FormFields\<T\> Properties
+
+The following properties apply to the `FormFields<T>` widget. For selection widgets (Dropdown, Radio, Checkbox), see the [Selection Widgets](#selection-widgets) section.
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -246,6 +337,11 @@ FormFields<String>(
 - `FormType.date` - Date picker (returns `DateTime`)
 - `FormType.time` - Time picker (supports `DateTime` or `TimeOfDay`)
 - `FormType.dateTime` - DateTime picker (returns `DateTime`)
+- `FormType.dateTimeRange` - Date range picker (returns `DateTimeRange`)
+- `FormType.dropdown` - Single-select dropdown
+- `FormType.dropdownMulti` - Multi-select dropdown with chips
+- `FormType.radioButton` - Radio button selection
+- `FormType.checkbox` - Checkbox selection
 
 ## LabelPosition Enum
 
@@ -261,6 +357,172 @@ FormFields<String>(
 - `BorderType.outlineInputBorder` - Material outlined border
 - `BorderType.underlineInputBorder` - Material underline border
 - `BorderType.none` - No border
+
+## Selection Widgets
+
+### FormFieldsDropdown
+
+Single-select dropdown with Material design.
+
+```dart
+FormFieldsDropdown<String>(
+  label: 'Select Country',
+  items: ['USA', 'Canada', 'UK', 'Germany', 'France'],
+  initialValue: _country,
+  isRequired: true,
+  hintText: 'Choose a country',
+  borderColor: Colors.grey,
+  focusedBorderColor: Colors.blue,
+  onChanged: (value) {
+    setState(() => _country = value ?? '');
+  },
+)
+```
+
+**API Parameters:**
+- `label` - Field label
+- `items` - List of items to choose from
+- `initialValue` - Currently selected value
+- `itemLabelBuilder` - Custom function to build item labels
+- `isRequired` - Whether selection is required
+- `hintText` - Placeholder text
+- `decoration` - Custom InputDecoration
+- `labelPosition` - Label positioning
+- `borderType` - Border style
+- `radius` - Border radius
+- `borderColor`, `focusedBorderColor`, `errorBorderColor` - Border colors
+- `enabled` - Enable/disable the field
+
+### FormFieldsDropdownMulti
+
+Multi-select dropdown with chip display and dialog selection.
+
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Select Skills',
+  items: ['Flutter', 'Firebase', 'REST API', 'GraphQL', 'UI/UX'],
+  initialValues: _skills,
+  isRequired: true,
+  minSelections: 2,
+  maxSelections: 5,
+  chipBackgroundColor: Colors.blue.shade100,
+  chipTextColor: Colors.blue.shade900,
+  chipDeleteIconColor: Colors.blue.shade700,
+  showItemCount: true,
+  onChanged: (values) {
+    setState(() => _skills = values);
+  },
+)
+```
+
+**API Parameters:**
+- `label` - Field label
+- `items` - List of items to choose from
+- `initialValues` - List of currently selected values
+- `itemLabelBuilder` - Custom function to build item labels
+- `isRequired` - Whether selection is required
+- `minSelections` - Minimum number of items to select
+- `maxSelections` - Maximum number of items to select
+- `hintText` - Placeholder text
+- `showItemCount` - Show "X of Y selected" text
+- `chipBackgroundColor` - Background color of chips
+- `chipTextColor` - Text color of chips
+- `chipDeleteIconColor` - Color of delete icon on chips
+- `labelPosition` - Label positioning
+- `borderType` - Border style
+- `radius` - Border radius
+- `borderColor`, `focusedBorderColor`, `errorBorderColor` - Border colors
+
+### FormFieldsRadioButton
+
+Single-selection radio button group.
+
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender,
+  isRequired: true,
+  direction: Axis.horizontal,
+  activeColor: Colors.blue,
+  itemPadding: EdgeInsets.symmetric(vertical: 8),
+  onChanged: (value) {
+    setState(() => _gender = value ?? '');
+  },
+)
+```
+
+**API Parameters:**
+- `label` - Field label
+- `items` - List of items to choose from
+- `initialValue` - Currently selected value
+- `itemLabelBuilder` - Custom function to build item labels
+- `itemBuilder` - Custom widget builder for each item
+- `isRequired` - Whether selection is required
+- `direction` - Layout direction (Axis.horizontal or Axis.vertical)
+- `activeColor` - Color of selected radio button
+- `itemPadding` - Padding for each item
+- `radius` - Border radius for container
+- `borderColor`, `errorBorderColor` - Border colors
+
+### FormFieldsCheckbox
+
+Multi-selection checkbox group.
+
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Select Interests',
+  items: ['Gaming', 'Music', 'Sports', 'Reading', 'Travel'],
+  initialValue: _interests,
+  isRequired: true,
+  direction: Axis.vertical,
+  activeColor: Colors.green,
+  itemPadding: EdgeInsets.symmetric(vertical: 6),
+  onChanged: (values) {
+    setState(() => _interests = values);
+  },
+)
+```
+
+**API Parameters:**
+- `label` - Field label
+- `items` - List of items to choose from
+- `initialValue` - List of currently selected values
+- `itemLabelBuilder` - Custom function to build item labels
+- `itemBuilder` - Custom widget builder for each item
+- `isRequired` - Whether at least one selection is required
+- `direction` - Layout direction (Axis.horizontal or Axis.vertical)
+- `activeColor` - Color of checked checkboxes
+- `itemPadding` - Padding for each item
+- `radius` - Border radius for container
+- `borderColor`, `errorBorderColor` - Border colors
+
+### FormFieldsSelect
+
+Generic wrapper that delegates to specific widgets based on `FormType`.
+
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country,
+  onChanged: (value) {
+    setState(() => _country = value ?? '');
+  },
+)
+
+// For multi-select
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages,
+  onMultiChanged: (values) {
+    setState(() => _languages = values);
+  },
+)
+```
 
 ## Built-in Validators
 
@@ -362,6 +624,137 @@ FormFields<String>(
   },
   onChanged: (value) {
     setState(() => _username = value ?? '');
+  },
+)
+```
+
+## Advanced Examples
+
+### Dropdown with Custom Item Labels
+
+```dart
+class Country {
+  final String code;
+  final String name;
+  
+  Country(this.code, this.name);
+}
+
+final countries = [
+  Country('US', 'United States'),
+  Country('CA', 'Canada'),
+  Country('GB', 'United Kingdom'),
+];
+
+FormFieldsDropdown<Country>(
+  label: 'Country',
+  items: countries,
+  initialValue: _selectedCountry,
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) {
+    setState(() => _selectedCountry = value);
+  },
+)
+```
+
+### Multi-Select with Validation
+
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Required Skills',
+  items: ['Flutter', 'Dart', 'Firebase', 'REST API', 'GraphQL'],
+  initialValues: _skills,
+  isRequired: true,
+  minSelections: 2,
+  maxSelections: 4,
+  validator: (values) {
+    if (values == null || values.isEmpty) {
+      return 'Please select at least one skill';
+    }
+    if (!values.contains('Flutter') && !values.contains('Dart')) {
+      return 'You must select Flutter or Dart';
+    }
+    return null;
+  },
+  onChanged: (values) {
+    setState(() => _skills = values);
+  },
+)
+```
+
+### Radio Button with Custom Styling
+
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Subscription Plan',
+  items: ['Free', 'Pro', 'Enterprise'],
+  initialValue: _plan,
+  isRequired: true,
+  direction: Axis.horizontal,
+  activeColor: Colors.purple,
+  borderColor: Colors.grey.shade300,
+  errorBorderColor: Colors.red,
+  radius: 12,
+  itemPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  onChanged: (value) {
+    setState(() => _plan = value ?? 'Free');
+  },
+)
+```
+
+### Checkbox with Custom Item Builder
+
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Features',
+  items: ['Push Notifications', 'Dark Mode', 'Offline Support', 'Analytics'],
+  initialValue: _features,
+  direction: Axis.vertical,
+  activeColor: Colors.teal,
+  itemBuilder: (item, selected) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: selected ? Colors.teal.shade50 : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        item,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          color: selected ? Colors.teal : Colors.black87,
+        ),
+      ),
+    );
+  },
+  onChanged: (values) {
+    setState(() => _features = values);
+  },
+)
+```
+
+### Using FormFieldsSelect for Flexibility
+
+```dart
+// Single select
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Payment Method',
+  items: ['Credit Card', 'PayPal', 'Bank Transfer'],
+  initialValue: _paymentMethod,
+  onChanged: (value) {
+    setState(() => _paymentMethod = value ?? '');
+  },
+)
+
+// Multi select
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Notification Preferences',
+  items: ['Email', 'SMS', 'Push'],
+  initialValues: _notifications,
+  onMultiChanged: (values) {
+    setState(() => _notifications = values);
   },
 )
 ```
@@ -555,6 +948,19 @@ FormFields<DateTime>(
 
 See the [example](https://github.com/enerren/form_fields/tree/main/example) folder for a complete working application demonstrating all features.
 
+The example app includes dedicated pages for:
+- **FormFields Examples** - Text, email, phone, password, date, time fields
+- **Dropdown Examples** - Single-select dropdowns with various configurations
+- **Multi-Select Dropdown Examples** - Multi-select dropdowns with chips and validation
+- **Radio Button Examples** - Radio button groups with different layouts
+- **Checkbox Examples** - Checkbox groups with custom styling
+
+Run the example app:
+```bash
+cd example
+flutter run
+```
+
 ## Migration from Jotun App
 
 If you're migrating from the Jotun app:
@@ -570,6 +976,82 @@ import 'package:form_fields/form_fields.dart';
 ```
 
 ## Troubleshooting
+
+### Dropdown: "There should be exactly one item" error
+
+This error occurs when the `initialValue` is not in the `items` list or is an empty string. The widget now automatically handles this by setting invalid values to `null`.
+
+```dart
+// ✅ Correct - initialValue exists in items
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: 'USA',  // This value exists in items
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+
+// ✅ Also correct - empty string is automatically converted to null
+String _country = '';  // Will be treated as null
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country,  // Empty string is safe
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+```
+
+### Multi-Select Dropdown: Chips not showing
+
+Ensure you're using a `List<T>` for `initialValues`, not a single value:
+
+```dart
+// ✅ Correct
+List<String> _selectedItems = [];
+FormFieldsDropdownMulti<String>(
+  initialValues: _selectedItems,
+  // ...
+)
+
+// ❌ Wrong
+String _selectedItem = '';  // Should be List<String>
+```
+
+### Radio Button: No selection showing
+
+Make sure the `initialValue` type matches the `items` type and exists in the list:
+
+```dart
+// ✅ Correct
+FormFieldsRadioButton<String>(
+  items: ['Option 1', 'Option 2'],
+  initialValue: 'Option 1',  // Exists in items
+  // ...
+)
+
+// ❌ Wrong - value doesn't exist in items
+FormFieldsRadioButton<String>(
+  items: ['Option 1', 'Option 2'],
+  initialValue: 'Option 3',  // Not in items list
+  // ...
+)
+```
+
+### Checkbox: Getting List<List<T>> instead of List<T>
+
+Ensure your state variable is `List<T>` not a nested list:
+
+```dart
+// ✅ Correct
+List<String> _hobbies = [];
+FormFieldsCheckbox<String>(
+  items: ['Reading', 'Sports', 'Music'],
+  initialValue: _hobbies,
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+
+// ❌ Wrong
+List<List<String>> _hobbies = [];  // Don't use nested lists
+```
 
 ### Phone field not validating correctly
 
