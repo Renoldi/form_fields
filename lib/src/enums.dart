@@ -1,7 +1,20 @@
 /// Enums for FormFields package
 
 /// Supported form field types
-enum FormType { string, phone, password, email, date, time, dateTime }
+enum FormType {
+  string,
+  phone,
+  password,
+  email,
+  date,
+  time,
+  dateTime,
+  dateTimeRange,
+  timeOfDay,
+  dropdown,
+  radioButton,
+  checkbox,
+}
 
 /// Label positions relative to the input field
 enum LabelPosition { top, bottom, left, right, inBorder, none }

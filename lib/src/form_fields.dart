@@ -12,21 +12,72 @@ import 'validators.dart';
 import 'utilities/extensions.dart';
 
 class FormFields<T> extends StatefulWidget {
+  // ============================================================================
+  // CORE PROPERTIES
+  // ============================================================================
   /// Callback when field value changes
   final ValueChanged<T> onChanged;
-
-  /// Custom validator function
-  final FormFieldValidator<String>? validator;
 
   /// Current value
   final T currrentValue;
 
-  /// Next focus node for keyboard navigation
-  final FocusNode? nextFocusNode;
+  // ============================================================================
+  // VALIDATION
+  // ============================================================================
+  /// Custom validator function
+  final FormFieldValidator<String>? validator;
 
-  /// Focus node for this field
-  final FocusNode? focusNode;
+  /// Whether field is required
+  final bool isRequired;
 
+  /// Minimum length for password field (default: 6)
+  final int minLengthPassword;
+
+  /// Custom password validator function
+  final FormFieldValidator<String>? customPasswordValidator;
+
+  /// Error text for minimum password length (default: 'Password must be at least X characters')
+  final String? minLengthPasswordErrorText;
+
+  // ============================================================================
+  // FIELD CONFIGURATION
+  // ============================================================================
+  /// Form field type (email, phone, password, etc.)
+  final FormType formType;
+
+  /// Field label text
+  final String label;
+
+  /// Label position relative to input
+  final LabelPosition labelPosition;
+
+  /// Number of lines for multiline input
+  final int multiLine;
+
+  // ============================================================================
+  // APPEARANCE & STYLING
+  // ============================================================================
+  /// Border radius
+  final double radius;
+
+  /// Border type
+  final BorderType borderType;
+
+  /// Border color for normal state (default: Color(0xFFC7C7C7))
+  final Color borderColor;
+
+  /// Border color for error state (default: Colors.red)
+  final Color errorBorderColor;
+
+  /// Custom text style for label (default: fontSize 14, fontWeight w500)
+  final TextStyle? labelTextStyle;
+
+  /// Custom input decoration
+  final InputDecoration? inputDecoration;
+
+  // ============================================================================
+  // DECORATIVE ELEMENTS
+  // ============================================================================
   /// Widget to display before the input
   final Widget? prefix;
 
@@ -39,39 +90,18 @@ class FormFields<T> extends StatefulWidget {
   /// Icon widget to display after the input
   final Widget? suffixIcon;
 
-  /// Custom input decoration
-  final InputDecoration? inputDecoration;
+  // ============================================================================
+  // FOCUS & NAVIGATION
+  // ============================================================================
+  /// Focus node for this field
+  final FocusNode? focusNode;
 
-  /// Form field type (email, phone, password, etc.)
-  final FormType formType;
+  /// Next focus node for keyboard navigation
+  final FocusNode? nextFocusNode;
 
-  /// Field label text
-  final String label;
-
-  /// Label position relative to input
-  final LabelPosition labelPosition;
-
-  /// Whether field is required
-  final bool isRequired;
-
-  /// Border radius
-  final double radius;
-
-  /// Border type
-  final BorderType borderType;
-
-  /// Number of lines for multiline input
-  final int multiLine;
-
-  /// Custom date/time format
-  final String? customFormat;
-
-  /// Whether to strip separators in numbers
-  final bool stripSeparators;
-
-  /// Locale for date/time pickers
-  final String? pickerLocale;
-
+  // ============================================================================
+  // TEXT & FORMATTING
+  // ============================================================================
   /// Custom text prefix for input hints (default: 'Enter ')
   final String enterText;
 
@@ -81,63 +111,64 @@ class FormFields<T> extends StatefulWidget {
   /// Custom error text for invalid number (default: 'Enter valid number for')
   final String invalidNumberText;
 
+  /// Whether to strip separators in numbers
+  final bool stripSeparators;
+
+  // ============================================================================
+  // DATE/TIME CONFIGURATION
+  // ============================================================================
+  /// Custom date/time format
+  final String? customFormat;
+
+  /// Locale for date/time pickers
+  final String? pickerLocale;
+
   /// First selectable date for date pickers (default: 100 years ago)
   final DateTime? firstDate;
 
   /// Last selectable date for date pickers (default: today)
   final DateTime? lastDate;
 
-  /// Border color for normal state (default: Color(0xFFC7C7C7))
-  final Color borderColor;
-
-  /// Border color for error state (default: Colors.red)
-  final Color errorBorderColor;
-
-  /// Custom text style for label (default: fontSize 14, fontWeight w500)
-  final TextStyle? labelTextStyle;
-
-  /// Minimum length for password field (default: 6)
-  final int minLengthPassword;
-
-  /// Custom password validator function
-  final FormFieldValidator<String>? customPasswordValidator;
-
-  /// Error text for minimum password length (default: 'Password must be at least X characters')
-  final String? minLengthPasswordErrorText;
-
   const FormFields({
     super.key,
     required this.onChanged,
     required this.label,
     required this.currrentValue,
+    // Validation
     this.validator,
-    this.nextFocusNode,
-    this.focusNode,
-    this.prefix,
-    this.inputDecoration,
-    this.formType = FormType.string,
-    this.labelPosition = LabelPosition.none,
     this.isRequired = false,
-    this.suffix,
-    this.prefixIcon,
-    this.suffixIcon,
-    this.radius = 10,
-    this.multiLine = 0,
-    this.borderType = BorderType.outlineInputBorder,
-    this.customFormat,
-    this.stripSeparators = true,
-    this.pickerLocale = 'id_ID',
-    this.enterText = 'Enter ',
-    this.invalidIntegerText = 'Enter valid integer for',
-    this.invalidNumberText = 'Enter valid number for',
-    this.firstDate,
-    this.lastDate,
-    this.borderColor = const Color(0xFFC7C7C7),
-    this.errorBorderColor = Colors.red,
-    this.labelTextStyle,
     this.minLengthPassword = 6,
     this.customPasswordValidator,
     this.minLengthPasswordErrorText,
+    // Field Configuration
+    this.formType = FormType.string,
+    this.labelPosition = LabelPosition.none,
+    this.multiLine = 0,
+    // Appearance & Styling
+    this.radius = 10,
+    this.borderType = BorderType.outlineInputBorder,
+    this.borderColor = const Color(0xFFC7C7C7),
+    this.errorBorderColor = Colors.red,
+    this.labelTextStyle,
+    this.inputDecoration,
+    // Decorative Elements
+    this.prefix,
+    this.prefixIcon,
+    this.suffix,
+    this.suffixIcon,
+    // Focus & Navigation
+    this.focusNode,
+    this.nextFocusNode,
+    // Text & Formatting
+    this.enterText = 'Enter ',
+    this.invalidIntegerText = 'Enter valid integer for',
+    this.invalidNumberText = 'Enter valid number for',
+    this.stripSeparators = true,
+    // Date/Time Configuration
+    this.customFormat,
+    this.pickerLocale = 'id_ID',
+    this.firstDate,
+    this.lastDate,
   });
 
   @override

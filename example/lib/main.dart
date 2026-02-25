@@ -1,19 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:form_fields/form_fields.dart';
+import 'package:go_router/go_router.dart';
+import 'pages/form_fields_examples_page.dart';
+import 'pages/dropdown_examples_page.dart';
+import 'pages/radio_button_examples_page.dart';
+import 'pages/checkbox_examples_page.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+// GoRouter configuration
+final GoRouter _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) {
+        return ScaffoldWithDrawer(child: child);
+      },
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const FormFieldsExamplesPage(),
+        ),
+        GoRoute(
+          path: '/dropdown',
+          builder: (context, state) => const DropdownExamplesPage(),
+        ),
+        GoRoute(
+          path: '/radio-button',
+          builder: (context, state) => const RadioButtonExamplesPage(),
+        ),
+        GoRoute(
+          path: '/checkbox',
+          builder: (context, state) => const CheckboxExamplesPage(),
+        ),
+      ],
+    ),
+  ],
+);
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FormFields - All Parameters Example',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+    return MaterialApp.router(
+      title: 'FormFields - Complete Examples',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1F2937),
+          foregroundColor: Colors.white,
+        ),
+      ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -23,466 +64,264 @@ class MyApp extends StatelessWidget {
         Locale('en', 'US'),
         Locale('en', 'GB'),
       ],
-      home: const FormFieldsExamplePage(),
+      routerConfig: _router,
     );
   }
 }
 
-class FormFieldsExamplePage extends StatefulWidget {
-  const FormFieldsExamplePage({Key? key}) : super(key: key);
+// Scaffold with Drawer wrapper
+class ScaffoldWithDrawer extends StatelessWidget {
+  final Widget child;
 
-  @override
-  State<FormFieldsExamplePage> createState() => _FormFieldsExamplePageState();
-}
+  const ScaffoldWithDrawer({Key? key, required this.child}) : super(key: key);
 
-class _FormFieldsExamplePageState extends State<FormFieldsExamplePage> {
-  final _formKey = GlobalKey<FormState>();
-  final _focusNode1 = FocusNode();
-  final _focusNode2 = FocusNode();
-
-  // STRING - All variations
-  String _string1 = '';
-  String? _string2;
-  String _stringCustom = '';
-  String _email = '';
-  String _phone = '';
-  String _password = '';
-
-  // INT - All variations
-  int _int1 = 0;
-  int? _int2;
-
-  // DOUBLE - All variations
-  double _double1 = 0.0;
-  double? _double2;
-
-  // DATETIME - All variations
-  DateTime _date1 = DateTime.now();
-  DateTime? _date2;
-
-  // TIMEOFDAY - All variations
-  TimeOfDay _time1 = TimeOfDay.now();
-  TimeOfDay? _time2;
-
-  // DATETIMERANGE - All variations
-  DateTimeRange _range1 =
-      DateTimeRange(start: DateTime.now(), end: DateTime.now());
-  DateTimeRange? _range2;
+  String _getTitle(String location) {
+    switch (location) {
+      case '/':
+        return 'FormFields Examples';
+      case '/dropdown':
+        return 'Dropdown Examples';
+      case '/radio-button':
+        return 'Radio Button Examples';
+      case '/checkbox':
+        return 'Checkbox Examples';
+      default:
+        return 'FormFields Examples';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentLocation = GoRouterState.of(context).uri.toString();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FormFields - All Parameters Example'),
-        elevation: 0,
+        title: Text(_getTitle(currentLocation)),
+        backgroundColor: const Color(0xFF1F2937),
+        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ========== STRING TYPE ==========
-                _buildSectionTitle('STRING TYPE - All Parameters'),
-
-                // Non-Nullable String - Basic
-                _buildFieldTitle('String (Non-Null) - Basic'),
-                FormFields<String>(
-                  label: 'Full Name',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  onChanged: (value) => setState(() => _string1 = value),
-                  currrentValue: _string1,
-                ),
-
-                // Nullable String - Optional
-                _buildFieldTitle('String (Nullable) - Optional'),
-                FormFields<String?>(
-                  label: 'Middle Name',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  onChanged: (value) => setState(() => _string2 = value),
-                  currrentValue: _string2,
-                ),
-
-                // String with All Custom Parameters
-                _buildFieldTitle('String - All Custom Parameters'),
-                FormFields<String>(
-                  label: 'Description',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  multiLine: 4,
-                  radius: 15,
-                  borderType: BorderType.outlineInputBorder,
-                  borderColor: Colors.green,
-                  errorBorderColor: Colors.red,
-                  enterText: 'Please enter ',
-                  labelTextStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                  prefixIcon:
-                      const Icon(Icons.description, color: Colors.green),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Required';
-                    if (value.length < 10) return 'Min 10 characters';
-                    return null;
-                  },
-                  onChanged: (value) => setState(() => _stringCustom = value),
-                  currrentValue: _stringCustom,
-                  focusNode: _focusNode1,
-                  nextFocusNode: _focusNode2,
-                ),
-
-                // Email with Parameters
-                _buildFieldTitle('String - Email FormType'),
-                FormFields<String>(
-                  label: 'Email Address',
-                  formType: FormType.email,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  borderColor: Colors.blue,
-                  prefixIcon: const Icon(Icons.email),
-                  onChanged: (value) => setState(() => _email = value),
-                  currrentValue: _email,
-                ),
-
-                // Phone with Parameters
-                _buildFieldTitle('String - Phone FormType'),
-                FormFields<String>(
-                  label: 'Phone Number',
-                  formType: FormType.phone,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  borderColor: Colors.orange,
-                  prefixIcon: const Icon(Icons.phone),
-                  onChanged: (value) => setState(() => _phone = value),
-                  currrentValue: _phone,
-                ),
-
-                // Password with All Parameters
-                _buildFieldTitle('String - Password with Custom Validation'),
-                FormFields<String>(
-                  label: 'Password',
-                  formType: FormType.password,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  minLengthPassword: 8,
-                  minLengthPasswordErrorText:
-                      'Password must be at least 8 characters long',
-                  borderColor: Colors.purple,
-                  customPasswordValidator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password is required';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be 8+ characters';
-                    }
-                    if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                      return 'Must contain uppercase letter';
-                    }
-                    if (!RegExp(r'[0-9]').hasMatch(value)) {
-                      return 'Must contain a number';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) => setState(() => _password = value),
-                  currrentValue: _password,
-                  focusNode: _focusNode2,
-                ),
-
-                // ========== INTEGER TYPE ==========
-                _buildSectionTitle('INTEGER TYPE - All Parameters'),
-
-                // Non-Nullable Int - Basic
-                _buildFieldTitle('Int (Non-Null) - Basic'),
-                FormFields<int>(
-                  label: 'Age',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: false,
-                  isRequired: true,
-                  onChanged: (value) => setState(() => _int1 = value),
-                  currrentValue: _int1,
-                ),
-
-                // Nullable Int - With All Parameters
-                _buildFieldTitle(
-                    'Int (Nullable) - With Separators & Custom Styling'),
-                FormFields<int?>(
-                  label: 'Stock Quantity',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: true,
-                  isRequired: false,
-                  borderColor: Colors.teal,
-                  radius: 12,
-                  invalidIntegerText: 'Please enter valid integer for',
-                  prefixIcon: const Icon(Icons.inventory, color: Colors.teal),
-                  labelTextStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.teal,
-                  ),
-                  onChanged: (value) => setState(() => _int2 = value),
-                  currrentValue: _int2,
-                ),
-
-                // ========== DOUBLE TYPE ==========
-                _buildSectionTitle('DOUBLE TYPE - All Parameters'),
-
-                // Non-Nullable Double - With Separators
-                _buildFieldTitle('Double (Non-Null) - With Separators'),
-                FormFields<double>(
-                  label: 'Product Price',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: true,
-                  isRequired: true,
-                  borderColor: Colors.green,
-                  prefix: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('\$',
-                        style: TextStyle(fontSize: 16, color: Colors.green)),
-                  ),
-                  onChanged: (value) => setState(() => _double1 = value),
-                  currrentValue: _double1,
-                ),
-
-                // Nullable Double - All Parameters
-                _buildFieldTitle(
-                    'Double (Nullable) - Without Separators & Custom'),
-                FormFields<double?>(
-                  label: 'Discount Percentage',
-                  formType: FormType.string,
-                  labelPosition: LabelPosition.top,
-                  stripSeparators: false,
-                  isRequired: false,
-                  radius: 20,
-                  borderType: BorderType.outlineInputBorder,
-                  borderColor: Colors.amber,
-                  errorBorderColor: Colors.deepOrange,
-                  invalidNumberText: 'Invalid number for',
-                  suffix: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('%', style: TextStyle(fontSize: 16)),
-                  ),
-                  labelTextStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.amber,
-                  ),
-                  onChanged: (value) => setState(() => _double2 = value),
-                  currrentValue: _double2,
-                ),
-
-                // ========== DATETIME TYPE ==========
-                _buildSectionTitle('DATETIME TYPE - All Parameters'),
-
-                // Non-Nullable DateTime - Date with Custom Range
-                _buildFieldTitle(
-                    'DateTime (Non-Null) - Date with Custom Range'),
-                FormFields<DateTime>(
-                  label: 'Birth Date',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  firstDate: DateTime(1950, 1, 1),
-                  lastDate: DateTime.now(),
-                  customFormat: 'dd/MM/yyyy',
-                  pickerLocale: 'en_US',
-                  borderColor: Colors.indigo,
-                  prefixIcon: const Icon(Icons.cake, color: Colors.indigo),
-                  onChanged: (value) => setState(() => _date1 = value),
-                  currrentValue: _date1,
-                ),
-
-                // Nullable DateTime - With All Parameters
-                _buildFieldTitle(
-                    'DateTime (Nullable) - DateTime with Custom Format'),
-                FormFields<DateTime?>(
-                  label: 'Appointment',
-                  formType: FormType.dateTime,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  customFormat: 'MMM dd, yyyy - hh:mm a',
-                  pickerLocale: 'en_GB',
-                  radius: 10,
-                  borderColor: Colors.deepPurple,
-                  labelTextStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.deepPurple,
-                  ),
-                  onChanged: (value) => setState(() => _date2 = value),
-                  currrentValue: _date2,
-                ),
-
-                // ========== TIMEOFDAY TYPE ==========
-                _buildSectionTitle('TIMEOFDAY TYPE - All Parameters'),
-
-                // Non-Nullable TimeOfDay
-                _buildFieldTitle('TimeOfDay (Non-Null) - Basic'),
-                FormFields<TimeOfDay>(
-                  label: 'Work Start Time',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  borderColor: Colors.cyan,
-                  prefixIcon: const Icon(Icons.access_time, color: Colors.cyan),
-                  onChanged: (value) => setState(() => _time1 = value),
-                  currrentValue: _time1,
-                ),
-
-                // Nullable TimeOfDay - With Custom Parameters
-                _buildFieldTitle('TimeOfDay (Nullable) - Custom Styling'),
-                FormFields<TimeOfDay?>(
-                  label: 'Break Time',
-                  formType: FormType.time,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  radius: 15,
-                  borderType: BorderType.outlineInputBorder,
-                  borderColor: Colors.pink,
-                  errorBorderColor: Colors.redAccent,
-                  pickerLocale: 'en_US',
-                  labelTextStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.pink,
-                  ),
-                  onChanged: (value) => setState(() => _time2 = value),
-                  currrentValue: _time2,
-                ),
-
-                // ========== DATETIMERANGE TYPE ==========
-                _buildSectionTitle('DATETIMERANGE TYPE - All Parameters'),
-
-                // Non-Nullable DateTimeRange
-                _buildFieldTitle('DateTimeRange (Non-Null) - Basic'),
-                FormFields<DateTimeRange>(
-                  label: 'Project Duration',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  isRequired: true,
-                  borderColor: Colors.brown,
-                  prefixIcon: const Icon(Icons.date_range, color: Colors.brown),
-                  onChanged: (value) => setState(() => _range1 = value),
-                  currrentValue: _range1,
-                ),
-
-                // Nullable DateTimeRange - All Parameters
-                _buildFieldTitle(
-                    'DateTimeRange (Nullable) - Custom Range & Format'),
-                FormFields<DateTimeRange?>(
-                  label: 'Vacation Dates',
-                  formType: FormType.date,
-                  labelPosition: LabelPosition.top,
-                  isRequired: false,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                  customFormat: 'MMM dd, yyyy',
-                  radius: 12,
-                  borderColor: Colors.lightGreen,
-                  labelTextStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.lightGreen,
-                  ),
-                  onChanged: (value) => setState(() => _range2 = value),
-                  currrentValue: _range2,
-                ),
-
-                const SizedBox(height: 32),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _showFormData();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'SUBMIT FORM',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
-      ),
+      drawer: const AppDrawer(),
+      body: child,
     );
   }
+}
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
-            ),
+// Custom Drawer Widget
+class AppDrawer extends StatelessWidget {
+  const AppDrawer({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final currentLocation = GoRouterState.of(context).uri.toString();
+
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF1F2937),
+              Colors.grey.shade900,
+            ],
           ),
-          const SizedBox(height: 8),
-          Container(
-            height: 3,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue, Colors.blue.shade100],
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.shade700,
+                    Colors.blue.shade500,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.widgets,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'FormFields',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Complete Examples',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
+            const SizedBox(height: 8),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.text_fields,
+              title: 'FormFields',
+              subtitle: 'Text, Number, Date & Time',
+              route: '/',
+              isSelected: currentLocation == '/',
+              color: Colors.blue,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.arrow_drop_down_circle,
+              title: 'Dropdown',
+              subtitle: 'All Dropdown Examples',
+              route: '/dropdown',
+              isSelected: currentLocation == '/dropdown',
+              color: Colors.green,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.radio_button_checked,
+              title: 'Radio Button',
+              subtitle: 'All Radio Button Examples',
+              route: '/radio-button',
+              isSelected: currentLocation == '/radio-button',
+              color: Colors.orange,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.check_box,
+              title: 'Checkbox',
+              subtitle: 'All Checkbox Examples',
+              route: '/checkbox',
+              isSelected: currentLocation == '/checkbox',
+              color: Colors.pink,
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.white70, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'About',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Comprehensive examples showcasing all properties and features of the FormFields package.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showFormData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('✅ Form validated successfully!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
+  Widget _buildDrawerItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String route,
+    required bool isSelected,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? color : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 12,
+          ),
+        ),
+        trailing: isSelected
+            ? Icon(Icons.check_circle, color: color, size: 24)
+            : const Icon(Icons.arrow_forward_ios,
+                color: Colors.white38, size: 16),
+        onTap: () {
+          context.go(route);
+          Navigator.pop(context);
+        },
       ),
     );
   }
