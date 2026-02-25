@@ -319,7 +319,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.pink.withOpacity(0.3),
+                  color: Colors.pink.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -367,8 +367,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
   void _showFormData() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: const [
+        content: const Row(
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 12),
             Text('Checkbox form validated successfully!'),
