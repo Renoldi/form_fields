@@ -148,7 +148,107 @@ Form(
 )
 ```
 
-## 8. Converting Between TimeOfDay and DateTime
+## 8. Selection Widgets
+
+### Dropdown (Single-Select)
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Germany'],
+  initialValue: _selectedCountry,
+  isRequired: true,
+  onChanged: (value) {
+    setState(() => _selectedCountry = value ?? '');
+  },
+)
+```
+
+### Multi-Select Dropdown
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German'],
+  initialValues: _selectedLanguages,
+  minSelections: 1,
+  maxSelections: 3,
+  onChanged: (values) {
+    setState(() => _selectedLanguages = values);
+  },
+)
+```
+
+### Radio Button
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender,
+  direction: Axis.horizontal,
+  onChanged: (value) {
+    setState(() => _gender = value ?? '');
+  },
+)
+```
+
+### Checkbox
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Sports', 'Music', 'Travel'],
+  initialValue: _hobbies,
+  direction: Axis.vertical,
+  onChanged: (values) {
+    setState(() => _hobbies = values);
+  },
+)
+```
+
+## 9. Using Custom Classes
+
+All selection widgets support generic types with custom classes:
+
+```dart
+// Define your model
+class Country {
+  final String code;
+  final String name;
+  
+  Country(this.code, this.name);
+  
+  @override
+  bool operator ==(Object other) =>
+    identical(this, other) ||
+    other is Country && code == other.code;
+  
+  @override
+  int get hashCode => code.hashCode;
+}
+
+// Use with dropdown
+FormFieldsDropdown<Country>(
+  label: 'Select Country',
+  items: [
+    Country('US', 'United States'),
+    Country('CA', 'Canada'),
+  ],
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) {
+    setState(() => _selectedCountry = value);
+  },
+)
+
+// Use with multi-select
+FormFieldsDropdownMulti<Country>(
+  label: 'Countries Visited',
+  items: countries,
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (values) {
+    setState(() => _countriesVisited = values);
+  },
+)
+```
+
+## 10. Converting Between TimeOfDay and DateTime
 
 Use built-in extension methods for easy conversion:
 

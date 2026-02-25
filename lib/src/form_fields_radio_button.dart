@@ -100,20 +100,13 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
             borderRadius: BorderRadius.circular(radius),
           ),
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: RadioGroup<T>(
-            groupValue: state.value,
-            onChanged: (value) {
-              state.didChange(value);
-              onChanged(value);
-            },
-            child: direction == Axis.horizontal
-                ? Wrap(
-                    children: items.map((e) => _buildItem(e)).toList(),
-                  )
-                : Column(
-                    children: items.map((e) => _buildItem(e)).toList(),
-                  ),
-          ),
+          child: direction == Axis.horizontal
+              ? Wrap(
+                  children: items.map((e) => _buildItem(e)).toList(),
+                )
+              : Column(
+                  children: items.map((e) => _buildItem(e)).toList(),
+                ),
         ),
 
         // Error
@@ -147,6 +140,11 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
           children: [
             Radio<T>(
               value: item,
+              groupValue: state.value,
+              onChanged: (value) {
+                state.didChange(value);
+                onChanged(value);
+              },
               activeColor: activeColor,
             ),
             const SizedBox(width: 8),

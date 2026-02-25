@@ -759,6 +759,239 @@ FormFieldsSelect<String>(
 )
 ```
 
+## Working with Custom Classes
+
+All selection widgets support generic types with custom model classes for type-safe selection handling.
+
+### Defining a Custom Model
+
+Create a model class with proper equality operators:
+
+```dart
+class Country {
+  final String code;
+  final String name;
+  final String flag;
+
+  Country(this.code, this.name, this.flag);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Country && code == other.code;
+
+  @override
+  int get hashCode => code.hashCode;
+
+  @override
+  String toString() => name;
+}
+```
+
+### Dropdown with Custom Class
+
+```dart
+final countries = [
+  Country('US', 'United States', '🇺🇸'),
+  Country('CA', 'Canada', '🇨🇦'),
+  Country('GB', 'United Kingdom', '🇬🇧'),
+  Country('DE', 'Germany', '🇩🇪'),
+];
+
+Country? _selectedCountry;
+
+FormFieldsDropdown<Country>(
+  label: 'Select Country',
+  items: countries,
+  initialValue: _selectedCountry,
+  itemLabelBuilder: (country) => '${country.flag} ${country.name}',
+  onChanged: (value) {
+    setState(() => _selectedCountry = value);
+    // Access full object properties
+    if (value != null) {
+      print('Code: ${value.code}, Name: ${value.name}');
+    }
+  },
+)
+```
+
+### Multi-Select Dropdown with Custom Class
+
+```dart
+class Skill {
+  final String id;
+  final String name;
+  final String category;
+
+  Skill(this.id, this.name, this.category);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Skill && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+final skills = [
+  Skill('flutter', 'Flutter', 'Mobile'),
+  Skill('firebase', 'Firebase', 'Backend'),
+  Skill('rest', 'REST API', 'Backend'),
+];
+
+List<Skill> _selectedSkills = [];
+
+FormFieldsDropdownMulti<Skill>(
+  label: 'Select Your Skills',
+  items: skills,
+  initialValues: _selectedSkills,
+  itemLabelBuilder: (skill) => '${skill.name} (${skill.category})',
+  minSelections: 1,
+  maxSelections: 3,
+  onChanged: (values) {
+    setState(() => _selectedSkills = values);
+    // Full type safety
+    for (var skill in values) {
+      print('${skill.name} - ${skill.category}');
+    }
+  },
+)
+```
+
+### Radio Button with Custom Class
+
+```dart
+class SubscriptionPlan {
+  final String id;
+  final String name;
+  final double price;
+
+  SubscriptionPlan(this.id, this.name, this.price);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SubscriptionPlan && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+SubscriptionPlan? _selectedPlan;
+
+FormFieldsRadioButton<SubscriptionPlan>(
+  label: 'Choose Your Plan',
+  items: [
+    SubscriptionPlan('free', 'Free', 0),
+    SubscriptionPlan('pro', 'Pro', 9.99),
+    SubscriptionPlan('enterprise', 'Enterprise', 29.99),
+  ],
+  initialValue: _selectedPlan,
+  itemLabelBuilder: (plan) => '${plan.name} - \$${plan.price}/mo',
+  onChanged: (value) {
+    setState(() => _selectedPlan = value);
+  },
+)
+```
+
+### Checkbox with Custom Class
+
+```dart
+class Interest {
+  final String id;
+  final String name;
+  final Color color;
+
+  Interest(this.id, this.name, this.color);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Interest && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+List<Interest> _selectedInterests = [];
+
+FormFieldsCheckbox<Interest>(
+  label: 'Select Your Interests',
+  items: [
+    Interest('gaming', 'Gaming', Colors.purple),
+    Interest('music', 'Music', Colors.pink),
+    Interest('sports', 'Sports', Colors.orange),
+  ],
+  initialValue: _selectedInterests,
+  itemLabelBuilder: (interest) => interest.name,
+  onChanged: (values) {
+    setState(() => _selectedInterests = values);
+  },
+)
+```
+
+### Custom Item Builder
+
+For advanced UI customization, use `itemBuilder`:
+
+```dart
+FormFieldsRadioButton<SubscriptionPlan>(
+  label: 'Choose Your Plan',
+  items: plans,
+  itemBuilder: (plan, selected) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: selected ? Colors.blue.shade50 : Colors.white,
+        border: Border.all(
+          color: selected ? Colors.blue : Colors.grey,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Radio<SubscriptionPlan>(
+            value: plan,
+            groupValue: _selectedPlan,
+            onChanged: (value) {
+              setState(() => _selectedPlan = value);
+            },
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  plan.name,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text('\$${plan.price}/month'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  },
+  onChanged: (value) {
+    setState(() => _selectedPlan = value);
+  },
+)
+```
+
+### Why Use Custom Classes?
+
+1. **Type Safety** - Compile-time type checking
+2. **Full Object Access** - Access all properties, not just strings
+3. **Structured Data** - Maintain complex relationships
+4. **API Integration** - Direct mapping to API models
+5. **Code Clarity** - Self-documenting with meaningful types
+
 ## Number Formatting
 
 The `stripSeparators` parameter controls thousand separator formatting **for numeric types only** (`FormFields<int>` and `FormFields<double>`). It also restricts input to numbers only, preventing non-numeric characters.

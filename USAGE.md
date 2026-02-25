@@ -924,6 +924,248 @@ Column(
 )
 ```
 
+### Using Custom Classes with Selection Widgets
+
+All selection widgets support generic types with custom model classes, providing type-safe selection handling.
+
+#### Step 1: Define Your Model Class
+
+Models should implement equality operators:
+
+```dart
+class Country {
+  final String code;
+  final String name;
+  final String flag;
+
+  Country(this.code, this.name, this.flag);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Country &&
+          runtimeType == other.runtimeType &&
+          code == other.code;
+
+  @override
+  int get hashCode => code.hashCode;
+
+  @override
+  String toString() => name;
+}
+```
+
+#### Step 2: Create Model Instances
+
+```dart
+final List<Country> countries = [
+  Country('US', 'United States', '🇺🇸'),
+  Country('CA', 'Canada', '🇨🇦'),
+  Country('GB', 'United Kingdom', '🇬🇧'),
+  Country('DE', 'Germany', '🇩🇪'),
+];
+```
+
+#### Step 3: Use with Dropdown
+
+```dart
+Country? _selectedCountry;
+
+FormFieldsDropdown<Country>(
+  label: 'Select Country',
+  items: countries,
+  initialValue: _selectedCountry,
+  itemLabelBuilder: (country) => '${country.flag} ${country.name}',
+  isRequired: true,
+  onChanged: (value) {
+    setState(() => _selectedCountry = value);
+    // Access full object properties
+    if (value != null) {
+      print('Code: ${value.code}');
+      print('Name: ${value.name}');
+    }
+  },
+)
+```
+
+#### Step 4: Use with Multi-Select Dropdown
+
+```dart
+class Skill {
+  final String id;
+  final String name;
+  final String category;
+
+  Skill(this.id, this.name, this.category);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Skill && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+List<Skill> _selectedSkills = [];
+
+FormFieldsDropdownMulti<Skill>(
+  label: 'Select Your Skills',
+  items: [
+    Skill('flutter', 'Flutter', 'Mobile'),
+    Skill('firebase', 'Firebase', 'Backend'),
+    Skill('rest', 'REST API', 'Backend'),
+  ],
+  initialValues: _selectedSkills,
+  itemLabelBuilder: (skill) => '${skill.name} (${skill.category})',
+  minSelections: 2,
+  maxSelections: 5,
+  onChanged: (values) {
+    setState(() => _selectedSkills = values);
+    // Access full list of selected objects
+    for (var skill in values) {
+      print('Selected: ${skill.name} - ${skill.category}');
+    }
+  },
+)
+```
+
+#### Step 5: Use with Radio Button
+
+```dart
+class SubscriptionPlan {
+  final String id;
+  final String name;
+  final double price;
+
+  SubscriptionPlan(this.id, this.name, this.price);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SubscriptionPlan && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+SubscriptionPlan? _selectedPlan;
+
+FormFieldsRadioButton<SubscriptionPlan>(
+  label: 'Choose Your Plan',
+  items: [
+    SubscriptionPlan('free', 'Free', 0),
+    SubscriptionPlan('pro', 'Pro', 9.99),
+    SubscriptionPlan('enterprise', 'Enterprise', 29.99),
+  ],
+  initialValue: _selectedPlan,
+  itemLabelBuilder: (plan) => '${plan.name} - \$${plan.price}/mo',
+  onChanged: (value) {
+    setState(() => _selectedPlan = value);
+    if (value != null) {
+      print('Selected plan: ${value.name} at \$${value.price}');
+    }
+  },
+)
+```
+
+#### Step 6: Use with Checkbox
+
+```dart
+class Interest {
+  final String id;
+  final String name;
+  final Color color;
+
+  Interest(this.id, this.name, this.color);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Interest && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
+List<Interest> _selectedInterests = [];
+
+FormFieldsCheckbox<Interest>(
+  label: 'Select Your Interests',
+  items: [
+    Interest('gaming', 'Gaming', Colors.purple),
+    Interest('music', 'Music', Colors.pink),
+    Interest('sports', 'Sports', Colors.orange),
+  ],
+  initialValue: _selectedInterests,
+  itemLabelBuilder: (interest) => interest.name,
+  onChanged: (values) {
+    setState(() => _selectedInterests = values);
+    // Full type safety with custom objects
+    for (var interest in values) {
+      print('Interest: ${interest.name}, Color: ${interest.color}');
+    }
+  },
+)
+```
+
+#### Custom Item Builder for Advanced UI
+
+Use `itemBuilder` for complete UI customization:
+
+```dart
+FormFieldsRadioButton<SubscriptionPlan>(
+  label: 'Choose Your Plan',
+  items: plans,
+  itemBuilder: (plan, selected) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: selected ? Colors.blue.shade50 : Colors.white,
+        border: Border.all(
+          color: selected ? Colors.blue : Colors.grey,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            plan.name,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text('\$${plan.price}/month'),
+        ],
+      ),
+    );
+  },
+  onChanged: (value) {
+    setState(() => _selectedPlan = value);
+  },
+)
+```
+
+#### Benefits of Custom Classes
+
+1. **Type Safety**: Compile-time checking of object types
+2. **Full Object Access**: Access all properties, not just display strings
+3. **Structured Data**: Maintain complex relationships between fields
+4. **Code Clarity**: Self-documenting code with meaningful types
+5. **Validation**: Validate based on object properties
+6. **API Integration**: Direct mapping to API models
+
+#### Best Practices for Custom Classes
+
+1. **Always implement `==` operator**: Required for selection comparison
+2. **Always implement `hashCode`**: Required for Set/Map operations
+3. **Keep models immutable**: Use `final` fields
+4. **Provide meaningful `toString()`**: Helpful for debugging
+5. **Use `itemLabelBuilder`**: Customize display without changing model
+
 ## Best Practices
 
 ### 1. Always Provide onChange Handler
