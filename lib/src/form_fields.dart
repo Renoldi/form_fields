@@ -93,6 +93,9 @@ class FormFields<T> extends StatefulWidget {
   /// Border color for error state (default: Colors.red)
   final Color errorBorderColor;
 
+  /// Custom text style for label (default: fontSize 14, fontWeight w500)
+  final TextStyle? labelTextStyle;
+
   const FormFields({
     super.key,
     required this.onChanged,
@@ -122,6 +125,7 @@ class FormFields<T> extends StatefulWidget {
     this.lastDate,
     this.borderColor = const Color(0xFFC7C7C7),
     this.errorBorderColor = Colors.red,
+    this.labelTextStyle,
   });
 
   @override
@@ -741,7 +745,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         labelText,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        style: widget.labelTextStyle ??
+            const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
     );
   }
