@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import '../widgets/result_display_widget.dart';
+import '../widgets/language_indicator.dart';
 
 class DropdownMultiExamplesPage extends StatefulWidget {
   const DropdownMultiExamplesPage({Key? key}) : super(key: key);
@@ -19,6 +20,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
   List<String> _multiDropdown3 = [];
   List<String> _multiDropdown4 = [];
   List<String> _multiDropdown5 = [];
+  List<String> _multiDropdown6 = [];
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +80,13 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
 
             const SizedBox(height: 32),
 
+            // Language indicator showing current locale
+            const LanguageIndicator(),
+
+            const SizedBox(height: 24),
+
             // Example 1: Basic Multi-Select
-            _buildFieldTitle('1. Basic Multi-Select'),
+            buildFieldTitle('1. Basic Multi-Select', Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
               label: 'Select Programming Languages',
               initialValues: _multiDropdown1,
@@ -94,6 +101,26 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 'Go',
                 'Rust',
                 'TypeScript',
+                'C#',
+                'PHP',
+                'Ruby',
+                'Scala',
+                'Perl',
+                'R',
+                'MATLAB',
+                'Objective-C',
+                'Shell',
+                'PowerShell',
+                'Haskell',
+                'Lua',
+                'Groovy',
+                'Visual Basic',
+                'Assembly',
+                'COBOL',
+                'Fortran',
+                'Elixir',
+                'Clojure',
+                'F#',
               ],
               isRequired: true,
               onChanged: (values) => setState(() => _multiDropdown1 = values),
@@ -101,7 +128,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
             buildResultDisplay('Programming Languages', _multiDropdown1),
 
             // Example 2: With Min/Max Constraints
-            _buildFieldTitle('2. Min/Max Selections (Min: 2, Max: 4)'),
+            buildFieldTitle('2. Min/Max Selections (Min: 2, Max: 4)',
+                Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
               label: 'Select Skills',
               initialValues: _multiDropdown2,
@@ -127,7 +155,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
             buildResultDisplay('Selected Skills', _multiDropdown2),
 
             // Example 3: Custom Styled
-            _buildFieldTitle('3. Custom Chip Styling'),
+            buildFieldTitle('3. Custom Chip Styling', Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
               label: 'Select Interests',
               initialValues: _multiDropdown3,
@@ -151,7 +179,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 isOptional: true),
 
             // Example 4: With Item Count Display
-            _buildFieldTitle('4. With Item Count Display'),
+            buildFieldTitle(
+                '4. With Item Count Display', Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
               label: 'Select Frameworks',
               initialValues: _multiDropdown4,
@@ -176,7 +205,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 isOptional: true),
 
             // Example 5: Custom Borders and Hint
-            _buildFieldTitle('5. Custom Border & Hint Text'),
+            buildFieldTitle(
+                '5. Custom Border & Hint Text', Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
               label: 'Select Countries Visited',
               initialValues: _multiDropdown5,
@@ -191,6 +221,26 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 'Brazil',
                 'India',
                 'China',
+                'Italy',
+                'Spain',
+                'Mexico',
+                'Russia',
+                'South Korea',
+                'Argentina',
+                'Netherlands',
+                'Sweden',
+                'Switzerland',
+                'Belgium',
+                'Poland',
+                'Norway',
+                'Austria',
+                'Denmark',
+                'Finland',
+                'Ireland',
+                'Portugal',
+                'Greece',
+                'New Zealand',
+                'Singapore',
               ],
               isRequired: false,
               hintText: 'Choose countries from the list',
@@ -204,6 +254,55 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               onChanged: (values) => setState(() => _multiDropdown5 = values),
             ),
             buildResultDisplay('Countries Visited', _multiDropdown5,
+                isOptional: true),
+
+            // Example 6: With Filter/Search
+            buildFieldTitle(
+                '6. Multi-Select with Filter/Search', Colors.purple.shade600),
+            FormFieldsDropdownMulti<String>(
+              label: 'Select Programming Languages with Filter',
+              initialValues: _multiDropdown6,
+              items: const [
+                'Dart',
+                'Java',
+                'Kotlin',
+                'Swift',
+                'JavaScript',
+                'Python',
+                'C++',
+                'Go',
+                'Rust',
+                'TypeScript',
+                'C#',
+                'PHP',
+                'Ruby',
+                'Scala',
+                'Perl',
+                'R',
+                'MATLAB',
+                'Objective-C',
+                'Shell',
+                'PowerShell',
+                'Haskell',
+                'Lua',
+                'Groovy',
+                'Visual Basic',
+                'Assembly',
+                'COBOL',
+                'Fortran',
+                'Elixir',
+                'Clojure',
+                'F#',
+              ],
+              isRequired: false,
+              enableFilter: true,
+              filterHintText: 'Search languages...',
+              chipBackgroundColor: Colors.indigo.shade100,
+              chipTextColor: Colors.indigo.shade900,
+              chipDeleteIconColor: Colors.indigo.shade700,
+              onChanged: (values) => setState(() => _multiDropdown6 = values),
+            ),
+            buildResultDisplay('Selected Languages (Filtered)', _multiDropdown6,
                 isOptional: true),
 
             const SizedBox(height: 32),
@@ -238,31 +337,6 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
 
             const SizedBox(height: 24),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.purple.shade600,
-              width: 4,
-            ),
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
         ),
       ),
     );

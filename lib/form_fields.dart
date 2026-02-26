@@ -11,3 +11,4 @@ export 'src/enums.dart';
 export 'src/controller.dart';
 export 'src/validators.dart';
 export 'src/utilities/extensions.dart';
+export 'src/localization/form_fields_localizations.dart';

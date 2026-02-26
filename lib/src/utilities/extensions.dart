@@ -23,10 +23,10 @@ extension StringExtensions on String? {
     return this!.length >= 6;
   }
 
-  /// Check if phone number is valid (Indonesian format: +0 followed by 11 digits)
+  /// Check if phone number is valid in +CCXXXXXXXXXX format (country code + 7-15 digits)
   bool get isValidPhone {
     if (this == null) return false;
-    final phoneRegExp = RegExp(r"^\+?0[0-9]{11}$");
+    final phoneRegExp = RegExp(r'^\+\d{1,3}\d{7,15}$');
     return phoneRegExp.hasMatch(this!);
   }
 

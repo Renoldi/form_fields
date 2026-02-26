@@ -29,10 +29,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildSectionTitle('CHECKBOX - Basic Examples'),
+          buildSectionTitle('CHECKBOX - Basic Examples', Colors.pink.shade700,
+              Colors.pink.shade400),
 
           // Example 1: Single Selection - Vertical
-          _buildFieldTitle('Single Selection - Vertical Layout'),
+          buildFieldTitle(
+              'Single Selection - Vertical Layout', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Terms & Conditions',
             initialValue: _checkbox1,
@@ -44,7 +46,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Terms Agreed', _checkbox1),
 
           // Example 2: Single Selection - Horizontal
-          _buildFieldTitle('Single Selection - Horizontal Layout'),
+          buildFieldTitle(
+              'Single Selection - Horizontal Layout', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Newsletter Subscription',
             initialValue: _checkbox2,
@@ -57,10 +60,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           ),
           buildResultDisplay('Newsletter', _checkbox2, isOptional: true),
 
-          _buildSectionTitle('CHECKBOX - Multiple Selection'),
+          buildSectionTitle('CHECKBOX - Multiple Selection',
+              Colors.pink.shade700, Colors.pink.shade400),
 
           // Example 3: Multiple Selection - Vertical
-          _buildFieldTitle('Multiple Selection - Vertical Layout'),
+          buildFieldTitle(
+              'Multiple Selection - Vertical Layout', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Hobbies',
             initialValue: _checkbox3,
@@ -71,6 +76,25 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Cooking',
               'Traveling',
               'Photography',
+              'Music',
+              'Art & Crafts',
+              'Dancing',
+              'Yoga',
+              'Meditation',
+              'Gardening',
+              'Fishing',
+              'Hiking',
+              'Cycling',
+              'Swimming',
+              'Writing',
+              'Blogging',
+              'Painting',
+              'Drawing',
+              'Singing',
+              'Playing Instruments',
+              'Bird Watching',
+              'Astronomy',
+              'Volunteering',
             ],
             isRequired: true,
             direction: Axis.vertical,
@@ -79,11 +103,34 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Selected Hobbies', _checkbox3),
 
           // Example 4: Multiple Selection - Horizontal
-          _buildFieldTitle('Multiple Selection - Horizontal Layout'),
+          buildFieldTitle(
+              'Multiple Selection - Horizontal Layout', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Programming Languages',
             initialValue: _checkbox4,
-            items: const ['Dart', 'JavaScript', 'Python', 'Java', 'C++'],
+            items: const [
+              'Dart',
+              'JavaScript',
+              'Python',
+              'Java',
+              'C++',
+              'TypeScript',
+              'Go',
+              'Rust',
+              'Kotlin',
+              'Swift',
+              'C#',
+              'PHP',
+              'Ruby',
+              'Scala',
+              'R',
+              'MATLAB',
+              'Perl',
+              'Haskell',
+              'Lua',
+              'Elixir',
+              'Clojure'
+            ],
             isRequired: true,
             direction: Axis.horizontal,
             borderColor: Colors.teal,
@@ -92,10 +139,11 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           ),
           buildResultDisplay('Selected Languages', _checkbox4),
 
-          _buildSectionTitle('CHECKBOX - Custom Styling'),
+          buildSectionTitle('CHECKBOX - Custom Styling', Colors.pink.shade700,
+              Colors.pink.shade400),
 
           // Example 5: Custom Border & Colors
-          _buildFieldTitle('Custom Border & Active Color'),
+          buildFieldTitle('Custom Border & Active Color', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Skills',
             initialValue: _checkbox5,
@@ -105,6 +153,26 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Problem Solving',
               'Time Management',
               'Teamwork',
+              'Critical Thinking',
+              'Creativity',
+              'Adaptability',
+              'Decision Making',
+              'Conflict Resolution',
+              'Negotiation',
+              'Project Management',
+              'Strategic Planning',
+              'Public Speaking',
+              'Active Listening',
+              'Emotional Intelligence',
+              'Customer Service',
+              'Sales',
+              'Marketing',
+              'Data Analysis',
+              'Research',
+              'Technical Writing',
+              'Mentoring',
+              'Coaching',
+              'Delegation',
             ],
             isRequired: true,
             direction: Axis.vertical,
@@ -117,7 +185,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Selected Skills', _checkbox5),
 
           // Example 6: Custom Item Padding
-          _buildFieldTitle('Custom Item Padding'),
+          buildFieldTitle('Custom Item Padding', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Preferred Contact Methods',
             initialValue: _checkbox6,
@@ -132,10 +200,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           ),
           buildResultDisplay('Contact Methods', _checkbox6, isOptional: true),
 
-          _buildSectionTitle('CHECKBOX - Layout Variations'),
+          buildSectionTitle('CHECKBOX - Layout Variations',
+              Colors.pink.shade700, Colors.pink.shade400),
 
           // Example 7: Horizontal Layout
-          _buildFieldTitle('Horizontal Layout - Days of Week'),
+          buildFieldTitle(
+              'Horizontal Layout - Days of Week', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Days of the Week',
             initialValue: _checkbox7,
@@ -149,7 +219,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Selected Days', _checkbox7),
 
           // Example 8: Vertical Layout with Custom Colors
-          _buildFieldTitle('Vertical Layout - Features'),
+          buildFieldTitle('Vertical Layout - Features', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Features',
             initialValue: _checkbox8,
@@ -162,10 +232,12 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           ),
           buildResultDisplay('Selected Features', _checkbox8, isOptional: true),
 
-          _buildSectionTitle('CHECKBOX - Advanced Features'),
+          buildSectionTitle('CHECKBOX - Advanced Features',
+              Colors.pink.shade700, Colors.pink.shade400),
 
           // Example 9: Custom Validation
-          _buildFieldTitle('Custom Validation - Minimum Selections'),
+          buildFieldTitle(
+              'Custom Validation - Minimum Selections', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Select at least 2 preferences',
             initialValue: _checkbox3,
@@ -188,7 +260,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Custom Validation', _checkbox3),
 
           // Example 10: Custom Styling
-          _buildFieldTitle('Custom Item Padding'),
+          buildFieldTitle('Custom Item Padding', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Dietary Restrictions',
             initialValue: _checkbox4,
@@ -198,6 +270,26 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Gluten-Free',
               'Dairy-Free',
               'Nut Allergy',
+              'Shellfish Allergy',
+              'Egg Allergy',
+              'Soy Allergy',
+              'Lactose Intolerant',
+              'Kosher',
+              'Halal',
+              'Pescatarian',
+              'Raw Food',
+              'Keto',
+              'Paleo',
+              'Low Carb',
+              'Low Sodium',
+              'Low Sugar',
+              'Diabetic',
+              'Heart Healthy',
+              'No Preservatives',
+              'Organic Only',
+              'No Artificial Colors',
+              'No MSG',
+              'No GMO',
             ],
             isRequired: false,
             direction: Axis.vertical,
@@ -211,7 +303,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               isOptional: true),
 
           // Example 11: Horizontal Layout with Custom Border
-          _buildFieldTitle('Horizontal Layout - Notifications'),
+          buildFieldTitle(
+              'Horizontal Layout - Notifications', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Notifications',
             initialValue: _checkbox5,
@@ -225,7 +318,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
           buildResultDisplay('Notifications', _checkbox5, isOptional: true),
 
           // Example 12: Many Options
-          _buildFieldTitle('Many Options - Scrollable'),
+          buildFieldTitle('Many Options - Scrollable', Colors.pink.shade600),
           FormFieldsCheckbox<String>(
             label: 'Countries Visited',
             initialValue: _checkbox6,
@@ -242,6 +335,24 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               'Brazil',
               'Mexico',
               'Italy',
+              'Spain',
+              'Russia',
+              'South Korea',
+              'Argentina',
+              'Netherlands',
+              'Sweden',
+              'Switzerland',
+              'Belgium',
+              'Poland',
+              'Norway',
+              'Austria',
+              'Denmark',
+              'Finland',
+              'Ireland',
+              'Portugal',
+              'Greece',
+              'New Zealand',
+              'Singapore',
             ],
             isRequired: false,
             direction: Axis.vertical,
@@ -284,66 +395,6 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.pink.shade700, Colors.pink.shade400],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.pink.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.pink.shade600,
-              width: 4,
-            ),
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
       ),
     );
   }

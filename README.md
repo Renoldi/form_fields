@@ -30,11 +30,14 @@ A comprehensive and reusable Flutter form field widget package with support for 
 - Custom input decoration
 - Custom validators
 - Custom error messages and hint text
+- **🌍 Multi-language support (US English default, Indonesian included)**
 - Locale support for date/time pickers (string format: 'en_US', 'id_ID', etc.)
 - Custom date/time formatting
 - Date range customization (`firstDate`, `lastDate`) for date/datetime/daterange pickers
 - Automatic number formatting with thousands separators (numeric types only)
 - Numeric-only input validation for int/double fields
+- **Filter/search functionality for dropdowns**
+- **Custom filter hint text**
 
 ✨ **Developer Experience**
 - Generic type support for type safety (`FormFields<String>`, `FormFields<int>`, `FormFields<DateTime>`, `FormFields<TimeOfDay>`, etc.)
@@ -1337,6 +1340,94 @@ FormFields<String>(
 ```
 
 **Note:** Both `stripSeparators: true` and `stripSeparators: false` restrict input to numeric characters only for int/double types. The only difference is whether thousand separators (commas) are displayed.
+
+## 🌍 Localization & Multi-Language Support
+
+The FormFields package supports multi-language functionality with **US English as the default language**.
+
+### Supported Languages
+
+- 🇺🇸 **English (US)** - Default (no setup required)
+- 🇮🇩 **Indonesian (ID)** - Included
+- More languages coming soon!
+
+### Quick Setup
+
+**1. Basic Usage (Default English)**
+
+Works out of the box - no configuration needed:
+
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: countries,
+  enableFilter: true,  // Shows "Search..." in English
+  onChanged: (value) => setState(() => selectedCountry = value),
+)
+```
+
+**2. Enable Multi-Language Support**
+
+Add the localization delegate to your `MaterialApp`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_fields/form_fields.dart';
+
+MaterialApp(
+  localizationsDelegates: const [
+    FormFieldsLocalizationsDelegate(),  // Add this
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: FormFieldsLocalizations.supportedLocales,
+  locale: const Locale('id', 'ID'),  // Or any supported locale
+)
+```
+
+**3. Access Localized Strings**
+
+```dart
+final l10n = FormFieldsLocalizations.of(context);
+
+String cancelText = l10n.cancel;  // "CANCEL" or "BATAL"
+String selectCountry = l10n.select('Country');  // "Select Country" or "Pilih Country"
+String searchHint = l10n.searchHint;  // "Search..." or "Cari..."
+```
+
+### Automatically Localized Elements
+
+- Dialog buttons (Cancel, OK, Done)
+- Search/filter hints ("Search...", "Type to search...")
+- Validation messages ("Select {label}", "Enter {label}")
+- Error messages (email, phone, password validation)
+- All dropdown and multi-select UI text
+
+### Custom Filter Hints
+
+Override default hints with custom text:
+
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: countries,
+  enableFilter: true,
+  filterHintText: 'Type to search countries...',  // Custom hint
+  onChanged: (value) => setState(() => selectedCountry = value),
+)
+```
+
+### Adding New Languages
+
+Want to add your language? See [LOCALIZATION.md](LOCALIZATION.md) for detailed instructions on:
+- Creating new language files
+- Translation guidelines
+- Contributing translations
+- Available API methods
+
+**📖 Full Documentation:** [LOCALIZATION.md](LOCALIZATION.md)
 
 ## Contributing
 

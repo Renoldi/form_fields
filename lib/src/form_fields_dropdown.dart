@@ -1,135 +1,347 @@
 import 'package:flutter/material.dart';
 import 'enums.dart';
+import 'localization/form_fields_localizations.dart';
 
-class FormFieldsDropdown<T> extends FormField<T> {
-  FormFieldsDropdown({
+class FormFieldsDropdown<T> extends StatefulWidget {
+  final List<T> items;
+  final String label;
+  final ValueChanged<T?> onChanged;
+  final T? initialValue;
+  final String? Function(T?)? validator;
+  final bool isRequired;
+  final String Function(T item)? itemLabelBuilder;
+  final LabelPosition labelPosition;
+  final BorderType borderType;
+  final double radius;
+  final Color borderColor;
+  final Color focusedBorderColor;
+  final Color errorBorderColor;
+  final InputDecoration? decoration;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final String? hintText;
+  final bool enabled;
+  final bool enableFilter;
+  final String? filterHintText;
+
+  const FormFieldsDropdown({
     super.key,
-    required List<T> items,
-    required String label,
-    required ValueChanged<T?> onChanged,
-    T? initialValue,
-    String? Function(T?)? validator,
-    bool isRequired = false,
-    String Function(T item)? itemLabelBuilder,
-    LabelPosition labelPosition = LabelPosition.top,
-    BorderType borderType = BorderType.outlineInputBorder,
-    double radius = 10,
-    Color borderColor = const Color(0xFFC7C7C7),
-    Color focusedBorderColor = Colors.blue,
-    Color errorBorderColor = Colors.red,
-    InputDecoration? decoration,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-    String? hintText,
-    bool enabled = true,
-  }) : super(
-          // Only use initialValue if it exists in items and is not empty
-          // For String types, empty string is treated as null
-          initialValue: _sanitizeInitialValue(initialValue, items),
-          validator: (value) {
-            if (isRequired && value == null) {
-              return 'Select $label';
-            }
-            if (validator != null) {
-              return validator(value);
-            }
-            return null;
-          },
-          builder: (FormFieldState<T> state) {
-            final effectiveDecoration = (decoration ??
-                    InputDecoration(
-                      hintText: hintText ?? 'Select $label',
-                      prefixIcon: prefixIcon,
-                      suffixIcon: suffixIcon,
-                    ))
-                .copyWith(
-              errorText: state.errorText,
-              border: _buildBorder(borderType, borderColor, radius),
-              enabledBorder: _buildBorder(borderType, borderColor, radius),
-              focusedBorder:
-                  _buildBorder(borderType, focusedBorderColor, radius),
-              errorBorder: _buildBorder(borderType, errorBorderColor, radius),
-              focusedErrorBorder:
-                  _buildBorder(borderType, errorBorderColor, radius),
-            );
+    required this.items,
+    required this.label,
+    required this.onChanged,
+    this.initialValue,
+    this.validator,
+    this.isRequired = false,
+    this.itemLabelBuilder,
+    this.labelPosition = LabelPosition.top,
+    this.borderType = BorderType.outlineInputBorder,
+    this.radius = 10,
+    this.borderColor = const Color(0xFFC7C7C7),
+    this.focusedBorderColor = Colors.blue,
+    this.errorBorderColor = Colors.red,
+    this.decoration,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.hintText,
+    this.enabled = true,
+    this.enableFilter = false,
+    this.filterHintText,
+  });
 
-            final dropdown = DropdownButtonFormField<T>(
-              value: state.value,
-              items: items
-                  .map(
-                    (item) => DropdownMenuItem<T>(
-                      value: item,
-                      child: Text(
-                        itemLabelBuilder != null
-                            ? itemLabelBuilder(item)
-                            : item.toString(),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: enabled
-                  ? (value) {
-                      state.didChange(value);
-                      onChanged(value);
-                    }
-                  : null,
-              decoration: effectiveDecoration,
-            );
+  @override
+  State<FormFieldsDropdown<T>> createState() => _FormFieldsDropdownState<T>();
 
-            if (labelPosition == LabelPosition.none) {
-              return dropdown;
-            }
+  static T? _sanitizeInitialValue<T>(T? value, List<T> items) {
+    if (value == null) return null;
+    try {
+      if (items.contains(value)) {
+        return value;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+}
 
-            final labelText = label;
-            final requiredIndicator = isRequired ? ' *' : '';
+class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
+  late GlobalKey<FormFieldState<T>> _formKey;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
+  @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormFieldState<T>>();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Rebuild when locale changes to update localized strings
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FormField<T>(
+      key: _formKey,
+      initialValue: FormFieldsDropdown._sanitizeInitialValue(
+          widget.initialValue, widget.items),
+      validator: (value) {
+        if (widget.isRequired && value == null) {
+          return 'Select ${widget.label}';
+        }
+        if (widget.validator != null) {
+          return widget.validator!(value);
+        }
+        return null;
+      },
+      onSaved: (_) {},
+      builder: (FormFieldState<T> state) {
+        return _buildDropdownContent(context, state, widget);
+      },
+    );
+  }
+
+  Widget _buildDropdownContent(BuildContext context, FormFieldState<T> state,
+      FormFieldsDropdown<T> widget) {
+    void openFilterDialog(BuildContext context) {
+      final l10n = FormFieldsLocalizations.of(context);
+      final filterState = <String>[''];
+      T? tempSelected = state.value;
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final filteredItems = widget.items.where((item) {
+                final label = widget.itemLabelBuilder != null
+                    ? widget.itemLabelBuilder!(item)
+                    : item.toString();
+                return label
+                    .toLowerCase()
+                    .contains(filterState[0].toLowerCase());
+              }).toList();
+
+              return AlertDialog(
+                title: Text(l10n.select(widget.label)),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: Column(
                     children: [
-                      TextSpan(
-                        text: labelText,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      if (isRequired)
-                        TextSpan(
-                          text: requiredIndicator,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.red,
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: widget.filterHintText ?? l10n.searchHint,
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            filterState[0] = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: filteredItems.length,
+                          itemBuilder: (context, index) {
+                            final item = filteredItems[index];
+                            final isSelected = tempSelected == item;
+
+                            return ListTile(
+                              title: Text(
+                                widget.itemLabelBuilder != null
+                                    ? widget.itemLabelBuilder!(item)
+                                    : item.toString(),
+                              ),
+                              selected: isSelected,
+                              onTap: () {
+                                tempSelected = item;
+                                state.didChange(item);
+                                widget.onChanged(item);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                dropdown,
-              ],
-            );
-          },
-        );
-
-  static T? _sanitizeInitialValue<T>(T? initialValue, List<T> items) {
-    // Return null if initialValue is null
-    if (initialValue == null) return null;
-
-    // For String types, treat empty string as null
-    if (T == String) {
-      final strValue = initialValue as dynamic;
-      if (strValue is String && strValue.isEmpty) return null;
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.cancel),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
     }
 
-    // Only return initialValue if it exists in items
-    if (!items.contains(initialValue)) return null;
+    return StatefulBuilder(
+      builder: (context, setStateDropdown) {
+        final l10n = FormFieldsLocalizations.of(context);
+        final effectiveDecoration = (widget.decoration ??
+                InputDecoration(
+                  hintText: widget.hintText ?? l10n.select(widget.label),
+                  prefixIcon: widget.prefixIcon,
+                  suffixIcon: widget.suffixIcon,
+                ))
+            .copyWith(
+          errorText: state.errorText,
+          border: _buildBorder(
+              widget.borderType, widget.borderColor, widget.radius),
+          enabledBorder: _buildBorder(
+              widget.borderType, widget.borderColor, widget.radius),
+          focusedBorder: _buildBorder(
+              widget.borderType, widget.focusedBorderColor, widget.radius),
+          errorBorder: _buildBorder(
+              widget.borderType, widget.errorBorderColor, widget.radius),
+          focusedErrorBorder: _buildBorder(
+              widget.borderType, widget.errorBorderColor, widget.radius),
+        );
 
-    return initialValue;
+        // When filter is enabled, use dialog instead of dropdown
+        if (widget.enableFilter && widget.enabled) {
+          final currentValueText = state.value != null
+              ? (widget.itemLabelBuilder != null
+                  ? widget.itemLabelBuilder!(state.value as T)
+                  : state.value.toString())
+              : '';
+
+          final field = InkWell(
+            onTap: () => openFilterDialog(context),
+            child: InputDecorator(
+              decoration: effectiveDecoration,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      currentValueText.isEmpty
+                          ? (widget.hintText ?? l10n.select(widget.label))
+                          : currentValueText,
+                      style: TextStyle(
+                        color: currentValueText.isEmpty
+                            ? Colors.grey.shade600
+                            : Colors.black87,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_drop_down, color: Colors.grey.shade700),
+                ],
+              ),
+            ),
+          );
+
+          if (widget.labelPosition == LabelPosition.none) {
+            return field;
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: widget.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (widget.isRequired)
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              field,
+            ],
+          );
+        }
+
+        // Regular dropdown without filter
+        final filteredItems = widget.items;
+
+        final dropdown = DropdownButtonFormField<T>(
+          value: state.value,
+          items: filteredItems
+              .map(
+                (item) => DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(
+                    widget.itemLabelBuilder != null
+                        ? widget.itemLabelBuilder!(item)
+                        : item.toString(),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: widget.enabled
+              ? (value) {
+                  state.didChange(value);
+                  widget.onChanged(value);
+                }
+              : null,
+          decoration: effectiveDecoration,
+        );
+
+        if (widget.labelPosition == LabelPosition.none) {
+          return dropdown;
+        }
+
+        final labelText = widget.label;
+        final requiredIndicator = widget.isRequired ? ' *' : '';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: labelText,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (widget.isRequired)
+                    TextSpan(
+                      text: requiredIndicator,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            dropdown,
+          ],
+        );
+      },
+    );
   }
 
   static InputBorder _buildBorder(

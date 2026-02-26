@@ -30,10 +30,12 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildSectionTitle('RADIO BUTTON - Basic Examples'),
+          buildSectionTitle('RADIO BUTTON - Basic Examples',
+              Colors.orange.shade700, Colors.orange.shade400),
 
           // Example 1: Basic Vertical Radio Button
-          _buildFieldTitle('Basic Radio Button - Vertical Layout'),
+          buildFieldTitle(
+              'Basic Radio Button - Vertical Layout', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Gender',
             initialValue: _radio1,
@@ -45,7 +47,8 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           buildResultDisplay('Selected Gender', _radio1),
 
           // Example 2: Horizontal Radio Button
-          _buildFieldTitle('Radio Button - Horizontal Layout'),
+          buildFieldTitle(
+              'Radio Button - Horizontal Layout', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Marital Status',
             initialValue: _radio2,
@@ -56,10 +59,12 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           ),
           buildResultDisplay('Selected Marital Status', _radio2),
 
-          _buildSectionTitle('RADIO BUTTON - Custom Styling'),
+          buildSectionTitle('RADIO BUTTON - Custom Styling',
+              Colors.orange.shade700, Colors.orange.shade400),
 
           // Example 3: Custom Border & Colors
-          _buildFieldTitle('Custom Border & Active Color'),
+          buildFieldTitle(
+              'Custom Border & Active Color', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Subscription Plan',
             initialValue: _radio3,
@@ -75,7 +80,8 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           buildResultDisplay('Selected Plan', _radio3),
 
           // Example 4: Custom Item Spacing & Padding
-          _buildFieldTitle('Custom Item Spacing & Padding'),
+          buildFieldTitle(
+              'Custom Item Spacing & Padding', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Delivery Option',
             initialValue: _radio4,
@@ -90,10 +96,11 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           ),
           buildResultDisplay('Selected Delivery', _radio4),
 
-          _buildSectionTitle('RADIO BUTTON - Layout Variations'),
+          buildSectionTitle('RADIO BUTTON - Layout Variations',
+              Colors.orange.shade700, Colors.orange.shade400),
 
           // Example 5: Horizontal with Fill Items
-          _buildFieldTitle('Horizontal - Fill Items'),
+          buildFieldTitle('Horizontal - Fill Items', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Rating',
             initialValue: _radio5,
@@ -107,7 +114,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           buildResultDisplay('Selected Rating', _radio5),
 
           // Example 6: Different Label Positions
-          _buildFieldTitle('Label Position: Left'),
+          buildFieldTitle('Label Position: Left', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Priority',
             initialValue: _radio6,
@@ -120,10 +127,11 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           ),
           buildResultDisplay('Selected Priority', _radio6),
 
-          _buildSectionTitle('RADIO BUTTON - Advanced Features'),
+          buildSectionTitle('RADIO BUTTON - Advanced Features',
+              Colors.orange.shade700, Colors.orange.shade400),
 
           // Example 7: Custom Validation
-          _buildFieldTitle('Custom Validation'),
+          buildFieldTitle('Custom Validation', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Payment Method',
             initialValue: _radio7,
@@ -151,7 +159,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           buildResultDisplay('Selected Payment Method', _radio7),
 
           // Example 8: With Custom Icon Size
-          _buildFieldTitle('Custom Icon Size'),
+          buildFieldTitle('Custom Icon Size', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Newsletter Frequency',
             initialValue: _radio8,
@@ -166,10 +174,12 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           ),
           buildResultDisplay('Selected Frequency', _radio8, isOptional: true),
 
-          _buildSectionTitle('RADIO BUTTON - More Options'),
+          buildSectionTitle('RADIO BUTTON - More Options',
+              Colors.orange.shade700, Colors.orange.shade400),
 
           // Example 9: Many Options - Vertical
-          _buildFieldTitle('Many Options - Vertical Scrollable'),
+          buildFieldTitle(
+              'Many Options - Vertical Scrollable', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Country',
             initialValue: _radio1,
@@ -184,6 +194,26 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
               'China',
               'India',
               'Brazil',
+              'Mexico',
+              'Italy',
+              'Spain',
+              'Russia',
+              'South Korea',
+              'Argentina',
+              'Netherlands',
+              'Sweden',
+              'Switzerland',
+              'Belgium',
+              'Poland',
+              'Norway',
+              'Austria',
+              'Denmark',
+              'Finland',
+              'Ireland',
+              'Portugal',
+              'Greece',
+              'New Zealand',
+              'Singapore',
             ],
             isRequired: true,
             direction: Axis.vertical,
@@ -195,7 +225,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
           buildResultDisplay('Selected Country', _radio1),
 
           // Example 10: Underline Border Type
-          _buildFieldTitle('Underline Border Type'),
+          buildFieldTitle('Underline Border Type', Colors.orange.shade600),
           FormFieldsRadioButton<String>(
             label: 'Account Type',
             initialValue: _radio2,
@@ -240,66 +270,6 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
 
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange.shade700, Colors.orange.shade400],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.orange.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.orange.shade600,
-              width: 4,
-            ),
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
       ),
     );
   }

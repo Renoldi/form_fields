@@ -48,7 +48,7 @@ Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(8),
+            // padding: const EdgeInsets.all(0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(4),
@@ -67,6 +67,69 @@ Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+/// Reusable widget to display section titles with gradient background
+Widget buildSectionTitle(
+    String title, Color primaryColor, Color secondaryColor) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 32, bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primaryColor, secondaryColor],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Reusable widget to display field titles with left border
+Widget buildFieldTitle(String title, Color borderColor) {
+  return Padding(
+    padding: const EdgeInsets.only(top: 20, bottom: 8),
+    child: Container(
+      padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: borderColor,
+            width: 4,
+          ),
+        ),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey.shade800,
+        ),
       ),
     ),
   );

@@ -8,8 +8,9 @@ import 'package:provider/provider.dart';
 
 import 'controller.dart';
 import 'enums.dart';
+import 'localization/form_fields_localizations.dart';
 import 'validators.dart';
-import 'utilities/extensions.dart';
+import 'utilities/phone_country_codes.dart' as phone_codes;
 
 class FormFields<T> extends StatefulWidget {
   // ============================================================================
@@ -29,6 +30,9 @@ class FormFields<T> extends StatefulWidget {
 
   /// Whether field is required
   final bool isRequired;
+
+  /// When to show validation errors (default: onUserInteraction - validate after user interaction or form submission)
+  final AutovalidateMode autovalidateMode;
 
   /// Minimum length for password field (default: 6)
   final int minLengthPassword;
@@ -129,6 +133,19 @@ class FormFields<T> extends StatefulWidget {
   /// Last selectable date for date pickers (default: today)
   final DateTime? lastDate;
 
+  /// Use two date pickers for range selection instead of range picker
+  final bool useDatePickerForRange;
+
+  /// List of selectable country codes for phone input
+  final List<String> phoneCountryCodes;
+
+  /// Initial country code selection for phone input
+  final String? initialCountryCode;
+
+  /// Whether to display phone with dashes in input field (default: false)
+  /// Note: Result value is always returned without dashes (e.g., +628123456789)
+  final bool formatPhone;
+
   const FormFields({
     super.key,
     required this.onChanged,
@@ -137,6 +154,7 @@ class FormFields<T> extends StatefulWidget {
     // Validation
     this.validator,
     this.isRequired = false,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.minLengthPassword = 6,
     this.customPasswordValidator,
     this.minLengthPasswordErrorText,
@@ -169,6 +187,10 @@ class FormFields<T> extends StatefulWidget {
     this.pickerLocale = 'id_ID',
     this.firstDate,
     this.lastDate,
+    this.useDatePickerForRange = false,
+    this.phoneCountryCodes = phone_codes.phoneCountryCodes,
+    this.initialCountryCode,
+    this.formatPhone = false,
   });
 
   @override
@@ -179,6 +201,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   late FormFieldsController model;
   late Timer debounce;
   FocusNode? _internalFocusNode;
+  String _selectedCountryCode = '';
 
   FocusNode get _effectiveFocusNode {
     if (widget.focusNode != null) {
@@ -193,8 +216,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     super.initState();
     model = FormFieldsController();
     debounce = Timer(Duration.zero, () {});
+    if (_isPhoneType()) {
+      _initializePhoneCountryCode(
+        widget.currrentValue?.toString(),
+      );
+    }
     _initializeValue();
     _initializeModel();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Rebuild when locale changes to update localized strings
+    setState(() {});
   }
 
   @override
@@ -235,6 +270,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           newControllerText = _formatDateRange(
             widget.currrentValue as DateTimeRange,
           );
+        } else if (_isPhoneType()) {
+          _initializePhoneCountryCode(widget.currrentValue.toString());
+          final localFormatted = widget.formatPhone
+              ? _formatPhoneLocalOnly(widget.currrentValue.toString())
+              : _extractLocalPhoneDigits(widget.currrentValue.toString());
+          newControllerText = localFormatted;
         } else if ((_isIntType() || _isDoubleType()) &&
             widget.stripSeparators) {
           newControllerText = _formatNumber(widget.currrentValue as num);
@@ -274,6 +315,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       model.setControllerSilent(_formatDateRange(
         widget.currrentValue as DateTimeRange,
       ));
+    } else if (_isPhoneType()) {
+      _initializePhoneCountryCode(widget.currrentValue.toString());
+      final localFormatted = widget.formatPhone
+          ? _formatPhoneLocalOnly(widget.currrentValue.toString())
+          : _extractLocalPhoneDigits(widget.currrentValue.toString());
+      model.setControllerSilent(localFormatted);
     } else if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
       model.setControllerSilent(_formatNumber(widget.currrentValue as num));
     } else if (_isIntType() || _isDoubleType()) {
@@ -310,9 +357,160 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   bool _isDoubleType() => 0.0 is T;
   bool _isStringType() => '' is T;
   bool _isDateTimeType() => DateTime(0) is T;
+  bool _isPhoneType() => widget.formType == FormType.phone;
   bool _isTimeOfDayType() => const TimeOfDay(hour: 0, minute: 0) is T;
   bool _isDateTimeRangeType() =>
       DateTimeRange(start: DateTime(0), end: DateTime(0)) is T;
+
+  // ============================================================================
+  // PHONE INPUT HANDLING
+  // ============================================================================
+
+  List<String> _effectivePhoneCountryCodes() {
+    return widget.phoneCountryCodes.isNotEmpty
+        ? widget.phoneCountryCodes
+        : const ['+62'];
+  }
+
+  void _initializePhoneCountryCode(String? value) {
+    final candidates = _effectivePhoneCountryCodes();
+
+    if (widget.initialCountryCode != null &&
+        candidates.contains(widget.initialCountryCode)) {
+      _selectedCountryCode = widget.initialCountryCode!;
+      return;
+    }
+
+    if (value != null && value.startsWith('+')) {
+      final prefix = value.split('-').first;
+      if (candidates.contains(prefix)) {
+        _selectedCountryCode = prefix;
+        return;
+      }
+    }
+
+    // Default to Indonesia (+62) if available, otherwise use first code
+    _selectedCountryCode =
+        candidates.contains('+62') ? '+62' : candidates.first;
+  }
+
+  String _stripPhoneToDigits(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  String _extractLocalPhoneDigits(String value) {
+    final digits = _stripPhoneToDigits(value);
+    final codeDigits = _stripPhoneToDigits(_selectedCountryCode);
+
+    if (codeDigits.isNotEmpty && digits.startsWith(codeDigits)) {
+      return digits.substring(codeDigits.length);
+    }
+
+    return digits;
+  }
+
+  String _formatPhoneWithCode(String value) {
+    final localDigits = _extractLocalPhoneDigits(value);
+    final code = _selectedCountryCode.isNotEmpty ? _selectedCountryCode : '+62';
+
+    if (localDigits.isEmpty) {
+      return code;
+    }
+
+    final first = localDigits.substring(0, localDigits.length.clamp(0, 3));
+    final remaining = localDigits.length > 3 ? localDigits.substring(3) : '';
+    final second = remaining.substring(0, remaining.length.clamp(0, 4));
+    final tail = remaining.length > 4 ? remaining.substring(4) : '';
+    final third = tail.substring(0, tail.length.clamp(0, 4));
+
+    final parts = <String>[];
+    if (first.isNotEmpty) parts.add(first);
+    if (second.isNotEmpty) parts.add(second);
+    if (third.isNotEmpty) parts.add(third);
+
+    return parts.isEmpty ? code : '$code-${parts.join('-')}';
+  }
+
+  String _formatPhoneLocalOnly(String value) {
+    // Format only local digits without country code (for display in text field)
+    final localDigits = _extractLocalPhoneDigits(value);
+
+    if (localDigits.isEmpty) {
+      return '';
+    }
+
+    final first = localDigits.substring(0, localDigits.length.clamp(0, 3));
+    final remaining = localDigits.length > 3 ? localDigits.substring(3) : '';
+    final second = remaining.substring(0, remaining.length.clamp(0, 4));
+    final tail = remaining.length > 4 ? remaining.substring(4) : '';
+    final third = tail.substring(0, tail.length.clamp(0, 4));
+
+    final parts = <String>[];
+    if (first.isNotEmpty) parts.add(first);
+    if (second.isNotEmpty) parts.add(second);
+    if (third.isNotEmpty) parts.add(third);
+
+    return parts.join('-');
+  }
+
+  String _getPhoneWithoutFormatting(String value) {
+    // Remove all dashes and return only country code + digits
+    // Input: +62-812-3456-7890
+    // Output: +628123456789
+    return value.replaceAll('-', '');
+  }
+
+  Widget _buildPhoneCountryCodeDropdown() {
+    final codes = _effectivePhoneCountryCodes();
+    final selected = codes.contains(_selectedCountryCode)
+        ? _selectedCountryCode
+        : codes.first;
+
+    if (_selectedCountryCode != selected) {
+      _selectedCountryCode = selected;
+    }
+
+    return Container(
+      padding: const EdgeInsets.only(left: 4, right: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selected,
+          isDense: true,
+          icon: const Icon(Icons.arrow_drop_down, size: 18),
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              _selectedCountryCode = value;
+              // Update text field to show only local digits
+              final localFormatted = widget.formatPhone
+                  ? _formatPhoneLocalOnly(model.controller.text)
+                  : _extractLocalPhoneDigits(model.controller.text);
+              if (model.controller.text != localFormatted) {
+                model.setController = localFormatted;
+              }
+            });
+          },
+          items: codes
+              .map(
+                (code) => DropdownMenuItem<String>(
+                  value: code,
+                  child: Text(
+                    code,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
 
   // ============================================================================
   // NUMBER FORMATTING & INPUT HANDLING
@@ -352,6 +550,27 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   List<TextInputFormatter> _getInputFormatters() {
+    if (_isPhoneType()) {
+      return [
+        TextInputFormatter.withFunction((oldValue, newValue) {
+          final localDigits = _extractLocalPhoneDigits(newValue.text);
+          if (!widget.formatPhone) {
+            // Return unformatted local digits only (no dashes, no country code)
+            return TextEditingValue(
+              text: localDigits,
+              selection: TextSelection.collapsed(offset: localDigits.length),
+            );
+          }
+          // Return formatted local digits only (with dashes, no country code)
+          final formatted = _formatPhoneLocalOnly(newValue.text);
+          return TextEditingValue(
+            text: formatted,
+            selection: TextSelection.collapsed(offset: formatted.length),
+          );
+        }),
+      ];
+    }
+
     // For numeric types, always restrict to numeric input
     if (!_isIntType() && !_isDoubleType()) {
       return [];
@@ -635,6 +854,39 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       }
     }
 
+    if (widget.useDatePickerForRange) {
+      final startDate = await showDatePicker(
+        context: ctx,
+        initialDate: initialStart,
+        firstDate: first,
+        lastDate: last,
+        locale: _parseLocale(),
+      );
+
+      if (startDate == null || !mounted) {
+        return;
+      }
+
+      final normalizedInitialEnd = initialEnd.isBefore(startDate)
+          ? startDate
+          : (initialEnd.isAfter(last) ? last : initialEnd);
+
+      final endDate = await showDatePicker(
+        context: ctx,
+        initialDate: normalizedInitialEnd,
+        firstDate: startDate,
+        lastDate: last,
+        locale: _parseLocale(),
+      );
+
+      if (endDate != null && mounted) {
+        final dateRange = DateTimeRange(start: startDate, end: endDate);
+        vm.setController = _formatDateRange(dateRange);
+        widget.onChanged(dateRange as T);
+      }
+      return;
+    }
+
     final dateRange = await showDateRangePicker(
       context: ctx,
       firstDate: first,
@@ -733,10 +985,25 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // VALIDATION & UI BUILDING
   // ============================================================================
 
+  String? _validateRequired(String? value, String label, bool isRequired) {
+    print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
+
+    if (isRequired) {
+      if (value == null || value.isEmpty) {
+        print('  → RETURNING ERROR!');
+        return 'Enter $label';
+      }
+    }
+    return null;
+  }
+
   String? _validateField(String? value, FormFieldsController vm) {
     switch (vm.formType) {
       case FormType.phone:
-        return FormFieldValidators.phone(vm.label)(value);
+        // For phone validation, validate the full number with country code
+        final localDigits = _extractLocalPhoneDigits(value ?? '');
+        final fullPhone = '$_selectedCountryCode$localDigits';
+        return FormFieldValidators.phone(vm.label)(fullPhone);
       case FormType.email:
         return FormFieldValidators.email(vm.label)(value);
       case FormType.password:
@@ -744,15 +1011,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         if (widget.customPasswordValidator != null) {
           return widget.customPasswordValidator!(value);
         }
-        // Default validation: check minimum length
-        if (value != null && value.isNotEmpty) {
-          if (value.length < widget.minLengthPassword) {
-            final errorText = widget.minLengthPasswordErrorText ??
-                'Password must be at least ${widget.minLengthPassword} characters';
-            return errorText;
-          }
-        } else {
-          return FormFieldValidators.password(vm.label)(value);
+        // Check minimum length
+        if (value!.length < widget.minLengthPassword) {
+          final errorText = widget.minLengthPasswordErrorText ??
+              'Password must be at least ${widget.minLengthPassword} characters';
+          return errorText;
         }
         break;
       default:
@@ -760,31 +1023,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     if (_isIntType()) {
-      if (value != null && !value.isWhiteSpace) {
-        final cleaned =
-            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
-        final parsed = int.tryParse(cleaned);
-        if (parsed == null) {
-          return '${widget.invalidIntegerText} ${vm.label}';
-        }
-      } else {
-        return FormFieldValidators.required(vm.label)(value);
+      final cleaned =
+          widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
+      final parsed = int.tryParse(cleaned);
+      if (parsed == null) {
+        return '${widget.invalidIntegerText} ${vm.label}';
       }
     } else if (_isDoubleType()) {
-      if (value != null && !value.isWhiteSpace) {
-        final cleaned =
-            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
-        final parsed = double.tryParse(cleaned);
-        if (parsed == null) {
-          return '${widget.invalidNumberText} ${vm.label}';
-        }
-      } else {
-        return FormFieldValidators.required(vm.label)(value);
+      final cleaned =
+          widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
+      final parsed = double.tryParse(cleaned);
+      if (parsed == null) {
+        return '${widget.invalidNumberText} ${vm.label}';
       }
-    } else if (_isStringType()) {
-      return FormFieldValidators.required(vm.label)(value);
-    } else if (_isDateTimeType() || _isDateTimeRangeType()) {
-      return FormFieldValidators.required(vm.label)(value);
     }
 
     return null;
@@ -807,8 +1058,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             TextSpan(
               text: labelText,
               style: (widget.labelTextStyle ??
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))
-                .copyWith(color: Colors.black87),
+                      const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w500))
+                  .copyWith(color: Colors.black87),
             ),
             if (widget.isRequired)
               TextSpan(
@@ -871,16 +1123,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: model,
       child: Consumer<FormFieldsController>(
         builder: (ctx, vm, child) {
+          final phonePrefixIcon = _isPhoneType() && widget.prefixIcon == null
+              ? _buildPhoneCountryCodeDropdown()
+              : null;
+
           final textField = TextFormField(
             maxLines: vm.formType == FormType.password || widget.multiLine <= 1
                 ? 1
                 : widget.multiLine,
             obscureText: vm.formType == FormType.password ? vm.obscure : false,
-            autovalidateMode: AutovalidateMode.always,
+            autovalidateMode: widget.autovalidateMode,
             focusNode: _effectiveFocusNode,
             onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
             keyboardType: _isDateTimeType() ||
@@ -944,6 +1201,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   if (parsed != null) {
                     widget.onChanged(parsed as T);
                   }
+                } else if (_isPhoneType()) {
+                  final formatted = _formatPhoneWithCode(trimmed);
+                  final unformatted = _getPhoneWithoutFormatting(formatted);
+                  widget.onChanged(unformatted as T);
                 } else {
                   // Non-numeric types
                   widget.onChanged(trimmed as T);
@@ -978,9 +1239,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 }
               }
             },
-            validator: widget.isRequired
-                ? widget.validator ?? (value) => _validateField(value, vm)
-                : null,
+            validator: (value) =>
+                _validateRequired(value, widget.label, widget.isRequired),
             controller: vm.controller,
             onTap: () async {
               if (!mounted) return;
@@ -1020,10 +1280,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                 onPressed: () => _handleClearIconTap(vm),
                               ),
                   prefix: widget.prefix,
-                  prefixIcon: widget.prefixIcon,
-                  hintText: '${widget.enterText}${vm.label}',
+                  prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
+                  hintText:
+                      '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}',
                   labelText: widget.labelPosition == LabelPosition.inBorder
-                      ? '${widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
+                      ? '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
                       : null,
                   focusedErrorBorder: widget.borderType == BorderType.none
                       ? InputBorder.none

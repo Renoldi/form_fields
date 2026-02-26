@@ -42,6 +42,12 @@ class FormFieldsSelect<T> extends StatelessWidget {
   final Color focusedBorderColor;
   final Color errorBorderColor;
 
+  // ============================================================================
+  // FILTER
+  // ============================================================================
+  final bool enableFilter;
+  final String filterHintText;
+
   const FormFieldsSelect({
     super.key,
     required this.formType,
@@ -69,6 +75,8 @@ class FormFieldsSelect<T> extends StatelessWidget {
     this.borderColor = const Color(0xFFC7C7C7),
     this.focusedBorderColor = Colors.blue,
     this.errorBorderColor = Colors.red,
+    this.enableFilter = false,
+    this.filterHintText = 'Search...',
   });
 
   @override
@@ -89,6 +97,8 @@ class FormFieldsSelect<T> extends StatelessWidget {
           borderColor: borderColor,
           focusedBorderColor: focusedBorderColor,
           errorBorderColor: errorBorderColor,
+          enableFilter: enableFilter,
+          filterHintText: filterHintText,
         );
 
       case FormType.dropdownMulti:
@@ -106,6 +116,8 @@ class FormFieldsSelect<T> extends StatelessWidget {
           borderColor: borderColor,
           focusedBorderColor: focusedBorderColor,
           errorBorderColor: errorBorderColor,
+          enableFilter: enableFilter,
+          filterHintText: filterHintText,
         );
 
       case FormType.radioButton:

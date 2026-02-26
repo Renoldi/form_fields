@@ -2,11 +2,12 @@ phone
     contri code localize
     masking
 
-date range picker popup
+date range picker popup done
 
-dropdwon searce
+dropdwon searce ✓
 
-radio button ke samping
-check box ke samping
+radio button ke samping ✓
+check box ke samping ✓
 
-example tanpa tampilan hasil lansung dibawah
+example tanpa tampilan hasil lansung dibawah ✓
+label tanda bintang required ✓

@@ -105,6 +105,29 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
     Country('FR', 'France', '🇫🇷'),
     Country('JP', 'Japan', '🇯🇵'),
     Country('AU', 'Australia', '🇦🇺'),
+    Country('BR', 'Brazil', '🇧🇷'),
+    Country('IN', 'India', '🇮🇳'),
+    Country('CN', 'China', '🇨🇳'),
+    Country('IT', 'Italy', '🇮🇹'),
+    Country('ES', 'Spain', '🇪🇸'),
+    Country('MX', 'Mexico', '🇲🇽'),
+    Country('RU', 'Russia', '🇷🇺'),
+    Country('KR', 'South Korea', '🇰🇷'),
+    Country('AR', 'Argentina', '🇦🇷'),
+    Country('NL', 'Netherlands', '🇳🇱'),
+    Country('SE', 'Sweden', '🇸🇪'),
+    Country('CH', 'Switzerland', '🇨🇭'),
+    Country('BE', 'Belgium', '🇧🇪'),
+    Country('PL', 'Poland', '🇵🇱'),
+    Country('NO', 'Norway', '🇳🇴'),
+    Country('AT', 'Austria', '🇦🇹'),
+    Country('DK', 'Denmark', '🇩🇰'),
+    Country('FI', 'Finland', '🇫🇮'),
+    Country('IE', 'Ireland', '🇮🇪'),
+    Country('PT', 'Portugal', '🇵🇹'),
+    Country('GR', 'Greece', '🇬🇷'),
+    Country('NZ', 'New Zealand', '🇳🇿'),
+    Country('SG', 'Singapore', '🇸🇬'),
   ];
 
   final List<Skill> skills = [
@@ -115,6 +138,29 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
     Skill('graphql', 'GraphQL', 'Backend', Icons.graphic_eq),
     Skill('ui', 'UI/UX Design', 'Design', Icons.design_services),
     Skill('testing', 'Testing', 'Quality', Icons.bug_report),
+    Skill('react', 'React', 'Frontend', Icons.web),
+    Skill('vue', 'Vue.js', 'Frontend', Icons.web),
+    Skill('angular', 'Angular', 'Frontend', Icons.web),
+    Skill('node', 'Node.js', 'Backend', Icons.dns),
+    Skill('python', 'Python', 'Language', Icons.code),
+    Skill('java', 'Java', 'Language', Icons.code),
+    Skill('kotlin', 'Kotlin', 'Language', Icons.code),
+    Skill('swift', 'Swift', 'Language', Icons.code),
+    Skill('typescript', 'TypeScript', 'Language', Icons.code),
+    Skill('javascript', 'JavaScript', 'Language', Icons.code),
+    Skill('docker', 'Docker', 'DevOps', Icons.storage),
+    Skill('kubernetes', 'Kubernetes', 'DevOps', Icons.cloud_circle),
+    Skill('aws', 'AWS', 'Cloud', Icons.cloud_queue),
+    Skill('azure', 'Azure', 'Cloud', Icons.cloud_queue),
+    Skill('gcp', 'Google Cloud', 'Cloud', Icons.cloud_queue),
+    Skill('mongodb', 'MongoDB', 'Database', Icons.storage),
+    Skill('postgresql', 'PostgreSQL', 'Database', Icons.storage),
+    Skill('mysql', 'MySQL', 'Database', Icons.storage),
+    Skill('redis', 'Redis', 'Database', Icons.storage_rounded),
+    Skill('git', 'Git', 'Version Control', Icons.source),
+    Skill('agile', 'Agile', 'Methodology', Icons.groups),
+    Skill('scrum', 'Scrum', 'Methodology', Icons.people),
+    Skill('cicd', 'CI/CD', 'DevOps', Icons.sync),
   ];
 
   final List<SubscriptionPlan> plans = [
@@ -137,6 +183,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
   List<Skill> _selectedSkills = [];
   SubscriptionPlan? _selectedPlan;
   List<Interest> _selectedInterests = [];
+  Country? _selectedCountryWithFilter;
+  List<Skill> _selectedSkillsWithFilter = [];
 
   @override
   Widget build(BuildContext context) {
@@ -197,8 +245,10 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 1: Dropdown with Custom Class
-            _buildSectionTitle('Dropdown with Custom Class'),
-            _buildFieldTitle('Country Selection with Flag Icon'),
+            buildSectionTitle('Dropdown with Custom Class',
+                Colors.teal.shade700, Colors.teal.shade400),
+            buildFieldTitle(
+                'Country Selection with Flag Icon', Colors.teal.shade600),
             FormFieldsDropdown<Country>(
               label: 'Select Country',
               items: countries,
@@ -225,8 +275,10 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 2: Multi-Select Dropdown with Custom Class
-            _buildSectionTitle('Multi-Select Dropdown with Custom Class'),
-            _buildFieldTitle('Skills Selection with Categories'),
+            buildSectionTitle('Multi-Select Dropdown with Custom Class',
+                Colors.teal.shade700, Colors.teal.shade400),
+            buildFieldTitle(
+                'Skills Selection with Categories', Colors.teal.shade600),
             FormFieldsDropdownMulti<Skill>(
               label: 'Select Your Skills',
               items: skills,
@@ -259,8 +311,10 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 3: Radio Button with Custom Class
-            _buildSectionTitle('Radio Button with Custom Class'),
-            _buildFieldTitle('Subscription Plan Selection'),
+            buildSectionTitle('Radio Button with Custom Class',
+                Colors.teal.shade700, Colors.teal.shade400),
+            buildFieldTitle(
+                'Subscription Plan Selection', Colors.teal.shade600),
             FormFieldsRadioButton<SubscriptionPlan>(
               label: 'Choose Your Plan',
               items: plans,
@@ -352,8 +406,10 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 4: Checkbox with Custom Class
-            _buildSectionTitle('Checkbox with Custom Class'),
-            _buildFieldTitle('Interests Selection with Colors'),
+            buildSectionTitle('Checkbox with Custom Class',
+                Colors.teal.shade700, Colors.teal.shade400),
+            buildFieldTitle(
+                'Interests Selection with Colors', Colors.teal.shade600),
             FormFieldsCheckbox<Interest>(
               label: 'Select Your Interests',
               items: interests,
@@ -431,6 +487,81 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
 
             const SizedBox(height: 32),
 
+            // Example 5: Dropdown with Filter and Custom Class
+            buildSectionTitle('Dropdown with Filter and Custom Class',
+                Colors.teal.shade700, Colors.teal.shade400),
+            buildFieldTitle(
+                'Country Selection with Search Filter', Colors.teal.shade600),
+            FormFieldsDropdown<Country>(
+              label: 'Select Country with Filter',
+              items: countries,
+              initialValue: _selectedCountryWithFilter,
+              isRequired: true,
+              enableFilter: true,
+              filterHintText: 'Search countries...',
+              itemLabelBuilder: (country) => '${country.flag} ${country.name}',
+              borderColor: Colors.orange,
+              focusedBorderColor: Colors.orange.shade700,
+              onChanged: (value) {
+                setState(() => _selectedCountryWithFilter = value);
+              },
+            ),
+            buildResultDisplay(
+                'Selected Country (Filtered)', _selectedCountryWithFilter),
+
+            const SizedBox(height: 16),
+
+            if (_selectedCountryWithFilter != null)
+              _buildInfoCard(
+                'Selected Country Details',
+                'Code: ${_selectedCountryWithFilter!.code}\n'
+                    'Name: ${_selectedCountryWithFilter!.name}\n'
+                    'Flag: ${_selectedCountryWithFilter!.flag}',
+                Colors.orange.shade50,
+              ),
+
+            const SizedBox(height: 32),
+
+            // Example 6: Multi-Select Dropdown with Filter and Custom Class
+            buildSectionTitle(
+                'Multi-Select Dropdown with Filter and Custom Class',
+                Colors.teal.shade700,
+                Colors.teal.shade400),
+            buildFieldTitle(
+                'Skills Selection with Search Filter', Colors.teal.shade600),
+            FormFieldsDropdownMulti<Skill>(
+              label: 'Select Your Skills with Filter',
+              items: skills,
+              initialValues: _selectedSkillsWithFilter,
+              isRequired: false,
+              enableFilter: true,
+              filterHintText: 'Search skills by name...',
+              itemLabelBuilder: (skill) => '${skill.name} (${skill.category})',
+              chipBackgroundColor: Colors.indigo.shade100,
+              chipTextColor: Colors.indigo.shade900,
+              chipDeleteIconColor: Colors.indigo.shade700,
+              showItemCount: true,
+              onChanged: (values) {
+                setState(() => _selectedSkillsWithFilter = values);
+              },
+            ),
+            buildResultDisplay(
+                'Selected Skills (Filtered)', _selectedSkillsWithFilter,
+                isOptional: true),
+
+            const SizedBox(height: 16),
+
+            if (_selectedSkillsWithFilter.isNotEmpty)
+              _buildInfoCard(
+                'Selected Skills Details (${_selectedSkillsWithFilter.length})',
+                _selectedSkillsWithFilter
+                    .map((s) => '• ${s.name} - ${s.category}')
+                    .join('\n'),
+                Colors.indigo.shade50,
+              ),
+
+            const SizedBox(height: 32),
+
             // Submit Button
             SizedBox(
               width: double.infinity,
@@ -461,66 +592,6 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
 
             const SizedBox(height: 24),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.teal.shade700, Colors.teal.shade400],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.teal.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.teal.shade600,
-              width: 4,
-            ),
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
         ),
       ),
     );

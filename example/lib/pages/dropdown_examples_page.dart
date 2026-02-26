@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import '../widgets/result_display_widget.dart';
+import '../widgets/language_indicator.dart';
 
 class DropdownExamplesPage extends StatefulWidget {
   const DropdownExamplesPage({Key? key}) : super(key: key);
@@ -22,6 +23,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
   String _dropdown7 = '';
   String _dropdown8 = '';
   String _dropdown9 = '';
+  String _dropdown10 = '';
 
   final List<String> _countries = [
     'United States',
@@ -32,6 +34,28 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
     'France',
     'Japan',
     'China',
+    'Brazil',
+    'India',
+    'Italy',
+    'Spain',
+    'Mexico',
+    'Russia',
+    'South Korea',
+    'Argentina',
+    'Netherlands',
+    'Sweden',
+    'Switzerland',
+    'Belgium',
+    'Poland',
+    'Norway',
+    'Austria',
+    'Denmark',
+    'Finland',
+    'Ireland',
+    'Portugal',
+    'Greece',
+    'New Zealand',
+    'Singapore',
   ];
 
   final List<String> _colors = [
@@ -47,15 +71,20 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = FormFieldsLocalizations.of(context);
     return Form(
       key: _formKey,
       child: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildSectionTitle('DROPDOWN - Basic Examples'),
+          // Language indicator showing current locale
+          const LanguageIndicator(),
+
+          buildSectionTitle('DROPDOWN - Basic Examples', Colors.green.shade700,
+              Colors.green.shade400),
 
           // Example 1: Basic Dropdown
-          _buildFieldTitle('Basic Dropdown - Required'),
+          buildFieldTitle('Basic Dropdown - Required', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Country',
             initialValue: _dropdown1,
@@ -66,21 +95,23 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           buildResultDisplay('Selected Country', _dropdown1),
 
           // Example 2: Optional Dropdown
-          _buildFieldTitle('Optional Dropdown - Not Required'),
+          buildFieldTitle(
+              'Optional Dropdown - Not Required', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Preferred Language',
             initialValue: _dropdown2,
             items: const ['English', 'Spanish', 'French', 'German', 'Chinese'],
             isRequired: false,
-            hintText: 'Select your preferred language',
+            hintText: l10n.select('Preferred Language'),
             onChanged: (value) => setState(() => _dropdown2 = value ?? ''),
           ),
           buildResultDisplay('Selected Language', _dropdown2, isOptional: true),
 
-          _buildSectionTitle('DROPDOWN - Custom Styling'),
+          buildSectionTitle('DROPDOWN - Custom Styling', Colors.green.shade700,
+              Colors.green.shade400),
 
           // Example 3: Custom Border & Colors
-          _buildFieldTitle('Custom Border & Colors'),
+          buildFieldTitle('Custom Border & Colors', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Favorite Color',
             initialValue: _dropdown3,
@@ -95,7 +126,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           buildResultDisplay('Selected Color', _dropdown3),
 
           // Example 4: With Icons
-          _buildFieldTitle('With Prefix & Suffix Icons'),
+          buildFieldTitle('With Prefix & Suffix Icons', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'T-Shirt Size',
             initialValue: _dropdown4,
@@ -104,15 +135,16 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             borderColor: Colors.teal,
             prefixIcon: const Icon(Icons.shopping_bag, color: Colors.teal),
             suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.teal),
-            hintText: 'Choose your size',
+            hintText: l10n.select('T-Shirt Size'),
             onChanged: (value) => setState(() => _dropdown4 = value ?? ''),
           ),
           buildResultDisplay('Selected Size', _dropdown4),
 
-          _buildSectionTitle('DROPDOWN - Different Label Positions'),
+          buildSectionTitle('DROPDOWN - Different Label Positions',
+              Colors.green.shade700, Colors.green.shade400),
 
           // Example 5: Label at Top (default)
-          _buildFieldTitle('Label Position: Top'),
+          buildFieldTitle('Label Position: Top', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Shipping Method',
             labelPosition: LabelPosition.top,
@@ -125,7 +157,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           buildResultDisplay('Selected Shipping', _dropdown5),
 
           // Example 6: Label at Left
-          _buildFieldTitle('Label Position: Left'),
+          buildFieldTitle('Label Position: Left', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Payment',
             labelPosition: LabelPosition.left,
@@ -137,10 +169,11 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           ),
           buildResultDisplay('Selected Payment', _dropdown6),
 
-          _buildSectionTitle('DROPDOWN - Advanced Features'),
+          buildSectionTitle('DROPDOWN - Advanced Features',
+              Colors.green.shade700, Colors.green.shade400),
 
           // Example 7: Custom Validation
-          _buildFieldTitle('Custom Validation'),
+          buildFieldTitle('Custom Validation', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Priority Level',
             initialValue: _dropdown7,
@@ -161,7 +194,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           buildResultDisplay('Selected Priority', _dropdown7),
 
           // Example 8: Underline Border Type
-          _buildFieldTitle('Underline Border Type'),
+          buildFieldTitle('Underline Border Type', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Department',
             initialValue: _dropdown8,
@@ -174,17 +207,18 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
           ),
           buildResultDisplay('Selected Department', _dropdown8),
 
-          _buildSectionTitle('DROPDOWN - Custom Input Decoration'),
+          buildSectionTitle('DROPDOWN - Custom Input Decoration',
+              Colors.green.shade700, Colors.green.shade400),
 
           // Example 9: Full Custom InputDecoration
-          _buildFieldTitle('Custom Input Decoration'),
+          buildFieldTitle('Custom Input Decoration', Colors.green.shade600),
           FormFieldsDropdown<String>(
             label: 'Theme',
             initialValue: _dropdown9,
             items: const ['Light', 'Dark', 'Auto', 'System'],
             isRequired: false,
             decoration: InputDecoration(
-              hintText: 'Select app theme',
+              hintText: l10n.select('Theme'),
               filled: true,
               fillColor: Colors.grey.shade100,
               border: OutlineInputBorder(
@@ -208,6 +242,25 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             onChanged: (value) => setState(() => _dropdown9 = value ?? ''),
           ),
           buildResultDisplay('Selected Theme', _dropdown9, isOptional: true),
+
+          buildSectionTitle('DROPDOWN - With Search Filter',
+              Colors.green.shade700, Colors.green.shade400),
+
+          // Example 10: With Search Filter
+          buildFieldTitle('Dropdown with Filter/Search', Colors.green.shade600),
+          FormFieldsDropdown<String>(
+            label: 'Select Country with Filter',
+            initialValue: _dropdown10,
+            items: _countries,
+            isRequired: true,
+            enableFilter: true,
+            filterHintText: l10n.searchHint,
+            borderColor: Colors.teal,
+            focusedBorderColor: Colors.teal.shade700,
+            radius: 12,
+            onChanged: (value) => setState(() => _dropdown10 = value ?? ''),
+          ),
+          buildResultDisplay('Selected Country (Filtered)', _dropdown10),
 
           const SizedBox(height: 32),
 
@@ -241,66 +294,6 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
 
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green.shade700, Colors.green.shade400],
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: Colors.green.shade600,
-              width: 4,
-            ),
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
       ),
     );
   }
