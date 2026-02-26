@@ -24,6 +24,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -47,25 +48,26 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.library_add_check, size: 48, color: Colors.white),
-                  SizedBox(width: 16),
+                  const Icon(Icons.library_add_check,
+                      size: 48, color: Colors.white),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Multi-Select Dropdown Examples',
+                          l.get('dmHeaderTitle'),
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Comprehensive examples of multi-select dropdown form fields',
+                          l.get('dmHeaderSubtitle'),
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.white70,
@@ -86,9 +88,9 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
             const SizedBox(height: 24),
 
             // Example 1: Basic Multi-Select
-            buildFieldTitle('1. Basic Multi-Select', Colors.purple.shade600),
+            buildFieldTitle(l.get('dmBasicTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Programming Languages',
+              label: l.get('dmSelectProgramming'),
               initialValues: _multiDropdown1,
               items: const [
                 'Dart',
@@ -125,13 +127,13 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               isRequired: true,
               onChanged: (values) => setState(() => _multiDropdown1 = values),
             ),
-            buildResultDisplay('Programming Languages', _multiDropdown1),
+            buildResultDisplay(
+                context, l.get('dmProgramming'), _multiDropdown1),
 
             // Example 2: With Min/Max Constraints
-            buildFieldTitle('2. Min/Max Selections (Min: 2, Max: 4)',
-                Colors.purple.shade600),
+            buildFieldTitle(l.get('dmMinMaxTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Skills',
+              label: l.get('dmSkills'),
               initialValues: _multiDropdown2,
               items: const [
                 'Flutter',
@@ -152,12 +154,13 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.blue.shade700,
               onChanged: (values) => setState(() => _multiDropdown2 = values),
             ),
-            buildResultDisplay('Selected Skills', _multiDropdown2),
+            buildResultDisplay(
+                context, l.get('dmSelectedSkills'), _multiDropdown2),
 
             // Example 3: Custom Styled
-            buildFieldTitle('3. Custom Chip Styling', Colors.purple.shade600),
+            buildFieldTitle(l.get('dmCustomChipTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Interests',
+              label: l.get('dmInterests'),
               initialValues: _multiDropdown3,
               items: const [
                 'Gaming',
@@ -175,14 +178,13 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.white,
               onChanged: (values) => setState(() => _multiDropdown3 = values),
             ),
-            buildResultDisplay('Selected Interests', _multiDropdown3,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('dmSelectedInterests'), _multiDropdown3),
 
             // Example 4: With Item Count Display
-            buildFieldTitle(
-                '4. With Item Count Display', Colors.purple.shade600),
+            buildFieldTitle(l.get('dmItemCountTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Frameworks',
+              label: l.get('dmFrameworks'),
               initialValues: _multiDropdown4,
               items: const [
                 'React',
@@ -201,14 +203,14 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.orange.shade700,
               onChanged: (values) => setState(() => _multiDropdown4 = values),
             ),
-            buildResultDisplay('Selected Frameworks', _multiDropdown4,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('dmSelectedFrameworks'), _multiDropdown4),
 
             // Example 5: Custom Borders and Hint
             buildFieldTitle(
-                '5. Custom Border & Hint Text', Colors.purple.shade600),
+                l.get('dmCustomBorderTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Countries Visited',
+              label: l.get('dmCountriesVisited'),
               initialValues: _multiDropdown5,
               items: const [
                 'USA',
@@ -243,7 +245,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 'Singapore',
               ],
               isRequired: false,
-              hintText: 'Choose countries from the list',
+              hintText: l.get('dmHintCountries'),
               borderColor: Colors.grey.shade400,
               focusedBorderColor: Colors.purple,
               errorBorderColor: Colors.red.shade700,
@@ -253,14 +255,13 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               labelPosition: LabelPosition.top,
               onChanged: (values) => setState(() => _multiDropdown5 = values),
             ),
-            buildResultDisplay('Countries Visited', _multiDropdown5,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('dmSelectedCountriesVisited'), _multiDropdown5),
 
             // Example 6: With Filter/Search
-            buildFieldTitle(
-                '6. Multi-Select with Filter/Search', Colors.purple.shade600),
+            buildFieldTitle(l.get('dmWithFilterTitle'), Colors.purple.shade600),
             FormFieldsDropdownMulti<String>(
-              label: 'Select Programming Languages with Filter',
+              label: l.get('dmSelectProgrammingFilter'),
               initialValues: _multiDropdown6,
               items: const [
                 'Dart',
@@ -296,14 +297,14 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               ],
               isRequired: false,
               enableFilter: true,
-              filterHintText: 'Search languages...',
+              filterHintText: l.get('dmFilterLanguages'),
               chipBackgroundColor: Colors.indigo.shade100,
               chipTextColor: Colors.indigo.shade900,
               chipDeleteIconColor: Colors.indigo.shade700,
               onChanged: (values) => setState(() => _multiDropdown6 = values),
             ),
-            buildResultDisplay('Selected Languages (Filtered)', _multiDropdown6,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('dmSelectedLanguagesFiltered'), _multiDropdown6),
 
             const SizedBox(height: 32),
 
@@ -324,8 +325,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'VALIDATE FORM',
+                child: Text(
+                  l.get('validateFormButton'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -343,13 +344,14 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Multi-select dropdown form validated successfully!'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(l.get('dmFormValidated')),
           ],
         ),
         backgroundColor: Colors.purple,

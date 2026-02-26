@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'enums.dart';
 import 'localization/form_fields_localizations.dart';
+import 'enums.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
@@ -82,13 +82,14 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return FormField<T>(
       key: _formKey,
       initialValue: FormFieldsDropdown._sanitizeInitialValue(
           widget.initialValue, widget.items),
       validator: (value) {
         if (widget.isRequired && value == null) {
-          return 'Select ${widget.label}';
+          return l.select(widget.label);
         }
         if (widget.validator != null) {
           return widget.validator!(value);

@@ -41,6 +41,12 @@ class FormFieldsSelect<T> extends StatelessWidget {
   final Color borderColor;
   final Color focusedBorderColor;
   final Color errorBorderColor;
+  final Color? itemBorderColor;
+  final double itemBorderWidth;
+  final double itemBorderRadius;
+  final double itemMarginTop;
+  final double itemMarginBottom;
+  final double itemMarginHorizontal;
 
   // ============================================================================
   // FILTER
@@ -75,6 +81,12 @@ class FormFieldsSelect<T> extends StatelessWidget {
     this.borderColor = const Color(0xFFC7C7C7),
     this.focusedBorderColor = Colors.blue,
     this.errorBorderColor = Colors.red,
+    this.itemBorderColor,
+    this.itemBorderWidth = 1.0,
+    this.itemBorderRadius = 8,
+    this.itemMarginTop = 4,
+    this.itemMarginBottom = 4,
+    this.itemMarginHorizontal = 0,
     this.enableFilter = false,
     this.filterHintText = 'Search...',
   });
@@ -129,6 +141,16 @@ class FormFieldsSelect<T> extends StatelessWidget {
           itemLabelBuilder: itemLabelBuilder,
           onChanged: onChanged ?? (_) {},
           validator: validator,
+          labelPosition: labelPosition,
+          radius: radius,
+          borderColor: borderColor,
+          errorBorderColor: errorBorderColor,
+          activeColor: focusedBorderColor,
+          itemMarginTop: itemMarginTop,
+          itemMarginBottom: itemMarginBottom,
+          itemBorderColor: itemBorderColor,
+          itemBorderWidth: itemBorderWidth,
+          itemBorderRadius: itemBorderRadius,
         );
 
       case FormType.checkbox:
@@ -142,6 +164,16 @@ class FormFieldsSelect<T> extends StatelessWidget {
           validator: multiValidator != null
               ? (List<T>? values) => multiValidator!(values)
               : null,
+          radius: radius,
+          borderColor: borderColor,
+          errorBorderColor: errorBorderColor,
+          activeColor: focusedBorderColor,
+          itemMarginTop: itemMarginTop,
+          itemMarginBottom: itemMarginBottom,
+          itemMarginHorizontal: itemMarginHorizontal,
+          itemBorderColor: itemBorderColor,
+          itemBorderWidth: itemBorderWidth,
+          itemBorderRadius: itemBorderRadius,
         );
 
       default:

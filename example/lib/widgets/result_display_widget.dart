@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Reusable widget to display form field values in a formatted container
-Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
+Widget buildResultDisplay<T>(dynamic a, dynamic b, [dynamic c]) {
+  BuildContext? context;
+  String label;
+  T value;
+
+  if (a is BuildContext) {
+    context = a;
+    label = b as String;
+    value = c as T;
+  } else {
+    label = a as String;
+    value = b as T;
+  }
+
+  final l = context != null
+      ? FormFieldsLocalizations.of(context)
+      : FormFieldsLocalizations.load(
+          WidgetsBinding.instance.platformDispatcher.locale,
+        );
   final hasValue = value != null && value.toString().isNotEmpty;
-  final displayValue = hasValue ? value.toString() : 'Not set';
+  final displayValue = hasValue ? value.toString() : l.get('notSet');
 
   return Padding(
     padding: const EdgeInsets.only(top: 12, bottom: 16, left: 16, right: 16),
@@ -24,27 +43,13 @@ Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              if (isOptional)
-                Text(
-                  '(Optional)',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey.shade500,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-            ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
           ),
           const SizedBox(height: 8),
           Container(

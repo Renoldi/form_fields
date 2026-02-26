@@ -53,7 +53,7 @@ class LanguageIndicator extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '🌍 Multi-Language Demo',
+                      l10n.get('langDemoTitle'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -63,8 +63,8 @@ class LanguageIndicator extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       currentLocale.languageCode == 'id'
-                          ? '🇮🇩 Aktif: Indonesian (Bahasa Indonesia)'
-                          : '🇺🇸 Active: English (United States)',
+                          ? l10n.get('langActiveId')
+                          : l10n.get('langActiveEn'),
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.blue.shade700,
@@ -88,8 +88,8 @@ class LanguageIndicator extends StatelessWidget {
               children: [
                 Text(
                   currentLocale.languageCode == 'id'
-                      ? '💡 Contoh teks yang dilokalkan:'
-                      : '💡 Localized text examples:',
+                      ? l10n.get('langExamplesId')
+                      : l10n.get('langExamplesEn'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -97,18 +97,21 @@ class LanguageIndicator extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildExampleRow('Search:', l10n.searchHint),
-                _buildExampleRow('Cancel:', l10n.cancel),
-                _buildExampleRow('Select:', l10n.selectPrefix),
-                _buildExampleRow('Enter:', l10n.enterPrefix),
+                _buildExampleRow(
+                    l10n.get('langExampleSearch'), l10n.searchHint),
+                _buildExampleRow(l10n.get('langExampleCancel'), l10n.cancel),
+                _buildExampleRow(
+                    l10n.get('langExampleSelect'), l10n.selectPrefix),
+                _buildExampleRow(
+                    l10n.get('langExampleEnter'), l10n.enterPrefix),
               ],
             ),
           ),
           const SizedBox(height: 8),
           Text(
             currentLocale.languageCode == 'id'
-                ? '👆 Klik tombol EN/ID di AppBar atau buka Drawer untuk mengganti bahasa'
-                : '👆 Click EN/ID button on AppBar or open Drawer to change language',
+                ? l10n.get('langHintId')
+                : l10n.get('langHintEn'),
             style: TextStyle(
               fontSize: 11,
               color: Colors.blue.shade600,

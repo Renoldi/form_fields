@@ -188,6 +188,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -211,26 +212,26 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.class_, size: 48, color: Colors.white),
-                  SizedBox(width: 16),
+                  const Icon(Icons.class_, size: 48, color: Colors.white),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Custom Class Examples',
-                          style: TextStyle(
+                          l.get('ccHeaderTitle'),
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
-                          'Using generic types with custom model classes',
-                          style: TextStyle(
+                          l.get('ccHeaderSubtitle'),
+                          style: const TextStyle(
                             fontSize: 16,
                             color: Colors.white70,
                           ),
@@ -245,12 +246,11 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 1: Dropdown with Custom Class
-            buildSectionTitle('Dropdown with Custom Class',
+            buildSectionTitle(l.get('ccSectionDropdownCustomClass'),
                 Colors.teal.shade700, Colors.teal.shade400),
-            buildFieldTitle(
-                'Country Selection with Flag Icon', Colors.teal.shade600),
+            buildFieldTitle(l.get('ccFieldCountryFlag'), Colors.teal.shade600),
             FormFieldsDropdown<Country>(
-              label: 'Select Country',
+              label: l.get('ccSelectCountry'),
               items: countries,
               initialValue: _selectedCountry,
               isRequired: true,
@@ -259,7 +259,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedCountry = value);
               },
             ),
-            buildResultDisplay('Selected Country', _selectedCountry),
+            buildResultDisplay(
+                context, l.get('ccSelectedCountry'), _selectedCountry),
 
             const SizedBox(height: 16),
 
@@ -275,12 +276,12 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 2: Multi-Select Dropdown with Custom Class
-            buildSectionTitle('Multi-Select Dropdown with Custom Class',
+            buildSectionTitle(l.get('ccSectionMultiSelectCustomClass'),
                 Colors.teal.shade700, Colors.teal.shade400),
             buildFieldTitle(
-                'Skills Selection with Categories', Colors.teal.shade600),
+                l.get('ccFieldSkillsCategories'), Colors.teal.shade600),
             FormFieldsDropdownMulti<Skill>(
-              label: 'Select Your Skills',
+              label: l.get('ccSelectSkills'),
               items: skills,
               initialValues: _selectedSkills,
               isRequired: true,
@@ -295,7 +296,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedSkills = values);
               },
             ),
-            buildResultDisplay('Selected Skills', _selectedSkills),
+            buildResultDisplay(
+                context, l.get('ccSelectedSkills'), _selectedSkills),
 
             const SizedBox(height: 16),
 
@@ -311,12 +313,12 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 3: Radio Button with Custom Class
-            buildSectionTitle('Radio Button with Custom Class',
+            buildSectionTitle(l.get('ccSectionRadioCustomClass'),
                 Colors.teal.shade700, Colors.teal.shade400),
             buildFieldTitle(
-                'Subscription Plan Selection', Colors.teal.shade600),
+                l.get('ccFieldPlanSelection'), Colors.teal.shade600),
             FormFieldsRadioButton<SubscriptionPlan>(
-              label: 'Choose Your Plan',
+              label: l.get('ccSelectPlan'),
               items: plans,
               initialValue: _selectedPlan,
               isRequired: true,
@@ -337,52 +339,55 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                       width: 2,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Radio<SubscriptionPlan>(
-                        value: plan,
-                        groupValue: _selectedPlan,
-                        onChanged: (value) {
-                          setState(() => _selectedPlan = value);
-                        },
-                        activeColor: Colors.purple,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              plan.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    selected ? Colors.purple : Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '\$${plan.price}/month',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: selected
-                                    ? Colors.purple.shade700
-                                    : Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              plan.features,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Row(
+                      children: [
+                        Radio<SubscriptionPlan>(
+                          value: plan,
+                          groupValue: _selectedPlan,
+                          onChanged: (value) {
+                            setState(() => _selectedPlan = value);
+                          },
+                          activeColor: Colors.purple,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                plan.name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      selected ? Colors.purple : Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '\$${plan.price}/month',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selected
+                                      ? Colors.purple.shade700
+                                      : Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                plan.features,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -390,7 +395,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedPlan = value);
               },
             ),
-            buildResultDisplay('Selected Plan', _selectedPlan),
+            buildResultDisplay(context, l.get('ccSelectedPlan'), _selectedPlan),
 
             const SizedBox(height: 16),
 
@@ -406,12 +411,12 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 4: Checkbox with Custom Class
-            buildSectionTitle('Checkbox with Custom Class',
+            buildSectionTitle(l.get('ccSectionCheckboxCustomClass'),
                 Colors.teal.shade700, Colors.teal.shade400),
             buildFieldTitle(
-                'Interests Selection with Colors', Colors.teal.shade600),
+                l.get('ccFieldInterestsSelection'), Colors.teal.shade600),
             FormFieldsCheckbox<Interest>(
-              label: 'Select Your Interests',
+              label: l.get('ccSelectInterests'),
               items: interests,
               initialValue: _selectedInterests,
               isRequired: false,
@@ -473,8 +478,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedInterests = values);
               },
             ),
-            buildResultDisplay('Selected Interests', _selectedInterests,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('ccSelectedInterests'), _selectedInterests),
 
             const SizedBox(height: 16),
 
@@ -488,17 +493,17 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 5: Dropdown with Filter and Custom Class
-            buildSectionTitle('Dropdown with Filter and Custom Class',
+            buildSectionTitle(l.get('ccSectionDropdownFilterCustomClass'),
                 Colors.teal.shade700, Colors.teal.shade400),
             buildFieldTitle(
-                'Country Selection with Search Filter', Colors.teal.shade600),
+                l.get('ccFieldCountrySearchFilter'), Colors.teal.shade600),
             FormFieldsDropdown<Country>(
-              label: 'Select Country with Filter',
+              label: l.get('ccSelectCountryFilter'),
               items: countries,
               initialValue: _selectedCountryWithFilter,
               isRequired: true,
               enableFilter: true,
-              filterHintText: 'Search countries...',
+              filterHintText: l.get('ccSearchCountriesHint'),
               itemLabelBuilder: (country) => '${country.flag} ${country.name}',
               borderColor: Colors.orange,
               focusedBorderColor: Colors.orange.shade700,
@@ -506,8 +511,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedCountryWithFilter = value);
               },
             ),
-            buildResultDisplay(
-                'Selected Country (Filtered)', _selectedCountryWithFilter),
+            buildResultDisplay(context, l.get('ccSelectedCountryFiltered'),
+                _selectedCountryWithFilter),
 
             const SizedBox(height: 16),
 
@@ -523,19 +528,17 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(height: 32),
 
             // Example 6: Multi-Select Dropdown with Filter and Custom Class
-            buildSectionTitle(
-                'Multi-Select Dropdown with Filter and Custom Class',
-                Colors.teal.shade700,
-                Colors.teal.shade400),
+            buildSectionTitle(l.get('ccSectionMultiSelectFilterCustomClass'),
+                Colors.teal.shade700, Colors.teal.shade400),
             buildFieldTitle(
-                'Skills Selection with Search Filter', Colors.teal.shade600),
+                l.get('ccFieldSkillsSearchFilter'), Colors.teal.shade600),
             FormFieldsDropdownMulti<Skill>(
-              label: 'Select Your Skills with Filter',
+              label: l.get('ccSelectSkillsFilter'),
               items: skills,
               initialValues: _selectedSkillsWithFilter,
               isRequired: false,
               enableFilter: true,
-              filterHintText: 'Search skills by name...',
+              filterHintText: l.get('ccSearchSkillsHint'),
               itemLabelBuilder: (skill) => '${skill.name} (${skill.category})',
               chipBackgroundColor: Colors.indigo.shade100,
               chipTextColor: Colors.indigo.shade900,
@@ -545,9 +548,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedSkillsWithFilter = values);
               },
             ),
-            buildResultDisplay(
-                'Selected Skills (Filtered)', _selectedSkillsWithFilter,
-                isOptional: true),
+            buildResultDisplay(context, l.get('ccSelectedSkillsFiltered'),
+                _selectedSkillsWithFilter),
 
             const SizedBox(height: 16),
 
@@ -579,9 +581,9 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'VALIDATE FORM',
-                  style: TextStyle(
+                child: Text(
+                  l.get('validateFormButton'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -634,6 +636,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     final message = StringBuffer();
     message.writeln('Form Data:');
     message.writeln('Country: ${_selectedCountry?.name ?? "None"}');
@@ -650,7 +653,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Form validated! Check console for details.',
+                l.get('ccFormValidated'),
                 style: const TextStyle(color: Colors.white),
               ),
             ),

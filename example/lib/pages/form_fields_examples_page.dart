@@ -48,6 +48,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -58,39 +59,38 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             const LanguageIndicator(),
 
             // ========== STRING TYPE ==========
-            buildSectionTitle('STRING TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffStringTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable String - Basic
-            buildFieldTitle('String (Non-Null) - Basic', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffStringBasic'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Full Name',
+              label: l.get('ffFullName'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
               onChanged: (value) => setState(() => _string1 = value),
               currrentValue: _string1,
             ),
-            buildResultDisplay('Full Name', _string1),
+            buildResultDisplay(context, l.get('ffFullName'), _string1),
 
             // Nullable String - Optional
-            buildFieldTitle(
-                'String (Nullable) - Optional', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffStringOptional'), Colors.blue.shade600),
             FormFields<String?>(
-              label: 'Middle Name',
+              label: l.get('ffMiddleName'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
               onChanged: (value) => setState(() => _string2 = value),
               currrentValue: _string2,
             ),
-            buildResultDisplay('Middle Name', _string2, isOptional: true),
+            buildResultDisplay(context, l.get('ffMiddleName'), _string2),
 
             // String with All Custom Parameters
             buildFieldTitle(
-                'String - All Custom Parameters', Colors.blue.shade600),
+                l.get('ffStringCustomParams'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Description',
+              label: l.get('ffDescription'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -99,7 +99,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               borderType: BorderType.outlineInputBorder,
               borderColor: Colors.green,
               errorBorderColor: Colors.red,
-              enterText: 'Please enter ',
+              enterText: l.get('enterPrefix'),
               labelTextStyle: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -107,8 +107,8 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               ),
               prefixIcon: const Icon(Icons.description, color: Colors.green),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Required';
-                if (value.length < 10) return 'Min 10 characters';
+                if (value == null || value.isEmpty) return l.get('ffRequired');
+                if (value.length < 10) return l.get('ffMinChars');
                 return null;
               },
               onChanged: (value) => setState(() => _stringCustom = value),
@@ -116,12 +116,13 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               focusNode: _focusNode1,
               nextFocusNode: _focusNode2,
             ),
-            buildResultDisplay('Description', _stringCustom),
+            buildResultDisplay(context, l.get('ffDescription'), _stringCustom),
 
             // Email with Parameters
-            buildFieldTitle('String - Email FormType', Colors.blue.shade600),
+            buildFieldTitle(
+                l.get('ffStringEmailFormType'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Email Address',
+              label: l.get('ffEmail'),
               formType: FormType.email,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -130,12 +131,13 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _email = value),
               currrentValue: _email,
             ),
-            buildResultDisplay('Email Address', _email),
+            buildResultDisplay(context, l.get('ffEmail'), _email),
 
             // Phone with Parameters
-            buildFieldTitle('String - Phone FormType', Colors.blue.shade600),
+            buildFieldTitle(
+                l.get('ffStringPhoneFormType'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Phone Number',
+              label: l.get('ffPhone'),
               formType: FormType.phone,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -143,14 +145,13 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _phone = value),
               currrentValue: _phone,
             ),
-            buildResultDisplay('Phone Number', _phone),
+            buildResultDisplay(context, l.get('ffPhone'), _phone),
 
             // Phone with Country Code Selection
             buildFieldTitle(
-                'String - Phone with Country Code (dropdown shows +62 ▼, input shows local digits only)',
-                Colors.blue.shade600),
+                l.get('ffStringPhoneCountry'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Phone Number (with Country Code)',
+              label: l.get('ffPhoneCountryLabel'),
               formType: FormType.phone,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -160,15 +161,13 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               currrentValue: _phoneWithCountryCode,
             ),
             buildResultDisplay(
-                'Phone with Country Code (result: +62XXXXXXXXXXX)',
-                _phoneWithCountryCode),
+                context, l.get('ffPhoneCountryCode'), _phoneWithCountryCode),
 
             // Phone with Country Code & Formatting Display
             buildFieldTitle(
-                'String - Phone with Formatted Input (dropdown: +62 ▼, input: 111-1111-1111, result: +628111111111)',
-                Colors.blue.shade600),
+                l.get('ffStringPhoneFormatted'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Phone Number (formatted input)',
+              label: l.get('ffPhoneFormattedLabel'),
               formType: FormType.phone,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -178,32 +177,30 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               currrentValue: _phoneFormatted,
             ),
             buildResultDisplay(
-                'Phone (result always unformatted)', _phoneFormatted),
+                context, l.get('ffPhoneFormatted'), _phoneFormatted),
 
             // Password with All Parameters
-            buildFieldTitle('String - Password with Custom Validation',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffStringPassword'), Colors.blue.shade600),
             FormFields<String>(
-              label: 'Password',
+              label: l.get('ffPassword'),
               formType: FormType.password,
               labelPosition: LabelPosition.top,
               isRequired: true,
               minLengthPassword: 8,
-              minLengthPasswordErrorText:
-                  'Password must be at least 8 characters long',
+              minLengthPasswordErrorText: l.get('ffPasswordMin'),
               borderColor: Colors.purple,
               customPasswordValidator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Password is required';
+                  return l.get('passwordRequired');
                 }
                 if (value.length < 8) {
-                  return 'Password must be 8+ characters';
+                  return l.get('passwordTooShort');
                 }
                 if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                  return 'Must contain uppercase letter';
+                  return l.get('passwordNeedsUppercase');
                 }
                 if (!RegExp(r'[0-9]').hasMatch(value)) {
-                  return 'Must contain a number';
+                  return l.get('passwordNeedsNumber');
                 }
                 return null;
               },
@@ -211,16 +208,16 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               currrentValue: _password,
               focusNode: _focusNode2,
             ),
-            buildResultDisplay('Password', _password),
+            buildResultDisplay(context, l.get('ffPassword'), _password),
 
             // ========== INTEGER TYPE ==========
-            buildSectionTitle('INTEGER TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffIntTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable Int - Basic
-            buildFieldTitle('Int (Non-Null) - Basic', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffIntBasic'), Colors.blue.shade600),
             FormFields<int>(
-              label: 'Age',
+              label: l.get('ffAge'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               stripSeparators: false,
@@ -228,19 +225,17 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _int1 = value),
               currrentValue: _int1,
             ),
-            buildResultDisplay('Age', _int1),
+            buildResultDisplay(context, l.get('ffAge'), _int1),
             // Nullable Int - With All Parameters
-            buildFieldTitle('Int (Nullable) - With Separators & Custom Styling',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffIntOptional'), Colors.blue.shade600),
             FormFields<int?>(
-              label: 'Stock Quantity',
+              label: l.get('ffQuantity'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               stripSeparators: true,
               isRequired: false,
               borderColor: Colors.teal,
-              radius: 12,
-              invalidIntegerText: 'Please enter valid integer for',
+              invalidIntegerText: l.get('enterValidInteger'),
               prefixIcon: const Icon(Icons.inventory, color: Colors.teal),
               labelTextStyle: const TextStyle(
                 fontSize: 14,
@@ -250,17 +245,15 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _int2 = value),
               currrentValue: _int2,
             ),
-            buildResultDisplay('Quantity', _int2, isOptional: true),
+            buildResultDisplay(context, l.get('ffQuantity'), _int2),
 
-            // ========== DOUBLE TYPE ==========
-            buildSectionTitle('DOUBLE TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffDoubleTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable Double - With Separators
-            buildFieldTitle(
-                'Double (Non-Null) - With Separators', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDoubleBasic'), Colors.blue.shade600),
             FormFields<double>(
-              label: 'Product Price',
+              label: l.get('ffProductPrice'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               stripSeparators: true,
@@ -275,20 +268,18 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _double1 = value),
               currrentValue: _double1,
             ),
-            buildResultDisplay('Product Price', _double1),
+            buildResultDisplay(l.get('ffProductPrice'), _double1),
 
             // Nullable Double - All Parameters
-            buildFieldTitle('Double (Nullable) - All Custom Parameters',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDoubleOptional'), Colors.blue.shade600),
             FormFields<double?>(
-              label: 'Discount Percentage',
+              label: l.get('ffDiscountPercentage'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
-              stripSeparators: false,
               isRequired: false,
               borderColor: Colors.orange,
               radius: 10,
-              invalidNumberText: 'Please enter valid decimal for',
+              invalidNumberText: l.get('enterValidNumber'),
               suffix: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text('%',
@@ -298,36 +289,32 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               labelTextStyle: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange,
               ),
               onChanged: (value) => setState(() => _double2 = value),
               currrentValue: _double2,
             ),
-            buildResultDisplay('Discount Percentage', _double2,
-                isOptional: true),
+            buildResultDisplay(l.get('ffDiscountPercentage'), _double2),
 
             // ========== DATETIME TYPE ==========
-            buildSectionTitle('DATETIME TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffDateTimeTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable DateTime - Basic
-            buildFieldTitle(
-                'DateTime (Non-Null) - Basic', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDateTimeBasic'), Colors.blue.shade600),
             FormFields<DateTime>(
-              label: 'Birth Date',
+              label: l.get('ffBirthDate'),
               formType: FormType.dateTime,
               labelPosition: LabelPosition.top,
               isRequired: true,
               onChanged: (value) => setState(() => _date1 = value),
               currrentValue: _date1,
             ),
-            buildResultDisplay('Birth Date', _date1),
+            buildResultDisplay(l.get('ffBirthDate'), _date1),
 
             // Nullable DateTime - All Parameters
-            buildFieldTitle('DateTime (Nullable) - All Custom Parameters',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDateTimeOptional'), Colors.blue.shade600),
             FormFields<DateTime?>(
-              label: 'Event Date',
+              label: l.get('ffEventDate'),
               formType: FormType.dateTime,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -345,30 +332,28 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _date2 = value),
               currrentValue: _date2,
             ),
-            buildResultDisplay('Event Date', _date2, isOptional: true),
+            buildResultDisplay(l.get('ffEventDate'), _date2),
 
             // ========== TIMEOFDAY TYPE ==========
-            buildSectionTitle('TIMEOFDAY TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffTimeOfDayTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable TimeOfDay - Basic
-            buildFieldTitle(
-                'TimeOfDay (Non-Null) - Basic', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffTimeOfDayBasic'), Colors.blue.shade600),
             FormFields<TimeOfDay>(
-              label: 'Meeting Time',
+              label: l.get('ffMeetingTime'),
               formType: FormType.timeOfDay,
               labelPosition: LabelPosition.top,
               isRequired: true,
               onChanged: (value) => setState(() => _time1 = value),
               currrentValue: _time1,
             ),
-            buildResultDisplay('Meeting Time', _time1),
+            buildResultDisplay(l.get('ffMeetingTime'), _time1),
 
             // Nullable TimeOfDay - All Parameters
-            buildFieldTitle('TimeOfDay (Nullable) - All Custom Parameters',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffTimeOfDayOptional'), Colors.blue.shade600),
             FormFields<TimeOfDay?>(
-              label: 'Alarm Time',
+              label: l.get('ffWakeupTime'),
               formType: FormType.timeOfDay,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -383,31 +368,28 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               onChanged: (value) => setState(() => _time2 = value),
               currrentValue: _time2,
             ),
-            buildResultDisplay('Alarm Time', _time2, isOptional: true),
+            buildResultDisplay(l.get('ffWakeupTime'), _time2),
 
             // ========== DATETIMERANGE TYPE ==========
-            buildSectionTitle('DATETIMERANGE TYPE - All Parameters',
-                Colors.blue.shade700, Colors.blue.shade400),
+            buildSectionTitle(l.get('ffDateRangeTypes'), Colors.blue.shade700,
+                Colors.blue.shade400),
 
             // Non-Nullable DateTimeRange - Basic
-            buildFieldTitle(
-                'DateTimeRange (Non-Null) - Basic', Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDateRangeBasic'), Colors.blue.shade600),
             FormFields<DateTimeRange>(
-              label: 'Project Duration',
+              label: l.get('ffProjectDuration'),
               formType: FormType.dateTimeRange,
               labelPosition: LabelPosition.top,
-              isRequired: true,
               useDatePickerForRange: true,
               onChanged: (value) => setState(() => _range1 = value),
               currrentValue: _range1,
             ),
-            buildResultDisplay('Project Duration', _range1),
+            buildResultDisplay(l.get('ffProjectDuration'), _range1),
 
             // Nullable DateTimeRange - All Parameters
-            buildFieldTitle('DateTimeRange (Nullable) - All Custom Parameters',
-                Colors.blue.shade600),
+            buildFieldTitle(l.get('ffDateRangeOptional'), Colors.blue.shade600),
             FormFields<DateTimeRange?>(
-              label: 'Vacation Period',
+              label: l.get('ffVacationPeriod'),
               formType: FormType.dateTimeRange,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -419,14 +401,13 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               prefixIcon: const Icon(Icons.date_range),
               useDatePickerForRange: true,
               labelTextStyle: const TextStyle(
-                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.cyan,
               ),
               onChanged: (value) => setState(() => _range2 = value),
               currrentValue: _range2,
             ),
-            buildResultDisplay('Vacation Period', _range2, isOptional: true),
+            buildResultDisplay(l.get('ffVacationPeriod'), _range2),
 
             const SizedBox(height: 32),
 
@@ -461,8 +442,8 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'SUBMIT FORM',
+                child: Text(
+                  l.get('submitFormButton'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -480,13 +461,14 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Form validated successfully!'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(l.get('ffFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,

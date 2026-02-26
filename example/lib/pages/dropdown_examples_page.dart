@@ -71,7 +71,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = FormFieldsLocalizations.of(context);
+    final l = FormFieldsLocalizations.of(context);
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -81,25 +81,25 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             // Language indicator showing current locale
             const LanguageIndicator(),
 
-            buildSectionTitle('DROPDOWN - Basic Examples',
-                Colors.green.shade700, Colors.green.shade400),
+            buildSectionTitle(l.get('ddBasicExamples'), Colors.green.shade700,
+                Colors.green.shade400),
 
             // Example 1: Basic Dropdown
-            buildFieldTitle('Basic Dropdown - Required', Colors.green.shade600),
+            buildFieldTitle(l.get('ddBasicRequired'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Country',
+              label: l.get('ddCountry'),
               initialValue: _dropdown1,
               items: _countries,
               isRequired: true,
               onChanged: (value) => setState(() => _dropdown1 = value ?? ''),
             ),
-            buildResultDisplay('Selected Country', _dropdown1),
+            buildResultDisplay(context, l.get('ddSelectedCountry'), _dropdown1),
 
             // Example 2: Optional Dropdown
             buildFieldTitle(
-                'Optional Dropdown - Not Required', Colors.green.shade600),
+                l.get('ddOptionalNotRequired'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Preferred Language',
+              label: l.get('ddLanguage'),
               initialValue: _dropdown2,
               items: const [
                 'English',
@@ -109,19 +109,20 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
                 'Chinese'
               ],
               isRequired: false,
-              hintText: l10n.select('Preferred Language'),
+              hintText: l.select(l.get('ddLanguage')),
               onChanged: (value) => setState(() => _dropdown2 = value ?? ''),
             ),
-            buildResultDisplay('Selected Language', _dropdown2,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('ddSelectedLanguage'), _dropdown2),
 
-            buildSectionTitle('DROPDOWN - Custom Styling',
-                Colors.green.shade700, Colors.green.shade400),
+            buildSectionTitle(l.get('ddCustomStyling'), Colors.green.shade700,
+                Colors.green.shade400),
 
             // Example 3: Custom Border & Colors
-            buildFieldTitle('Custom Border & Colors', Colors.green.shade600),
+            buildFieldTitle(
+                l.get('ddCustomBorderColors'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Favorite Color',
+              label: l.get('ddColor'),
               initialValue: _dropdown3,
               items: _colors,
               isRequired: true,
@@ -131,31 +132,30 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               radius: 15,
               onChanged: (value) => setState(() => _dropdown3 = value ?? ''),
             ),
-            buildResultDisplay('Selected Color', _dropdown3),
+            buildResultDisplay(context, l.get('ddSelectedColor'), _dropdown3),
 
             // Example 4: With Icons
-            buildFieldTitle(
-                'With Prefix & Suffix Icons', Colors.green.shade600),
+            buildFieldTitle(l.get('ddWithIcons'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'T-Shirt Size',
+              label: l.get('ddSize'),
               initialValue: _dropdown4,
               items: _sizes,
               isRequired: true,
               borderColor: Colors.teal,
               prefixIcon: const Icon(Icons.shopping_bag, color: Colors.teal),
               suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.teal),
-              hintText: l10n.select('T-Shirt Size'),
+              hintText: l.select(l.get('ddSize')),
               onChanged: (value) => setState(() => _dropdown4 = value ?? ''),
             ),
-            buildResultDisplay('Selected Size', _dropdown4),
+            buildResultDisplay(context, l.get('ddSelectedSize'), _dropdown4),
 
-            buildSectionTitle('DROPDOWN - Different Label Positions',
-                Colors.green.shade700, Colors.green.shade400),
+            buildSectionTitle(l.get('ddLabelPositions'), Colors.green.shade700,
+                Colors.green.shade400),
 
             // Example 5: Label at Top (default)
-            buildFieldTitle('Label Position: Top', Colors.green.shade600),
+            buildFieldTitle(l.get('ddLabelTop'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Shipping Method',
+              label: l.get('ddShippingMethod'),
               labelPosition: LabelPosition.top,
               initialValue: _dropdown5,
               items: const [
@@ -168,12 +168,13 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               borderColor: Colors.orange,
               onChanged: (value) => setState(() => _dropdown5 = value ?? ''),
             ),
-            buildResultDisplay('Selected Shipping', _dropdown5),
+            buildResultDisplay(
+                context, l.get('ddSelectedShipping'), _dropdown5),
 
             // Example 6: Label at Left
-            buildFieldTitle('Label Position: Left', Colors.green.shade600),
+            buildFieldTitle(l.get('ddLabelLeft'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Payment',
+              label: l.get('ddPayment'),
               labelPosition: LabelPosition.left,
               initialValue: _dropdown6,
               items: const ['Credit Card', 'PayPal', 'Bank Transfer', 'Cash'],
@@ -181,36 +182,37 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               borderColor: Colors.green,
               onChanged: (value) => setState(() => _dropdown6 = value ?? ''),
             ),
-            buildResultDisplay('Selected Payment', _dropdown6),
+            buildResultDisplay(context, l.get('ddSelectedPayment'), _dropdown6),
 
-            buildSectionTitle('DROPDOWN - Advanced Features',
+            buildSectionTitle(l.get('ddAdvancedFeatures'),
                 Colors.green.shade700, Colors.green.shade400),
 
             // Example 7: Custom Validation
-            buildFieldTitle('Custom Validation', Colors.green.shade600),
+            buildFieldTitle(l.get('ddCustomValidation'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Priority Level',
+              label: l.get('ddPriority'),
               initialValue: _dropdown7,
               items: const ['Low', 'Medium', 'High', 'Critical'],
               isRequired: true,
               borderColor: Colors.red,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please select a priority level';
+                  return l.get('ddSelectPriority');
                 }
                 if (value == 'Critical') {
-                  return 'Critical priority requires manager approval';
+                  return l.get('ddCriticalApproval');
                 }
                 return null;
               },
               onChanged: (value) => setState(() => _dropdown7 = value ?? ''),
             ),
-            buildResultDisplay('Selected Priority', _dropdown7),
+            buildResultDisplay(
+                context, l.get('ddSelectedPriority'), _dropdown7),
 
             // Example 8: Underline Border Type
-            buildFieldTitle('Underline Border Type', Colors.green.shade600),
+            buildFieldTitle(l.get('ddUnderline'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Department',
+              label: l.get('ddDepartment'),
               initialValue: _dropdown8,
               items: const [
                 'Sales',
@@ -225,20 +227,21 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               focusedBorderColor: Colors.indigoAccent,
               onChanged: (value) => setState(() => _dropdown8 = value ?? ''),
             ),
-            buildResultDisplay('Selected Department', _dropdown8),
+            buildResultDisplay(
+                context, l.get('ddSelectedDepartment'), _dropdown8),
 
-            buildSectionTitle('DROPDOWN - Custom Input Decoration',
+            buildSectionTitle(l.get('ddCustomDecoration'),
                 Colors.green.shade700, Colors.green.shade400),
 
             // Example 9: Full Custom InputDecoration
-            buildFieldTitle('Custom Input Decoration', Colors.green.shade600),
+            buildFieldTitle(l.get('ddCustomInput'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Theme',
+              label: l.get('ddTheme'),
               initialValue: _dropdown9,
               items: const ['Light', 'Dark', 'Auto', 'System'],
               isRequired: false,
               decoration: InputDecoration(
-                hintText: l10n.select('Theme'),
+                hintText: l.select(l.get('ddTheme')),
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -261,27 +264,27 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
               ),
               onChanged: (value) => setState(() => _dropdown9 = value ?? ''),
             ),
-            buildResultDisplay('Selected Theme', _dropdown9, isOptional: true),
+            buildResultDisplay(context, l.get('ddSelectedTheme'), _dropdown9),
 
-            buildSectionTitle('DROPDOWN - With Search Filter',
-                Colors.green.shade700, Colors.green.shade400),
+            buildSectionTitle(l.get('ddWithFilter'), Colors.green.shade700,
+                Colors.green.shade400),
 
             // Example 10: With Search Filter
-            buildFieldTitle(
-                'Dropdown with Filter/Search', Colors.green.shade600),
+            buildFieldTitle(l.get('ddWithSearch'), Colors.green.shade600),
             FormFieldsDropdown<String>(
-              label: 'Select Country with Filter',
+              label: l.get('ddSelectCountryFilter'),
               initialValue: _dropdown10,
               items: _countries,
               isRequired: true,
               enableFilter: true,
-              filterHintText: l10n.searchHint,
+              filterHintText: l.searchHint,
               borderColor: Colors.teal,
               focusedBorderColor: Colors.teal.shade700,
               radius: 12,
               onChanged: (value) => setState(() => _dropdown10 = value ?? ''),
             ),
-            buildResultDisplay('Selected Country (Filtered)', _dropdown10),
+            buildResultDisplay(
+                context, l.get('ddSelectedCountryFiltered'), _dropdown10),
 
             const SizedBox(height: 32),
 
@@ -302,8 +305,8 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'VALIDATE FORM',
+                child: Text(
+                  l.get('validateFormButton'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -321,13 +324,14 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Dropdown form validated successfully!'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(l.get('ddFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,

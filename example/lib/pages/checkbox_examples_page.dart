@@ -24,51 +24,50 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            buildSectionTitle('CHECKBOX - Basic Examples', Colors.pink.shade700,
+            buildSectionTitle(l.get('cbBasicExamples'), Colors.pink.shade700,
                 Colors.pink.shade400),
 
             // Example 1: Single Selection - Vertical
-            buildFieldTitle(
-                'Single Selection - Vertical Layout', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbSingleVertical'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Terms & Conditions',
+              label: l.get('cbTermsConditions'),
               initialValue: _checkbox1,
-              items: const ['I agree to the Terms and Conditions'],
+              items: [l.get('iAgreeTerms')],
               isRequired: true,
               direction: Axis.vertical,
               onChanged: (value) => setState(() => _checkbox1 = value),
             ),
-            buildResultDisplay('Terms Agreed', _checkbox1),
+            buildResultDisplay(context, l.get('cbTermsAgreed'), _checkbox1),
 
             // Example 2: Single Selection - Horizontal
-            buildFieldTitle(
-                'Single Selection - Horizontal Layout', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbSingleHorizontal'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Newsletter Subscription',
+              label: l.get('cbNewsletter'),
               initialValue: _checkbox2,
-              items: const ['Subscribe to weekly newsletter'],
+              items: [l.get('cbSubscribeWeekly')],
               isRequired: false,
               direction: Axis.horizontal,
               borderColor: Colors.blue,
               activeColor: Colors.blue,
               onChanged: (value) => setState(() => _checkbox2 = value),
             ),
-            buildResultDisplay('Newsletter', _checkbox2, isOptional: true),
+            buildResultDisplay(
+                context, l.get('cbNewsletterResult'), _checkbox2),
 
-            buildSectionTitle('CHECKBOX - Multiple Selection',
+            buildSectionTitle(l.get('cbMultipleSelection'),
                 Colors.pink.shade700, Colors.pink.shade400),
 
             // Example 3: Multiple Selection - Vertical
-            buildFieldTitle(
-                'Multiple Selection - Vertical Layout', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbMultipleVertical'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Hobbies',
+              label: l.get('cbHobbies'),
               initialValue: _checkbox3,
               items: const [
                 'Reading',
@@ -101,13 +100,13 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               direction: Axis.vertical,
               onChanged: (value) => setState(() => _checkbox3 = value),
             ),
-            buildResultDisplay('Selected Hobbies', _checkbox3),
+            buildResultDisplay(context, l.get('cbSelectedHobbies'), _checkbox3),
 
             // Example 4: Multiple Selection - Horizontal
             buildFieldTitle(
-                'Multiple Selection - Horizontal Layout', Colors.pink.shade600),
+                l.get('cbMultipleHorizontal'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Programming Languages',
+              label: l.get('cbLanguages'),
               initialValue: _checkbox4,
               items: const [
                 'Dart',
@@ -138,16 +137,16 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               activeColor: Colors.teal,
               onChanged: (value) => setState(() => _checkbox4 = value),
             ),
-            buildResultDisplay('Selected Languages', _checkbox4),
+            buildResultDisplay(
+                context, l.get('cbSelectedLanguages'), _checkbox4),
 
-            buildSectionTitle('CHECKBOX - Custom Styling', Colors.pink.shade700,
+            buildSectionTitle(l.get('cbCustomStyling'), Colors.pink.shade700,
                 Colors.pink.shade400),
 
             // Example 5: Custom Border & Colors
-            buildFieldTitle(
-                'Custom Border & Active Color', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbCustomBorder'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Skills',
+              label: l.get('cbSkills'),
               initialValue: _checkbox5,
               items: const [
                 'Leadership',
@@ -182,48 +181,59 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               errorBorderColor: Colors.red.shade700,
               activeColor: Colors.purple,
               radius: 15,
+              itemBorderColor: Colors.purple.shade300,
+              itemBorderWidth: 1.5,
+              itemBorderRadius: 10,
               onChanged: (value) => setState(() => _checkbox5 = value),
             ),
-            buildResultDisplay('Selected Skills', _checkbox5),
+            buildResultDisplay(context, l.get('cbSelectedSkills'), _checkbox5),
 
             // Example 6: Custom Item Padding
-            buildFieldTitle('Custom Item Padding', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbCustomPadding'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Preferred Contact Methods',
+              label: l.get('cbContactMethods'),
               initialValue: _checkbox6,
               items: const ['Email', 'Phone', 'SMS', 'WhatsApp'],
               isRequired: false,
               direction: Axis.vertical,
               borderColor: Colors.orange,
               activeColor: Colors.orange,
+              itemBorderColor: Colors.orange.shade300,
+              itemBorderWidth: 1.25,
+              itemBorderRadius: 8,
               itemPadding:
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               onChanged: (value) => setState(() => _checkbox6 = value),
             ),
-            buildResultDisplay('Contact Methods', _checkbox6, isOptional: true),
+            buildResultDisplay(context, l.get('cbContactMethods'), _checkbox6),
 
-            buildSectionTitle('CHECKBOX - Layout Variations',
-                Colors.pink.shade700, Colors.pink.shade400),
+            buildSectionTitle(l.get('cbLayoutVariations'), Colors.pink.shade700,
+                Colors.pink.shade400),
 
             // Example 7: Horizontal Layout
-            buildFieldTitle(
-                'Horizontal Layout - Days of Week', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbHorizontalLayout'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Days of the Week',
+              label: l.get('cbDaysOfWeek'),
               initialValue: _checkbox7,
               items: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
               isRequired: true,
               direction: Axis.horizontal,
               borderColor: Colors.indigo,
               activeColor: Colors.indigo,
+              itemBorderColor: Colors.indigo.shade300,
+              itemBorderWidth: 1.25,
+              itemBorderRadius: 8,
+              itemMarginTop: 6,
+              itemMarginBottom: 6,
+              itemMarginHorizontal: 4,
               onChanged: (value) => setState(() => _checkbox7 = value),
             ),
-            buildResultDisplay('Selected Days', _checkbox7),
+            buildResultDisplay(context, l.get('cbSelectedDays'), _checkbox7),
 
             // Example 8: Vertical Layout with Custom Colors
-            buildFieldTitle('Vertical Layout - Features', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbVerticalLayout'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Features',
+              label: l.get('cbFeatures'),
               initialValue: _checkbox8,
               items: const ['WiFi', 'Parking', 'Gym', 'Pool'],
               isRequired: false,
@@ -232,17 +242,16 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               activeColor: Colors.cyan,
               onChanged: (value) => setState(() => _checkbox8 = value),
             ),
-            buildResultDisplay('Selected Features', _checkbox8,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('cbSelectedFeatures'), _checkbox8),
 
-            buildSectionTitle('CHECKBOX - Advanced Features',
-                Colors.pink.shade700, Colors.pink.shade400),
+            buildSectionTitle(l.get('cbAdvancedFeatures'), Colors.pink.shade700,
+                Colors.pink.shade400),
 
             // Example 9: Custom Validation
-            buildFieldTitle(
-                'Custom Validation - Minimum Selections', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbCustomValidation'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Select at least 2 preferences',
+              label: l.get('cbRestrictedMinOptions'),
               initialValue: _checkbox3,
               items: const ['Option A', 'Option B', 'Option C', 'Option D'],
               isRequired: true,
@@ -251,21 +260,22 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
               activeColor: Colors.red,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please select at least 2 options';
+                  return l.get('cbMinSelections');
                 }
                 if (value.length < 2) {
-                  return 'Please select at least 2 options';
+                  return l.get('cbMinSelections');
                 }
                 return null;
               },
               onChanged: (value) => setState(() => _checkbox3 = value),
             ),
-            buildResultDisplay('Custom Validation', _checkbox3),
+            buildResultDisplay(
+                context, l.get('cbCustomValidationResult'), _checkbox3),
 
             // Example 10: Custom Styling
-            buildFieldTitle('Custom Item Padding', Colors.pink.shade600),
+            buildFieldTitle(l.get('cbCustomPadding'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Dietary Restrictions',
+              label: l.get('cbDietaryRestrictions'),
               initialValue: _checkbox4,
               items: const [
                 'Vegetarian',
@@ -302,28 +312,32 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
                   const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
               onChanged: (value) => setState(() => _checkbox4 = value),
             ),
-            buildResultDisplay('Dietary Restrictions', _checkbox4,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('cbDietaryRestrictions'), _checkbox4),
 
             // Example 11: Horizontal Layout with Custom Border
             buildFieldTitle(
-                'Horizontal Layout - Notifications', Colors.pink.shade600),
+                l.get('cbNotificationsLayout'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Notifications',
+              label: l.get('cbNotifications'),
               initialValue: _checkbox5,
               items: const ['Push', 'Email', 'SMS', 'In-App'],
               isRequired: false,
               direction: Axis.horizontal,
               borderColor: Colors.deepPurple,
               activeColor: Colors.deepPurple,
+              itemBorderColor: Colors.deepPurple.shade300,
+              itemBorderWidth: 1.25,
+              itemBorderRadius: 8,
               onChanged: (value) => setState(() => _checkbox5 = value),
             ),
-            buildResultDisplay('Notifications', _checkbox5, isOptional: true),
+            buildResultDisplay(context, l.get('cbNotifications'), _checkbox5),
 
             // Example 12: Many Options
-            buildFieldTitle('Many Options - Scrollable', Colors.pink.shade600),
+            buildFieldTitle(
+                l.get('cbManyOptionsScrollable'), Colors.pink.shade600),
             FormFieldsCheckbox<String>(
-              label: 'Countries Visited',
+              label: l.get('cbCountriesVisited'),
               initialValue: _checkbox6,
               items: const [
                 'United States',
@@ -365,8 +379,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
                   const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
               onChanged: (value) => setState(() => _checkbox6 = value),
             ),
-            buildResultDisplay('Countries Visited', _checkbox6,
-                isOptional: true),
+            buildResultDisplay(
+                context, l.get('cbSelectedCountriesVisited'), _checkbox6),
 
             const SizedBox(height: 32),
 
@@ -387,8 +401,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'VALIDATE FORM',
+                child: Text(
+                  l.get('validateFormButton'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -406,13 +420,14 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Checkbox form validated successfully!'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(l.get('cbFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,

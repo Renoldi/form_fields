@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'localization/form_fields_localizations.dart';
 
 class FormFieldsCheckbox<T> extends FormField<List<T>> {
   FormFieldsCheckbox({
@@ -14,6 +15,12 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
     Color errorBorderColor = Colors.red,
     Color activeColor = Colors.blue,
     EdgeInsets itemPadding = const EdgeInsets.symmetric(vertical: 6),
+    double itemMarginTop = 4,
+    double itemMarginBottom = 4,
+    double itemMarginHorizontal = 0,
+    Color? itemBorderColor,
+    double itemBorderWidth = 1.0,
+    double itemBorderRadius = 8,
     String Function(T item)? itemLabelBuilder,
     Widget Function(T item, bool selected)? itemBuilder,
     FormFieldValidator<List<T>>? validator,
@@ -21,7 +28,8 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
           initialValue: initialValue ?? [],
           validator: (value) {
             if (isRequired && (value == null || value.isEmpty)) {
-              return "Select at least one $label";
+              // Localization handled in build method
+              return "";
             }
             return validator?.call(value ?? []);
           },
@@ -37,6 +45,12 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
               errorBorderColor: errorBorderColor,
               activeColor: activeColor,
               itemPadding: itemPadding,
+              itemMarginTop: itemMarginTop,
+              itemMarginBottom: itemMarginBottom,
+              itemMarginHorizontal: itemMarginHorizontal,
+              itemBorderColor: itemBorderColor,
+              itemBorderWidth: itemBorderWidth,
+              itemBorderRadius: itemBorderRadius,
               itemLabelBuilder: itemLabelBuilder,
               itemBuilder: itemBuilder,
               isRequired: isRequired,
@@ -56,6 +70,12 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
   final Color errorBorderColor;
   final Color activeColor;
   final EdgeInsets itemPadding;
+  final double itemMarginTop;
+  final double itemMarginBottom;
+  final double itemMarginHorizontal;
+  final Color? itemBorderColor;
+  final double itemBorderWidth;
+  final double itemBorderRadius;
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
   final bool isRequired;
@@ -71,6 +91,12 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
     required this.errorBorderColor,
     required this.activeColor,
     required this.itemPadding,
+    required this.itemMarginTop,
+    required this.itemMarginBottom,
+    required this.itemMarginHorizontal,
+    this.itemBorderColor,
+    required this.itemBorderWidth,
+    required this.itemBorderRadius,
     this.itemLabelBuilder,
     this.itemBuilder,
     required this.isRequired,
@@ -78,6 +104,7 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     final selectedValues = state.value ?? [];
     final hasError = state.hasError;
 
@@ -110,10 +137,12 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(
-              color: hasError ? errorBorderColor : borderColor,
-              width: 1.5,
-            ),
+            border: itemBorderColor == null
+                ? Border.all(
+                    color: hasError ? errorBorderColor : borderColor,
+                    width: 1.5,
+                  )
+                : null,
             borderRadius: BorderRadius.circular(radius),
           ),
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -133,7 +162,9 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              state.errorText!,
+              state.errorText?.isEmpty ?? true
+                  ? l.selectAtLeastOne(label)
+                  : state.errorText!,
               style: TextStyle(
                 color: errorBorderColor,
                 fontSize: 12,
@@ -146,52 +177,70 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
 
   Widget _buildItem(T item, List<T> selectedValues) {
     final isSelected = selectedValues.contains(item);
+    final itemBorder = itemBorderColor == null
+        ? null
+        : Border.all(color: itemBorderColor!, width: itemBorderWidth);
 
-    return InkWell(
-      onTap: () {
-        final updated = List<T>.from(selectedValues);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        itemMarginHorizontal,
+        itemMarginTop,
+        itemMarginHorizontal,
+        itemMarginBottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: itemBorder,
+          borderRadius: BorderRadius.circular(itemBorderRadius),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(itemBorderRadius),
+          onTap: () {
+            final updated = List<T>.from(selectedValues);
 
-        if (isSelected) {
-          updated.remove(item);
-        } else {
-          updated.add(item);
-        }
+            if (isSelected) {
+              updated.remove(item);
+            } else {
+              updated.add(item);
+            }
 
-        state.didChange(updated);
-        onChanged(updated);
-      },
-      child: Padding(
-        padding: itemPadding,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Checkbox(
-              value: isSelected,
-              activeColor: activeColor,
-              onChanged: (checked) {
-                final updated = List<T>.from(selectedValues);
+            state.didChange(updated);
+            onChanged(updated);
+          },
+          child: Padding(
+            padding: itemPadding,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Checkbox(
+                  value: isSelected,
+                  activeColor: activeColor,
+                  onChanged: (checked) {
+                    final updated = List<T>.from(selectedValues);
 
-                if (checked == true) {
-                  updated.add(item);
-                } else {
-                  updated.remove(item);
-                }
+                    if (checked == true) {
+                      updated.add(item);
+                    } else {
+                      updated.remove(item);
+                    }
 
-                state.didChange(updated);
-                onChanged(updated);
-              },
+                    state.didChange(updated);
+                    onChanged(updated);
+                  },
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: itemBuilder != null
+                      ? itemBuilder!(item, isSelected)
+                      : Text(
+                          itemLabelBuilder != null
+                              ? itemLabelBuilder!(item)
+                              : item.toString(),
+                        ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: itemBuilder != null
-                  ? itemBuilder!(item, isSelected)
-                  : Text(
-                      itemLabelBuilder != null
-                          ? itemLabelBuilder!(item)
-                          : item.toString(),
-                    ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'enums.dart';
 import 'localization/form_fields_localizations.dart';
+import 'enums.dart';
 
 class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String label;

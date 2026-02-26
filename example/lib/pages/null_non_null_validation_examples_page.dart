@@ -39,6 +39,7 @@ class _NullNonNullValidationExamplesPageState
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -51,23 +52,19 @@ class _NullNonNullValidationExamplesPageState
 
             // ===== STRING VALIDATION PATTERNS =====
             buildSectionTitle(
-              'STRING: Nullable vs Non-Nullable with isRequired',
+              l.get('valStringNullable'),
               Colors.blue.shade700,
               Colors.blue.shade400,
             ),
 
             // PATTERN 1: Non-Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 1: String (Non-Null) + isRequired: true',
-              Colors.green.shade600,
-            ),
+            buildFieldTitle(l.get('valPattern1'), Colors.green.shade600),
             buildDescriptionBox(
-              'Type: String | Nullable: ❌ | Required: ✓\n'
-              'Behavior: MUST have value, cannot be empty, cannot be null',
+              l.get('valStringDesc1'),
               Colors.green,
             ),
             FormFields<String>(
-              label: 'Full Name',
+              label: l.get('ffFullName'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -76,22 +73,17 @@ class _NullNonNullValidationExamplesPageState
                   setState(() => _stringNonNullRequired = value),
               currrentValue: _stringNonNullRequired,
             ),
-            buildResultDisplay('Full Name', _stringNonNullRequired),
+            buildResultDisplay(l.get('ffFullName'), _stringNonNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 2: Non-Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 2: String (Non-Null) + isRequired: false',
-              Colors.orange.shade600,
-            ),
+            buildFieldTitle(l.get('valPattern2'), Colors.orange.shade600),
             buildDescriptionBox(
-              'Type: String | Nullable: ❌ | Required: ❌\n'
-              'Behavior: Optional field, but if filled must be valid\n'
-              'Note: Default empty string satisfies non-null requirement',
+              l.get('valStringDesc2'),
               Colors.orange,
             ),
             FormFields<String>(
-              label: 'Middle Name',
+              label: l.get('ffMiddleName'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -100,23 +92,18 @@ class _NullNonNullValidationExamplesPageState
                   setState(() => _stringNonNullOptional = value),
               currrentValue: _stringNonNullOptional,
             ),
-            buildResultDisplay('Middle Name', _stringNonNullOptional,
+            buildResultDisplay(l.get('ffMiddleName'), _stringNonNullOptional,
                 isOptional: true),
             const SizedBox(height: 24),
 
             // PATTERN 3: Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 3: String (Nullable) + isRequired: true',
-              Colors.red.shade600,
-            ),
+            buildFieldTitle(l.get('valPattern3'), Colors.red.shade600),
             buildDescriptionBox(
-              'Type: String? | Nullable: ✓ | Required: ✓\n'
-              'Behavior: MUST have value, cannot be null, cannot be empty\n'
-              'Validation: isRequired=true overrides nullability',
+              l.get('valStringDesc3'),
               Colors.red,
             ),
             FormFields<String?>(
-              label: 'Last Name',
+              label: l.get('ffLastName'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -124,22 +111,17 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _stringNullRequired = value),
               currrentValue: _stringNullRequired,
             ),
-            buildResultDisplay('Last Name', _stringNullRequired),
+            buildResultDisplay(l.get('ffLastName'), _stringNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 4: Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 4: String (Nullable) + isRequired: false',
-              Colors.purple.shade600,
-            ),
+            buildFieldTitle(l.get('valPattern4'), Colors.purple.shade600),
             buildDescriptionBox(
-              'Type: String? | Nullable: ✓ | Required: ❌\n'
-              'Behavior: Fully optional, can be null or empty\n'
-              'Best for: Optional user input fields',
+              l.get('valStringDesc4'),
               Colors.purple,
             ),
             FormFields<String?>(
-              label: 'Nickname',
+              label: l.get('valNickname'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -147,30 +129,22 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _stringNullOptional = value),
               currrentValue: _stringNullOptional,
             ),
-            buildResultDisplay('Nickname', _stringNullOptional,
+            buildResultDisplay(l.get('valNickname'), _stringNullOptional,
                 isOptional: true),
             const SizedBox(height: 32),
 
             // ===== INT VALIDATION PATTERNS =====
-            buildSectionTitle(
-              'INT: Nullable vs Non-Nullable with isRequired',
-              Colors.teal.shade700,
-              Colors.teal.shade400,
-            ),
+            buildSectionTitle(l.get('valIntPatterns'), Colors.teal.shade700,
+                Colors.teal.shade400),
 
             // PATTERN 1: Non-Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 1: Int (Non-Null) + isRequired: true',
-              Colors.green.shade600,
-            ),
+            buildFieldTitle(l.get('valIntPattern1'), Colors.green.shade600),
             buildDescriptionBox(
-              'Type: int | Nullable: ❌ | Required: ✓\n'
-              'Behavior: MUST enter valid integer, cannot skip\n'
-              'Default: 0 (satisfies non-null requirement)',
+              l.get('valIntDesc1'),
               Colors.green,
             ),
             FormFields<int>(
-              label: 'Age',
+              label: l.get('ffAge'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -178,22 +152,17 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _intNonNullRequired = value),
               currrentValue: _intNonNullRequired,
             ),
-            buildResultDisplay('Age', _intNonNullRequired),
+            buildResultDisplay(l.get('ffAge'), _intNonNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 2: Non-Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 2: Int (Non-Null) + isRequired: false',
-              Colors.orange.shade600,
-            ),
+            buildFieldTitle(l.get('valIntPattern2'), Colors.orange.shade600),
             buildDescriptionBox(
-              'Type: int | Nullable: ❌ | Required: ❌\n'
-              'Behavior: Optional, default to 0 if left empty\n'
-              'Validation: Only validates if user enters value',
+              l.get('valIntDesc2'),
               Colors.orange,
             ),
             FormFields<int>(
-              label: 'Phone Extension',
+              label: l.get('valPhoneExtension'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -201,23 +170,18 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _intNonNullOptional = value),
               currrentValue: _intNonNullOptional,
             ),
-            buildResultDisplay('Phone Extension', _intNonNullOptional,
+            buildResultDisplay(l.get('valPhoneExtension'), _intNonNullOptional,
                 isOptional: true),
             const SizedBox(height: 24),
 
             // PATTERN 3: Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 3: Int (Nullable) + isRequired: true',
-              Colors.red.shade600,
-            ),
+            buildFieldTitle(l.get('valIntPattern3'), Colors.red.shade600),
             buildDescriptionBox(
-              'Type: int? | Nullable: ✓ | Required: ✓\n'
-              'Behavior: MUST enter valid integer, cannot be null\n'
-              'Error: "Enter Stock Quantity" if left empty',
+              l.get('valIntDesc3'),
               Colors.red,
             ),
             FormFields<int?>(
-              label: 'Stock Quantity',
+              label: l.get('ffQuantity'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -225,22 +189,17 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _intNullRequired = value),
               currrentValue: _intNullRequired,
             ),
-            buildResultDisplay('Stock Quantity', _intNullRequired),
+            buildResultDisplay(l.get('ffQuantity'), _intNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 4: Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 4: Int (Nullable) + isRequired: false',
-              Colors.purple.shade600,
-            ),
+            buildFieldTitle(l.get('valIntPattern4'), Colors.purple.shade600),
             buildDescriptionBox(
-              'Type: int? | Nullable: ✓ | Required: ❌\n'
-              'Behavior: Fully optional, can be null or empty\n'
-              'Best for: Optional numeric fields',
+              l.get('valIntDesc4'),
               Colors.purple,
             ),
             FormFields<int?>(
-              label: 'Employee ID',
+              label: l.get('valEmployeeId'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -248,30 +207,22 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _intNullOptional = value),
               currrentValue: _intNullOptional,
             ),
-            buildResultDisplay('Employee ID', _intNullOptional,
+            buildResultDisplay(l.get('valEmployeeId'), _intNullOptional,
                 isOptional: true),
             const SizedBox(height: 32),
 
             // ===== DOUBLE VALIDATION PATTERNS =====
-            buildSectionTitle(
-              'DOUBLE: Nullable vs Non-Nullable with isRequired',
-              Colors.indigo.shade700,
-              Colors.indigo.shade400,
-            ),
+            buildSectionTitle(l.get('valDoublePatterns'),
+                Colors.indigo.shade700, Colors.indigo.shade400),
 
             // PATTERN 1: Non-Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 1: Double (Non-Null) + isRequired: true',
-              Colors.green.shade600,
-            ),
+            buildFieldTitle(l.get('valDoublePattern1'), Colors.green.shade600),
             buildDescriptionBox(
-              'Type: double | Nullable: ❌ | Required: ✓\n'
-              'Behavior: MUST enter valid decimal, cannot skip\n'
-              'Default: 0.0 (satisfies non-null requirement)',
+              l.get('valDoubleDesc1'),
               Colors.green,
             ),
             FormFields<double>(
-              label: 'Product Price',
+              label: l.get('ffProductPrice'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -284,22 +235,17 @@ class _NullNonNullValidationExamplesPageState
                   setState(() => _doubleNonNullRequired = value),
               currrentValue: _doubleNonNullRequired,
             ),
-            buildResultDisplay('Product Price', _doubleNonNullRequired),
+            buildResultDisplay(l.get('ffProductPrice'), _doubleNonNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 2: Non-Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 2: Double (Non-Null) + isRequired: false',
-              Colors.orange.shade600,
-            ),
+            buildFieldTitle(l.get('valDoublePattern2'), Colors.orange.shade600),
             buildDescriptionBox(
-              'Type: double | Nullable: ❌ | Required: ❌\n'
-              'Behavior: Optional, default to 0.0 if left empty\n'
-              'Validation: Only validates if user enters value',
+              l.get('valDoubleDesc2'),
               Colors.orange,
             ),
             FormFields<double>(
-              label: 'Shipping Cost',
+              label: l.get('valShippingCost'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -312,23 +258,18 @@ class _NullNonNullValidationExamplesPageState
                   setState(() => _doubleNonNullOptional = value),
               currrentValue: _doubleNonNullOptional,
             ),
-            buildResultDisplay('Shipping Cost', _doubleNonNullOptional,
+            buildResultDisplay(l.get('valShippingCost'), _doubleNonNullOptional,
                 isOptional: true),
             const SizedBox(height: 24),
 
             // PATTERN 3: Nullable + isRequired: true
-            buildFieldTitle(
-              'Pattern 3: Double (Nullable) + isRequired: true',
-              Colors.red.shade600,
-            ),
+            buildFieldTitle(l.get('valDoublePattern3'), Colors.red.shade600),
             buildDescriptionBox(
-              'Type: double? | Nullable: ✓ | Required: ✓\n'
-              'Behavior: MUST enter valid decimal, cannot be null\n'
-              'Error: "Enter Discount Rate" if left empty',
+              l.get('valDoubleDesc3'),
               Colors.red,
             ),
             FormFields<double?>(
-              label: 'Discount Rate',
+              label: l.get('valDiscountRate'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
@@ -340,22 +281,17 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _doubleNullRequired = value),
               currrentValue: _doubleNullRequired,
             ),
-            buildResultDisplay('Discount Rate', _doubleNullRequired),
+            buildResultDisplay(l.get('valDiscountRate'), _doubleNullRequired),
             const SizedBox(height: 24),
 
             // PATTERN 4: Nullable + isRequired: false
-            buildFieldTitle(
-              'Pattern 4: Double (Nullable) + isRequired: false',
-              Colors.purple.shade600,
-            ),
+            buildFieldTitle(l.get('valDoublePattern4'), Colors.purple.shade600),
             buildDescriptionBox(
-              'Type: double? | Nullable: ✓ | Required: ❌\n'
-              'Behavior: Fully optional, can be null or empty\n'
-              'Best for: Optional decimal fields',
+              l.get('valDoubleDesc4'),
               Colors.purple,
             ),
             FormFields<double?>(
-              label: 'Commission Amount',
+              label: l.get('valCommissionAmount'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -367,62 +303,56 @@ class _NullNonNullValidationExamplesPageState
               onChanged: (value) => setState(() => _doubleNullOptional = value),
               currrentValue: _doubleNullOptional,
             ),
-            buildResultDisplay('Commission Amount', _doubleNullOptional,
+            buildResultDisplay(
+                l.get('valCommissionAmount'), _doubleNullOptional,
                 isOptional: true),
             const SizedBox(height: 32),
 
             // ===== CUSTOM VALIDATION =====
-            buildSectionTitle(
-              'CUSTOM VALIDATION: Using Custom Validators',
-              Colors.teal.shade700,
-              Colors.teal.shade400,
-            ),
+            buildSectionTitle(l.get('valCustomValidationSection'),
+                Colors.teal.shade700, Colors.teal.shade400),
 
             buildFieldTitle(
-              'Custom Validation 1: Username with Constraints',
-              Colors.teal.shade600,
-            ),
+                l.get('valCustomValidation1Title'), Colors.teal.shade600),
             buildDescriptionBox(
-              'Custom Rules: Min 3 chars, max 20 chars, alphanumeric + underscore only',
+              l.get('valCustomValidation1Desc'),
               Colors.teal,
             ),
             FormFields<String>(
-              label: 'Username',
+              label: l.get('valUsername'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
               borderColor: Colors.teal,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Username is required';
+                  return l.get('valUsernameRequired');
                 }
                 if (value.length < 3) {
-                  return 'Username must be at least 3 characters';
+                  return l.get('valUsernameMin');
                 }
                 if (value.length > 20) {
-                  return 'Username cannot exceed 20 characters';
+                  return l.get('valUsernameMax');
                 }
                 if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                  return 'Username can only contain letters, numbers, and underscores';
+                  return l.get('valUsernameChars');
                 }
                 return null;
               },
               onChanged: (value) => setState(() => _usernameCustom = value),
               currrentValue: _usernameCustom,
             ),
-            buildResultDisplay('Username', _usernameCustom),
+            buildResultDisplay(l.get('valUsername'), _usernameCustom),
             const SizedBox(height: 24),
 
             buildFieldTitle(
-              'Custom Validation 2: Email with Domain Restriction',
-              Colors.cyan.shade600,
-            ),
+                l.get('valCustomValidation2Title'), Colors.cyan.shade600),
             buildDescriptionBox(
-              'Custom Rules: Valid email AND must be company domain only',
+              l.get('valCustomValidation2Desc'),
               Colors.cyan,
             ),
             FormFields<String?>(
-              label: 'Company Email',
+              label: l.get('valEmail'),
               formType: FormType.email,
               labelPosition: LabelPosition.top,
               isRequired: false,
@@ -434,90 +364,76 @@ class _NullNonNullValidationExamplesPageState
                 // First check if valid email format
                 if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
                     .hasMatch(value)) {
-                  return 'Enter a valid email address';
+                  return l.get('valEmailInvalid');
                 }
                 // Then check if company domain
                 if (!value.endsWith('@company.com')) {
-                  return 'Only @company.com emails are allowed';
+                  return l.get('valEmailDomain');
                 }
                 return null;
               },
               onChanged: (value) => setState(() => _emailCustom = value),
               currrentValue: _emailCustom,
             ),
-            buildResultDisplay('Company Email', _emailCustom, isOptional: true),
+            buildResultDisplay(l.get('valEmail'), _emailCustom,
+                isOptional: true),
             const SizedBox(height: 24),
 
             buildFieldTitle(
-              'Custom Validation 3: Age Range Validation',
-              Colors.indigo.shade600,
-            ),
+                l.get('valCustomValidation3Title'), Colors.indigo.shade600),
             buildDescriptionBox(
-              'Custom Rules: Age must be between 18 and 65',
+              l.get('valCustomValidation3Desc'),
               Colors.indigo,
             ),
             FormFields<int>(
-              label: 'Age',
+              label: l.get('valAge'),
               formType: FormType.string,
               labelPosition: LabelPosition.top,
               isRequired: true,
               borderColor: Colors.indigo,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Age is required';
+                  return l.get('valAgeRequired');
                 }
                 final age = int.tryParse(value);
                 if (age == null) {
-                  return 'Enter a valid number';
+                  return l.get('valAgeInvalid');
                 }
                 if (age < 18) {
-                  return 'Must be at least 18 years old';
+                  return l.get('valAgeMin');
                 }
                 if (age > 65) {
-                  return 'Age cannot exceed 65';
+                  return l.get('valAgeMax');
                 }
                 return null;
               },
               onChanged: (value) => setState(() => _ageCustom = value),
               currrentValue: _ageCustom,
             ),
-            buildResultDisplay('Age', _ageCustom),
+            buildResultDisplay(l.get('valAge'), _ageCustom),
             const SizedBox(height: 32),
 
             // ===== VALIDATION RULES SUMMARY =====
-            buildSectionTitle(
-              'Validation Rules Summary',
-              Colors.grey.shade700,
-              Colors.grey.shade400,
-            ),
+            buildSectionTitle(l.get('valRulesSummaryTitle'),
+                Colors.grey.shade700, Colors.grey.shade400),
             buildRuleBox(
-              'Rule 1: Non-Null + isRequired: true',
-              '✓ MUST have value\n'
-                  '✗ Cannot be empty\n'
-                  '✗ Default value (0, "", 0.0) required',
+              l.get('valRule1Title'),
+              l.get('valRule1Desc'),
               Colors.green,
             ),
             buildRuleBox(
-              'Rule 2: Non-Null + isRequired: false',
-              '✓ Can be empty\n'
-                  '✓ Uses default value if empty\n'
-                  '✗ Still validates if user enters value',
+              l.get('valRule2Title'),
+              l.get('valRule2Desc'),
               Colors.orange,
             ),
             buildRuleBox(
-              'Rule 3: Nullable + isRequired: true',
-              '✓ MUST have value\n'
-                  '✗ Cannot be null\n'
-                  '✗ Cannot be empty\n'
-                  '⚠ isRequired overrides type nullability',
+              l.get('valRule3Title'),
+              l.get('valRule3Desc'),
               Colors.red,
             ),
             buildRuleBox(
-              'Rule 4: Nullable + isRequired: false',
-              '✓ Can be empty\n'
-                  '✓ Can be null\n'
-                  '✓ Fully optional field\n'
-                  '⚠ Only validates if value provided',
+              l.get('valRule4Title'),
+              l.get('valRule4Desc'),
               Colors.purple,
             ),
             const SizedBox(height: 32),
@@ -553,8 +469,8 @@ class _NullNonNullValidationExamplesPageState
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'VALIDATE & SUBMIT',
+                child: Text(
+                  l.get('valValidateSubmitButton'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -572,13 +488,14 @@ class _NullNonNullValidationExamplesPageState
   }
 
   void _showFormData() {
+    final l = FormFieldsLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Form validated successfully!'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(l.get('valFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,
@@ -693,11 +610,13 @@ class _NullNonNullValidationExamplesPageState
 
   Widget buildResultDisplay(String label, dynamic value,
       {bool isOptional = false}) {
-    final displayValue = value ?? '(null)';
+    final l = FormFieldsLocalizations.of(context);
+    final displayValue = value ?? l.get('notSet');
+    final optionalLabel = l.get('optionalLabel');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
-        '$label: $displayValue${isOptional ? ' (optional)' : ''}',
+        '$label: $displayValue${isOptional ? ' $optionalLabel' : ''}',
         style: const TextStyle(fontSize: 12, color: Colors.grey),
       ),
     );
