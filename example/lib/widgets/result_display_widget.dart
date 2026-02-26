@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Reusable widget to display form field values in a formatted container
-Widget buildResultDisplay(String label, dynamic value,
-    {bool isOptional = false}) {
+Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
   final hasValue = value != null && value.toString().isNotEmpty;
   final displayValue = hasValue ? value.toString() : 'Not set';
 
