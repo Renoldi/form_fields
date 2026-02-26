@@ -59,10 +59,10 @@ Widget buildResultDisplay<T>(String label, T value, {bool isOptional = false}) {
             child: Text(
               '"$displayValue"',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 13,
                 fontFamily: 'Courier',
                 fontWeight: FontWeight.w500,
-                color: hasValue ? Colors.red : Colors.grey.shade600,
+                color: hasValue ? Colors.green.shade700 : Colors.grey.shade600,
               ),
             ),
           ),
