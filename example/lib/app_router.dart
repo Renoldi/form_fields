@@ -5,6 +5,7 @@ import 'pages/dropdown_multi_examples_page.dart';
 import 'pages/radio_button_examples_page.dart';
 import 'pages/checkbox_examples_page.dart';
 import 'pages/custom_class_examples_page.dart';
+import 'pages/null_non_null_validation_examples_page.dart';
 import 'widgets/scaffold_with_drawer.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -38,6 +39,11 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/custom-class',
           builder: (context, state) => const CustomClassExamplesPage(),
+        ),
+        GoRoute(
+          path: '/null-non-null-validation',
+          builder: (context, state) =>
+              const NullNonNullValidationExamplesPage(),
         ),
       ],
     ),

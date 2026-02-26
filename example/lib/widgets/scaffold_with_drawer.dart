@@ -22,6 +22,8 @@ class ScaffoldWithDrawer extends StatelessWidget {
         return 'Checkbox Examples';
       case '/custom-class':
         return 'Custom Class Examples';
+      case '/null-non-null-validation':
+        return 'Null/Non-Null Validation Examples';
       default:
         return 'FormFields Examples';
     }
@@ -289,6 +291,16 @@ class AppDrawer extends StatelessWidget {
               route: '/custom-class',
               isSelected: currentLocation == '/custom-class',
               color: Colors.teal,
+            ),
+            const Divider(color: Colors.white24, height: 1),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.rule,
+              title: 'Null/Non-Null Validation',
+              subtitle: 'Nullable vs Non-Nullable Types',
+              route: '/null-non-null-validation',
+              isSelected: currentLocation == '/null-non-null-validation',
+              color: Colors.indigo,
             ),
             const SizedBox(height: 16),
             _buildLanguageSection(context),

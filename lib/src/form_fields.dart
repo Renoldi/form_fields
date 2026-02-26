@@ -985,19 +985,32 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // VALIDATION & UI BUILDING
   // ============================================================================
 
-  String? _validateRequired(String? value, String label, bool isRequired) {
+  String? _validateRequired(
+      String? value, String label, bool isRequired, FormFieldsController vm) {
     print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
 
+    // === CUSTOM VALIDATOR (Run first if provided) ===
+    if (widget.validator != null) {
+      final customError = widget.validator!(value);
+      if (customError != null) {
+        return customError;
+      }
+    }
+
+    // === REQUIRED FIELD CHECK ===
     if (isRequired) {
       if (value == null || value.isEmpty) {
         print('  → RETURNING ERROR!');
         return 'Enter $label';
       }
     }
-    return null;
-  }
 
-  String? _validateField(String? value, FormFieldsController vm) {
+    // === SKIP IF NOT REQUIRED AND EMPTY ===
+    if (!isRequired && (value == null || value.isEmpty)) {
+      return null;
+    }
+
+    // === TYPE-SPECIFIC VALIDATION ===
     switch (vm.formType) {
       case FormType.phone:
         // For phone validation, validate the full number with country code
@@ -1239,8 +1252,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 }
               }
             },
-            validator: (value) =>
-                _validateRequired(value, widget.label, widget.isRequired),
+            validator: (value) => _validateRequired(
+              value,
+              widget.label,
+              widget.isRequired,
+              vm,
+            ),
             controller: vm.controller,
             onTap: () async {
               if (!mounted) return;
