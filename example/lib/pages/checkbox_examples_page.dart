@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 class CheckboxExamplesPage extends StatefulWidget {
   const CheckboxExamplesPage({Key? key}) : super(key: key);
@@ -40,6 +41,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             direction: Axis.vertical,
             onChanged: (value) => setState(() => _checkbox1 = value),
           ),
+          buildResultDisplay('Terms Agreed', _checkbox1),
 
           // Example 2: Single Selection - Horizontal
           _buildFieldTitle('Single Selection - Horizontal Layout'),
@@ -53,6 +55,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             activeColor: Colors.blue,
             onChanged: (value) => setState(() => _checkbox2 = value),
           ),
+          buildResultDisplay('Newsletter', _checkbox2, isOptional: true),
 
           _buildSectionTitle('CHECKBOX - Multiple Selection'),
 
@@ -73,6 +76,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             direction: Axis.vertical,
             onChanged: (value) => setState(() => _checkbox3 = value),
           ),
+          buildResultDisplay('Selected Hobbies', _checkbox3),
 
           // Example 4: Multiple Selection - Horizontal
           _buildFieldTitle('Multiple Selection - Horizontal Layout'),
@@ -86,6 +90,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             activeColor: Colors.teal,
             onChanged: (value) => setState(() => _checkbox4 = value),
           ),
+          buildResultDisplay('Selected Languages', _checkbox4),
 
           _buildSectionTitle('CHECKBOX - Custom Styling'),
 
@@ -109,6 +114,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             radius: 15,
             onChanged: (value) => setState(() => _checkbox5 = value),
           ),
+          buildResultDisplay('Selected Skills', _checkbox5),
 
           // Example 6: Custom Item Padding
           _buildFieldTitle('Custom Item Padding'),
@@ -124,6 +130,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
                 const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             onChanged: (value) => setState(() => _checkbox6 = value),
           ),
+          buildResultDisplay('Contact Methods', _checkbox6, isOptional: true),
 
           _buildSectionTitle('CHECKBOX - Layout Variations'),
 
@@ -139,6 +146,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             activeColor: Colors.indigo,
             onChanged: (value) => setState(() => _checkbox7 = value),
           ),
+          buildResultDisplay('Selected Days', _checkbox7),
 
           // Example 8: Vertical Layout with Custom Colors
           _buildFieldTitle('Vertical Layout - Features'),
@@ -152,6 +160,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             activeColor: Colors.cyan,
             onChanged: (value) => setState(() => _checkbox8 = value),
           ),
+          buildResultDisplay('Selected Features', _checkbox8, isOptional: true),
 
           _buildSectionTitle('CHECKBOX - Advanced Features'),
 
@@ -176,6 +185,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             },
             onChanged: (value) => setState(() => _checkbox3 = value),
           ),
+          buildResultDisplay('Custom Validation', _checkbox3),
 
           // Example 10: Custom Styling
           _buildFieldTitle('Custom Item Padding'),
@@ -197,6 +207,8 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
                 const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             onChanged: (value) => setState(() => _checkbox4 = value),
           ),
+          buildResultDisplay('Dietary Restrictions', _checkbox4,
+              isOptional: true),
 
           // Example 11: Horizontal Layout with Custom Border
           _buildFieldTitle('Horizontal Layout - Notifications'),
@@ -210,6 +222,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             activeColor: Colors.deepPurple,
             onChanged: (value) => setState(() => _checkbox5 = value),
           ),
+          buildResultDisplay('Notifications', _checkbox5, isOptional: true),
 
           // Example 12: Many Options
           _buildFieldTitle('Many Options - Scrollable'),
@@ -237,6 +250,7 @@ class _CheckboxExamplesPageState extends State<CheckboxExamplesPage> {
             itemPadding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             onChanged: (value) => setState(() => _checkbox6 = value),
           ),
+          buildResultDisplay('Countries Visited', _checkbox6, isOptional: true),
 
           const SizedBox(height: 32),
 

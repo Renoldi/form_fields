@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 class RadioButtonExamplesPage extends StatefulWidget {
   const RadioButtonExamplesPage({Key? key}) : super(key: key);
@@ -41,6 +42,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             direction: Axis.vertical,
             onChanged: (value) => setState(() => _radio1 = value ?? ''),
           ),
+          buildResultDisplay('Selected Gender', _radio1),
 
           // Example 2: Horizontal Radio Button
           _buildFieldTitle('Radio Button - Horizontal Layout'),
@@ -52,6 +54,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             direction: Axis.horizontal,
             onChanged: (value) => setState(() => _radio2 = value ?? ''),
           ),
+          buildResultDisplay('Selected Marital Status', _radio2),
 
           _buildSectionTitle('RADIO BUTTON - Custom Styling'),
 
@@ -69,6 +72,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             radius: 15,
             onChanged: (value) => setState(() => _radio3 = value ?? ''),
           ),
+          buildResultDisplay('Selected Plan', _radio3),
 
           // Example 4: Custom Item Spacing & Padding
           _buildFieldTitle('Custom Item Spacing & Padding'),
@@ -84,6 +88,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
                 const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             onChanged: (value) => setState(() => _radio4 = value ?? ''),
           ),
+          buildResultDisplay('Selected Delivery', _radio4),
 
           _buildSectionTitle('RADIO BUTTON - Layout Variations'),
 
@@ -99,6 +104,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             activeColor: Colors.amber,
             onChanged: (value) => setState(() => _radio5 = value ?? ''),
           ),
+          buildResultDisplay('Selected Rating', _radio5),
 
           // Example 6: Different Label Positions
           _buildFieldTitle('Label Position: Left'),
@@ -112,6 +118,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             activeColor: Colors.red,
             onChanged: (value) => setState(() => _radio6 = value ?? ''),
           ),
+          buildResultDisplay('Selected Priority', _radio6),
 
           _buildSectionTitle('RADIO BUTTON - Advanced Features'),
 
@@ -141,6 +148,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             },
             onChanged: (value) => setState(() => _radio7 = value ?? ''),
           ),
+          buildResultDisplay('Selected Payment Method', _radio7),
 
           // Example 8: With Custom Icon Size
           _buildFieldTitle('Custom Icon Size'),
@@ -156,6 +164,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
                 const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             onChanged: (value) => setState(() => _radio8 = value ?? ''),
           ),
+          buildResultDisplay('Selected Frequency', _radio8, isOptional: true),
 
           _buildSectionTitle('RADIO BUTTON - More Options'),
 
@@ -183,6 +192,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             itemPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             onChanged: (value) => setState(() => _radio1 = value ?? ''),
           ),
+          buildResultDisplay('Selected Country', _radio1),
 
           // Example 10: Underline Border Type
           _buildFieldTitle('Underline Border Type'),
@@ -196,6 +206,7 @@ class _RadioButtonExamplesPageState extends State<RadioButtonExamplesPage> {
             activeColor: Colors.cyan,
             onChanged: (value) => setState(() => _radio2 = value ?? ''),
           ),
+          buildResultDisplay('Selected Account Type', _radio2),
 
           const SizedBox(height: 32),
 

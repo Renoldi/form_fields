@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 class DropdownMultiExamplesPage extends StatefulWidget {
   const DropdownMultiExamplesPage({Key? key}) : super(key: key);
@@ -97,6 +98,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               isRequired: true,
               onChanged: (values) => setState(() => _multiDropdown1 = values),
             ),
+            buildResultDisplay('Programming Languages', _multiDropdown1),
 
             // Example 2: With Min/Max Constraints
             _buildFieldTitle('2. Min/Max Selections (Min: 2, Max: 4)'),
@@ -122,6 +124,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.blue.shade700,
               onChanged: (values) => setState(() => _multiDropdown2 = values),
             ),
+            buildResultDisplay('Selected Skills', _multiDropdown2),
 
             // Example 3: Custom Styled
             _buildFieldTitle('3. Custom Chip Styling'),
@@ -144,6 +147,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.white,
               onChanged: (values) => setState(() => _multiDropdown3 = values),
             ),
+            buildResultDisplay('Selected Interests', _multiDropdown3,
+                isOptional: true),
 
             // Example 4: With Item Count Display
             _buildFieldTitle('4. With Item Count Display'),
@@ -167,6 +172,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               chipDeleteIconColor: Colors.orange.shade700,
               onChanged: (values) => setState(() => _multiDropdown4 = values),
             ),
+            buildResultDisplay('Selected Frameworks', _multiDropdown4,
+                isOptional: true),
 
             // Example 5: Custom Borders and Hint
             _buildFieldTitle('5. Custom Border & Hint Text'),
@@ -196,6 +203,8 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
               labelPosition: LabelPosition.top,
               onChanged: (values) => setState(() => _multiDropdown5 = values),
             ),
+            buildResultDisplay('Countries Visited', _multiDropdown5,
+                isOptional: true),
 
             const SizedBox(height: 32),
 

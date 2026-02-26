@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 // Custom Model Classes
 class Country {
@@ -208,6 +209,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedCountry = value);
               },
             ),
+            buildResultDisplay('Selected Country', _selectedCountry),
 
             const SizedBox(height: 16),
 
@@ -241,6 +243,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedSkills = values);
               },
             ),
+            buildResultDisplay('Selected Skills', _selectedSkills),
 
             const SizedBox(height: 16),
 
@@ -333,6 +336,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedPlan = value);
               },
             ),
+            buildResultDisplay('Selected Plan', _selectedPlan),
 
             const SizedBox(height: 16),
 
@@ -413,6 +417,8 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                 setState(() => _selectedInterests = values);
               },
             ),
+            buildResultDisplay('Selected Interests', _selectedInterests,
+                isOptional: true),
 
             const SizedBox(height: 16),
 

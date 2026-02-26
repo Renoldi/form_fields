@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 class DropdownExamplesPage extends StatefulWidget {
   const DropdownExamplesPage({Key? key}) : super(key: key);
@@ -62,6 +63,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             isRequired: true,
             onChanged: (value) => setState(() => _dropdown1 = value ?? ''),
           ),
+          buildResultDisplay('Selected Country', _dropdown1),
 
           // Example 2: Optional Dropdown
           _buildFieldTitle('Optional Dropdown - Not Required'),
@@ -73,6 +75,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             hintText: 'Select your preferred language',
             onChanged: (value) => setState(() => _dropdown2 = value ?? ''),
           ),
+          buildResultDisplay('Selected Language', _dropdown2, isOptional: true),
 
           _buildSectionTitle('DROPDOWN - Custom Styling'),
 
@@ -89,6 +92,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             radius: 15,
             onChanged: (value) => setState(() => _dropdown3 = value ?? ''),
           ),
+          buildResultDisplay('Selected Color', _dropdown3),
 
           // Example 4: With Icons
           _buildFieldTitle('With Prefix & Suffix Icons'),
@@ -103,6 +107,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             hintText: 'Choose your size',
             onChanged: (value) => setState(() => _dropdown4 = value ?? ''),
           ),
+          buildResultDisplay('Selected Size', _dropdown4),
 
           _buildSectionTitle('DROPDOWN - Different Label Positions'),
 
@@ -117,6 +122,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             borderColor: Colors.orange,
             onChanged: (value) => setState(() => _dropdown5 = value ?? ''),
           ),
+          buildResultDisplay('Selected Shipping', _dropdown5),
 
           // Example 6: Label at Left
           _buildFieldTitle('Label Position: Left'),
@@ -129,6 +135,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             borderColor: Colors.green,
             onChanged: (value) => setState(() => _dropdown6 = value ?? ''),
           ),
+          buildResultDisplay('Selected Payment', _dropdown6),
 
           _buildSectionTitle('DROPDOWN - Advanced Features'),
 
@@ -151,6 +158,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             },
             onChanged: (value) => setState(() => _dropdown7 = value ?? ''),
           ),
+          buildResultDisplay('Selected Priority', _dropdown7),
 
           // Example 8: Underline Border Type
           _buildFieldTitle('Underline Border Type'),
@@ -164,6 +172,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             focusedBorderColor: Colors.indigoAccent,
             onChanged: (value) => setState(() => _dropdown8 = value ?? ''),
           ),
+          buildResultDisplay('Selected Department', _dropdown8),
 
           _buildSectionTitle('DROPDOWN - Custom Input Decoration'),
 
@@ -198,6 +207,7 @@ class _DropdownExamplesPageState extends State<DropdownExamplesPage> {
             ),
             onChanged: (value) => setState(() => _dropdown9 = value ?? ''),
           ),
+          buildResultDisplay('Selected Theme', _dropdown9, isOptional: true),
 
           const SizedBox(height: 32),
 

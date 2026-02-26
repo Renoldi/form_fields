@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../widgets/result_display_widget.dart';
 
 class FormFieldsExamplesPage extends StatefulWidget {
   const FormFieldsExamplesPage({Key? key}) : super(key: key);
@@ -62,6 +63,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _string1 = value),
             currrentValue: _string1,
           ),
+          buildResultDisplay('Full Name', _string1),
 
           // Nullable String - Optional
           _buildFieldTitle('String (Nullable) - Optional'),
@@ -73,6 +75,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _string2 = value),
             currrentValue: _string2,
           ),
+          buildResultDisplay('Middle Name', _string2, isOptional: true),
 
           // String with All Custom Parameters
           _buildFieldTitle('String - All Custom Parameters'),
@@ -103,6 +106,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             focusNode: _focusNode1,
             nextFocusNode: _focusNode2,
           ),
+          buildResultDisplay('Description', _stringCustom),
 
           // Email with Parameters
           _buildFieldTitle('String - Email FormType'),
@@ -116,6 +120,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _email = value),
             currrentValue: _email,
           ),
+          buildResultDisplay('Email Address', _email),
 
           // Phone with Parameters
           _buildFieldTitle('String - Phone FormType'),
@@ -129,6 +134,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _phone = value),
             currrentValue: _phone,
           ),
+          buildResultDisplay('Phone Number', _phone),
 
           // Password with All Parameters
           _buildFieldTitle('String - Password with Custom Validation'),
@@ -160,6 +166,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             currrentValue: _password,
             focusNode: _focusNode2,
           ),
+          buildResultDisplay('Password', _password),
 
           // ========== INTEGER TYPE ==========
           _buildSectionTitle('INTEGER TYPE - All Parameters'),
@@ -175,7 +182,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _int1 = value),
             currrentValue: _int1,
           ),
-
+          buildResultDisplay('Age', _int1),
           // Nullable Int - With All Parameters
           _buildFieldTitle('Int (Nullable) - With Separators & Custom Styling'),
           FormFields<int?>(
@@ -196,6 +203,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _int2 = value),
             currrentValue: _int2,
           ),
+          buildResultDisplay('Quantity', _int2, isOptional: true),
 
           // ========== DOUBLE TYPE ==========
           _buildSectionTitle('DOUBLE TYPE - All Parameters'),
@@ -217,6 +225,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _double1 = value),
             currrentValue: _double1,
           ),
+          buildResultDisplay('Product Price', _double1),
 
           // Nullable Double - All Parameters
           _buildFieldTitle('Double (Nullable) - All Custom Parameters'),
@@ -242,6 +251,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _double2 = value),
             currrentValue: _double2,
           ),
+          buildResultDisplay('Discount Percentage', _double2, isOptional: true),
 
           // ========== DATETIME TYPE ==========
           _buildSectionTitle('DATETIME TYPE - All Parameters'),
@@ -256,6 +266,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _date1 = value),
             currrentValue: _date1,
           ),
+          buildResultDisplay('Birth Date', _date1),
 
           // Nullable DateTime - All Parameters
           _buildFieldTitle('DateTime (Nullable) - All Custom Parameters'),
@@ -278,6 +289,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _date2 = value),
             currrentValue: _date2,
           ),
+          buildResultDisplay('Event Date', _date2, isOptional: true),
 
           // ========== TIMEOFDAY TYPE ==========
           _buildSectionTitle('TIMEOFDAY TYPE - All Parameters'),
@@ -292,6 +304,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _time1 = value),
             currrentValue: _time1,
           ),
+          buildResultDisplay('Meeting Time', _time1),
 
           // Nullable TimeOfDay - All Parameters
           _buildFieldTitle('TimeOfDay (Nullable) - All Custom Parameters'),
@@ -311,6 +324,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _time2 = value),
             currrentValue: _time2,
           ),
+          buildResultDisplay('Alarm Time', _time2, isOptional: true),
 
           // ========== DATETIMERANGE TYPE ==========
           _buildSectionTitle('DATETIMERANGE TYPE - All Parameters'),
@@ -325,6 +339,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _range1 = value),
             currrentValue: _range1,
           ),
+          buildResultDisplay('Project Duration', _range1),
 
           // Nullable DateTimeRange - All Parameters
           _buildFieldTitle('DateTimeRange (Nullable) - All Custom Parameters'),
@@ -347,6 +362,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
             onChanged: (value) => setState(() => _range2 = value),
             currrentValue: _range2,
           ),
+          buildResultDisplay('Vacation Period', _range2, isOptional: true),
 
           const SizedBox(height: 32),
 
