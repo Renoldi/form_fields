@@ -985,9 +985,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // VALIDATION & UI BUILDING
   // ============================================================================
 
-  String? _validateRequired(
-      String? value, String label, bool isRequired, FormFieldsController vm) {
-    print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
+  String? _validateRequired(String? value, String label, bool isRequired,
+      FormFieldsController vm, FormFieldsLocalizations l10n) {
+    // print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
 
     // === CUSTOM VALIDATOR (Run first if provided) ===
     if (widget.validator != null) {
@@ -1000,8 +1000,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // === REQUIRED FIELD CHECK ===
     if (isRequired) {
       if (value == null || value.isEmpty) {
-        print('  → RETURNING ERROR!');
-        return 'Enter $label';
+        // print('  → RETURNING ERROR!');
+        return l10n.getWithLabel('required', label);
       }
     }
 
@@ -1016,9 +1016,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // For phone validation, validate the full number with country code
         final localDigits = _extractLocalPhoneDigits(value ?? '');
         final fullPhone = '$_selectedCountryCode$localDigits';
-        return FormFieldValidators.phone(vm.label)(fullPhone);
+        return FormFieldValidators.phone(vm.label, l10n)(fullPhone);
       case FormType.email:
-        return FormFieldValidators.email(vm.label)(value);
+        return FormFieldValidators.email(vm.label, l10n)(value);
       case FormType.password:
         // Use custom validator if provided
         if (widget.customPasswordValidator != null) {
@@ -1027,7 +1027,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // Check minimum length
         if (value!.length < widget.minLengthPassword) {
           final errorText = widget.minLengthPasswordErrorText ??
-              'Password must be at least ${widget.minLengthPassword} characters';
+              l10n.getWithValue('passwordMinLength', widget.minLengthPassword);
           return errorText;
         }
         break;
@@ -1040,14 +1040,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
       final parsed = int.tryParse(cleaned);
       if (parsed == null) {
-        return '${widget.invalidIntegerText} ${vm.label}';
+        return l10n.getWithLabel('enterValidInteger', vm.label);
       }
     } else if (_isDoubleType()) {
       final cleaned =
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
       final parsed = double.tryParse(cleaned);
       if (parsed == null) {
-        return '${widget.invalidNumberText} ${vm.label}';
+        return l10n.getWithLabel('enterValidNumber', vm.label);
       }
     }
 
@@ -1257,6 +1257,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
               widget.label,
               widget.isRequired,
               vm,
+              l10n,
             ),
             controller: vm.controller,
             onTap: () async {

@@ -1,6 +1,7 @@
 /// Form field validators for validation logic
 import 'package:flutter/material.dart';
 import 'utilities/extensions.dart';
+import 'localization/form_fields_localizations.dart';
 
 /// Collection of reusable form field validators
 class FormFieldValidators {
@@ -8,10 +9,13 @@ class FormFieldValidators {
   static FormFieldValidator<String> required(
     String label, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       return null;
     };
@@ -19,15 +23,20 @@ class FormFieldValidators {
 
   /// Validates email format
   static FormFieldValidator<String> email(
-    String label, {
+    String label,
+    FormFieldsLocalizations? l10n, {
     String? customMessage,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (!value.isValidEmail) {
-        return customMessage ?? 'Enter valid email address';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.get('enterValidEmail');
+        return 'Enter valid email address';
       }
       return null;
     };
@@ -35,15 +44,20 @@ class FormFieldValidators {
 
   /// Validates phone number format
   static FormFieldValidator<String> phone(
-    String label, {
+    String label,
+    FormFieldsLocalizations? l10n, {
     String? customMessage,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (!value.isValidPhone) {
-        return customMessage ?? 'Enter valid phone number';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.get('enterValidPhone');
+        return 'Enter valid phone number';
       }
       return null;
     };
@@ -53,13 +67,18 @@ class FormFieldValidators {
   static FormFieldValidator<String> password(
     String label, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (!value.isValidPassword) {
-        return customMessage ?? 'Password must be at least 6 characters';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithValue('passwordMinLength', 6);
+        return 'Password must be at least 6 characters';
       }
       return null;
     };
@@ -69,13 +88,18 @@ class FormFieldValidators {
   static FormFieldValidator<String> number(
     String label, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (!value.isValidNumber) {
-        return customMessage ?? 'Enter valid number';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('enterValidNumber', label);
+        return 'Enter valid number';
       }
       return null;
     };
@@ -86,13 +110,21 @@ class FormFieldValidators {
     String label,
     int minLength, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (value.length < minLength) {
-        return customMessage ?? '$label must be at least $minLength characters';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) {
+          return l10n
+              .getWithParams('tooShort', {'label': label, 'value': minLength});
+        }
+        return '$label must be at least $minLength characters';
       }
       return null;
     };
@@ -103,10 +135,16 @@ class FormFieldValidators {
     String label,
     int maxLength, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value != null && value.length > maxLength) {
-        return customMessage ?? '$label must not exceed $maxLength characters';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) {
+          return l10n
+              .getWithParams('tooLong', {'label': label, 'value': maxLength});
+        }
+        return '$label must not exceed $maxLength characters';
       }
       return null;
     };
@@ -118,17 +156,23 @@ class FormFieldValidators {
     num min,
     num max, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       if (!value.isValidNumber) {
-        return customMessage ?? 'Enter valid number';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('enterValidNumber', label);
+        return 'Enter valid number';
       }
       final num? numValue = num.tryParse(value);
       if (numValue == null || numValue < min || numValue > max) {
-        return customMessage ?? '$label must be between $min and $max';
+        if (customMessage != null) return customMessage;
+        return '$label must be between $min and $max';
       }
       return null;
     };
@@ -139,14 +183,19 @@ class FormFieldValidators {
     String label,
     String pattern, {
     String? customMessage,
+    FormFieldsLocalizations? l10n,
   }) {
     return (value) {
       if (value == null || value.isWhiteSpace) {
-        return customMessage ?? 'Enter $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('required', label);
+        return 'Enter $label';
       }
       final regExp = RegExp(pattern);
       if (!regExp.hasMatch(value)) {
-        return customMessage ?? 'Enter valid $label';
+        if (customMessage != null) return customMessage;
+        if (l10n != null) return l10n.getWithLabel('invalid', label);
+        return 'Enter valid $label';
       }
       return null;
     };
