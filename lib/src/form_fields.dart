@@ -797,13 +797,30 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     final labelText = vm.label;
+    final requiredIndicator = widget.isRequired ? ' *' : '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        labelText,
-        style: widget.labelTextStyle ??
-            const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: labelText,
+              style: (widget.labelTextStyle ??
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))
+                .copyWith(color: Colors.black87),
+            ),
+            if (widget.isRequired)
+              TextSpan(
+                text: requiredIndicator,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1006,7 +1023,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   prefixIcon: widget.prefixIcon,
                   hintText: '${widget.enterText}${vm.label}',
                   labelText: widget.labelPosition == LabelPosition.inBorder
-                      ? '${widget.enterText}${vm.label}'
+                      ? '${widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
                       : null,
                   focusedErrorBorder: widget.borderType == BorderType.none
                       ? InputBorder.none

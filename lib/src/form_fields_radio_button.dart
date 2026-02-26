@@ -39,6 +39,7 @@ class FormFieldsRadioButton<T> extends FormField<T> {
               errorBorderColor: errorBorderColor,
               activeColor: activeColor,
               itemPadding: itemPadding,
+              isRequired: isRequired,
             );
           },
         );
@@ -57,6 +58,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
   final Color errorBorderColor;
   final Color activeColor;
   final EdgeInsets itemPadding;
+  final bool isRequired;
 
   const _FormFieldsRadioButtonBody({
     required this.label,
@@ -71,6 +73,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
     required this.errorBorderColor,
     required this.activeColor,
     required this.itemPadding,
+    required this.isRequired,
   });
 
   @override
@@ -81,11 +84,27 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Label
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

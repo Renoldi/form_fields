@@ -181,10 +181,25 @@ class FormFieldsDropdownMulti<T> extends FormField<List<T>> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isRequired ? '$label *' : label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      if (isRequired)
+                        const TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),

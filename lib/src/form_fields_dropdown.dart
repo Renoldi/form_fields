@@ -80,14 +80,33 @@ class FormFieldsDropdown<T> extends FormField<T> {
               return dropdown;
             }
 
+            final labelText = label;
+            final requiredIndicator = isRequired ? ' *' : '';
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isRequired ? "$label *" : label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: labelText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      if (isRequired)
+                        TextSpan(
+                          text: requiredIndicator,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),

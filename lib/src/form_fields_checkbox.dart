@@ -39,6 +39,7 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
               itemPadding: itemPadding,
               itemLabelBuilder: itemLabelBuilder,
               itemBuilder: itemBuilder,
+              isRequired: isRequired,
             );
           },
         );
@@ -57,6 +58,7 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
   final EdgeInsets itemPadding;
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
+  final bool isRequired;
 
   const _FormFieldsCheckboxBody({
     required this.label,
@@ -71,6 +73,7 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
     required this.itemPadding,
     this.itemLabelBuilder,
     this.itemBuilder,
+    required this.isRequired,
   });
 
   @override
@@ -81,9 +84,28 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
         Container(
