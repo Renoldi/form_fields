@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:logger/logger.dart';
 import '../widgets/language_indicator.dart';
+
+final logger = Logger();
 
 class NullNonNullValidationExamplesPage extends StatefulWidget {
   const NullNonNullValidationExamplesPage({Key? key}) : super(key: key);
@@ -444,21 +447,21 @@ class _NullNonNullValidationExamplesPageState
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  print(
+                  logger.i(
                       '\n╔═══════════════════════════════════════════════════════════════╗');
-                  print(
+                  logger.i(
                       '║ FORM SUBMIT BUTTON CLICKED                                      ║');
-                  print(
+                  logger.i(
                       '╚═══════════════════════════════════════════════════════════════╝');
 
                   final isValid = _formKey.currentState!.validate();
-                  print('Form validation result: $isValid');
+                  logger.i('Form validation result: $isValid');
 
                   if (!isValid) {
-                    print('❌ Form validation FAILED - showing errors');
+                    logger.e('❌ Form validation FAILED - showing errors');
                     return;
                   } else {
-                    print('✓ Form validation PASSED - submitting');
+                    logger.i('✓ Form validation PASSED - submitting');
                     _showFormData();
                   }
                 },
@@ -471,7 +474,7 @@ class _NullNonNullValidationExamplesPageState
                 ),
                 child: Text(
                   l.get('valValidateSubmitButton'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

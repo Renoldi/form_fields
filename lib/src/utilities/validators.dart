@@ -1,7 +1,7 @@
 /// Form field validators for validation logic
 import 'package:flutter/material.dart';
-import 'utilities/extensions.dart';
-import 'localization/form_fields_localizations.dart';
+import 'extensions.dart';
+import '../localization/form_fields_localizations.dart';
 
 /// Collection of reusable form field validators
 class FormFieldValidators {

@@ -59,7 +59,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                       children: [
                         Text(
                           l.get('dmHeaderTitle'),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -68,7 +68,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                         const SizedBox(height: 8),
                         Text(
                           l.get('dmHeaderSubtitle'),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             color: Colors.white70,
                           ),
@@ -327,7 +327,7 @@ class _DropdownMultiExamplesPageState extends State<DropdownMultiExamplesPage> {
                 ),
                 child: Text(
                   l.get('validateFormButton'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

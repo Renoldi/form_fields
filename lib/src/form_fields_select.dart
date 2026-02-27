@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'enums.dart';
+import 'utilities/enums.dart';
 import 'form_fields_checkbox.dart';
 import 'form_fields_dropdown.dart';
 import 'form_fields_dropdown_multi.dart';

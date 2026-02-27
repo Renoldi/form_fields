@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:logger/logger.dart';
 import '../widgets/result_display_widget.dart';
+
+final logger = Logger();
 
 // Custom Model Classes
 class Country {
@@ -343,13 +346,29 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
                     constraints: const BoxConstraints(maxWidth: 600),
                     child: Row(
                       children: [
-                        Radio<SubscriptionPlan>(
-                          value: plan,
-                          groupValue: _selectedPlan,
-                          onChanged: (value) {
-                            setState(() => _selectedPlan = value);
-                          },
-                          activeColor: Colors.purple,
+                        // Custom radio button indicator
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selected ? Colors.purple : Colors.grey,
+                              width: 2,
+                            ),
+                          ),
+                          child: selected
+                              ? Center(
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.purple,
+                                    ),
+                                  ),
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -666,7 +685,7 @@ class _CustomClassExamplesPageState extends State<CustomClassExamplesPage> {
       ),
     );
 
-    // Print to console
-    print(message.toString());
+    // Log to console
+    logger.i(message.toString());
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:logger/logger.dart';
 import '../widgets/result_display_widget.dart';
 import '../widgets/language_indicator.dart';
+
+final logger = Logger();
 
 class FormFieldsExamplesPage extends StatefulWidget {
   const FormFieldsExamplesPage({Key? key}) : super(key: key);
@@ -417,21 +420,21 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                  print(
+                  logger.i(
                       '\n╔═══════════════════════════════════════════════════════════════╗');
-                  print(
+                  logger.i(
                       '║ FORM SUBMIT BUTTON CLICKED                                      ║');
-                  print(
+                  logger.i(
                       '╚═══════════════════════════════════════════════════════════════╝');
 
                   final isValid = _formKey.currentState!.validate();
-                  print('Form validation result: $isValid');
+                  logger.i('Form validation result: $isValid');
 
                   if (!isValid) {
-                    print('❌ Form validation FAILED - showing errors');
+                    logger.e('❌ Form validation FAILED - showing errors');
                     return;
                   } else {
-                    print('✓ Form validation PASSED - submitting');
+                    logger.i('✓ Form validation PASSED - submitting');
                     _showFormData();
                   }
                 },
@@ -444,7 +447,7 @@ class _FormFieldsExamplesPageState extends State<FormFieldsExamplesPage> {
                 ),
                 child: Text(
                   l.get('submitFormButton'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

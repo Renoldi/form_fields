@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'enums.dart';
+import 'utilities/enums.dart';
+import 'localization/form_fields_localizations.dart';
 
 class FormFieldsRadioButton<T> extends FormField<T> {
   FormFieldsRadioButton({
@@ -42,7 +43,7 @@ class FormFieldsRadioButton<T> extends FormField<T> {
           validator: (value) {
             if (isRequired && value == null) {
               // Localization handled in build method
-              return "Select $label";
+              return '';
             }
             return validator?.call(value);
           },
@@ -147,6 +148,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
     final hasError = state.hasError;
     final hasSections = sections.isNotEmpty;
 
@@ -189,7 +191,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         boxShadow: itemShadow && !hasError
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -205,7 +207,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         ? Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              state.errorText!,
+              state.errorText ?? l.getWithLabel('selectRequired', label),
               style: const TextStyle(
                 color: Color(0xFFB71C1C),
                 fontSize: 12,
@@ -364,7 +366,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
               builder: (context) {
                 final containerColor = selected
                     ? (selectedItemBackgroundColor ??
-                        activeColor.withOpacity(0.1))
+                        activeColor.withValues(alpha: 0.1))
                     : Colors.transparent;
 
                 final itemBox = AnimatedContainer(
@@ -384,7 +386,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                     boxShadow: itemShadow && selected
                         ? [
                             BoxShadow(
-                              color: activeColor.withOpacity(0.15),
+                              color: activeColor.withValues(alpha: 0.15),
                               blurRadius: 12,
                               offset: const Offset(0, 3),
                             ),
@@ -396,22 +398,37 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                       state.didChange(item);
                       onChanged(item);
                     },
-                    hoverColor:
-                        (hoverBackgroundColor ?? activeColor).withOpacity(0.08),
+                    hoverColor: (hoverBackgroundColor ?? activeColor)
+                        .withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(itemBorderRadius),
                     child: Padding(
                       padding: itemPadding,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
                         children: [
-                          Radio<T>(
-                            value: item,
-                            groupValue: state.value,
-                            onChanged: (value) {
-                              state.didChange(value);
-                              onChanged(value);
-                            },
-                            activeColor: activeColor,
+                          // Custom radio button indicator (replaces Radio widget)
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selected ? activeColor : Colors.grey,
+                                width: 2,
+                              ),
+                            ),
+                            child: selected
+                                ? Center(
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: activeColor,
+                                      ),
+                                    ),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 12),
                           itemBuilder != null

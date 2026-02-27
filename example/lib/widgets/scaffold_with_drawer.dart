@@ -10,7 +10,7 @@ class ScaffoldWithDrawer extends StatelessWidget {
 
   String _getTitle(String location) {
     switch (location) {
-      case '/':
+      case '/form-fields':
         return 'FormFields Examples';
       case '/dropdown':
         return 'Dropdown Examples';
@@ -22,7 +22,7 @@ class ScaffoldWithDrawer extends StatelessWidget {
         return 'Checkbox Examples';
       case '/custom-class':
         return 'Custom Class Examples';
-      case '/null-non-null-validation':
+      case '/validation':
         return 'Null/Non-Null Validation Examples';
       default:
         return 'FormFields Examples';
@@ -238,8 +238,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.text_fields,
               title: 'FormFields',
               subtitle: 'Text, Number, Date & Time',
-              route: '/',
-              isSelected: currentLocation == '/',
+              route: '/form-fields',
+              isSelected: currentLocation == '/form-fields',
               color: Colors.blue,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -298,8 +298,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.rule,
               title: 'Null/Non-Null Validation',
               subtitle: 'Nullable vs Non-Nullable Types',
-              route: '/null-non-null-validation',
-              isSelected: currentLocation == '/null-non-null-validation',
+              route: '/validation',
+              isSelected: currentLocation == '/validation',
               color: Colors.indigo,
             ),
             const SizedBox(height: 16),

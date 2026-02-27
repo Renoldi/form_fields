@@ -6,10 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'controller.dart';
-import 'enums.dart';
+import 'utilities/controller.dart';
+import 'utilities/enums.dart';
 import 'localization/form_fields_localizations.dart';
-import 'validators.dart';
+import 'utilities/validators.dart';
 import 'utilities/phone_country_codes.dart' as phone_codes;
 
 class FormFields<T> extends StatefulWidget {
@@ -789,7 +789,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       locale: _parseLocale(),
     );
 
-    if (date != null && mounted) {
+    if (date != null) {
+      if (!mounted) return;
       final time = await showTimePicker(
         // ignore: use_build_context_synchronously
         context: ctx,
@@ -823,6 +824,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    if (!mounted) return;
     final now = DateTime.now();
     final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
     final last = widget.lastDate ?? now;
@@ -855,7 +857,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     if (widget.useDatePickerForRange) {
+      if (!mounted) return; // Guard before first async operation
       final startDate = await showDatePicker(
+        // ignore: use_build_context_synchronously
         context: ctx,
         initialDate: initialStart,
         firstDate: first,
@@ -863,7 +867,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         locale: _parseLocale(),
       );
 
-      if (startDate == null || !mounted) {
+      if (startDate == null) {
         return;
       }
 
@@ -871,7 +875,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           ? startDate
           : (initialEnd.isAfter(last) ? last : initialEnd);
 
+      if (!mounted) return; // Guard before second async operation
       final endDate = await showDatePicker(
+        // ignore: use_build_context_synchronously
         context: ctx,
         initialDate: normalizedInitialEnd,
         firstDate: startDate,
@@ -887,7 +893,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       return;
     }
 
+    if (!mounted) return; // Guard before third async operation
     final dateRange = await showDateRangePicker(
+      // ignore: use_build_context_synchronously
       context: ctx,
       firstDate: first,
       lastDate: last,

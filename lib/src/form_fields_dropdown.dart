@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'localization/form_fields_localizations.dart';
-import 'enums.dart';
+import 'utilities/enums.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
@@ -282,7 +282,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
         final filteredItems = widget.items;
 
         final dropdown = DropdownButtonFormField<T>(
-          value: state.value,
+          initialValue: state.value,
           items: filteredItems
               .map(
                 (item) => DropdownMenuItem<T>(
