@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/notifiers/app_state_notifier.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/state/pages/settings_view_model.dart';
 
 class SettingsPage extends StatelessWidget {
   final VoidCallback onBack;
@@ -22,74 +23,74 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppStateNotifier>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: onBack,
-          tooltip: 'Back',
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionCard(
-            title: 'Account & Security',
-            icon: Icons.security,
-            child: Column(
+    return ChangeNotifierProvider(
+      create: (_) => SettingsViewModel(context.read<AppStateNotifier>()),
+      child: Consumer<SettingsViewModel>(
+        builder: (context, viewModel, _) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Settings'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+                tooltip: 'Back',
+              ),
+            ),
+            body: ListView(
+              padding: const EdgeInsets.all(16),
               children: [
-                _SettingsTile(
-                  title: 'Edit Profile',
-                  subtitle: 'Update your personal information',
-                  icon: Icons.person,
-                  onTap: onOpenProfile,
+                _SectionCard(
+                  title: 'Account & Security',
+                  icon: Icons.security,
+                  child: Column(
+                    children: [
+                      _SettingsTile(
+                        title: 'Edit Profile',
+                        subtitle: 'Update your personal information',
+                        icon: Icons.person,
+                        onTap: onOpenProfile,
+                      ),
+                      _SettingsTile(
+                        title: 'Change Password',
+                        subtitle: 'Update your account password',
+                        icon: Icons.lock,
+                        onTap: onOpenChangePassword,
+                      ),
+                      _SettingsTile(
+                        title: 'Logout',
+                        subtitle: 'Sign out of your account',
+                        icon: Icons.logout,
+                        onTap: () => viewModel.logout(onLogout),
+                      ),
+                    ],
+                  ),
                 ),
-                _SettingsTile(
-                  title: 'Change Password',
-                  subtitle: 'Update your account password',
-                  icon: Icons.lock,
-                  onTap: onOpenChangePassword,
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: 'Preferences',
+                  icon: Icons.tune,
+                  child: _SettingsTile(
+                    title: 'Language',
+                    subtitle: viewModel.languageLabel,
+                    icon: Icons.language,
+                    onTap: onOpenLanguage,
+                  ),
                 ),
-                _SettingsTile(
-                  title: 'Logout',
-                  subtitle: 'Sign out of your account',
-                  icon: Icons.logout,
-                  onTap: () {
-                    appState.logout();
-                    onLogout();
-                  },
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: 'About',
+                  icon: Icons.info_outline,
+                  child: _SettingsTile(
+                    title: 'App Info',
+                    subtitle: 'Version and application details',
+                    icon: Icons.info_outline,
+                    onTap: onOpenAppInfo,
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: 'Preferences',
-            icon: Icons.tune,
-            child: _SettingsTile(
-              title: 'Language',
-              subtitle: appState.locale.languageCode == 'id'
-                  ? 'Indonesian (ID)'
-                  : 'English (US)',
-              icon: Icons.language,
-              onTap: onOpenLanguage,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: 'About',
-            icon: Icons.info_outline,
-            child: _SettingsTile(
-              title: 'App Info',
-              subtitle: 'Version and application details',
-              icon: Icons.info_outline,
-              onTap: onOpenAppInfo,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

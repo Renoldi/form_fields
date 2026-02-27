@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../data/models/user.dart';
-import '../../data/services/http_service.dart';
+import 'package:form_fields_example/data/models/user.dart';
+import 'package:form_fields_example/data/services/http_service.dart';
 
 /// Manages global app state including locale preference and authentication
 class AppStateNotifier extends ChangeNotifier {

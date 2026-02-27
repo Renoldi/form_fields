@@ -1,21 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../ui/pages/login_page.dart';
-import '../ui/pages/menu_page.dart';
-import '../ui/pages/form_fields_examples_page.dart';
-import '../ui/pages/dropdown_examples_page.dart';
-import '../ui/pages/dropdown_multi_examples_page.dart';
-import '../ui/pages/radio_button_examples_page.dart';
-import '../ui/pages/checkbox_examples_page.dart';
-import '../ui/pages/custom_class_examples_page.dart';
-import '../ui/pages/null_non_null_validation_examples_page.dart';
-import '../ui/pages/settings_page.dart';
-import '../ui/pages/profile_page.dart';
-import '../ui/pages/change_password_page.dart';
-import '../ui/pages/language_page.dart';
-import '../ui/pages/app_info_page.dart';
-import '../state/notifiers/app_state_notifier.dart';
+import 'package:form_fields_example/ui/pages/login_page.dart';
+import 'package:form_fields_example/ui/pages/menu_page.dart';
+import 'package:form_fields_example/ui/pages/form_fields_examples_page.dart';
+import 'package:form_fields_example/ui/pages/dropdown_examples_page.dart';
+import 'package:form_fields_example/ui/pages/dropdown_multi_examples_page.dart';
+import 'package:form_fields_example/ui/pages/radio_button_examples_page.dart';
+import 'package:form_fields_example/ui/pages/checkbox_examples_page.dart';
+import 'package:form_fields_example/ui/pages/custom_class_examples_page.dart';
+import 'package:form_fields_example/ui/pages/null_non_null_validation_examples_page.dart';
+import 'package:form_fields_example/ui/pages/settings_page.dart';
+import 'package:form_fields_example/ui/pages/profile_page.dart';
+import 'package:form_fields_example/ui/pages/change_password_page.dart';
+import 'package:form_fields_example/ui/pages/language_page.dart';
+import 'package:form_fields_example/ui/pages/app_info_page.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'app_routes.dart';
 
 /// Creates and configures the application's [GoRouter] instance.

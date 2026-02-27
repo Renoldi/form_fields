@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
-import '../services/http_service.dart';
+import 'package:form_fields_example/data/services/http_service.dart';
 
 part 'user.g.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../state/notifiers/app_state_notifier.dart';
-import '../../config/app_routes.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/config/app_routes.dart';
 
 // Scaffold with Drawer wrapper
 class ScaffoldWithDrawer extends StatelessWidget {

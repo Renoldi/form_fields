@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../state/notifiers/app_state_notifier.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/state/pages/language_view_model.dart';
 
 class LanguagePage extends StatelessWidget {
   final VoidCallback onBack;
@@ -12,31 +13,36 @@ class LanguagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppStateNotifier>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Language'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: onBack,
-          tooltip: 'Back',
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _LanguageTile(
-            title: 'English (US)',
-            selected: appState.locale.languageCode == 'en',
-            onTap: () => appState.setLocale(const Locale('en', 'US')),
-          ),
-          _LanguageTile(
-            title: 'Indonesian (ID)',
-            selected: appState.locale.languageCode == 'id',
-            onTap: () => appState.setLocale(const Locale('id', 'ID')),
-          ),
-        ],
+    return ChangeNotifierProvider(
+      create: (_) => LanguageViewModel(context.read<AppStateNotifier>()),
+      child: Consumer<LanguageViewModel>(
+        builder: (context, viewModel, _) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Language'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+                tooltip: 'Back',
+              ),
+            ),
+            body: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _LanguageTile(
+                  title: 'English (US)',
+                  selected: viewModel.isEnglish,
+                  onTap: viewModel.setEnglish,
+                ),
+                _LanguageTile(
+                  title: 'Indonesian (ID)',
+                  selected: viewModel.isIndonesian,
+                  onTap: viewModel.setIndonesian,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

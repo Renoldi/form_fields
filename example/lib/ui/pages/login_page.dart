@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-import '../../data/models/user.dart';
-import '../../state/notifiers/app_state_notifier.dart';
-import '../widgets/blocking_dialogs.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/state/pages/login_view_model.dart';
+import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -15,20 +15,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final LoginFormNotifier _formNotifier = LoginFormNotifier();
-
-  @override
-  void dispose() {
-    _formNotifier.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _formNotifier,
-      child: Consumer<LoginFormNotifier>(
-        builder: (context, formState, _) {
+    return ChangeNotifierProvider(
+      create: (_) => LoginViewModel(),
+      child: Consumer<LoginViewModel>(
+        builder: (context, viewModel, _) {
           return Scaffold(
             backgroundColor: const Color(0xFFF5F5F5),
             body: Center(
@@ -64,34 +56,34 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 24),
                       FormFields<String>(
                         label: 'Username',
-                        currrentValue: formState.username,
+                        currrentValue: viewModel.username,
                         formType: FormType.string,
                         prefixIcon: const Icon(Icons.person),
                         onChanged: (value) {
-                          formState.setUsername(value);
-                          if (formState.errorMessage != null) {
-                            formState.clearError();
+                          viewModel.setUsername(value);
+                          if (viewModel.errorMessage != null) {
+                            viewModel.clearError();
                           }
                         },
                       ),
                       const SizedBox(height: 16),
                       FormFields<String>(
                         label: 'Password',
-                        currrentValue: formState.password,
+                        currrentValue: viewModel.password,
                         formType: FormType.password,
                         minLengthPassword: 4,
                         prefixIcon: const Icon(Icons.lock_outline),
                         onChanged: (value) {
-                          formState.setPassword(value);
-                          if (formState.errorMessage != null) {
-                            formState.clearError();
+                          viewModel.setPassword(value);
+                          if (viewModel.errorMessage != null) {
+                            viewModel.clearError();
                           }
                         },
                       ),
-                      if (formState.errorMessage != null) ...[
+                      if (viewModel.errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Text(
-                          formState.errorMessage!,
+                          viewModel.errorMessage!,
                           style: const TextStyle(color: Colors.red),
                         ),
                       ],
@@ -99,9 +91,9 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: formState.canSubmit
+                          onPressed: viewModel.canSubmit
                               ? () async {
-                                  formState.clearError();
+                                  viewModel.clearError();
 
                                   if (!mounted) return;
                                   final appState =
@@ -113,19 +105,15 @@ class _LoginPageState extends State<LoginPage> {
                                   );
 
                                   try {
-                                    // Call User.login() directly
-                                    final user = await User.login(
-                                      username: formState.username.trim(),
-                                      password: formState.password.trim(),
-                                    );
+                                    final user = await viewModel.login();
 
                                     if (!context.mounted) return;
 
                                     // Update app state with logged in user
                                     appState.updateUserAfterLogin(
                                       user: user,
-                                      username: formState.username.trim(),
-                                      password: formState.password.trim(),
+                                      username: viewModel.username.trim(),
+                                      password: viewModel.password.trim(),
                                     );
 
                                     if (!context.mounted) return;
@@ -144,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                                         ? 'Invalid username or password'
                                         : error.toString();
 
-                                    formState.setError(errorMessage);
+                                    viewModel.setError(errorMessage);
 
                                     if (!context.mounted) return;
                                     await showBlockingResult(
@@ -178,46 +166,5 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
     );
-  }
-}
-
-class LoginFormNotifier extends ChangeNotifier {
-  String? _errorMessage;
-  final bool _isSubmitting = false;
-  String _username = '';
-  String _password = '';
-
-  String? get errorMessage => _errorMessage;
-  bool get isSubmitting => _isSubmitting;
-  String get username => _username;
-  String get password => _password;
-
-  /// Returns true if the form is valid and can be submitted
-  bool get canSubmit =>
-      !_isSubmitting &&
-      _username.trim().isNotEmpty &&
-      _password.trim().isNotEmpty;
-
-  void setError(String message) {
-    _errorMessage = message;
-    notifyListeners();
-  }
-
-  void setUsername(String value) {
-    if (_username == value) return;
-    _username = value;
-    notifyListeners();
-  }
-
-  void setPassword(String value) {
-    if (_password == value) return;
-    _password = value;
-    notifyListeners();
-  }
-
-  void clearError() {
-    if (_errorMessage == null) return;
-    _errorMessage = null;
-    notifyListeners();
   }
 }
