@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-import '../models/user.dart';
-import '../providers/app_state_notifier.dart';
+import '../../data/models/user.dart';
+import '../../state/notifiers/app_state_notifier.dart';
 import '../widgets/blocking_dialogs.dart';
 
 class LoginPage extends StatefulWidget {
@@ -103,14 +103,12 @@ class _LoginPageState extends State<LoginPage> {
                               ? () async {
                                   formState.clearError();
 
-                                  // Capture context before async operations
                                   if (!mounted) return;
-                                  final currentContext = context;
                                   final appState =
-                                      currentContext.read<AppStateNotifier>();
+                                      context.read<AppStateNotifier>();
 
                                   showBlockingLoading(
-                                    currentContext,
+                                    context,
                                     message: 'Signing in...',
                                   );
 
@@ -121,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                                       password: formState.password.trim(),
                                     );
 
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
 
                                     // Update app state with logged in user
                                     appState.updateUserAfterLogin(
@@ -130,14 +128,15 @@ class _LoginPageState extends State<LoginPage> {
                                       password: formState.password.trim(),
                                     );
 
-                                    hideBlockingDialog(currentContext);
+                                    if (!context.mounted) return;
+                                    hideBlockingDialog(context);
 
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     widget.onLoginSuccess();
                                   } catch (error) {
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
 
-                                    hideBlockingDialog(currentContext);
+                                    hideBlockingDialog(context);
 
                                     final errorMessage = error
                                             .toString()
@@ -147,8 +146,9 @@ class _LoginPageState extends State<LoginPage> {
 
                                     formState.setError(errorMessage);
 
+                                    if (!context.mounted) return;
                                     await showBlockingResult(
-                                      currentContext,
+                                      context,
                                       title: 'Login Failed',
                                       message: errorMessage,
                                       isSuccess: false,
@@ -183,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
 
 class LoginFormNotifier extends ChangeNotifier {
   String? _errorMessage;
-  bool _isSubmitting = false;
+  final bool _isSubmitting = false;
   String _username = '';
   String _password = '';
 

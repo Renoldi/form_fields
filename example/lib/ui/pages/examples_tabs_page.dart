@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state_notifier.dart';
+import '../../state/notifiers/app_state_notifier.dart';
 import 'checkbox_examples_page.dart';
 import 'custom_class_examples_page.dart';
 import 'dropdown_examples_page.dart';

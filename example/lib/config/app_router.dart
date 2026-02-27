@@ -1,22 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'pages/login_page.dart';
-import 'pages/menu_page.dart';
-import 'pages/form_fields_examples_page.dart';
-import 'pages/dropdown_examples_page.dart';
-import 'pages/dropdown_multi_examples_page.dart';
-import 'pages/radio_button_examples_page.dart';
-import 'pages/checkbox_examples_page.dart';
-import 'pages/custom_class_examples_page.dart';
-import 'pages/null_non_null_validation_examples_page.dart';
-import 'pages/settings_page.dart';
-import 'pages/profile_page.dart';
-import 'pages/change_password_page.dart';
-import 'pages/language_page.dart';
-import 'pages/app_info_page.dart';
-import 'providers/app_state_notifier.dart';
-import 'routes/app_routes.dart';
+import '../ui/pages/login_page.dart';
+import '../ui/pages/menu_page.dart';
+import '../ui/pages/form_fields_examples_page.dart';
+import '../ui/pages/dropdown_examples_page.dart';
+import '../ui/pages/dropdown_multi_examples_page.dart';
+import '../ui/pages/radio_button_examples_page.dart';
+import '../ui/pages/checkbox_examples_page.dart';
+import '../ui/pages/custom_class_examples_page.dart';
+import '../ui/pages/null_non_null_validation_examples_page.dart';
+import '../ui/pages/settings_page.dart';
+import '../ui/pages/profile_page.dart';
+import '../ui/pages/change_password_page.dart';
+import '../ui/pages/language_page.dart';
+import '../ui/pages/app_info_page.dart';
+import '../state/notifiers/app_state_notifier.dart';
+import 'app_routes.dart';
 
 /// Creates and configures the application's [GoRouter] instance.
 ///
@@ -82,7 +82,7 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         path: AppRoute.settings.path,
         name: AppRoute.settings.name,
         builder: (context, state) => SettingsPage(
-          onBack: () => context.goBack(),
+          onBack: () => context.pop(),
           onLogout: () => context.goToRoute(AppRoute.login),
           onOpenProfile: () => context.pushRoute(AppRoute.profile),
           onOpenChangePassword: () =>
@@ -95,28 +95,28 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         path: AppRoute.profile.path,
         name: AppRoute.profile.name,
         builder: (context, state) => ProfilePage(
-          onBack: () => context.goBack(),
+          onBack: () => context.pop(),
         ),
       ),
       GoRoute(
         path: AppRoute.changePassword.path,
         name: AppRoute.changePassword.name,
         builder: (context, state) => ChangePasswordPage(
-          onBack: () => context.goBack(),
+          onBack: () => context.pop(),
         ),
       ),
       GoRoute(
         path: AppRoute.language.path,
         name: AppRoute.language.name,
         builder: (context, state) => LanguagePage(
-          onBack: () => context.goBack(),
+          onBack: () => context.pop(),
         ),
       ),
       GoRoute(
         path: AppRoute.appInfo.path,
         name: AppRoute.appInfo.name,
         builder: (context, state) => AppInfoPage(
-          onBack: () => context.goBack(),
+          onBack: () => context.pop(),
         ),
       ),
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/user.dart';
-import '../providers/app_state_notifier.dart';
+import '../../data/models/user.dart';
+import '../../state/notifiers/app_state_notifier.dart';
 import '../widgets/blocking_dialogs.dart';
 
 class ProfilePage extends StatefulWidget {

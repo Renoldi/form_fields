@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state_notifier.dart';
+import '../../state/notifiers/app_state_notifier.dart';
 
 class LanguagePage extends StatelessWidget {
   final VoidCallback onBack;
