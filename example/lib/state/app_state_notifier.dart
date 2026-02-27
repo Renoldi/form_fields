@@ -36,9 +36,24 @@ class AppStateNotifier extends ChangeNotifier {
       _refreshToken = prefs.getString(_keyRefreshToken) ?? '';
       _isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
 
-      // Set auth token in HTTP service if available
-      if (_accessToken.isNotEmpty) {
+      // Verify token if logged in
+      if (_isLoggedIn && _accessToken.isNotEmpty) {
         httpClient.setAuthToken(_accessToken);
+
+        // Try to verify the token by fetching user data
+        try {
+          final user = await User.getMe(accessToken: _accessToken);
+          _currentUser = user;
+          _userError = null;
+        } catch (e) {
+          // Token is invalid, clear stored auth
+          _isLoggedIn = false;
+          _accessToken = '';
+          _refreshToken = '';
+          _currentUser = null;
+          httpClient.clearAuthToken();
+          await _clearAuthState();
+        }
       }
 
       _isInitialized = true;
@@ -209,8 +224,15 @@ class AppStateNotifier extends ChangeNotifier {
     } catch (error) {
       _userError = _formatUserError(error);
 
-      // Clear auth token from global HTTP service
+      // Clear auth state if token is invalid
+      _isLoggedIn = false;
+      _accessToken = '';
+      _refreshToken = '';
+      _currentUser = null;
+
+      // Clear auth token from global HTTP service and storage
       httpClient.clearAuthToken();
+      await _clearAuthState();
 
       return false;
     } finally {

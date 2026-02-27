@@ -98,9 +98,17 @@ class MenuViewModel extends ChangeNotifier {
       _appState.updateUserData(user);
       return null;
     } catch (error) {
-      return error.toString().contains('DioException')
+      // If token is invalid, trigger logout
+      final errorMsg = error.toString();
+      if (errorMsg.contains('401') ||
+          errorMsg.contains('403') ||
+          errorMsg.contains('Bad Response')) {
+        _appState.logout();
+        return 'Session expired. Please login again.';
+      }
+      return errorMsg.contains('DioException')
           ? 'Unable to load user data'
-          : error.toString();
+          : errorMsg;
     }
   }
 
