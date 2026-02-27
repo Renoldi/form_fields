@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../main.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state_notifier.dart';
+import '../routes/app_routes.dart';
 
 // Scaffold with Drawer wrapper
 class ScaffoldWithDrawer extends StatelessWidget {
@@ -9,23 +11,22 @@ class ScaffoldWithDrawer extends StatelessWidget {
   const ScaffoldWithDrawer({Key? key, required this.child}) : super(key: key);
 
   String _getTitle(String location) {
-    switch (location) {
-      case '/form-fields':
-        return 'FormFields Examples';
-      case '/dropdown':
-        return 'Dropdown Examples';
-      case '/dropdown-multi':
-        return 'Multi-Select Dropdown Examples';
-      case '/radio-button':
-        return 'Radio Button Examples';
-      case '/checkbox':
-        return 'Checkbox Examples';
-      case '/custom-class':
-        return 'Custom Class Examples';
-      case '/validation':
-        return 'Null/Non-Null Validation Examples';
-      default:
-        return 'FormFields Examples';
+    if (location == AppRoute.formFields.path) {
+      return 'FormFields Examples';
+    } else if (location == AppRoute.dropdown.path) {
+      return 'Dropdown Examples';
+    } else if (location == AppRoute.dropdownMulti.path) {
+      return 'Multi-Select Dropdown Examples';
+    } else if (location == AppRoute.radioButton.path) {
+      return 'Radio Button Examples';
+    } else if (location == AppRoute.checkbox.path) {
+      return 'Checkbox Examples';
+    } else if (location == AppRoute.customClass.path) {
+      return 'Custom Class Examples';
+    } else if (location == AppRoute.validation.path) {
+      return 'Null/Non-Null Validation Examples';
+    } else {
+      return 'FormFields Examples';
     }
   }
 
@@ -79,6 +80,17 @@ class ScaffoldWithDrawer extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.goNamed(AppRoute.menu.name);
+            }
+          },
+          tooltip: 'Back',
+        ),
         title: Text(_getTitle(currentLocation)),
         backgroundColor: const Color(0xFF1F2937),
         foregroundColor: Colors.white,
@@ -149,7 +161,7 @@ class _LanguageOption extends StatelessWidget {
           : null,
       selected: isSelected,
       onTap: () {
-        MyApp.of(context)?.setLocale(locale);
+        context.read<AppStateNotifier>().setLocale(locale);
         Navigator.pop(context);
       },
     );
@@ -238,8 +250,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.text_fields,
               title: 'FormFields',
               subtitle: 'Text, Number, Date & Time',
-              route: '/form-fields',
-              isSelected: currentLocation == '/form-fields',
+              routeName: AppRoute.formFields.name,
+              isSelected: currentLocation == AppRoute.formFields.path,
               color: Colors.blue,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -248,8 +260,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.arrow_drop_down_circle,
               title: 'Dropdown',
               subtitle: 'Single Select Dropdown',
-              route: '/dropdown',
-              isSelected: currentLocation == '/dropdown',
+              routeName: AppRoute.dropdown.name,
+              isSelected: currentLocation == AppRoute.dropdown.path,
               color: Colors.green,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -258,8 +270,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.library_add_check,
               title: 'Dropdown Multi',
               subtitle: 'Multi-Select Dropdown',
-              route: '/dropdown-multi',
-              isSelected: currentLocation == '/dropdown-multi',
+              routeName: AppRoute.dropdownMulti.name,
+              isSelected: currentLocation == AppRoute.dropdownMulti.path,
               color: Colors.purple,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -268,8 +280,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.radio_button_checked,
               title: 'Radio Button',
               subtitle: 'All Radio Button Examples',
-              route: '/radio-button',
-              isSelected: currentLocation == '/radio-button',
+              routeName: AppRoute.radioButton.name,
+              isSelected: currentLocation == AppRoute.radioButton.path,
               color: Colors.orange,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -278,8 +290,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.check_box,
               title: 'Checkbox',
               subtitle: 'All Checkbox Examples',
-              route: '/checkbox',
-              isSelected: currentLocation == '/checkbox',
+              routeName: AppRoute.checkbox.name,
+              isSelected: currentLocation == AppRoute.checkbox.path,
               color: Colors.pink,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -288,8 +300,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.class_,
               title: 'Custom Class',
               subtitle: 'Generic Types with Models',
-              route: '/custom-class',
-              isSelected: currentLocation == '/custom-class',
+              routeName: AppRoute.customClass.name,
+              isSelected: currentLocation == AppRoute.customClass.path,
               color: Colors.teal,
             ),
             const Divider(color: Colors.white24, height: 1),
@@ -298,8 +310,8 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.rule,
               title: 'Null/Non-Null Validation',
               subtitle: 'Nullable vs Non-Nullable Types',
-              route: '/validation',
-              isSelected: currentLocation == '/validation',
+              routeName: AppRoute.validation.name,
+              isSelected: currentLocation == AppRoute.validation.path,
               color: Colors.indigo,
             ),
             const SizedBox(height: 16),
@@ -428,7 +440,9 @@ class AppDrawer extends StatelessWidget {
                   Expanded(
                     child: InkWell(
                       onTap: () {
-                        MyApp.of(context)?.setLocale(const Locale('en', 'US'));
+                        context
+                            .read<AppStateNotifier>()
+                            .setLocale(const Locale('en', 'US'));
                       },
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(12),
@@ -475,7 +489,9 @@ class AppDrawer extends StatelessWidget {
                   Expanded(
                     child: InkWell(
                       onTap: () {
-                        MyApp.of(context)?.setLocale(const Locale('id', 'ID'));
+                        context
+                            .read<AppStateNotifier>()
+                            .setLocale(const Locale('id', 'ID'));
                       },
                       borderRadius: const BorderRadius.only(
                         bottomRight: Radius.circular(12),
@@ -528,7 +544,7 @@ class AppDrawer extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required String route,
+    required String routeName,
     required bool isSelected,
     required Color color,
   }) {
@@ -575,7 +591,7 @@ class AppDrawer extends StatelessWidget {
             : const Icon(Icons.arrow_forward_ios,
                 color: Colors.white38, size: 16),
         onTap: () {
-          context.go(route);
+          context.pushNamed(routeName);
           Navigator.pop(context);
         },
       ),

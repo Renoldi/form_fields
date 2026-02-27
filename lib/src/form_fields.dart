@@ -11,6 +11,7 @@ import 'utilities/enums.dart';
 import 'localization/form_fields_localizations.dart';
 import 'utilities/validators.dart';
 import 'utilities/phone_country_codes.dart' as phone_codes;
+import 'providers/form_fields_notifier.dart';
 
 class FormFields<T> extends StatefulWidget {
   // ============================================================================
@@ -202,6 +203,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   late Timer debounce;
   FocusNode? _internalFocusNode;
   String _selectedCountryCode = '';
+  late FormFieldsNotifier _notifier;
 
   FocusNode get _effectiveFocusNode {
     if (widget.focusNode != null) {
@@ -216,6 +218,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     super.initState();
     model = FormFieldsController();
     debounce = Timer(Duration.zero, () {});
+    _notifier = FormFieldsNotifier();
     if (_isPhoneType()) {
       _initializePhoneCountryCode(
         widget.currrentValue?.toString(),
@@ -229,7 +232,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Rebuild when locale changes to update localized strings
-    setState(() {});
+    _notifier.rebuildOnLocaleChange();
   }
 
   @override
@@ -485,16 +488,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           style: const TextStyle(fontSize: 14, color: Colors.black87),
           onChanged: (value) {
             if (value == null) return;
-            setState(() {
-              _selectedCountryCode = value;
-              // Update text field to show only local digits
-              final localFormatted = widget.formatPhone
-                  ? _formatPhoneLocalOnly(model.controller.text)
-                  : _extractLocalPhoneDigits(model.controller.text);
-              if (model.controller.text != localFormatted) {
-                model.setController = localFormatted;
-              }
-            });
+            _selectedCountryCode = value;
+            _notifier.setSelectedCountryCode(value);
+            // Update text field to show only local digits
+            final localFormatted = widget.formatPhone
+                ? _formatPhoneLocalOnly(model.controller.text)
+                : _extractLocalPhoneDigits(model.controller.text);
+            if (model.controller.text != localFormatted) {
+              model.setController = localFormatted;
+            }
           },
           items: codes
               .map(
@@ -1146,238 +1148,257 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   Widget build(BuildContext context) {
     final l10n = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
-      value: model,
-      child: Consumer<FormFieldsController>(
-        builder: (ctx, vm, child) {
-          final phonePrefixIcon = _isPhoneType() && widget.prefixIcon == null
-              ? _buildPhoneCountryCodeDropdown()
-              : null;
+      value: _notifier,
+      child: Consumer<FormFieldsNotifier>(
+        builder: (ctx, notifier, _) {
+          return ChangeNotifierProvider.value(
+            value: model,
+            child: Consumer<FormFieldsController>(
+              builder: (ctx, vm, child) {
+                final phonePrefixIcon =
+                    _isPhoneType() && widget.prefixIcon == null
+                        ? _buildPhoneCountryCodeDropdown()
+                        : null;
 
-          final textField = TextFormField(
-            maxLines: vm.formType == FormType.password || widget.multiLine <= 1
-                ? 1
-                : widget.multiLine,
-            obscureText: vm.formType == FormType.password ? vm.obscure : false,
-            autovalidateMode: widget.autovalidateMode,
-            focusNode: _effectiveFocusNode,
-            onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
-            keyboardType: _isDateTimeType() ||
-                    _isTimeOfDayType() ||
-                    _isDateTimeRangeType()
-                ? TextInputType.none
-                : _isIntType() || _isDoubleType()
-                    ? TextInputType.number
-                    : vm.formType == FormType.phone
-                        ? TextInputType.phone
-                        : vm.formType == FormType.email
-                            ? TextInputType.emailAddress
-                            : widget.multiLine == 0
-                                ? TextInputType.text
-                                : TextInputType.multiline,
-            inputFormatters: _getInputFormatters(),
-            onChanged: (v) {
-              if (debounce.isActive) debounce.cancel();
+                final textField = TextFormField(
+                  maxLines:
+                      vm.formType == FormType.password || widget.multiLine <= 1
+                          ? 1
+                          : widget.multiLine,
+                  obscureText:
+                      vm.formType == FormType.password ? vm.obscure : false,
+                  autovalidateMode: widget.autovalidateMode,
+                  focusNode: _effectiveFocusNode,
+                  onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
+                  keyboardType: _isDateTimeType() ||
+                          _isTimeOfDayType() ||
+                          _isDateTimeRangeType()
+                      ? TextInputType.none
+                      : _isIntType() || _isDoubleType()
+                          ? TextInputType.number
+                          : vm.formType == FormType.phone
+                              ? TextInputType.phone
+                              : vm.formType == FormType.email
+                                  ? TextInputType.emailAddress
+                                  : widget.multiLine == 0
+                                      ? TextInputType.text
+                                      : TextInputType.multiline,
+                  inputFormatters: _getInputFormatters(),
+                  onChanged: (v) {
+                    if (debounce.isActive) debounce.cancel();
 
-              // For non-separator numeric fields, respond immediately for smoother UX
-              final useDebounce =
-                  widget.stripSeparators || !(_isIntType() || _isDoubleType());
-              final delay = useDebounce
-                  ? const Duration(milliseconds: 500)
-                  : const Duration(milliseconds: 50);
+                    // For non-separator numeric fields, respond immediately for smoother UX
+                    final useDebounce = widget.stripSeparators ||
+                        !(_isIntType() || _isDoubleType());
+                    final delay = useDebounce
+                        ? const Duration(milliseconds: 500)
+                        : const Duration(milliseconds: 50);
 
-              debounce = Timer(delay, () {
-                // Trim whitespace from input
-                final trimmed = v.trim();
+                    debounce = Timer(delay, () {
+                      // Trim whitespace from input
+                      final trimmed = v.trim();
 
-                // Handle numeric types - stripSeparators only affects formatting, not parsing
-                if (_isIntType()) {
-                  final cleaned = widget.stripSeparators
-                      ? _stripSeparatorsForParse(trimmed)
-                      : trimmed;
-                  if (cleaned.isEmpty || cleaned == '-') {
-                    if (_isNullable()) {
-                      widget.onChanged(null as T);
+                      // Handle numeric types - stripSeparators only affects formatting, not parsing
+                      if (_isIntType()) {
+                        final cleaned = widget.stripSeparators
+                            ? _stripSeparatorsForParse(trimmed)
+                            : trimmed;
+                        if (cleaned.isEmpty || cleaned == '-') {
+                          if (_isNullable()) {
+                            widget.onChanged(null as T);
+                          }
+                          return;
+                        }
+                        final parsed = int.tryParse(cleaned);
+                        if (parsed != null) {
+                          widget.onChanged(parsed as T);
+                        }
+                      } else if (_isDoubleType()) {
+                        final cleaned = widget.stripSeparators
+                            ? _stripSeparatorsForParse(trimmed)
+                            : trimmed;
+                        if (cleaned.isEmpty || cleaned == '-') {
+                          if (_isNullable()) {
+                            widget.onChanged(null as T);
+                          }
+                          return;
+                        }
+                        if (cleaned.endsWith('.')) {
+                          // Don't wait, emit null or keep previous value
+                          return;
+                        }
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed != null) {
+                          widget.onChanged(parsed as T);
+                        }
+                      } else if (_isPhoneType()) {
+                        final formatted = _formatPhoneWithCode(trimmed);
+                        final unformatted =
+                            _getPhoneWithoutFormatting(formatted);
+                        widget.onChanged(unformatted as T);
+                      } else {
+                        // Non-numeric types
+                        widget.onChanged(trimmed as T);
+                      }
+                    });
+                  },
+                  onEditingComplete: () {
+                    // Trim whitespace from input
+                    vm.controller.text = vm.controller.text.trim();
+
+                    // stripSeparators only works for numeric types (int, double)
+                    if ((_isIntType() || _isDoubleType()) &&
+                        widget.stripSeparators) {
+                      final text = vm.controller.text;
+                      if (text.isEmpty) return;
+                      final cleaned = _stripSeparatorsForParse(text);
+                      if (cleaned.isEmpty ||
+                          cleaned == '-' ||
+                          cleaned.endsWith('.')) {
+                        return;
+                      }
+
+                      if (_isIntType()) {
+                        final parsed = int.tryParse(cleaned);
+                        if (parsed != null) {
+                          vm.setController = _formatNumber(parsed);
+                        }
+                      } else if (_isDoubleType()) {
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed != null) {
+                          vm.setController = _formatNumber(parsed);
+                        }
+                      }
                     }
-                    return;
-                  }
-                  final parsed = int.tryParse(cleaned);
-                  if (parsed != null) {
-                    widget.onChanged(parsed as T);
-                  }
-                } else if (_isDoubleType()) {
-                  final cleaned = widget.stripSeparators
-                      ? _stripSeparatorsForParse(trimmed)
-                      : trimmed;
-                  if (cleaned.isEmpty || cleaned == '-') {
-                    if (_isNullable()) {
-                      widget.onChanged(null as T);
-                    }
-                    return;
-                  }
-                  if (cleaned.endsWith('.')) {
-                    // Don't wait, emit null or keep previous value
-                    return;
-                  }
-                  final parsed = double.tryParse(cleaned);
-                  if (parsed != null) {
-                    widget.onChanged(parsed as T);
-                  }
-                } else if (_isPhoneType()) {
-                  final formatted = _formatPhoneWithCode(trimmed);
-                  final unformatted = _getPhoneWithoutFormatting(formatted);
-                  widget.onChanged(unformatted as T);
-                } else {
-                  // Non-numeric types
-                  widget.onChanged(trimmed as T);
-                }
-              });
-            },
-            onEditingComplete: () {
-              // Trim whitespace from input
-              vm.controller.text = vm.controller.text.trim();
+                  },
+                  validator: (value) => _validateRequired(
+                    value,
+                    widget.label,
+                    widget.isRequired,
+                    vm,
+                    l10n,
+                  ),
+                  controller: vm.controller,
+                  onTap: () async {
+                    if (!mounted) return;
+                    final ctx = context;
+                    await _showPicker(ctx, vm);
+                  },
+                  autofocus: false,
+                  decoration: widget.inputDecoration ??
+                      InputDecoration(
+                        suffix: vm.formType == FormType.password
+                            ? null
+                            : widget.suffix,
+                        suffixIcon: vm.formType == FormType.password
+                            ? IconButton(
+                                icon: Icon(
+                                  vm.obscure
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  vm.obscure = !vm.obscure;
+                                },
+                              )
+                            : (_isDateTimeType() ||
+                                    _isTimeOfDayType() ||
+                                    _isDateTimeRangeType())
+                                ? IconButton(
+                                    icon: Icon(_getPickerIcon()),
+                                    onPressed: () async {
+                                      if (!mounted) return;
+                                      final ctx = context;
+                                      await _showPicker(ctx, vm);
+                                    },
+                                  )
+                                : widget.suffixIcon ??
+                                    IconButton(
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () => _handleClearIconTap(vm),
+                                    ),
+                        prefix: widget.prefix,
+                        prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
+                        hintText:
+                            '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}',
+                        labelText: widget.labelPosition ==
+                                LabelPosition.inBorder
+                            ? '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
+                            : null,
+                        focusedErrorBorder: widget.borderType == BorderType.none
+                            ? InputBorder.none
+                            : widget.borderType ==
+                                    BorderType.underlineInputBorder
+                                ? const UnderlineInputBorder()
+                                : OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(widget.radius),
+                                    borderSide: BorderSide(
+                                      width: 1,
+                                      color: widget.errorBorderColor,
+                                    ),
+                                  ),
+                        focusedBorder: widget.borderType == BorderType.none
+                            ? InputBorder.none
+                            : widget.borderType ==
+                                    BorderType.underlineInputBorder
+                                ? const UnderlineInputBorder()
+                                : OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(widget.radius),
+                                    borderSide: BorderSide(
+                                      width: 1,
+                                      color: widget.borderColor,
+                                    ),
+                                  ),
+                        enabledBorder: widget.borderType == BorderType.none
+                            ? InputBorder.none
+                            : widget.borderType ==
+                                    BorderType.underlineInputBorder
+                                ? const UnderlineInputBorder()
+                                : OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(widget.radius),
+                                    borderSide: BorderSide(
+                                      width: 1,
+                                      color: widget.borderColor,
+                                    ),
+                                  ),
+                        border: widget.borderType == BorderType.none
+                            ? InputBorder.none
+                            : widget.borderType ==
+                                    BorderType.underlineInputBorder
+                                ? const UnderlineInputBorder()
+                                : OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(widget.radius),
+                                    borderSide: BorderSide(
+                                      width: 1,
+                                      color: widget.borderColor,
+                                    ),
+                                  ),
+                        disabledBorder: widget.borderType == BorderType.none
+                            ? InputBorder.none
+                            : widget.borderType ==
+                                    BorderType.underlineInputBorder
+                                ? const UnderlineInputBorder()
+                                : OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(widget.radius),
+                                    borderSide: BorderSide(
+                                      width: 1,
+                                      color: widget.borderColor,
+                                    ),
+                                  ),
+                      ),
+                );
 
-              // stripSeparators only works for numeric types (int, double)
-              if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
-                final text = vm.controller.text;
-                if (text.isEmpty) return;
-                final cleaned = _stripSeparatorsForParse(text);
-                if (cleaned.isEmpty ||
-                    cleaned == '-' ||
-                    cleaned.endsWith('.')) {
-                  return;
-                }
-
-                if (_isIntType()) {
-                  final parsed = int.tryParse(cleaned);
-                  if (parsed != null) {
-                    vm.setController = _formatNumber(parsed);
-                  }
-                } else if (_isDoubleType()) {
-                  final parsed = double.tryParse(cleaned);
-                  if (parsed != null) {
-                    vm.setController = _formatNumber(parsed);
-                  }
-                }
-              }
-            },
-            validator: (value) => _validateRequired(
-              value,
-              widget.label,
-              widget.isRequired,
-              vm,
-              l10n,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: _buildFieldWithLabel(textField, vm),
+                );
+              },
             ),
-            controller: vm.controller,
-            onTap: () async {
-              if (!mounted) return;
-              final ctx = context;
-              await _showPicker(ctx, vm);
-            },
-            autofocus: false,
-            decoration: widget.inputDecoration ??
-                InputDecoration(
-                  suffix:
-                      vm.formType == FormType.password ? null : widget.suffix,
-                  suffixIcon: vm.formType == FormType.password
-                      ? IconButton(
-                          icon: Icon(
-                            vm.obscure
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                          ),
-                          onPressed: () {
-                            vm.obscure = !vm.obscure;
-                          },
-                        )
-                      : (_isDateTimeType() ||
-                              _isTimeOfDayType() ||
-                              _isDateTimeRangeType())
-                          ? IconButton(
-                              icon: Icon(_getPickerIcon()),
-                              onPressed: () async {
-                                if (!mounted) return;
-                                final ctx = context;
-                                await _showPicker(ctx, vm);
-                              },
-                            )
-                          : widget.suffixIcon ??
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () => _handleClearIconTap(vm),
-                              ),
-                  prefix: widget.prefix,
-                  prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
-                  hintText:
-                      '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}',
-                  labelText: widget.labelPosition == LabelPosition.inBorder
-                      ? '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
-                      : null,
-                  focusedErrorBorder: widget.borderType == BorderType.none
-                      ? InputBorder.none
-                      : widget.borderType == BorderType.underlineInputBorder
-                          ? const UnderlineInputBorder()
-                          : OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(widget.radius),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: widget.errorBorderColor,
-                              ),
-                            ),
-                  focusedBorder: widget.borderType == BorderType.none
-                      ? InputBorder.none
-                      : widget.borderType == BorderType.underlineInputBorder
-                          ? const UnderlineInputBorder()
-                          : OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(widget.radius),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: widget.borderColor,
-                              ),
-                            ),
-                  enabledBorder: widget.borderType == BorderType.none
-                      ? InputBorder.none
-                      : widget.borderType == BorderType.underlineInputBorder
-                          ? const UnderlineInputBorder()
-                          : OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(widget.radius),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: widget.borderColor,
-                              ),
-                            ),
-                  border: widget.borderType == BorderType.none
-                      ? InputBorder.none
-                      : widget.borderType == BorderType.underlineInputBorder
-                          ? const UnderlineInputBorder()
-                          : OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(widget.radius),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: widget.borderColor,
-                              ),
-                            ),
-                  disabledBorder: widget.borderType == BorderType.none
-                      ? InputBorder.none
-                      : widget.borderType == BorderType.underlineInputBorder
-                          ? const UnderlineInputBorder()
-                          : OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(widget.radius),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: widget.borderColor,
-                              ),
-                            ),
-                ),
-          );
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            child: _buildFieldWithLabel(textField, vm),
           );
         },
       ),

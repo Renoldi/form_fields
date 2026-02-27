@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
-import '../main.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state_notifier.dart';
 import 'checkbox_examples_page.dart';
 import 'custom_class_examples_page.dart';
 import 'dropdown_examples_page.dart';
@@ -290,7 +291,7 @@ class _LanguageOption extends StatelessWidget {
           : null,
       selected: isSelected,
       onTap: () {
-        MyApp.of(context)?.setLocale(locale);
+        context.read<AppStateNotifier>().setLocale(locale);
         Navigator.pop(context);
       },
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'localization/form_fields_localizations.dart';
 import 'utilities/enums.dart';
+import 'providers/form_fields_dropdown_notifier.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
@@ -66,40 +68,49 @@ class FormFieldsDropdown<T> extends StatefulWidget {
 
 class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
   late GlobalKey<FormFieldState<T>> _formKey;
+  late FormFieldsDropdownNotifier _notifier;
 
   @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormFieldState<T>>();
+    _notifier = FormFieldsDropdownNotifier();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Rebuild when locale changes to update localized strings
-    setState(() {});
+    _notifier.rebuildOnLocaleChange();
   }
 
   @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
-    return FormField<T>(
-      key: _formKey,
-      initialValue: FormFieldsDropdown._sanitizeInitialValue(
-          widget.initialValue, widget.items),
-      validator: (value) {
-        if (widget.isRequired && value == null) {
-          return l.select(widget.label);
-        }
-        if (widget.validator != null) {
-          return widget.validator!(value);
-        }
-        return null;
-      },
-      onSaved: (_) {},
-      builder: (FormFieldState<T> state) {
-        return _buildDropdownContent(context, state, widget);
-      },
+    return ChangeNotifierProvider.value(
+      value: _notifier,
+      child: Consumer<FormFieldsDropdownNotifier>(
+        builder: (context, notifier, _) {
+          return FormField<T>(
+            key: _formKey,
+            initialValue: FormFieldsDropdown._sanitizeInitialValue(
+                widget.initialValue, widget.items),
+            validator: (value) {
+              if (widget.isRequired && value == null) {
+                return l.select(widget.label);
+              }
+              if (widget.validator != null) {
+                return widget.validator!(value);
+              }
+              return null;
+            },
+            onSaved: (_) {},
+            builder: (FormFieldState<T> state) {
+              return _buildDropdownContent(context, state, widget);
+            },
+          );
+        },
+      ),
     );
   }
 
