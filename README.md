@@ -8,41 +8,11 @@
   <i>All input types, all label positions, all the beauty and flexibility you need.</i>
 </p>
 
----
-
-## 🚀 2026 Highlights
-
-- ✨ All label positions: <b>top, bottom, left, right, inBorder, none</b>
-- ✨ Professional, beautiful UI out-of-the-box
-- ✨ Modular, maintainable, and extensible codebase
-- ✨ Full localization and multi-language support
-- ✨ All field types: text, email, phone, password, date, time, dropdown, multi-select, radio, checkbox, and more
-- ✨ Powerful validation, custom error messages, and built-in validators
-- ✨ Provider-based state management for advanced use cases
-- ✨ Type-safe generics for all widgets
-- ✨ Easy migration from legacy form field packages
+<div align="center">
+  <h2>🏁 Navigation</h2>
+</div>
 
 ---
-
-## Why Choose FormFields?
-
-- **All label positions**: Place your label anywhere—top, bottom, left, right, inside the border, or hide it completely.
-- **Beautiful by default**: Professional spacing, error handling, and Material design—no extra styling needed.
-- **All field types**: Text, email, phone, password, date, time, dropdown, multi-select, radio, checkbox, and more.
-- **Localization built-in**: US English and Indonesian included, easy to add more.
-- **Type-safe and flexible**: Use your own model classes, not just strings.
-- **Comprehensive docs and examples**: Everything you need to get started and go advanced.
-- **Actively maintained for 2026 and beyond**.
-
----
-
-## Quick Start
-
-```dart
-import 'package:form_fields/form_fields.dart';
-
-
-## 🏁 Navigation
 
 - [Widget Overview](#why-choose-formfields)
 - [Installation](#-installation)
@@ -51,19 +21,78 @@ import 'package:form_fields/form_fields.dart';
 - [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
 - [Date Range Picker](#date-range-picker-usedatepickerforrange)
 - [FormFields<T> Properties](#formfieldst-properties-2026)
-  - [How to Use FormFields<T>](#how-to-use-formfieldst)
+    - [How to Use FormFields<T>](#how-to-use-formfieldst)
 
+<details>
+  <summary><strong>Selection Widgets</strong></summary>
+  
+  <ul>
+    <li><strong>FormFieldsCheckbox</strong>
+      <ul>
+        <li><a href="#formfieldscheckbox-properties">Properties</a></li>
+        <li><a href="#how-to-use-formfieldscheckbox">How to Use</a></li>
+        <li><a href="#custom-class-formfieldscheckbox">Custom Class</a></li>
+      </ul>
+    </li>
+    <li><strong>FormFieldsDropdownMulti</strong>
+      <ul>
+        <li><a href="#formfieldsdropdownmulti-properties">Properties</a></li>
+        <li><a href="#how-to-use-formfieldsdropdownmulti">How to Use</a></li>
+        <li><a href="#custom-class-formfieldsdropdownmulti">Custom Class</a></li>
+      </ul>
+    </li>
+    <li><strong>FormFieldsDropdown</strong>
+      <ul>
+        <li><a href="#formfieldsdropdown-properties">Properties</a></li>
+        <li><a href="#how-to-use-formfieldsdropdown">How to Use</a></li>
+        <li><a href="#custom-class-formfieldsdropdown">Custom Class</a></li>
+      </ul>
+    </li>
+    <li><strong>FormFieldsRadioButton</strong>
+      <ul>
+        <li><a href="#formfieldsradiobutton-properties">Properties</a></li>
+        <li><a href="#how-to-use-formfieldsradiobutton">How to Use</a></li>
+        <li><a href="#custom-class-formfieldsradiobutton">Custom Class</a></li>
+      </ul>
+    </li>
+    <li><strong>FormFieldsSelect</strong>
+      <ul>
+        <li><a href="#formfieldsselect-properties">Properties</a></li>
+        <li><a href="#how-to-use-formfieldsselect">How to Use</a></li>
+        <li><a href="#custom-class-formfieldsselect">Custom Class</a></li>
+      </ul>
+    </li>
+  </ul>
+</details>
 
-<!-- Selection Widget Properties Navigation (Grouped) -->
-- **FormFieldsCheckbox**
-    - [Properties](#formfieldscheckbox-properties)
-    - [How to Use](#how-to-use-formfieldscheckbox)
-    - [Custom Class](#custom-class-formfieldscheckbox)
-- **FormFieldsDropdownMulti**
-    - [Properties](#formfieldsdropdownmulti-properties)
-    - [How to Use](#how-to-use-formfieldsdropdownmulti)
-    - [Custom Class](#custom-class-formfieldsdropdownmulti)
-- **FormFieldsDropdown**
+---
+
+- [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
+- [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
+- [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
+- [FormFieldsDropdown (null & non-null)](#3-formfieldsdropdown)
+- [FormFieldsRadioButton (null & non-null)](#4-formfieldsradiobutton)
+- [FormFieldsSelect (null & non-null)](#5-formfieldsselect)
+- [Selection Widgets Overview](#selection-widgets-null-and-non-null-usage)
+- [Built-in Validators](#built-in-validators)
+- [String & Date Extensions](#string--date-extensions)
+- [Custom Validators](#custom-validators)
+- [Advanced Examples](#advanced-examples)
+- [Custom Classes](#custom-class-usage-with-selection-widgets)
+- [Number Formatting](#number-formatting)
+- [Custom Date Format & Range](#custom-date-format--range)
+- [Custom Error Messages](#custom-error-messages)
+- [Focus Navigation](#focus-navigation)
+- [Form Validation Example](#form-validation-example)
+- [Color Customization](#color-customization)
+- [Locale Support](#locale-support)
+- [Troubleshooting](#troubleshooting)
+- [Localization & Multi-Language Support](#-localization--multi-language-support)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
+
+<!-- Remove any repeated navigation blocks below -->
     - [Properties](#formfieldsdropdown-properties)
     - [How to Use](#how-to-use-formfieldsdropdown)
     - [Custom Class](#custom-class-formfieldsdropdown)
