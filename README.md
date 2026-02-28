@@ -916,6 +916,41 @@ FormFieldsSelect<Country>(
 | radioButton     | Radio button group                          |
 | checkbox        | Checkbox group                              |
 
+#### Custom Class Example
+You can extend or wrap the `FormType` enum for advanced scenarios, such as localization or custom types:
+```dart
+enum CustomFormType {
+  string,
+  phone,
+  password,
+  email,
+  customType, // Add your own
+}
+
+extension CustomFormTypeExtension on CustomFormType {
+  String get label {
+    switch (this) {
+      case CustomFormType.string:
+        return 'Text';
+      case CustomFormType.phone:
+        return 'Phone';
+      case CustomFormType.password:
+        return 'Password';
+      case CustomFormType.email:
+        return 'Email';
+      case CustomFormType.customType:
+        return 'Custom';
+    }
+  }
+}
+
+FormFields<String>(
+  label: CustomFormType.customType.label,
+  formType: FormType.string, // Use closest built-in type or handle separately
+  onChanged: (v) {},
+)
+```
+
 #### LabelPosition
 | Value         | Description                |
 |---------------|---------------------------|
@@ -1039,5 +1074,114 @@ FormFields<String?>(
   label: 'Middle Name (optional)',
   currrentValue: _middleName, // String? (can be null)
   onChanged: (value) => setState(() => _middleName = value),
+)
+```
+
+---
+
+## FormType Usage Examples
+
+- **FormType.string**
+```dart
+FormFields<String>(
+  label: 'Username',
+  formType: FormType.string,
+  onChanged: (v) {},
+)
+```
+- **FormType.phone**
+```dart
+FormFields<String>(
+  label: 'Phone',
+  formType: FormType.phone,
+  onChanged: (v) {},
+)
+```
+- **FormType.password**
+```dart
+FormFields<String>(
+  label: 'Password',
+  formType: FormType.password,
+  onChanged: (v) {},
+)
+```
+- **FormType.email**
+```dart
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  onChanged: (v) {},
+)
+```
+- **FormType.date**
+```dart
+FormFields<DateTime>(
+  label: 'Birth Date',
+  formType: FormType.date,
+  onChanged: (v) {},
+)
+```
+- **FormType.time**
+```dart
+FormFields<DateTime>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (v) {},
+)
+```
+- **FormType.dateTime**
+```dart
+FormFields<DateTime>(
+  label: 'Event DateTime',
+  formType: FormType.dateTime,
+  onChanged: (v) {},
+)
+```
+- **FormType.dateTimeRange**
+```dart
+FormFields<DateTimeRange>(
+  label: 'Trip Duration',
+  formType: FormType.dateTimeRange,
+  onChanged: (v) {},
+)
+```
+- **FormType.timeOfDay**
+```dart
+FormFields<TimeOfDay>(
+  label: 'Alarm',
+  formType: FormType.timeOfDay,
+  onChanged: (v) {},
+)
+```
+- **FormType.dropdown**
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  onChanged: (v) {},
+)
+```
+- **FormType.dropdownMulti**
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  onChanged: (v) {},
+)
+```
+- **FormType.radioButton**
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  onChanged: (v) {},
+)
+```
+- **FormType.checkbox**
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  onChanged: (v) {},
 )
 ```
