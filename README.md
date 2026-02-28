@@ -56,6 +56,7 @@ FormFields<String>(
 
 
 
+
 ## 🏁 Navigation
 
 - [Widget Overview](#why-choose-formfields)
@@ -66,10 +67,15 @@ FormFields<String>(
 - [Date Range Picker](#date-range-picker-usedatepickerforrange)
 - [FormFields<T> Properties](#formfieldst-properties-2026)
 - [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
+  - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
 - [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
+  - [How to Use FormFieldsDropdownMulti](#how-to-use-formfieldsdropdownmulti)
 - [FormFieldsDropdown Properties](#formfieldsdropdown-properties)
+  - [How to Use FormFieldsDropdown](#how-to-use-formfieldsdropdown)
 - [FormFieldsRadioButton Properties](#formfieldsradiobutton-properties)
+  - [How to Use FormFieldsRadioButton](#how-to-use-formfieldsradiobutton)
 - [FormFieldsSelect Properties](#formfieldsselect-properties)
+  - [How to Use FormFieldsSelect](#how-to-use-formfieldsselect)
 - [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
 - [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
 - [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
@@ -470,6 +476,29 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
 | `radius` | `double` | `8.0` | Border radius |
 
+
+<!-- how-to-use-formfieldscheckbox -->
+### How to Use FormFieldsCheckbox
+
+**Non-nullable:**
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _hobbies, // List<String>
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+```
+**Nullable:**
+```dart
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _optionalHobbies, // List<String?>
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
 ---
 
 ## FormFieldsDropdownMulti Properties
@@ -488,6 +517,29 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `chipDeleteIconColor` | `Color` | `Theme.of(context).chipTheme.deleteIconColor` | Chip delete icon color |
 | `showItemCount` | `bool` | `false` | Show item count on chips |
 | `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+
+
+<!-- how-to-use-formfieldsdropdownmulti -->
+### How to Use FormFieldsDropdownMulti
+
+**Non-nullable:**
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  onChanged: (values) => setState(() => _languages = values),
+)
+```
+**Nullable:**
+```dart
+FormFieldsDropdownMulti<String?>(
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  onChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
 
 ---
 
@@ -510,6 +562,29 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `enabled` | `bool` | `true` | Whether the dropdown is enabled |
 | `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
 
+
+<!-- how-to-use-formfieldsdropdown -->
+### How to Use FormFieldsDropdown
+
+**Non-nullable:**
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+```
+**Nullable:**
+```dart
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+
 ---
 
 ## FormFieldsRadioButton Properties
@@ -529,6 +604,29 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `radius` | `double` | `12.0` | Border radius |
 | `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
 | `itemBuilder` | `Widget Function(T, bool)` | `null` | Custom widget for each item |
+
+
+<!-- how-to-use-formfieldsradiobutton -->
+### How to Use FormFieldsRadioButton
+
+**Non-nullable:**
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+```
+**Nullable:**
+```dart
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String?
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
 
 ---
 
@@ -553,6 +651,51 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `borderType` | `BorderType` | `BorderType.outlineInputBorder` | Border style |
 | `enabled` | `bool` | `true` | Whether the select is enabled |
 | `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+
+
+<!-- how-to-use-formfieldsselect -->
+### How to Use FormFieldsSelect
+
+**Dropdown (non-nullable):**
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+```
+**Dropdown (nullable):**
+```dart
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+**Multi-select (non-nullable):**
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  onMultiChanged: (values) => setState(() => _languages = values),
+)
+```
+**Multi-select (nullable):**
+```dart
+FormFieldsSelect<String?>(
+  formType: FormType.dropdownMulti,
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  onMultiChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
 
 ---
 
