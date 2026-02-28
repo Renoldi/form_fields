@@ -7,7 +7,7 @@ import 'providers/form_fields_dropdown_notifier.dart';
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
   final String label;
-  final ValueChanged<T?> onChanged;
+  final ValueChanged<T?>? onChanged;
   final T? initialValue;
   final String? Function(T?)? validator;
   final bool isRequired;
@@ -26,7 +26,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final bool enableFilter;
   final String? filterHintText;
 
-  const FormFieldsDropdown({
+  FormFieldsDropdown({
     super.key,
     required this.items,
     required this.label,
@@ -48,7 +48,12 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.enabled = true,
     this.enableFilter = false,
     this.filterHintText,
-  });
+  }) : assert(
+          items.isEmpty ||
+              initialValue == null ||
+              items.where((item) => item == initialValue).length == 1,
+          "There should be exactly one item with the dropdown's value: $initialValue. Either zero or 2 or more items were detected with the same value",
+        );
 
   @override
   State<FormFieldsDropdown<T>> createState() => _FormFieldsDropdownState<T>();
@@ -142,18 +147,25 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   height: MediaQuery.of(context).size.height * 0.6,
                   child: Column(
                     children: [
-                      TextField(
-                        decoration: InputDecoration(
-                          hintText: widget.filterHintText ?? l10n.searchHint,
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setDialogState(() {
-                            filterState[0] = value;
-                          });
+                      FormField<String>(
+                        initialValue: filterState[0],
+                        builder: (formFieldState) {
+                          return TextFormField(
+                            decoration: InputDecoration(
+                              hintText:
+                                  widget.filterHintText ?? l10n.searchHint,
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setDialogState(() {
+                                filterState[0] = value;
+                                formFieldState.didChange(value);
+                              });
+                            },
+                          );
                         },
                       ),
                       const SizedBox(height: 12),
@@ -174,7 +186,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                               onTap: () {
                                 tempSelected = item;
                                 state.didChange(item);
-                                widget.onChanged(item);
+                                widget.onChanged?.call(item);
                                 Navigator.pop(context);
                               },
                             );
@@ -293,7 +305,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
         final filteredItems = widget.items;
 
         final dropdown = DropdownButtonFormField<T>(
-          initialValue: state.value,
+          initialValue: state.value as T,
           items: filteredItems
               .map(
                 (item) => DropdownMenuItem<T>(
@@ -309,7 +321,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           onChanged: widget.enabled
               ? (value) {
                   state.didChange(value);
-                  widget.onChanged(value);
+                  widget.onChanged?.call(value);
                 }
               : null,
           decoration: effectiveDecoration,

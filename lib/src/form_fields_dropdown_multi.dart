@@ -132,19 +132,26 @@ class _FormFieldsDropdownMultiState<T>
                           if (widget.enableFilter)
                             Column(
                               children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    hintText: widget.filterHintText ??
-                                        dialogL10n.searchHint,
-                                    prefixIcon: const Icon(Icons.search),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    setDialogState(() {
-                                      filterState[0] = value;
-                                    });
+                                FormField<String>(
+                                  initialValue: filterState[0],
+                                  builder: (formFieldState) {
+                                    return TextFormField(
+                                      decoration: InputDecoration(
+                                        hintText: widget.filterHintText ??
+                                            dialogL10n.searchHint,
+                                        prefixIcon: const Icon(Icons.search),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          filterState[0] = value;
+                                          formFieldState.didChange(value);
+                                        });
+                                      },
+                                    );
                                   },
                                 ),
                                 const SizedBox(height: 12),
