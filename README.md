@@ -41,22 +41,8 @@
 ```dart
 import 'package:form_fields/form_fields.dart';
 
-FormFields<String>(
-  label: 'Email',
-  formType: FormType.email,
-  labelPosition: LabelPosition.top,
-  isRequired: true,
-  onChanged: (value) {
-    print('Email: $value');
-  },
-)
-```
 
----
-
-
-
-
+## 🏁 Navigation
 
 - [Widget Overview](#why-choose-formfields)
 - [Installation](#-installation)
@@ -67,32 +53,53 @@ FormFields<String>(
 - [FormFields<T> Properties](#formfieldst-properties-2026)
   - [How to Use FormFields<T>](#how-to-use-formfieldst)
 
-<!-- Selection Widget Properties Navigation -->
-- [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
-  - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
-  - [Custom Class: FormFieldsCheckbox](#custom-class-formfieldscheckbox)
-- [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
-  - [How to Use FormFieldsDropdownMulti](#how-to-use-formfieldsdropdownmulti)
-  - [Custom Class: FormFieldsDropdownMulti](#custom-class-formfieldsdropdownmulti)
-- [FormFieldsDropdown Properties](#formfieldsdropdown-properties)
-  - [How to Use FormFieldsDropdown](#how-to-use-formfieldsdropdown)
-  - [Custom Class: FormFieldsDropdown](#custom-class-formfieldsdropdown)
-- [FormFieldsRadioButton Properties](#formfieldsradiobutton-properties)
-  - [How to Use FormFieldsRadioButton](#how-to-use-formfieldsradiobutton)
-  - [Custom Class: FormFieldsRadioButton](#custom-class-formfieldsradiobutton)
-- [FormFieldsSelect Properties](#formfieldsselect-properties)
-  - [How to Use FormFieldsSelect](#how-to-use-formfieldsselect)
-  - [Custom Class: FormFieldsSelect](#custom-class-formfieldsselect)
-- [Widget Overview](#why-choose-formfields)
-- [Installation](#-installation)
-- [Quick Start](#quick-start)
-- [Nullable Type Support](#-nullable-type-support-2026)
-- [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
-- [Date Range Picker](#date-range-picker-usedatepickerforrange)
-- [FormFields<T> Properties](#formfieldst-properties-2026)
-  - [How to Use FormFields<T>](#how-to-use-formfieldst)
 
-<!-- Selection Widget Properties Navigation -->
+<!-- Selection Widget Properties Navigation (Grouped) -->
+- **FormFieldsCheckbox**
+    - [Properties](#formfieldscheckbox-properties)
+    - [How to Use](#how-to-use-formfieldscheckbox)
+    - [Custom Class](#custom-class-formfieldscheckbox)
+- **FormFieldsDropdownMulti**
+    - [Properties](#formfieldsdropdownmulti-properties)
+    - [How to Use](#how-to-use-formfieldsdropdownmulti)
+    - [Custom Class](#custom-class-formfieldsdropdownmulti)
+- **FormFieldsDropdown**
+    - [Properties](#formfieldsdropdown-properties)
+    - [How to Use](#how-to-use-formfieldsdropdown)
+    - [Custom Class](#custom-class-formfieldsdropdown)
+- **FormFieldsRadioButton**
+    - [Properties](#formfieldsradiobutton-properties)
+    - [How to Use](#how-to-use-formfieldsradiobutton)
+    - [Custom Class](#custom-class-formfieldsradiobutton)
+- **FormFieldsSelect**
+    - [Properties](#formfieldsselect-properties)
+    - [How to Use](#how-to-use-formfieldsselect)
+    - [Custom Class](#custom-class-formfieldsselect)
+
+- [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
+- [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
+- [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
+- [FormFieldsDropdown (null & non-null)](#3-formfieldsdropdown)
+- [FormFieldsRadioButton (null & non-null)](#4-formfieldsradiobutton)
+- [FormFieldsSelect (null & non-null)](#5-formfieldsselect)
+- [Selection Widgets Overview](#selection-widgets-null-and-non-null-usage)
+- [Built-in Validators](#built-in-validators)
+- [String & Date Extensions](#string--date-extensions)
+- [Custom Validators](#custom-validators)
+- [Advanced Examples](#advanced-examples)
+- [Custom Classes](#custom-class-usage-with-selection-widgets)
+- [Number Formatting](#number-formatting)
+- [Custom Date Format & Range](#custom-date-format--range)
+- [Custom Error Messages](#custom-error-messages)
+- [Focus Navigation](#focus-navigation)
+- [Form Validation Example](#form-validation-example)
+- [Color Customization](#color-customization)
+- [Locale Support](#locale-support)
+- [Troubleshooting](#troubleshooting)
+- [Localization & Multi-Language Support](#-localization--multi-language-support)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 - [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
   - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
 - [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
