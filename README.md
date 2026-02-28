@@ -1,3 +1,39 @@
+
+
+<div align="center">
+  <h2>🏁 Navigation</h2>
+</div>
+
+---
+
+1. **FormFields<T>**
+  - [Properties](#formfieldst-properties-2026)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldst)
+  - [Custom Class](#custom-class-formfieldst)
+2. **FormFieldsCheckbox**
+  - [Properties](#formfieldscheckbox-properties)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldscheckbox)
+  - [Custom Class](#custom-class-formfieldscheckbox)
+3. **FormFieldsDropdownMulti**
+  - [Properties](#formfieldsdropdownmulti-properties)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldsdropdownmulti)
+  - [Custom Class](#custom-class-formfieldsdropdownmulti)
+4. **FormFieldsDropdown**
+  - [Properties](#formfieldsdropdown-properties)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldsdropdown)
+  - [Custom Class](#custom-class-formfieldsdropdown)
+5. **FormFieldsRadioButton**
+  - [Properties](#formfieldsradiobutton-properties)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldsradiobutton)
+  - [Custom Class](#custom-class-formfieldsradiobutton)
+6. **FormFieldsSelect**
+  - [Properties](#formfieldsselect-properties)
+  - [How to Use Each Property](#how-to-use-each-property-formfieldsselect)
+  - [Custom Class](#custom-class-formfieldsselect)
+
+---
+
+...existing code...
 # FormFields
 
 [![Pub Package](https://img.shields.io/pub/v/form_fields.svg)](https://pub.dev/packages/form_fields)
