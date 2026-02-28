@@ -54,22 +54,25 @@ FormFields<String>(
 
 ---
 
+
 ## 🏁 Navigation
 
-- [Widget Overview](#-widget-overview)
+- [Widget Overview](#why-choose-formfields)
 - [Installation](#-installation)
 - [Quick Start](#quick-start)
+- [Nullable Type Support](#-nullable-type-support-2026)
 - [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
-- [FormFields<T> Properties](#formfieldst-properties)
-- [Enums: FormType, LabelPosition, BorderType](#formtype-enum)
-- [Selection Widgets](#selection-widgets)
+- [Date Range Picker](#date-range-picker-usedatepickerforrange)
+- [FormFields<T> Properties](#formfieldst-properties-2026)
+- [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
+- [Selection Widgets](#selection-widgets-dropdown-multi-select-radio-checkbox)
 - [Built-in Validators](#built-in-validators)
-- [String & Date Extensions](#string-extensions)
+- [String & Date Extensions](#string--date-extensions)
 - [Custom Validators](#custom-validators)
 - [Advanced Examples](#advanced-examples)
-- [Custom Classes](#working-with-custom-classes)
+- [Custom Classes](#using-custom-classes)
 - [Number Formatting](#number-formatting)
-- [Custom Date Format & Range](#custom-date-format)
+- [Custom Date Format & Range](#custom-date-format--range)
 - [Custom Error Messages](#custom-error-messages)
 - [Focus Navigation](#focus-navigation)
 - [Form Validation Example](#form-validation-example)
@@ -434,5 +437,491 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 - All properties work with both nullable and non-nullable types for `T`.
 - See code examples above for how to use each property in practice.
 - For advanced customization, combine these properties as needed.
+
+---
+
+## Selection Widgets: Null and Non-Null Usage
+
+### 1. FormFieldsCheckbox
+
+#### Non-nullable
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _hobbies, // List<String>
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+```
+#### Nullable
+```dart
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _optionalHobbies, // List<String?>
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+### 2. FormFieldsDropdownMulti
+
+#### Non-nullable
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  onChanged: (values) => setState(() => _languages = values),
+)
+```
+#### Nullable
+```dart
+FormFieldsDropdownMulti<String?>(
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  onChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+### 3. FormFieldsDropdown
+
+#### Non-nullable
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+```
+#### Nullable
+```dart
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+
+### 4. FormFieldsRadioButton
+
+#### Non-nullable
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+```
+#### Nullable
+```dart
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String?
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+
+### 5. FormFieldsSelect
+
+#### Non-nullable (Dropdown)
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+```
+#### Nullable (Dropdown)
+```dart
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+#### Non-nullable (Multi-Select)
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  onMultiChanged: (values) => setState(() => _languages = values),
+)
+```
+#### Nullable (Multi-Select)
+```dart
+FormFieldsSelect<String?>(
+  formType: FormType.dropdownMulti,
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  onMultiChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+---
+
+> **Tip:** All selection widgets support both nullable and non-nullable types for maximum flexibility and null safety.
+
+---
+
+## Full Property Usage Examples for Selection Widgets
+
+Below are practical examples showing how to use all major properties for each selection widget, with both nullable and non-nullable types.
+
+### 1. FormFieldsCheckbox
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _hobbies, // List<String>
+  isRequired: true,
+  direction: Axis.vertical,
+  itemLabelBuilder: (item) => item.toUpperCase(),
+  itemBuilder: (item, selected) => Text(item),
+  activeColor: Colors.blue,
+  itemPadding: EdgeInsets.symmetric(vertical: 8),
+  borderColor: Colors.grey,
+  errorBorderColor: Colors.red,
+  radius: 8,
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _optionalHobbies, // List<String?>
+  isRequired: false,
+  direction: Axis.horizontal,
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+### 2. FormFieldsDropdownMulti
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  isRequired: true,
+  minSelections: 1,
+  maxSelections: 3,
+  chipBackgroundColor: Colors.green.shade100,
+  chipTextColor: Colors.green.shade900,
+  chipDeleteIconColor: Colors.green.shade700,
+  showItemCount: true,
+  itemLabelBuilder: (item) => item,
+  onChanged: (values) => setState(() => _languages = values),
+)
+
+FormFieldsDropdownMulti<String?>(
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  isRequired: false,
+  onChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+### 3. FormFieldsDropdown
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  isRequired: true,
+  hintText: 'Select a country',
+  borderColor: Colors.grey,
+  focusedBorderColor: Colors.blue,
+  errorBorderColor: Colors.red,
+  radius: 10,
+  labelPosition: LabelPosition.top,
+  borderType: BorderType.outlineInputBorder,
+  enabled: true,
+  itemLabelBuilder: (item) => item,
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  isRequired: false,
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+
+### 4. FormFieldsRadioButton
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String
+  isRequired: true,
+  direction: Axis.horizontal,
+  activeColor: Colors.purple,
+  itemPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  borderColor: Colors.grey.shade300,
+  errorBorderColor: Colors.red,
+  radius: 12,
+  itemLabelBuilder: (item) => item,
+  itemBuilder: (item, selected) => Text(item),
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String?
+  isRequired: false,
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+
+### 5. FormFieldsSelect
+```dart
+// Dropdown (non-nullable)
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String
+  isRequired: true,
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+
+// Dropdown (nullable)
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String?
+  isRequired: false,
+  onChanged: (value) => setState(() => _country = value),
+)
+
+// Multi-select (non-nullable)
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _languages, // List<String>
+  isRequired: true,
+  onMultiChanged: (values) => setState(() => _languages = values),
+)
+
+// Multi-select (nullable)
+FormFieldsSelect<String?>(
+  formType: FormType.dropdownMulti,
+  label: 'Optional Languages',
+  items: ['Dart', 'Java', 'Kotlin'],
+  initialValues: _optionalLanguages, // List<String?>
+  isRequired: false,
+  onMultiChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+---
+
+> **Tip:** All properties can be combined as needed. Use nullable types for optional fields and non-nullable for required fields. All selection widgets are fully null-safe.
+
+---
+
+## Custom Class Usage with Selection Widgets
+
+All selection widgets support custom model classes for type-safe, rich data selection. Below are examples for each widget, showing both nullable and non-nullable usage.
+
+### 1. FormFieldsCheckbox with Custom Class
+```dart
+class Hobby {
+  final String id;
+  final String name;
+  const Hobby(this.id, this.name);
+  @override
+  bool operator ==(Object other) => other is Hobby && id == other.id;
+  @override
+  int get hashCode => id.hashCode;
+  @override
+  String toString() => name;
+}
+
+final hobbies = [Hobby('r', 'Reading'), Hobby('m', 'Music'), Hobby('s', 'Sports')];
+List<Hobby> _selectedHobbies = [];
+
+FormFieldsCheckbox<Hobby>(
+  label: 'Hobbies',
+  items: hobbies,
+  initialValue: _selectedHobbies,
+  itemLabelBuilder: (h) => h.name,
+  onChanged: (values) => setState(() => _selectedHobbies = values),
+)
+```
+#### Nullable
+```dart
+List<Hobby?> _optionalHobbies = [];
+FormFieldsCheckbox<Hobby?>(
+  label: 'Optional Hobbies',
+  items: hobbies,
+  initialValue: _optionalHobbies,
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+### 2. FormFieldsDropdownMulti with Custom Class
+```dart
+class Language {
+  final String code;
+  final String name;
+  const Language(this.code, this.name);
+  @override
+  bool operator ==(Object other) => other is Language && code == other.code;
+  @override
+  int get hashCode => code.hashCode;
+  @override
+  String toString() => name;
+}
+
+final languages = [Language('dart', 'Dart'), Language('java', 'Java'), Language('kt', 'Kotlin')];
+List<Language> _selectedLanguages = [];
+
+FormFieldsDropdownMulti<Language>(
+  label: 'Languages',
+  items: languages,
+  initialValues: _selectedLanguages,
+  itemLabelBuilder: (l) => l.name,
+  onChanged: (values) => setState(() => _selectedLanguages = values),
+)
+```
+#### Nullable
+```dart
+List<Language?> _optionalLanguages = [];
+FormFieldsDropdownMulti<Language?>(
+  label: 'Optional Languages',
+  items: languages,
+  initialValues: _optionalLanguages,
+  onChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+### 3. FormFieldsDropdown with Custom Class
+```dart
+class Country {
+  final String code;
+  final String name;
+  const Country(this.code, this.name);
+  @override
+  bool operator ==(Object other) => other is Country && code == other.code;
+  @override
+  int get hashCode => code.hashCode;
+  @override
+  String toString() => name;
+}
+
+final countries = [Country('US', 'USA'), Country('CA', 'Canada'), Country('UK', 'UK')];
+Country? _country;
+
+FormFieldsDropdown<Country>(
+  label: 'Country',
+  items: countries,
+  initialValue: _country,
+  itemLabelBuilder: (c) => c.name,
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+#### Nullable
+```dart
+FormFieldsDropdown<Country?>(
+  label: 'Country (optional)',
+  items: countries,
+  initialValue: _country,
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+
+### 4. FormFieldsRadioButton with Custom Class
+```dart
+class Gender {
+  final String id;
+  final String label;
+  const Gender(this.id, this.label);
+  @override
+  bool operator ==(Object other) => other is Gender && id == other.id;
+  @override
+  int get hashCode => id.hashCode;
+  @override
+  String toString() => label;
+}
+
+final genders = [Gender('m', 'Male'), Gender('f', 'Female'), Gender('o', 'Other')];
+Gender? _gender;
+
+FormFieldsRadioButton<Gender>(
+  label: 'Gender',
+  items: genders,
+  initialValue: _gender,
+  itemLabelBuilder: (g) => g.label,
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+#### Nullable
+```dart
+FormFieldsRadioButton<Gender?>(
+  label: 'Gender (optional)',
+  items: genders,
+  initialValue: _gender,
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+
+### 5. FormFieldsSelect with Custom Class
+```dart
+// Dropdown
+FormFieldsSelect<Country>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: countries,
+  initialValue: _country,
+  onChanged: (value) => setState(() => _country = value),
+)
+// Multi-select
+FormFieldsSelect<Language>(
+  formType: FormType.dropdownMulti,
+  label: 'Languages',
+  items: languages,
+  initialValues: _selectedLanguages,
+  onMultiChanged: (values) => setState(() => _selectedLanguages = values),
+)
+```
+#### Nullable
+```dart
+FormFieldsSelect<Country?>(
+  formType: FormType.dropdown,
+  label: 'Country (optional)',
+  items: countries,
+  initialValue: _country,
+  onChanged: (value) => setState(() => _country = value),
+)
+FormFieldsSelect<Language?>(
+  formType: FormType.dropdownMulti,
+  label: 'Optional Languages',
+  items: languages,
+  initialValues: _optionalLanguages,
+  onMultiChanged: (values) => setState(() => _optionalLanguages = values),
+)
+```
+
+---
+
+> **Tip:** Always implement `==` and `hashCode` for your custom classes to ensure correct selection and comparison.
 
 ---

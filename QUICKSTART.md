@@ -148,58 +148,144 @@ Form(
 )
 ```
 
-## 8. Selection Widgets
+
+## 8. Selection Widgets (Dropdown, Multi-Select, Radio, Checkbox)
+
+All selection widgets support both simple and custom class types, as well as nullable and non-nullable usage.
 
 ### Dropdown (Single-Select)
 ```dart
+// Non-nullable
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada', 'UK', 'Germany'],
-  initialValue: _selectedCountry,
+  initialValue: _selectedCountry, // String
   isRequired: true,
-  onChanged: (value) {
-    setState(() => _selectedCountry = value ?? '');
-  },
+  onChanged: (value) => setState(() => _selectedCountry = value ?? ''),
+)
+
+// Nullable
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK', 'Germany'],
+  initialValue: _selectedCountry, // String?
+  onChanged: (value) => setState(() => _selectedCountry = value),
 )
 ```
 
 ### Multi-Select Dropdown
 ```dart
+// Non-nullable
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French', 'German'],
-  initialValues: _selectedLanguages,
+  initialValues: _selectedLanguages, // List<String>
   minSelections: 1,
   maxSelections: 3,
-  onChanged: (values) {
-    setState(() => _selectedLanguages = values);
-  },
+  onChanged: (values) => setState(() => _selectedLanguages = values),
+)
+
+// Nullable
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages (optional)',
+  items: ['English', 'Spanish', 'French', 'German'],
+  initialValues: _selectedLanguages, // List<String?>
+  onChanged: (values) => setState(() => _selectedLanguages = values),
 )
 ```
 
 ### Radio Button
 ```dart
+// Non-nullable
 FormFieldsRadioButton<String>(
   label: 'Gender',
   items: ['Male', 'Female', 'Other'],
-  initialValue: _gender,
+  initialValue: _gender, // String
   direction: Axis.horizontal,
-  onChanged: (value) {
-    setState(() => _gender = value ?? '');
-  },
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+
+// Nullable
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String?
+  onChanged: (value) => setState(() => _gender = value),
 )
 ```
 
 ### Checkbox
 ```dart
+// Non-nullable
 FormFieldsCheckbox<String>(
   label: 'Hobbies',
   items: ['Reading', 'Sports', 'Music', 'Travel'],
-  initialValue: _hobbies,
+  initialValue: _hobbies, // List<String>
   direction: Axis.vertical,
-  onChanged: (values) {
-    setState(() => _hobbies = values);
-  },
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+
+// Nullable
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Sports', 'Music', 'Travel'],
+  initialValue: _optionalHobbies, // List<String?>
+  direction: Axis.vertical,
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+### Using Custom Classes
+
+All selection widgets support custom class types for advanced use cases:
+
+```dart
+// Define your model
+class Country {
+  final String code;
+  final String name;
+  Country(this.code, this.name);
+  @override
+  bool operator ==(Object other) =>
+    identical(this, other) ||
+    other is Country && code == other.code;
+  @override
+  int get hashCode => code.hashCode;
+}
+
+// Dropdown with custom class
+FormFieldsDropdown<Country>(
+  label: 'Select Country',
+  items: [
+    Country('US', 'United States'),
+    Country('CA', 'Canada'),
+  ],
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) => setState(() => _selectedCountry = value),
+)
+
+// Multi-select with custom class
+FormFieldsDropdownMulti<Country>(
+  label: 'Countries Visited',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (values) => setState(() => _countriesVisited = values),
+)
+
+// Radio button with custom class
+FormFieldsRadioButton<Country>(
+  label: 'Country',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) => setState(() => _selectedCountry = value),
+)
+
+// Checkbox with custom class
+FormFieldsCheckbox<Country>(
+  label: 'Favorite Countries',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (values) => setState(() => _favoriteCountries = values),
 )
 ```
 

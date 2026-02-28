@@ -924,200 +924,156 @@ Column(
 )
 ```
 
-### Using Custom Classes with Selection Widgets
 
-All selection widgets support generic types with custom model classes, providing type-safe selection handling.
+## Selection Widgets: Dropdown, Multi-Select, Radio, Checkbox
 
-#### Step 1: Define Your Model Class
+All selection widgets support both simple and custom class types, as well as nullable and non-nullable usage for full null safety.
 
-Models should implement equality operators:
+### Dropdown (Single-Select)
+```dart
+// Non-nullable
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Germany'],
+  initialValue: _selectedCountry, // String
+  isRequired: true,
+  onChanged: (value) => setState(() => _selectedCountry = value ?? ''),
+)
+
+// Nullable
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK', 'Germany'],
+  initialValue: _selectedCountry, // String?
+  onChanged: (value) => setState(() => _selectedCountry = value),
+)
+```
+
+### Multi-Select Dropdown
+```dart
+// Non-nullable
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German'],
+  initialValues: _selectedLanguages, // List<String>
+  minSelections: 1,
+  maxSelections: 3,
+  onChanged: (values) => setState(() => _selectedLanguages = values),
+)
+
+// Nullable
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages (optional)',
+  items: ['English', 'Spanish', 'French', 'German'],
+  initialValues: _selectedLanguages, // List<String?>
+  onChanged: (values) => setState(() => _selectedLanguages = values),
+)
+```
+
+### Radio Button
+```dart
+// Non-nullable
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String
+  direction: Axis.horizontal,
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+
+// Nullable
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String?
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+
+### Checkbox
+```dart
+// Non-nullable
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Sports', 'Music', 'Travel'],
+  initialValue: _hobbies, // List<String>
+  direction: Axis.vertical,
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+
+// Nullable
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Sports', 'Music', 'Travel'],
+  initialValue: _optionalHobbies, // List<String?>
+  direction: Axis.vertical,
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+### Using Custom Classes
+
+All selection widgets support custom class types for advanced use cases:
 
 ```dart
+// Define your model
 class Country {
   final String code;
   final String name;
-  final String flag;
-
-  Country(this.code, this.name, this.flag);
-
+  Country(this.code, this.name);
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Country &&
-          runtimeType == other.runtimeType &&
-          code == other.code;
-
+    identical(this, other) ||
+    other is Country && code == other.code;
   @override
   int get hashCode => code.hashCode;
-
-  @override
-  String toString() => name;
 }
-```
 
-#### Step 2: Create Model Instances
-
-```dart
-final List<Country> countries = [
-  Country('US', 'United States', '🇺🇸'),
-  Country('CA', 'Canada', '🇨🇦'),
-  Country('GB', 'United Kingdom', '🇬🇧'),
-  Country('DE', 'Germany', '🇩🇪'),
-];
-```
-
-#### Step 3: Use with Dropdown
-
-```dart
-Country? _selectedCountry;
-
+// Dropdown with custom class
 FormFieldsDropdown<Country>(
   label: 'Select Country',
-  items: countries,
-  initialValue: _selectedCountry,
-  itemLabelBuilder: (country) => '${country.flag} ${country.name}',
-  isRequired: true,
-  onChanged: (value) {
-    setState(() => _selectedCountry = value);
-    // Access full object properties
-    if (value != null) {
-      print('Code: ${value.code}');
-      print('Name: ${value.name}');
-    }
-  },
-)
-```
-
-#### Step 4: Use with Multi-Select Dropdown
-
-```dart
-class Skill {
-  final String id;
-  final String name;
-  final String category;
-
-  Skill(this.id, this.name, this.category);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Skill && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
-
-List<Skill> _selectedSkills = [];
-
-FormFieldsDropdownMulti<Skill>(
-  label: 'Select Your Skills',
   items: [
-    Skill('flutter', 'Flutter', 'Mobile'),
-    Skill('firebase', 'Firebase', 'Backend'),
-    Skill('rest', 'REST API', 'Backend'),
+    Country('US', 'United States'),
+    Country('CA', 'Canada'),
   ],
-  initialValues: _selectedSkills,
-  itemLabelBuilder: (skill) => '${skill.name} (${skill.category})',
-  minSelections: 2,
-  maxSelections: 5,
-  onChanged: (values) {
-    setState(() => _selectedSkills = values);
-    // Access full list of selected objects
-    for (var skill in values) {
-      print('Selected: ${skill.name} - ${skill.category}');
-    }
-  },
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) => setState(() => _selectedCountry = value),
+)
+
+// Multi-select with custom class
+FormFieldsDropdownMulti<Country>(
+  label: 'Countries Visited',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (values) => setState(() => _countriesVisited = values),
+)
+
+// Radio button with custom class
+FormFieldsRadioButton<Country>(
+  label: 'Country',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (value) => setState(() => _selectedCountry = value),
+)
+
+// Checkbox with custom class
+FormFieldsCheckbox<Country>(
+  label: 'Favorite Countries',
+  items: countries, // List<Country>
+  itemLabelBuilder: (country) => country.name,
+  onChanged: (values) => setState(() => _favoriteCountries = values),
 )
 ```
 
-#### Step 5: Use with Radio Button
-
-```dart
-class SubscriptionPlan {
-  final String id;
-  final String name;
-  final double price;
-
-  SubscriptionPlan(this.id, this.name, this.price);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SubscriptionPlan && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
-
-SubscriptionPlan? _selectedPlan;
-
-FormFieldsRadioButton<SubscriptionPlan>(
-  label: 'Choose Your Plan',
-  items: [
-    SubscriptionPlan('free', 'Free', 0),
-    SubscriptionPlan('pro', 'Pro', 9.99),
-    SubscriptionPlan('enterprise', 'Enterprise', 29.99),
-  ],
-  initialValue: _selectedPlan,
-  itemLabelBuilder: (plan) => '${plan.name} - \$${plan.price}/mo',
-  onChanged: (value) {
-    setState(() => _selectedPlan = value);
-    if (value != null) {
-      print('Selected plan: ${value.name} at \$${value.price}');
-    }
-  },
-)
-```
-
-#### Step 6: Use with Checkbox
-
-```dart
-class Interest {
-  final String id;
-  final String name;
-  final Color color;
-
-  Interest(this.id, this.name, this.color);
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Interest && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
-
-List<Interest> _selectedInterests = [];
-
-FormFieldsCheckbox<Interest>(
-  label: 'Select Your Interests',
-  items: [
-    Interest('gaming', 'Gaming', Colors.purple),
-    Interest('music', 'Music', Colors.pink),
-    Interest('sports', 'Sports', Colors.orange),
-  ],
-  initialValue: _selectedInterests,
-  itemLabelBuilder: (interest) => interest.name,
-  onChanged: (values) {
-    setState(() => _selectedInterests = values);
-    // Full type safety with custom objects
-    for (var interest in values) {
-      print('Interest: ${interest.name}, Color: ${interest.color}');
-    }
-  },
-)
-```
-
-#### Custom Item Builder for Advanced UI
+### Custom Item Builder for Advanced UI
 
 Use `itemBuilder` for complete UI customization:
 
 ```dart
-FormFieldsRadioButton<SubscriptionPlan>(
-  label: 'Choose Your Plan',
-  items: plans,
-  itemBuilder: (plan, selected) {
+FormFieldsRadioButton<Country>(
+  label: 'Choose Country',
+  items: countries,
+  itemBuilder: (country, selected) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1128,26 +1084,34 @@ FormFieldsRadioButton<SubscriptionPlan>(
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            plan.name,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text('\$${plan.price}/month'),
-        ],
+      child: Text(
+        country.name,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   },
-  onChanged: (value) {
-    setState(() => _selectedPlan = value);
-  },
+  onChanged: (value) => setState(() => _selectedCountry = value),
 )
 ```
+
+### Benefits and Best Practices for Custom Classes
+
+1. **Type Safety**: Compile-time checking of object types
+2. **Full Object Access**: Access all properties, not just display strings
+3. **Structured Data**: Maintain complex relationships between fields
+4. **Code Clarity**: Self-documenting code with meaningful types
+5. **Validation**: Validate based on object properties
+6. **API Integration**: Direct mapping to API models
+
+**Best Practices:**
+- Always implement `==` and `hashCode` for your model
+- Use `final` fields for immutability
+- Provide a meaningful `toString()` for debugging
+- Use `itemLabelBuilder` for display customization
+
 
 #### Benefits of Custom Classes
 
@@ -1219,15 +1183,163 @@ FormFields<DateTime>(label: 'Date', onChanged: (v) {})
 FormFields<int>(label: 'Name', onChanged: (v) {})  // String name as int
 ```
 
-### 5. Handle Nullable Values
 
+## Nullable and Non-Nullable Property Usage
+
+All FormFields widgets and properties support both nullable and non-nullable types. This gives you full flexibility and null safety for every use case.
+
+### How to Use Nullable and Non-Nullable Properties
+
+#### 1. Text Field (String and String?)
 ```dart
+// Non-nullable (required field)
 FormFields<String>(
-  label: 'Middle Name',
-  onChanged: (value) {
-    final name = value ?? '';  // Handle null
-    setState(() => _middleName = name);
+  label: 'First Name',
+  isRequired: true,
+  currrentValue: _firstName, // String, must not be null
+  onChanged: (value) => setState(() => _firstName = value ?? ''),
+)
+
+// Nullable (optional field)
+FormFields<String?>(
+  label: 'Middle Name (optional)',
+  currrentValue: _middleName, // String? (can be null)
+  onChanged: (value) => setState(() => _middleName = value),
+)
+```
+
+#### 2. Dropdown (T and T?)
+```dart
+// Non-nullable (must select)
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String, not null
+  isRequired: true,
+  onChanged: (value) => setState(() => _country = value ?? ''),
+)
+
+// Nullable (can clear selection)
+FormFieldsDropdown<String?>(
+  label: 'Country (optional)',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: _country, // String? (can be null)
+  onChanged: (value) => setState(() => _country = value),
+)
+```
+
+#### 3. Radio Button (T and T?)
+```dart
+// Non-nullable
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String, not null
+  isRequired: true,
+  onChanged: (value) => setState(() => _gender = value ?? ''),
+)
+
+// Nullable
+FormFieldsRadioButton<String?>(
+  label: 'Gender (optional)',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: _gender, // String? (can be null)
+  onChanged: (value) => setState(() => _gender = value),
+)
+```
+
+#### 4. Checkbox (List<T> and List<T?>)
+```dart
+// Non-nullable list
+FormFieldsCheckbox<String>(
+  label: 'Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _hobbies, // List<String>
+  onChanged: (values) => setState(() => _hobbies = values),
+)
+
+// Nullable list (rare, but possible)
+FormFieldsCheckbox<String?>(
+  label: 'Optional Hobbies',
+  items: ['Reading', 'Music', 'Sports'],
+  initialValue: _optionalHobbies, // List<String?>
+  onChanged: (values) => setState(() => _optionalHobbies = values),
+)
+```
+
+#### 5. Numeric Fields (int, int?, double, double?)
+```dart
+// Non-nullable int
+FormFields<int>(
+  label: 'Age',
+  currrentValue: _age, // int
+  onChanged: (value) => setState(() => _age = value ?? 0),
+)
+
+// Nullable int
+FormFields<int?>(
+  label: 'Age (optional)',
+  currrentValue: _age, // int?
+  onChanged: (value) => setState(() => _age = value),
+)
+
+// Non-nullable double
+FormFields<double>(
+  label: 'Price',
+  currrentValue: _price, // double
+  onChanged: (value) => setState(() => _price = value ?? 0.0),
+)
+
+// Nullable double
+FormFields<double?>(
+  label: 'Price (optional)',
+  currrentValue: _price, // double?
+  onChanged: (value) => setState(() => _price = value),
+)
+```
+
+#### 6. Date/Time Fields (DateTime, DateTime?, TimeOfDay, TimeOfDay?)
+```dart
+// Non-nullable DateTime
+FormFields<DateTime>(
+  label: 'Birth Date',
+  currrentValue: _birthDate, // DateTime
+  onChanged: (value) => setState(() => _birthDate = value!),
+)
+
+// Nullable DateTime
+FormFields<DateTime?>(
+  label: 'Anniversary (optional)',
+  currrentValue: _anniversary, // DateTime?
+  onChanged: (value) => setState(() => _anniversary = value),
+)
+
+// Non-nullable TimeOfDay
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  currrentValue: _meetingTime, // TimeOfDay
+  onChanged: (value) => setState(() => _meetingTime = value!),
+)
+
+// Nullable TimeOfDay
+FormFields<TimeOfDay?>(
+  label: 'Optional Meeting Time',
+  currrentValue: _optionalMeetingTime, // TimeOfDay?
+  onChanged: (value) => setState(() => _optionalMeetingTime = value),
+)
+```
+
+#### 7. Custom Validation with Nullables
+```dart
+FormFields<String?>(
+  label: 'Referral Code (optional)',
+  validator: (value) {
+    if (value != null && value.length < 6) {
+      return 'Referral code must be at least 6 characters';
+    }
+    return null; // Accepts null as valid (optional field)
   },
+  onChanged: (value) => setState(() => _referralCode = value),
 )
 ```
 
