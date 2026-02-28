@@ -1,4 +1,18 @@
-/// FormFields - A comprehensive Flutter form field widget
+/// ---------------------------------------------------------------------------
+/// FormFields Widget
+/// ---------------------------------------------------------------------------
+/// A beautiful, flexible, and easy-to-use form field widget for Flutter.
+///
+/// Supports all label positions, field types, and professional UI out of the box.
+///
+/// Example:
+///   FormFields<String>(
+///     label: 'Email',
+///     formType: FormType.email,
+///     labelPosition: LabelPosition.top,
+///     onChanged: (value) { /* ... */ },
+///   )
+/// ---------------------------------------------------------------------------
 library;
 
 import 'dart:async';
@@ -16,25 +30,25 @@ import 'utilities/phone_country_codes.dart' as phone_codes;
 import 'providers/form_fields_notifier.dart';
 
 class FormFields<T> extends StatefulWidget {
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // CORE PROPERTIES
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Callback when field value changes
   final ValueChanged<T> onChanged;
 
   /// Current value
   final T currrentValue;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // VALIDATION
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Custom validator function
   final FormFieldValidator<String>? validator;
 
   /// Whether field is required
   final bool isRequired;
 
-  /// When to show validation errors (default: onUserInteraction - validate after user interaction or form submission)
+  /// When to show validation errors (default: onUserInteraction)
   final AutovalidateMode autovalidateMode;
 
   /// Minimum length for password field (default: 6)
@@ -43,12 +57,12 @@ class FormFields<T> extends StatefulWidget {
   /// Custom password validator function
   final FormFieldValidator<String>? customPasswordValidator;
 
-  /// Error text for minimum password length (default: 'Password must be at least X characters')
+  /// Error text for minimum password length
   final String? minLengthPasswordErrorText;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // FIELD CONFIGURATION
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Form field type (email, phone, password, etc.)
   final FormType formType;
 
@@ -61,30 +75,30 @@ class FormFields<T> extends StatefulWidget {
   /// Number of lines for multiline input
   final int multiLine;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // APPEARANCE & STYLING
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Border radius
   final double radius;
 
   /// Border type
   final BorderType borderType;
 
-  /// Border color for normal state (default: Color(0xFFC7C7C7))
+  /// Border color for normal state
   final Color borderColor;
 
-  /// Border color for error state (default: Colors.red)
+  /// Border color for error state
   final Color errorBorderColor;
 
-  /// Custom text style for label (default: fontSize 14, fontWeight w500)
+  /// Custom text style for label
   final TextStyle? labelTextStyle;
 
   /// Custom input decoration
   final InputDecoration? inputDecoration;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // DECORATIVE ELEMENTS
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Widget to display before the input
   final Widget? prefix;
 
@@ -97,43 +111,43 @@ class FormFields<T> extends StatefulWidget {
   /// Icon widget to display after the input
   final Widget? suffixIcon;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // FOCUS & NAVIGATION
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Focus node for this field
   final FocusNode? focusNode;
 
   /// Next focus node for keyboard navigation
   final FocusNode? nextFocusNode;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // TEXT & FORMATTING
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Custom text prefix for input hints (default: 'Enter ')
   final String enterText;
 
-  /// Custom error text for invalid integer (default: 'Enter valid integer for')
+  /// Custom error text for invalid integer
   final String invalidIntegerText;
 
-  /// Custom error text for invalid number (default: 'Enter valid number for')
+  /// Custom error text for invalid number
   final String invalidNumberText;
 
   /// Whether to strip separators in numbers
   final bool stripSeparators;
 
-  // ============================================================================
+  // -------------------------------------------------------------------------
   // DATE/TIME CONFIGURATION
-  // ============================================================================
+  // -------------------------------------------------------------------------
   /// Custom date/time format
   final String? customFormat;
 
   /// Locale for date/time pickers
   final String? pickerLocale;
 
-  /// First selectable date for date pickers (default: 100 years ago)
+  /// First selectable date for date pickers
   final DateTime? firstDate;
 
-  /// Last selectable date for date pickers (default: today)
+  /// Last selectable date for date pickers
   final DateTime? lastDate;
 
   /// Use two date pickers for range selection instead of range picker
@@ -149,6 +163,9 @@ class FormFields<T> extends StatefulWidget {
   /// Note: Result value is always returned without dashes (e.g., +628123456789)
   final bool formatPhone;
 
+  /// -----------------------------------------------------------------------
+  /// Constructor
+  /// -----------------------------------------------------------------------
   const FormFields({
     super.key,
     required this.onChanged,
