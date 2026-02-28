@@ -57,7 +57,6 @@ FormFields<String>(
 
 
 
-## 🏁 Navigation
 
 - [Widget Overview](#why-choose-formfields)
 - [Installation](#-installation)
@@ -66,6 +65,34 @@ FormFields<String>(
 - [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
 - [Date Range Picker](#date-range-picker-usedatepickerforrange)
 - [FormFields<T> Properties](#formfieldst-properties-2026)
+  - [How to Use FormFields<T>](#how-to-use-formfieldst)
+
+<!-- Selection Widget Properties Navigation -->
+- [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
+  - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
+  - [Custom Class: FormFieldsCheckbox](#custom-class-formfieldscheckbox)
+- [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
+  - [How to Use FormFieldsDropdownMulti](#how-to-use-formfieldsdropdownmulti)
+  - [Custom Class: FormFieldsDropdownMulti](#custom-class-formfieldsdropdownmulti)
+- [FormFieldsDropdown Properties](#formfieldsdropdown-properties)
+  - [How to Use FormFieldsDropdown](#how-to-use-formfieldsdropdown)
+  - [Custom Class: FormFieldsDropdown](#custom-class-formfieldsdropdown)
+- [FormFieldsRadioButton Properties](#formfieldsradiobutton-properties)
+  - [How to Use FormFieldsRadioButton](#how-to-use-formfieldsradiobutton)
+  - [Custom Class: FormFieldsRadioButton](#custom-class-formfieldsradiobutton)
+- [FormFieldsSelect Properties](#formfieldsselect-properties)
+  - [How to Use FormFieldsSelect](#how-to-use-formfieldsselect)
+  - [Custom Class: FormFieldsSelect](#custom-class-formfieldsselect)
+- [Widget Overview](#why-choose-formfields)
+- [Installation](#-installation)
+- [Quick Start](#quick-start)
+- [Nullable Type Support](#-nullable-type-support-2026)
+- [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
+- [Date Range Picker](#date-range-picker-usedatepickerforrange)
+- [FormFields<T> Properties](#formfieldst-properties-2026)
+  - [How to Use FormFields<T>](#how-to-use-formfieldst)
+
+<!-- Selection Widget Properties Navigation -->
 - [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
   - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
 - [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
@@ -76,6 +103,7 @@ FormFields<String>(
   - [How to Use FormFieldsRadioButton](#how-to-use-formfieldsradiobutton)
 - [FormFieldsSelect Properties](#formfieldsselect-properties)
   - [How to Use FormFieldsSelect](#how-to-use-formfieldsselect)
+
 - [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
 - [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
 - [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
@@ -452,10 +480,21 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `formatPhone` | `bool` | `false` | Display phone with dashes in input field |
 
 
-<!-- how-to-use-formfields-t -->
-### How to Use FormFields<T>
 
-**Non-nullable:**
+<!-- how-to-use-formfields-t -->
+<div align="center">
+  <h3>✨ How to Use <code>FormFields&lt;T&gt;</code> ✨</h3>
+</div>
+
+<details>
+<summary><b>Show usage examples</b></summary>
+
+<br/>
+
+<ul>
+  <li><b>Non-nullable (required field):</b></li>
+</ul>
+
 ```dart
 FormFields<String>(
   label: 'First Name',
@@ -465,7 +504,11 @@ FormFields<String>(
   onChanged: (value) => setState(() => _firstName = value ?? ''),
 )
 ```
-**Nullable:**
+
+<ul>
+  <li><b>Nullable (optional field):</b></li>
+</ul>
+
 ```dart
 FormFields<String?>(
   label: 'Middle Name (optional)',
@@ -474,7 +517,11 @@ FormFields<String?>(
   onChanged: (value) => setState(() => _middleName = value),
 )
 ```
-**Other types:**
+
+<ul>
+  <li><b>Other types (int, DateTime, etc):</b></li>
+</ul>
+
 ```dart
 FormFields<int>(
   label: 'Age',
@@ -482,6 +529,7 @@ FormFields<int>(
   currrentValue: _age, // int
   onChanged: (value) => setState(() => _age = value ?? 0),
 )
+
 FormFields<DateTime?>(
   label: 'Anniversary (optional)',
   formType: FormType.date,
@@ -489,7 +537,16 @@ FormFields<DateTime?>(
   onChanged: (value) => setState(() => _anniversary = value),
 )
 ```
-All properties work with both nullable and non-nullable types for `T`. For advanced customization, combine these properties as needed.
+
+<br/>
+
+<b>Tips:</b>
+<ul>
+  <li>All properties work with both nullable and non-nullable types for <code>T</code>.</li>
+  <li>For advanced customization, combine these properties as needed.</li>
+</ul>
+
+</details>
 
 ---
 
@@ -1116,7 +1173,8 @@ FormFieldsSelect<String?>(
 
 All selection widgets support custom model classes for type-safe, rich data selection. Below are examples for each widget, showing both nullable and non-nullable usage.
 
-### 1. FormFieldsCheckbox with Custom Class
+<!-- custom-class-formfieldscheckbox -->
+### Custom Class: FormFieldsCheckbox
 ```dart
 class Hobby {
   final String id;
@@ -1152,7 +1210,8 @@ FormFieldsCheckbox<Hobby?>(
 )
 ```
 
-### 2. FormFieldsDropdownMulti with Custom Class
+<!-- custom-class-formfieldsdropdownmulti -->
+### Custom Class: FormFieldsDropdownMulti
 ```dart
 class Language {
   final String code;
@@ -1188,7 +1247,8 @@ FormFieldsDropdownMulti<Language?>(
 )
 ```
 
-### 3. FormFieldsDropdown with Custom Class
+<!-- custom-class-formfieldsdropdown -->
+### Custom Class: FormFieldsDropdown
 ```dart
 class Country {
   final String code;
@@ -1223,7 +1283,8 @@ FormFieldsDropdown<Country?>(
 )
 ```
 
-### 4. FormFieldsRadioButton with Custom Class
+<!-- custom-class-formfieldsradiobutton -->
+### Custom Class: FormFieldsRadioButton
 ```dart
 class Gender {
   final String id;
@@ -1258,7 +1319,8 @@ FormFieldsRadioButton<Gender?>(
 )
 ```
 
-### 5. FormFieldsSelect with Custom Class
+<!-- custom-class-formfieldsselect -->
+### Custom Class: FormFieldsSelect
 ```dart
 // Dropdown
 FormFieldsSelect<Country>(
