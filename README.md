@@ -451,10 +451,45 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 | `initialCountryCode` | `String?` | `null` | Initial country code for phone input |
 | `formatPhone` | `bool` | `false` | Display phone with dashes in input field |
 
-**Usage:**
-- All properties work with both nullable and non-nullable types for `T`.
-- See code examples above for how to use each property in practice.
-- For advanced customization, combine these properties as needed.
+
+<!-- how-to-use-formfields-t -->
+### How to Use FormFields<T>
+
+**Non-nullable:**
+```dart
+FormFields<String>(
+  label: 'First Name',
+  formType: FormType.string,
+  currrentValue: _firstName, // String
+  isRequired: true,
+  onChanged: (value) => setState(() => _firstName = value ?? ''),
+)
+```
+**Nullable:**
+```dart
+FormFields<String?>(
+  label: 'Middle Name (optional)',
+  formType: FormType.string,
+  currrentValue: _middleName, // String?
+  onChanged: (value) => setState(() => _middleName = value),
+)
+```
+**Other types:**
+```dart
+FormFields<int>(
+  label: 'Age',
+  formType: FormType.number,
+  currrentValue: _age, // int
+  onChanged: (value) => setState(() => _age = value ?? 0),
+)
+FormFields<DateTime?>(
+  label: 'Anniversary (optional)',
+  formType: FormType.date,
+  currrentValue: _anniversary, // DateTime?
+  onChanged: (value) => setState(() => _anniversary = value),
+)
+```
+All properties work with both nullable and non-nullable types for `T`. For advanced customization, combine these properties as needed.
 
 ---
 
