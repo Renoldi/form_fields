@@ -55,6 +55,7 @@ FormFields<String>(
 ---
 
 
+
 ## 🏁 Navigation
 
 - [Widget Overview](#why-choose-formfields)
@@ -64,6 +65,11 @@ FormFields<String>(
 - [Nullable and Non-Nullable Property Usage](#nullable-and-non-nullable-property-usage)
 - [Date Range Picker](#date-range-picker-usedatepickerforrange)
 - [FormFields<T> Properties](#formfieldst-properties-2026)
+- [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
+- [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
+- [FormFieldsDropdown Properties](#formfieldsdropdown-properties)
+- [FormFieldsRadioButton Properties](#formfieldsradiobutton-properties)
+- [FormFieldsSelect Properties](#formfieldsselect-properties)
 - [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
 - [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
 - [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
@@ -395,6 +401,7 @@ FormFields<List<DateTimeRange>>(
 
 ---
 
+
 ## FormFields<T> Properties (2026)
 
 Below are all properties supported by the core `FormFields<T>` widget, with clear explanations and usage for both nullable and non-nullable types.
@@ -442,6 +449,186 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 - All properties work with both nullable and non-nullable types for `T`.
 - See code examples above for how to use each property in practice.
 - For advanced customization, combine these properties as needed.
+
+---
+
+## FormFieldsCheckbox Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `label` | `String` | **Required** | Field label text |
+| `items` | `List<T>` | **Required** | List of selectable items |
+| `initialValue` | `List<T>` | **Required** | Current selected values |
+| `onChanged` | `ValueChanged<List<T>>` | **Required** | Callback when selection changes |
+| `isRequired` | `bool` | `false` | Whether at least one selection is required |
+| `direction` | `Axis` | `Axis.vertical` | Layout direction (vertical/horizontal) |
+| `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+| `itemBuilder` | `Widget Function(T, bool)` | `null` | Custom widget for each item |
+| `activeColor` | `Color` | `Theme.of(context).primaryColor` | Color for selected checkboxes |
+| `itemPadding` | `EdgeInsets` | `EdgeInsets.zero` | Padding for each item |
+| `borderColor` | `Color` | `Colors.grey` | Border color |
+| `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
+| `radius` | `double` | `8.0` | Border radius |
+
+---
+
+## FormFieldsDropdownMulti Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `label` | `String` | **Required** | Field label text |
+| `items` | `List<T>` | **Required** | List of selectable items |
+| `initialValues` | `List<T>` | **Required** | Current selected values |
+| `onChanged` | `ValueChanged<List<T>>` | **Required** | Callback when selection changes |
+| `isRequired` | `bool` | `false` | Whether at least one selection is required |
+| `minSelections` | `int` | `0` | Minimum selections required |
+| `maxSelections` | `int` | `null` | Maximum selections allowed |
+| `chipBackgroundColor` | `Color` | `Theme.of(context).chipTheme.backgroundColor` | Chip background color |
+| `chipTextColor` | `Color` | `Theme.of(context).chipTheme.labelStyle.color` | Chip text color |
+| `chipDeleteIconColor` | `Color` | `Theme.of(context).chipTheme.deleteIconColor` | Chip delete icon color |
+| `showItemCount` | `bool` | `false` | Show item count on chips |
+| `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+
+---
+
+## FormFieldsDropdown Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `label` | `String` | **Required** | Field label text |
+| `items` | `List<T>` | **Required** | List of selectable items |
+| `initialValue` | `T` | **Required** | Current selected value |
+| `onChanged` | `ValueChanged<T?>` | **Required** | Callback when selection changes |
+| `isRequired` | `bool` | `false` | Whether selection is required |
+| `hintText` | `String?` | `null` | Placeholder text |
+| `borderColor` | `Color` | `Colors.grey` | Border color |
+| `focusedBorderColor` | `Color` | `Colors.blue` | Border color (focused) |
+| `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
+| `radius` | `double` | `10.0` | Border radius |
+| `labelPosition` | `LabelPosition` | `LabelPosition.top` | Label position |
+| `borderType` | `BorderType` | `BorderType.outlineInputBorder` | Border style |
+| `enabled` | `bool` | `true` | Whether the dropdown is enabled |
+| `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+
+---
+
+## FormFieldsRadioButton Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `label` | `String` | **Required** | Field label text |
+| `items` | `List<T>` | **Required** | List of selectable items |
+| `initialValue` | `T` | **Required** | Current selected value |
+| `onChanged` | `ValueChanged<T?>` | **Required** | Callback when selection changes |
+| `isRequired` | `bool` | `false` | Whether selection is required |
+| `direction` | `Axis` | `Axis.horizontal` | Layout direction |
+| `activeColor` | `Color` | `Theme.of(context).primaryColor` | Color for selected radio |
+| `itemPadding` | `EdgeInsets` | `EdgeInsets.zero` | Padding for each item |
+| `borderColor` | `Color` | `Colors.grey.shade300` | Border color |
+| `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
+| `radius` | `double` | `12.0` | Border radius |
+| `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+| `itemBuilder` | `Widget Function(T, bool)` | `null` | Custom widget for each item |
+
+---
+
+## FormFieldsSelect Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `formType` | `FormType` | **Required** | Field type (dropdown, dropdownMulti) |
+| `label` | `String` | **Required** | Field label text |
+| `items` | `List<T>` | **Required** | List of selectable items |
+| `initialValue` | `T` | `null` | Current selected value (for dropdown) |
+| `initialValues` | `List<T>` | `null` | Current selected values (for dropdownMulti) |
+| `onChanged` | `ValueChanged<T?>` | `null` | Callback for single selection |
+| `onMultiChanged` | `ValueChanged<List<T>>` | `null` | Callback for multi-selection |
+| `isRequired` | `bool` | `false` | Whether selection is required |
+| `hintText` | `String?` | `null` | Placeholder text |
+| `borderColor` | `Color` | `Colors.grey` | Border color |
+| `focusedBorderColor` | `Color` | `Colors.blue` | Border color (focused) |
+| `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
+| `radius` | `double` | `10.0` | Border radius |
+| `labelPosition` | `LabelPosition` | `LabelPosition.top` | Label position |
+| `borderType` | `BorderType` | `BorderType.outlineInputBorder` | Border style |
+| `enabled` | `bool` | `true` | Whether the select is enabled |
+| `itemLabelBuilder` | `String Function(T)` | `null` | Custom label for each item |
+
+---
+
+---
+
+<!-- enums-formtype-labelposition-bordertype -->
+## Enums: FormType, LabelPosition, BorderType
+
+Below are the enums used throughout the FormFields package. These provide type safety and clarity for field types, label positions, and border styles.
+
+### FormType
+
+Represents the type of form field to display. Used as the `formType` property in `FormFields<T>` and related widgets.
+
+| Value | Description |
+|-------|-------------|
+| `FormType.string` | Plain text input |
+| `FormType.phone` | Phone number input (with country code support) |
+| `FormType.password` | Password input (obscured) |
+| `FormType.email` | Email input |
+| `FormType.date` | Date picker |
+| `FormType.time` | Time picker |
+| `FormType.dateTime` | Date & time picker |
+| `FormType.dateTimeRange` | Date range picker |
+| `FormType.timeOfDay` | Time of day picker |
+| `FormType.dropdown` | Dropdown selection |
+| `FormType.dropdownMulti` | Multi-select dropdown |
+| `FormType.radioButton` | Radio button group |
+| `FormType.checkbox` | Checkbox group |
+
+**Example:**
+```dart
+FormFields<String>(
+  formType: FormType.email,
+  // ...
+)
+```
+
+### LabelPosition
+
+Controls where the label appears relative to the input field. Used as the `labelPosition` property.
+
+| Value | Description |
+|-------|-------------|
+| `LabelPosition.top` | Label above the field |
+| `LabelPosition.bottom` | Label below the field |
+| `LabelPosition.left` | Label to the left of the field |
+| `LabelPosition.right` | Label to the right of the field |
+| `LabelPosition.inBorder` | Label inside the border (floating/inline) |
+| `LabelPosition.none` | No label displayed |
+
+**Example:**
+```dart
+FormFields<String>(
+  labelPosition: LabelPosition.inBorder,
+  // ...
+)
+```
+
+### BorderType
+
+Defines the border style for input fields. Used as the `borderType` property.
+
+| Value | Description |
+|-------|-------------|
+| `BorderType.outlineInputBorder` | Standard Material outline border |
+| `BorderType.underlineInputBorder` | Underline border (Material style) |
+| `BorderType.none` | No border |
+
+**Example:**
+```dart
+FormFields<String>(
+  borderType: BorderType.underlineInputBorder,
+  // ...
+)
+```
 
 ---
 
