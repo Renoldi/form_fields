@@ -315,9 +315,124 @@ FormFields<String?>(
 
 ---
 
+### Date Range Picker: useDatePickerForRange
+
+The `useDatePickerForRange` property lets you choose between a single dialog for picking a date range, or two separate dialogs for start and end dates. This gives you more control over the user experience.
+
+#### Default (Single Dialog)
+```dart
+FormFields<DateTimeRange>(
+  label: 'Trip Duration',
+  currrentValue: _tripDates,
+  onChanged: (value) => setState(() => _tripDates = value),
+)
+```
+- Shows a single date range picker dialog (Material style).
+- User selects both start and end dates in one step.
+
+#### Separate Start/End Pickers
+```dart
+FormFields<DateTimeRange>(
+  label: 'Trip Duration',
+  useDatePickerForRange: true, // <-- Enable this
+  currrentValue: _tripDates,
+  onChanged: (value) => setState(() => _tripDates = value),
+)
+```
+- Shows two dialogs: first for start date, then for end date.
+- Useful for workflows where you want to guide the user step-by-step.
+
+**Tip:**
+- `useDatePickerForRange: false` (default) = single dialog (recommended for most apps)
+- `useDatePickerForRange: true` = two dialogs (for custom UX or accessibility)
+
+---
+
+### Date Range Picker (Single and Multi-Selection)
+
+You can use FormFields<DateTimeRange> for a single date range, or FormFields<List<DateTimeRange>> for multi-selection of date ranges.
+
+#### Single Date Range
+```dart
+FormFields<DateTimeRange>(
+  label: 'Trip Duration',
+  currrentValue: _tripDates, // DateTimeRange
+  onChanged: (value) => setState(() => _tripDates = value),
+)
+```
+- Shows a date range picker dialog.
+- Returns a DateTimeRange with start and end.
+- Great for booking, rental periods, or any single range selection.
+
+#### Multiple Date Ranges (Advanced)
+```dart
+FormFields<List<DateTimeRange>>(
+  label: 'Multiple Booking Periods',
+  currrentValue: _periods, // List<DateTimeRange>
+  onChanged: (value) => setState(() => _periods = value ?? []),
+)
+```
+- Allows selection of multiple date ranges (if your UI supports it).
+- Returns a list of DateTimeRange objects.
+- Useful for advanced scheduling, availability, or batch bookings.
+
+**Tip:** For most use cases, a single DateTimeRange is sufficient. Use a list only if you need to support multiple, non-overlapping periods.
+
+---
+
 > **Tip:**
 > - Use nullable types (`T?`) for optional fields or when you want to allow clearing the value.
 > - Use non-nullable types (`T`) for required fields or when a value must always be present.
 > - All FormFields widgets and properties are null-safe and work seamlessly with both approaches.
+
+---
+
+## FormFields<T> Properties (2026)
+
+Below are all properties supported by the core `FormFields<T>` widget, with clear explanations and usage for both nullable and non-nullable types.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `onChanged` | `ValueChanged<T>` | **Required** | Callback when field value changes |
+| `currrentValue` | `T` | **Required** | Current value (nullable or non-nullable) |
+| `validator` | `FormFieldValidator<String>?` | `null` | Custom validator function |
+| `isRequired` | `bool` | `false` | Whether field is required |
+| `autovalidateMode` | `AutovalidateMode` | `onUserInteraction` | When to show validation errors |
+| `minLengthPassword` | `int` | `6` | Minimum length for password field |
+| `customPasswordValidator` | `FormFieldValidator<String>?` | `null` | Custom password validator |
+| `minLengthPasswordErrorText` | `String?` | `null` | Error text for min password length |
+| `formType` | `FormType` | `FormType.string` | Field type (text, email, phone, etc.) |
+| `label` | `String` | **Required** | Field label text |
+| `labelPosition` | `LabelPosition` | `LabelPosition.none` | Label position (top, bottom, left, right, inBorder, none) |
+| `multiLine` | `int` | `0` | Number of lines for multiline input |
+| `radius` | `double` | `10` | Border radius |
+| `borderType` | `BorderType` | `BorderType.outlineInputBorder` | Border style |
+| `borderColor` | `Color` | `Color(0xFFC7C7C7)` | Border color (normal) |
+| `errorBorderColor` | `Color` | `Colors.red` | Border color (error) |
+| `labelTextStyle` | `TextStyle?` | `null` | Custom label text style |
+| `inputDecoration` | `InputDecoration?` | `null` | Custom input decoration |
+| `prefix` | `Widget?` | `null` | Widget before input |
+| `prefixIcon` | `Widget?` | `null` | Icon before input |
+| `suffix` | `Widget?` | `null` | Widget after input |
+| `suffixIcon` | `Widget?` | `null` | Icon after input |
+| `focusNode` | `FocusNode?` | `null` | Focus node for this field |
+| `nextFocusNode` | `FocusNode?` | `null` | Next focus node for navigation |
+| `enterText` | `String` | `'Enter '` | Custom text prefix for input hints |
+| `invalidIntegerText` | `String` | `'Enter valid integer for'` | Custom error for invalid integer |
+| `invalidNumberText` | `String` | `'Enter valid number for'` | Custom error for invalid number |
+| `stripSeparators` | `bool` | `true` | Format numbers with thousand separators |
+| `customFormat` | `String?` | `null` | Custom date/time format |
+| `pickerLocale` | `String?` | `'id_ID'` | Locale for date/time pickers |
+| `firstDate` | `DateTime?` | `null` (100 years ago) | First selectable date for pickers |
+| `lastDate` | `DateTime?` | `null` (today) | Last selectable date for pickers |
+| `useDatePickerForRange` | `bool` | `false` | Use two dialogs for date range selection |
+| `phoneCountryCodes` | `List<String>` | `['+62', ...]` | List of selectable country codes |
+| `initialCountryCode` | `String?` | `null` | Initial country code for phone input |
+| `formatPhone` | `bool` | `false` | Display phone with dashes in input field |
+
+**Usage:**
+- All properties work with both nullable and non-nullable types for `T`.
+- See code examples above for how to use each property in practice.
+- For advanced customization, combine these properties as needed.
 
 ---
