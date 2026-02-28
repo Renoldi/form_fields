@@ -5,7 +5,7 @@ import 'package:form_fields_example/state/pages/custom_class_examples_view_model
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 
 class CustomClassExamplesPage extends StatelessWidget {
-  const CustomClassExamplesPage({Key? key}) : super(key: key);
+  const CustomClassExamplesPage({super.key});
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

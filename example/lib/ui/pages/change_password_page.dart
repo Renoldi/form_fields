@@ -6,9 +6,9 @@ class ChangePasswordPage extends StatelessWidget {
   final VoidCallback onBack;
 
   const ChangePasswordPage({
-    Key? key,
+    super.key,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

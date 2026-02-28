@@ -9,7 +9,7 @@ import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 final logger = Logger();
 
 class FormFieldsExamplesPage extends StatelessWidget {
-  const FormFieldsExamplesPage({Key? key}) : super(key: key);
+  const FormFieldsExamplesPage({super.key});
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

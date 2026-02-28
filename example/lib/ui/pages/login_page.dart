@@ -8,7 +8,7 @@ import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
 
-  const LoginPage({Key? key, required this.onLoginSuccess}) : super(key: key);
+  const LoginPage({super.key, required this.onLoginSuccess});
 
   @override
   State<LoginPage> createState() => _LoginPageState();

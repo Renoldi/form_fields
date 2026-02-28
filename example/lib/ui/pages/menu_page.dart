@@ -11,12 +11,12 @@ class MenuPage extends StatefulWidget {
   final Future<void> Function() onOpenProfile;
 
   const MenuPage({
-    Key? key,
+    super.key,
     required this.onLogout,
     required this.onMenuItemTap,
     required this.onOpenSettings,
     required this.onOpenProfile,
-  }) : super(key: key);
+  });
 
   @override
   State<MenuPage> createState() => _MenuPageState();

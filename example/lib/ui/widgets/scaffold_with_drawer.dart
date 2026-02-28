@@ -8,7 +8,7 @@ import 'package:form_fields_example/config/app_routes.dart';
 class ScaffoldWithDrawer extends StatelessWidget {
   final Widget child;
 
-  const ScaffoldWithDrawer({Key? key, required this.child}) : super(key: key);
+  const ScaffoldWithDrawer({super.key, required this.child});
 
   String _getTitle(String location) {
     if (location == AppRoute.formFields.path) {
@@ -170,7 +170,7 @@ class _LanguageOption extends StatelessWidget {
 
 // Custom Drawer Widget
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+  const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {

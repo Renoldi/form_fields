@@ -6,7 +6,7 @@ import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 
 class DropdownMultiExamplesPage extends StatelessWidget {
-  const DropdownMultiExamplesPage({Key? key}) : super(key: key);
+  const DropdownMultiExamplesPage({super.key});
 
   @override
   Widget build(BuildContext context) {

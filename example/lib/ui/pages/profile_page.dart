@@ -8,9 +8,9 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback onBack;
 
   const ProfilePage({
-    Key? key,
+    super.key,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();

@@ -1,4 +1,5 @@
 /// Indonesian (ID) localization strings for form fields package
+library;
 
 const Map<String, String> idIDStrings = {
   // Common UI

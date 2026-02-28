@@ -1,4 +1,6 @@
 /// FormFields - A comprehensive Flutter form field widget
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';

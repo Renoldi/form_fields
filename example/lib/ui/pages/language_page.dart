@@ -7,9 +7,9 @@ class LanguagePage extends StatelessWidget {
   final VoidCallback onBack;
 
   const LanguagePage({
-    Key? key,
+    super.key,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

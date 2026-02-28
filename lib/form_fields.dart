@@ -1,5 +1,5 @@
 /// FormFields - A comprehensive Flutter form field widget package
-library form_fields;
+library;
 
 export 'src/form_fields.dart';
 export 'src/form_fields_select.dart';

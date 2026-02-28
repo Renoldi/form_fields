@@ -1,4 +1,6 @@
 /// State management controller for FormFields
+library;
+
 import 'package:flutter/material.dart';
 import 'enums.dart';
 

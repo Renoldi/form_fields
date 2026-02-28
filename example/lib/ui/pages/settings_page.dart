@@ -12,14 +12,14 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onOpenAppInfo;
 
   const SettingsPage({
-    Key? key,
+    super.key,
     required this.onBack,
     required this.onLogout,
     required this.onOpenProfile,
     required this.onOpenChangePassword,
     required this.onOpenLanguage,
     required this.onOpenAppInfo,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

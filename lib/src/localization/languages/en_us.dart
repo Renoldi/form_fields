@@ -1,4 +1,5 @@
 /// English (US) localization strings for form fields package
+library;
 
 const Map<String, String> enUSStrings = {
   // Common UI

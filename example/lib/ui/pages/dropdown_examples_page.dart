@@ -6,7 +6,7 @@ import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 
 class DropdownExamplesPage extends StatelessWidget {
-  const DropdownExamplesPage({Key? key}) : super(key: key);
+  const DropdownExamplesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     initialValue: viewModel.dropdown1,
                     items: viewModel.countries,
                     isRequired: true,
-                    onChanged: (value) => viewModel.setDropdown1(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown1(value),
                   ),
                   buildResultDisplay(
                       context, l.get('ddSelectedCountry'), viewModel.dropdown1),
@@ -55,7 +55,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     ],
                     isRequired: false,
                     hintText: l.select(l.get('ddLanguage')),
-                    onChanged: (value) => viewModel.setDropdown2(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown2(value),
                   ),
                   buildResultDisplay(context, l.get('ddSelectedLanguage'),
                       viewModel.dropdown2),
@@ -75,7 +75,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     focusedBorderColor: Colors.deepPurple,
                     errorBorderColor: Colors.red.shade700,
                     radius: 15,
-                    onChanged: (value) => viewModel.setDropdown3(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown3(value),
                   ),
                   buildResultDisplay(
                       context, l.get('ddSelectedColor'), viewModel.dropdown3),
@@ -93,7 +93,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     suffixIcon:
                         const Icon(Icons.arrow_drop_down, color: Colors.teal),
                     hintText: l.select(l.get('ddSize')),
-                    onChanged: (value) => viewModel.setDropdown4(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown4(value),
                   ),
                   buildResultDisplay(
                       context, l.get('ddSelectedSize'), viewModel.dropdown4),
@@ -115,7 +115,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     ],
                     isRequired: true,
                     borderColor: Colors.orange,
-                    onChanged: (value) => viewModel.setDropdown5(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown5(value),
                   ),
                   buildResultDisplay(context, l.get('ddSelectedShipping'),
                       viewModel.dropdown5),
@@ -134,7 +134,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     ],
                     isRequired: true,
                     borderColor: Colors.green,
-                    onChanged: (value) => viewModel.setDropdown6(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown6(value),
                   ),
                   buildResultDisplay(
                       context, l.get('ddSelectedPayment'), viewModel.dropdown6),
@@ -160,7 +160,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       }
                       return null;
                     },
-                    onChanged: (value) => viewModel.setDropdown7(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown7(value),
                   ),
                   buildResultDisplay(context, l.get('ddSelectedPriority'),
                       viewModel.dropdown7),
@@ -181,7 +181,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     borderType: BorderType.underlineInputBorder,
                     borderColor: Colors.indigo,
                     focusedBorderColor: Colors.indigoAccent,
-                    onChanged: (value) => viewModel.setDropdown8(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown8(value),
                   ),
                   buildResultDisplay(context, l.get('ddSelectedDepartment'),
                       viewModel.dropdown8),
@@ -220,7 +220,7 @@ class DropdownExamplesPage extends StatelessWidget {
                         vertical: 16,
                       ),
                     ),
-                    onChanged: (value) => viewModel.setDropdown9(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown9(value),
                   ),
                   buildResultDisplay(
                       context, l.get('ddSelectedTheme'), viewModel.dropdown9),
@@ -240,7 +240,7 @@ class DropdownExamplesPage extends StatelessWidget {
                     borderColor: Colors.teal,
                     focusedBorderColor: Colors.teal.shade700,
                     radius: 12,
-                    onChanged: (value) => viewModel.setDropdown10(value ?? ''),
+                    onChanged: (value) => viewModel.setDropdown10(value),
                   ),
                   buildResultDisplay(context,
                       l.get('ddSelectedCountryFiltered'), viewModel.dropdown10),

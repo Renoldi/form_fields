@@ -5,7 +5,7 @@ import 'package:form_fields_example/state/pages/radio_button_examples_view_model
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 
 class RadioButtonExamplesPage extends StatelessWidget {
-  const RadioButtonExamplesPage({Key? key}) : super(key: key);
+  const RadioButtonExamplesPage({super.key});
 
   @override
   Widget build(BuildContext context) {

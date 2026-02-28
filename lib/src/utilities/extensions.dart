@@ -1,4 +1,6 @@
 /// String extensions for validation and manipulation
+library;
+
 import 'package:flutter/material.dart';
 
 extension StringExtensions on String? {

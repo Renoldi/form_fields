@@ -6,9 +6,9 @@ class AppInfoPage extends StatelessWidget {
   final VoidCallback onBack;
 
   const AppInfoPage({
-    Key? key,
+    super.key,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

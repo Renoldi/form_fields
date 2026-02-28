@@ -234,11 +234,14 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
 
         // When filter is enabled, use dialog instead of dropdown
         if (widget.enableFilter && widget.enabled) {
-          final currentValueText = state.value != null
-              ? (widget.itemLabelBuilder != null
-                  ? widget.itemLabelBuilder!(state.value as T)
-                  : state.value.toString())
-              : '';
+          String currentValueText = '';
+          if (state.value != null) {
+            if (widget.itemLabelBuilder != null && state.value != null) {
+              currentValueText = widget.itemLabelBuilder!(state.value as T);
+            } else {
+              currentValueText = state.value.toString();
+            }
+          }
 
           final field = InkWell(
             onTap: () => openFilterDialog(context),
@@ -305,7 +308,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
         final filteredItems = widget.items;
 
         final dropdown = DropdownButtonFormField<T>(
-          initialValue: state.value as T,
+          initialValue: state.value,
           items: filteredItems
               .map(
                 (item) => DropdownMenuItem<T>(

@@ -1,4 +1,5 @@
 /// Enums for FormFields package
+library;
 
 /// Supported form field types
 enum FormType {

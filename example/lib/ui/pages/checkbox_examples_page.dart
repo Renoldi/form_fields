@@ -5,7 +5,7 @@ import 'package:form_fields_example/state/pages/checkbox_examples_view_model.dar
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 
 class CheckboxExamplesPage extends StatelessWidget {
-  const CheckboxExamplesPage({Key? key}) : super(key: key);
+  const CheckboxExamplesPage({super.key});
 
   @override
   Widget build(BuildContext context) {

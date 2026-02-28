@@ -11,7 +11,7 @@ import 'null_non_null_validation_examples_page.dart';
 import 'radio_button_examples_page.dart';
 
 class ExamplesTabsPage extends StatelessWidget {
-  const ExamplesTabsPage({Key? key}) : super(key: key);
+  const ExamplesTabsPage({super.key});
 
   @override
   Widget build(BuildContext context) {

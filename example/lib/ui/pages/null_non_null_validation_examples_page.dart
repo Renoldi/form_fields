@@ -8,7 +8,7 @@ import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 final logger = Logger();
 
 class NullNonNullValidationExamplesPage extends StatelessWidget {
-  const NullNonNullValidationExamplesPage({Key? key}) : super(key: key);
+  const NullNonNullValidationExamplesPage({super.key});
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

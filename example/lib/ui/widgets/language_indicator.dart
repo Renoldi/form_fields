@@ -3,7 +3,7 @@ import 'package:form_fields/form_fields.dart';
 
 /// Widget to show current language and demonstrate localized text
 class LanguageIndicator extends StatelessWidget {
-  const LanguageIndicator({Key? key}) : super(key: key);
+  const LanguageIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {

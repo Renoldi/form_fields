@@ -11,7 +11,7 @@ class FormFieldsRadioButton<T> extends FormField<T> {
     required ValueChanged<T?> onChanged,
     String Function(T item)? itemLabelBuilder,
     Widget Function(T item, bool selected)? itemBuilder,
-    T? initialValue,
+    super.initialValue,
     bool isRequired = false,
     Axis direction = Axis.vertical,
     double radius = 10,
@@ -39,7 +39,6 @@ class FormFieldsRadioButton<T> extends FormField<T> {
   })  : assert(items != null || sections != null,
             'Either items or sections must be provided'),
         super(
-          initialValue: initialValue,
           validator: (value) {
             if (isRequired && value == null) {
               // Localization handled in build method
@@ -329,7 +328,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
               ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
