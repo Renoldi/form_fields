@@ -47,70 +47,14 @@
 
 ...existing code...
 
-<!-- Remove any repeated navigation blocks below -->
-    - [Properties](#formfieldsdropdown-properties)
-    - [How to Use](#how-to-use-formfieldsdropdown)
-    - [Custom Class](#custom-class-formfieldsdropdown)
 
-<!-- Selection Widget Properties Navigation (Grouped) -->
-- **FormFieldsCheckbox**
-  - [Properties](#formfieldscheckbox-properties)
-  - [How to Use](#how-to-use-formfieldscheckbox)
-  - [Custom Class](#custom-class-formfieldscheckbox)
-- **FormFieldsDropdownMulti**
-  - [Properties](#formfieldsdropdownmulti-properties)
-  - [How to Use](#how-to-use-formfieldsdropdownmulti)
-  - [Custom Class](#custom-class-formfieldsdropdownmulti)
-- **FormFieldsDropdown**
-  - [Properties](#formfieldsdropdown-properties)
-  - [How to Use](#how-to-use-formfieldsdropdown)
-  - [Custom Class](#custom-class-formfieldsdropdown)
-- **FormFieldsRadioButton**
-  - [Properties](#formfieldsradiobutton-properties)
-  - [How to Use](#how-to-use-formfieldsradiobutton)
-  - [Custom Class](#custom-class-formfieldsradiobutton)
-- **FormFieldsSelect**
-  - [Properties](#formfieldsselect-properties)
-  - [How to Use](#how-to-use-formfieldsselect)
-  - [Custom Class](#custom-class-formfieldsselect)
+---
 
-...existing code...
-- [Support](#support)
-- [FormFieldsCheckbox Properties](#formfieldscheckbox-properties)
-  - [How to Use FormFieldsCheckbox](#how-to-use-formfieldscheckbox)
-- [FormFieldsDropdownMulti Properties](#formfieldsdropdownmulti-properties)
-  - [How to Use FormFieldsDropdownMulti](#how-to-use-formfieldsdropdownmulti)
-- [FormFieldsDropdown Properties](#formfieldsdropdown-properties)
-  - [How to Use FormFieldsDropdown](#how-to-use-formfieldsdropdown)
-- [FormFieldsRadioButton Properties](#formfieldsradiobutton-properties)
-  - [How to Use FormFieldsRadioButton](#how-to-use-formfieldsradiobutton)
-- [FormFieldsSelect Properties](#formfieldsselect-properties)
-  - [How to Use FormFieldsSelect](#how-to-use-formfieldsselect)
+## How to Use Each Property
 
-- [Enums: FormType, LabelPosition, BorderType](#enums-formtype-labelposition-bordertype)
-- [FormFieldsCheckbox (null & non-null)](#1-formfieldscheckbox)
-- [FormFieldsDropdownMulti (null & non-null)](#2-formfieldsdropdownmulti)
-- [FormFieldsDropdown (null & non-null)](#3-formfieldsdropdown)
-- [FormFieldsRadioButton (null & non-null)](#4-formfieldsradiobutton)
-- [FormFieldsSelect (null & non-null)](#5-formfieldsselect)
-- [Selection Widgets Overview](#selection-widgets-null-and-non-null-usage)
-- [Built-in Validators](#built-in-validators)
-- [String & Date Extensions](#string--date-extensions)
-- [Custom Validators](#custom-validators)
-- [Advanced Examples](#advanced-examples)
-- [Custom Classes](#custom-class-usage-with-selection-widgets)
-- [Number Formatting](#number-formatting)
-- [Custom Date Format & Range](#custom-date-format--range)
-- [Custom Error Messages](#custom-error-messages)
-- [Focus Navigation](#focus-navigation)
-- [Form Validation Example](#form-validation-example)
-- [Color Customization](#color-customization)
-- [Locale Support](#locale-support)
-- [Troubleshooting](#troubleshooting)
-- [Localization & Multi-Language Support](#-localization--multi-language-support)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
+This section provides practical usage examples for every property of each selection widget. See the widget's Properties table above, then refer to the code samples below for how to use each property in real-world scenarios (nullable and non-nullable).
+
+<!-- Add detailed property usage examples for each widget here, following the navigation order. -->
 
 ---
 
