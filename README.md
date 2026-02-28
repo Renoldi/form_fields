@@ -1,24 +1,24 @@
 # 🏁 Navigation
 
-- [FormFields](#1-formfields)
-  - [Properties](#properties)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsCheckbox](#2-formfieldscheckbox)
+- [FormFields](#1-formfields) — The core, highly customizable text and input field widget supporting all types and label positions.
+  - [Properties](#properties) — All configurable options for FormFields.
+  - [How to Use Each Property](#how-to-use-each-property-detailed) — Code examples for every property.
+- [FormFieldsCheckbox](#2-formfieldscheckbox) — Checkbox group widget for multi-selection with custom item builders.
   - [Properties](#properties-1)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsDropdownMulti](#3-formfieldsdropdownmulti)
+- [FormFieldsDropdownMulti](#3-formfieldsdropdownmulti) — Multi-select dropdown with chips, filtering, and selection limits.
   - [Properties](#properties-2)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsDropdown](#4-formfieldsdropdown)
+- [FormFieldsDropdown](#4-formfieldsdropdown) — Single-select dropdown with search, custom labels, and decoration.
   - [Properties](#properties-3)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsRadioButton](#5-formfieldsradiobutton)
+- [FormFieldsRadioButton](#5-formfieldsradiobutton) — Radio button group with sectioning, custom widgets, and advanced styling.
   - [Properties](#properties-4)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsSelect](#6-formfieldsselect)
+- [FormFieldsSelect](#6-formfieldsselect) — Unified selection widget for dropdown, multi-select, radio, and checkbox.
   - [Properties](#properties-5)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [Utilities & Advanced Usage](#utilities--advanced-usage)
+- [Utilities & Advanced Usage](#utilities--advanced-usage) — Enums, validators, controller, and null-safety patterns.
 
 ---
 
