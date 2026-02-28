@@ -51,228 +51,36 @@
 ---
 
 
-## How to Use Each Property
 
-Below are practical usage examples for every property of each selection widget, following the navigation order. Each example demonstrates both nullable and non-nullable usage, and covers all major properties as shown in the property tables above.
+<!-- how-to-use-each-property-formfieldst -->
+## How to Use Each Property: FormFields<T>
 
----
+...existing code for FormFields<T> property usage examples...
 
-### 1. FormFields<T>
+<!-- how-to-use-each-property-formfieldscheckbox -->
+## How to Use Each Property: FormFieldsCheckbox
 
-```dart
-FormFields<String>(
-  label: 'First Name',
-  formType: FormType.string,
-  currrentValue: _firstName, // String
-  isRequired: true,
-  autovalidateMode: AutovalidateMode.onUserInteraction,
-  validator: (value) => value.isEmpty ? 'Required' : null,
-  minLengthPassword: 6,
-  customPasswordValidator: null,
-  minLengthPasswordErrorText: 'Password too short',
-  labelPosition: LabelPosition.top,
-  multiLine: 1,
-  radius: 10,
-  borderType: BorderType.outlineInputBorder,
-  borderColor: Colors.grey,
-  errorBorderColor: Colors.red,
-  labelTextStyle: TextStyle(fontWeight: FontWeight.bold),
-  inputDecoration: InputDecoration(hintText: 'Enter your name'),
-  prefix: Icon(Icons.person),
-  prefixIcon: null,
-  suffix: null,
-  suffixIcon: null,
-  focusNode: _focusNode,
-  nextFocusNode: _nextFocusNode,
-  enterText: 'Enter ',
-  invalidIntegerText: 'Enter valid integer for',
-  invalidNumberText: 'Enter valid number for',
-  stripSeparators: true,
-  customFormat: null,
-  pickerLocale: 'en_US',
-  firstDate: DateTime(1900),
-  lastDate: DateTime.now(),
-  useDatePickerForRange: false,
-  phoneCountryCodes: ['+62', '+1'],
-  initialCountryCode: '+1',
-  formatPhone: false,
-  onChanged: (value) => setState(() => _firstName = value ?? ''),
-)
+...existing code for FormFieldsCheckbox property usage examples...
 
-FormFields<String?>(
-  label: 'Middle Name (optional)',
-  formType: FormType.string,
-  currrentValue: _middleName, // String?
-  onChanged: (value) => setState(() => _middleName = value),
-)
-```
+<!-- how-to-use-each-property-formfieldsdropdownmulti -->
+## How to Use Each Property: FormFieldsDropdownMulti
 
----
+...existing code for FormFieldsDropdownMulti property usage examples...
 
-### 2. FormFieldsCheckbox
+<!-- how-to-use-each-property-formfieldsdropdown -->
+## How to Use Each Property: FormFieldsDropdown
 
-```dart
-FormFieldsCheckbox<String>(
-  label: 'Hobbies',
-  items: ['Reading', 'Music', 'Sports'],
-  initialValue: _hobbies, // List<String>
-  isRequired: true,
-  direction: Axis.vertical,
-  itemLabelBuilder: (item) => item.toUpperCase(),
-  itemBuilder: (item, selected) => Text(item),
-  activeColor: Colors.blue,
-  itemPadding: EdgeInsets.symmetric(vertical: 8),
-  borderColor: Colors.grey,
-  errorBorderColor: Colors.red,
-  radius: 8,
-  onChanged: (values) => setState(() => _hobbies = values),
-)
+...existing code for FormFieldsDropdown property usage examples...
 
-FormFieldsCheckbox<String?>(
-  label: 'Optional Hobbies',
-  items: ['Reading', 'Music', 'Sports'],
-  initialValue: _optionalHobbies, // List<String?>
-  isRequired: false,
-  direction: Axis.horizontal,
-  onChanged: (values) => setState(() => _optionalHobbies = values),
-)
-```
+<!-- how-to-use-each-property-formfieldsradiobutton -->
+## How to Use Each Property: FormFieldsRadioButton
 
----
+...existing code for FormFieldsRadioButton property usage examples...
 
-### 3. FormFieldsDropdownMulti
+<!-- how-to-use-each-property-formfieldsselect -->
+## How to Use Each Property: FormFieldsSelect
 
-```dart
-FormFieldsDropdownMulti<String>(
-  label: 'Languages',
-  items: ['Dart', 'Java', 'Kotlin'],
-  initialValues: _languages, // List<String>
-  isRequired: true,
-  minSelections: 1,
-  maxSelections: 3,
-  chipBackgroundColor: Colors.green.shade100,
-  chipTextColor: Colors.green.shade900,
-  chipDeleteIconColor: Colors.green.shade700,
-  showItemCount: true,
-  itemLabelBuilder: (item) => item,
-  onChanged: (values) => setState(() => _languages = values),
-)
-
-FormFieldsDropdownMulti<String?>(
-  label: 'Optional Languages',
-  items: ['Dart', 'Java', 'Kotlin'],
-  initialValues: _optionalLanguages, // List<String?>
-  isRequired: false,
-  onChanged: (values) => setState(() => _optionalLanguages = values),
-)
-```
-
----
-
-### 4. FormFieldsDropdown
-
-```dart
-FormFieldsDropdown<String>(
-  label: 'Country',
-  items: ['USA', 'Canada', 'UK'],
-  initialValue: _country, // String
-  isRequired: true,
-  hintText: 'Select a country',
-  borderColor: Colors.grey,
-  focusedBorderColor: Colors.blue,
-  errorBorderColor: Colors.red,
-  radius: 10,
-  labelPosition: LabelPosition.top,
-  borderType: BorderType.outlineInputBorder,
-  enabled: true,
-  itemLabelBuilder: (item) => item,
-  onChanged: (value) => setState(() => _country = value ?? ''),
-)
-
-FormFieldsDropdown<String?>(
-  label: 'Country (optional)',
-  items: ['USA', 'Canada', 'UK'],
-  initialValue: _country, // String?
-  isRequired: false,
-  onChanged: (value) => setState(() => _country = value),
-)
-```
-
----
-
-### 5. FormFieldsRadioButton
-
-```dart
-FormFieldsRadioButton<String>(
-  label: 'Gender',
-  items: ['Male', 'Female', 'Other'],
-  initialValue: _gender, // String
-  isRequired: true,
-  direction: Axis.horizontal,
-  activeColor: Colors.purple,
-  itemPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  borderColor: Colors.grey.shade300,
-  errorBorderColor: Colors.red,
-  radius: 12,
-  itemLabelBuilder: (item) => item,
-  itemBuilder: (item, selected) => Text(item),
-  onChanged: (value) => setState(() => _gender = value ?? ''),
-)
-
-FormFieldsRadioButton<String?>(
-  label: 'Gender (optional)',
-  items: ['Male', 'Female', 'Other'],
-  initialValue: _gender, // String?
-  isRequired: false,
-  onChanged: (value) => setState(() => _gender = value),
-)
-```
-
----
-
-### 6. FormFieldsSelect
-
-```dart
-// Dropdown (non-nullable)
-FormFieldsSelect<String>(
-  formType: FormType.dropdown,
-  label: 'Country',
-  items: ['USA', 'Canada', 'UK'],
-  initialValue: _country, // String
-  isRequired: true,
-  onChanged: (value) => setState(() => _country = value ?? ''),
-)
-
-// Dropdown (nullable)
-FormFieldsSelect<String?>(
-  formType: FormType.dropdown,
-  label: 'Country (optional)',
-  items: ['USA', 'Canada', 'UK'],
-  initialValue: _country, // String?
-  isRequired: false,
-  onChanged: (value) => setState(() => _country = value),
-)
-
-// Multi-select (non-nullable)
-FormFieldsSelect<String>(
-  formType: FormType.dropdownMulti,
-  label: 'Languages',
-  items: ['Dart', 'Java', 'Kotlin'],
-  initialValues: _languages, // List<String>
-  isRequired: true,
-  onMultiChanged: (values) => setState(() => _languages = values),
-)
-
-// Multi-select (nullable)
-FormFieldsSelect<String?>(
-  formType: FormType.dropdownMulti,
-  label: 'Optional Languages',
-  items: ['Dart', 'Java', 'Kotlin'],
-  initialValues: _optionalLanguages, // List<String?>
-  isRequired: false,
-  onMultiChanged: (values) => setState(() => _optionalLanguages = values),
-)
-```
+...existing code for FormFieldsSelect property usage examples...
 
 ---
 
