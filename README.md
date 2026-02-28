@@ -75,7 +75,7 @@ FormFields<String>(
 - [String & Date Extensions](#string--date-extensions)
 - [Custom Validators](#custom-validators)
 - [Advanced Examples](#advanced-examples)
-- [Custom Classes](#using-custom-classes)
+- [Custom Classes](#custom-class-usage-with-selection-widgets)
 - [Number Formatting](#number-formatting)
 - [Custom Date Format & Range](#custom-date-format--range)
 - [Custom Error Messages](#custom-error-messages)
@@ -447,6 +447,7 @@ Below are all properties supported by the core `FormFields<T>` widget, with clea
 
 ## Selection Widgets: Null and Non-Null Usage
 
+<!-- 1-formfieldscheckbox -->
 ### 1. FormFieldsCheckbox
 
 #### Non-nullable
@@ -468,6 +469,7 @@ FormFieldsCheckbox<String?>(
 )
 ```
 
+<!-- 2-formfieldsdropdownmulti -->
 ### 2. FormFieldsDropdownMulti
 
 #### Non-nullable
@@ -489,6 +491,7 @@ FormFieldsDropdownMulti<String?>(
 )
 ```
 
+<!-- 3-formfieldsdropdown -->
 ### 3. FormFieldsDropdown
 
 #### Non-nullable
@@ -510,6 +513,7 @@ FormFieldsDropdown<String?>(
 )
 ```
 
+<!-- 4-formfieldsradiobutton -->
 ### 4. FormFieldsRadioButton
 
 #### Non-nullable
@@ -531,6 +535,7 @@ FormFieldsRadioButton<String?>(
 )
 ```
 
+<!-- 5-formfieldsselect -->
 ### 5. FormFieldsSelect
 
 #### Non-nullable (Dropdown)
