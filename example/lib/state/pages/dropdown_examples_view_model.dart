@@ -13,6 +13,13 @@ class DropdownExamplesViewModel extends ChangeNotifier {
   String? dropdown8;
   String? dropdown9;
   String? dropdown10;
+  // Unique state for all-label-positions demo
+  String? labelTopValue;
+  String? labelBottomValue;
+  String? labelLeftValue;
+  String? labelRightValue;
+  String? labelInBorderValue;
+  String? labelNoneValue;
 
   final List<String> countries = [
     'United States',
@@ -105,6 +112,37 @@ class DropdownExamplesViewModel extends ChangeNotifier {
 
   void setDropdown10(String? value) {
     dropdown10 = value;
+    notifyListeners();
+  }
+
+  // Setters for all-label-positions demo
+  void setLabelTopValue(String? value) {
+    labelTopValue = value;
+    notifyListeners();
+  }
+
+  void setLabelBottomValue(String? value) {
+    labelBottomValue = value;
+    notifyListeners();
+  }
+
+  void setLabelLeftValue(String? value) {
+    labelLeftValue = value;
+    notifyListeners();
+  }
+
+  void setLabelRightValue(String? value) {
+    labelRightValue = value;
+    notifyListeners();
+  }
+
+  void setLabelInBorderValue(String? value) {
+    labelInBorderValue = value;
+    notifyListeners();
+  }
+
+  void setLabelNoneValue(String? value) {
+    labelNoneValue = value;
     notifyListeners();
   }
 }

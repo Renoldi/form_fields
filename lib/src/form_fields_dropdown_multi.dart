@@ -270,38 +270,30 @@ class _FormFieldsDropdownMultiState<T>
           ),
         );
 
-        if (widget.labelPosition == LabelPosition.none) {
-          return field;
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: widget.label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  if (widget.isRequired)
-                    const TextSpan(
-                      text: ' *',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red,
-                      ),
-                    ),
-                ],
+        final labelWidget = RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: widget.label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            field,
-            if (widget.showItemCount)
-              Padding(
+              if (widget.isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+            ],
+          ),
+        );
+
+        Widget itemCountWidget = widget.showItemCount
+            ? Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '${selectedItems.length} of ${widget.items.length} selected',
@@ -310,9 +302,69 @@ class _FormFieldsDropdownMultiState<T>
                     color: Colors.grey.shade600,
                   ),
                 ),
-              ),
-          ],
-        );
+              )
+            : const SizedBox.shrink();
+
+        switch (widget.labelPosition) {
+          case LabelPosition.top:
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                labelWidget,
+                const SizedBox(height: 8),
+                field,
+                itemCountWidget,
+              ],
+            );
+          case LabelPosition.bottom:
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                field,
+                const SizedBox(height: 8),
+                labelWidget,
+                itemCountWidget,
+              ],
+            );
+          case LabelPosition.left:
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                IntrinsicWidth(child: labelWidget),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      field,
+                      itemCountWidget,
+                    ],
+                  ),
+                ),
+              ],
+            );
+          case LabelPosition.right:
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      field,
+                      itemCountWidget,
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IntrinsicWidth(child: labelWidget),
+              ],
+            );
+          case LabelPosition.inBorder:
+            return field;
+          case LabelPosition.none:
+            return field;
+        }
       },
     );
   }

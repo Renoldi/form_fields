@@ -23,7 +23,70 @@ class DropdownExamplesPage extends StatelessWidget {
                 children: [
                   // Language indicator showing current locale
                   const LanguageIndicator(),
-
+// Beautiful All Label Positions Example
+                  buildSectionTitle('All Label Positions (Beautiful)',
+                      Colors.pink.shade700, Colors.pink.shade400),
+                  buildFieldTitle('Label Top', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Top',
+                    labelPosition: LabelPosition.top,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelTopValue,
+                    onChanged: (value) => viewModel.setLabelTopValue(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Top)', viewModel.labelTopValue),
+                  buildFieldTitle('Label Bottom', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Bottom',
+                    labelPosition: LabelPosition.bottom,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelBottomValue,
+                    onChanged: (value) => viewModel.setLabelBottomValue(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Bottom)', viewModel.labelBottomValue),
+                  buildFieldTitle('Label Left', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Left',
+                    labelPosition: LabelPosition.left,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelLeftValue,
+                    onChanged: (value) => viewModel.setLabelLeftValue(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Left)', viewModel.labelLeftValue),
+                  buildFieldTitle('Label Right', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Right',
+                    labelPosition: LabelPosition.right,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelRightValue,
+                    onChanged: (value) => viewModel.setLabelRightValue(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Right)', viewModel.labelRightValue),
+                  buildFieldTitle('Label In Border', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'InBorder',
+                    labelPosition: LabelPosition.inBorder,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelInBorderValue,
+                    onChanged: (value) =>
+                        viewModel.setLabelInBorderValue(value),
+                  ),
+                  buildResultDisplay(context, 'Selected (InBorder)',
+                      viewModel.labelInBorderValue),
+                  buildFieldTitle('Label None', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'None',
+                    labelPosition: LabelPosition.none,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.labelNoneValue,
+                    onChanged: (value) => viewModel.setLabelNoneValue(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (None)', viewModel.labelNoneValue),
                   buildSectionTitle(l.get('ddBasicExamples'),
                       Colors.green.shade700, Colors.green.shade400),
 
@@ -121,68 +184,67 @@ class DropdownExamplesPage extends StatelessWidget {
                       viewModel.dropdown5),
 
                   // Example 6: Label at Left
-                  buildFieldTitle(l.get('ddLabelLeft'), Colors.green.shade600),
+                  buildFieldTitle('Label Top', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddPayment'),
+                    label: 'Top',
+                    labelPosition: LabelPosition.top,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.dropdown1,
+                    onChanged: (value) => viewModel.setDropdown1(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Top)', viewModel.dropdown1),
+                  buildFieldTitle('Label Bottom', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Bottom',
+                    labelPosition: LabelPosition.bottom,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.dropdown2,
+                    onChanged: (value) => viewModel.setDropdown2(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Bottom)', viewModel.dropdown2),
+                  buildFieldTitle('Label Left', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Left',
                     labelPosition: LabelPosition.left,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.dropdown3,
+                    onChanged: (value) => viewModel.setDropdown3(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Left)', viewModel.dropdown3),
+                  buildFieldTitle('Label Right', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Right',
+                    labelPosition: LabelPosition.right,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.dropdown4,
+                    onChanged: (value) => viewModel.setDropdown4(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Right)', viewModel.dropdown4),
+                  buildFieldTitle('Label In Border', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'InBorder',
+                    labelPosition: LabelPosition.inBorder,
+                    items: const ['A', 'B', 'C'],
+                    initialValue: viewModel.dropdown5,
+                    onChanged: (value) => viewModel.setDropdown5(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (InBorder)', viewModel.dropdown5),
+                  buildFieldTitle('Label None', Colors.pink.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'None',
+                    labelPosition: LabelPosition.none,
+                    items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown6,
-                    items: const [
-                      'Credit Card',
-                      'PayPal',
-                      'Bank Transfer',
-                      'Cash'
-                    ],
-                    isRequired: true,
-                    borderColor: Colors.green,
                     onChanged: (value) => viewModel.setDropdown6(value),
                   ),
                   buildResultDisplay(
-                      context, l.get('ddSelectedPayment'), viewModel.dropdown6),
+                      context, 'Selected (None)', viewModel.dropdown6),
 
-                  buildSectionTitle(l.get('ddAdvancedFeatures'),
-                      Colors.green.shade700, Colors.green.shade400),
-
-                  // Example 7: Custom Validation
-                  buildFieldTitle(
-                      l.get('ddCustomValidation'), Colors.green.shade600),
-                  FormFieldsDropdown<String>(
-                    label: l.get('ddPriority'),
-                    initialValue: viewModel.dropdown7,
-                    items: const ['Low', 'Medium', 'High', 'Critical'],
-                    isRequired: true,
-                    borderColor: Colors.red,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return l.get('ddSelectPriority');
-                      }
-                      if (value == 'Critical') {
-                        return l.get('ddCriticalApproval');
-                      }
-                      return null;
-                    },
-                    onChanged: (value) => viewModel.setDropdown7(value),
-                  ),
-                  buildResultDisplay(context, l.get('ddSelectedPriority'),
-                      viewModel.dropdown7),
-
-                  // Example 8: Underline Border Type
-                  buildFieldTitle(l.get('ddUnderline'), Colors.green.shade600),
-                  FormFieldsDropdown<String>(
-                    label: l.get('ddDepartment'),
-                    initialValue: viewModel.dropdown8,
-                    items: const [
-                      'Sales',
-                      'Marketing',
-                      'Engineering',
-                      'HR',
-                      'Finance'
-                    ],
-                    isRequired: true,
-                    borderType: BorderType.underlineInputBorder,
-                    borderColor: Colors.indigo,
-                    focusedBorderColor: Colors.indigoAccent,
-                    onChanged: (value) => viewModel.setDropdown8(value),
-                  ),
                   buildResultDisplay(context, l.get('ddSelectedDepartment'),
                       viewModel.dropdown8),
 

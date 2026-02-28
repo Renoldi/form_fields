@@ -150,10 +150,9 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                       FormField<String>(
                         initialValue: filterState[0],
                         builder: (formFieldState) {
-                          return TextFormField(
+                          return TextField(
                             decoration: InputDecoration(
-                              hintText:
-                                  widget.filterHintText ?? l10n.searchHint,
+                              hintText: widget.filterHintText ?? l10n.searchHint,
                               prefixIcon: const Icon(Icons.search),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -268,40 +267,65 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             ),
           );
 
-          if (widget.labelPosition == LabelPosition.none) {
-            return field;
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: widget.label,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    if (widget.isRequired)
-                      const TextSpan(
-                        text: ' *',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.red,
-                        ),
-                      ),
-                  ],
+          Widget labelWidget = RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: widget.label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              field,
-            ],
+                if (widget.isRequired)
+                  const TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+              ],
+            ),
           );
+
+          switch (widget.labelPosition) {
+            case LabelPosition.top:
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [labelWidget, const SizedBox(height: 8), field],
+              );
+            case LabelPosition.bottom:
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [field, const SizedBox(height: 8), labelWidget],
+              );
+            case LabelPosition.left:
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  labelWidget,
+                  const SizedBox(width: 12),
+                  Expanded(child: field),
+                ],
+              );
+            case LabelPosition.right:
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: field),
+                  const SizedBox(width: 12),
+                  labelWidget,
+                ],
+              );
+            case LabelPosition.inBorder:
+              // Let InputDecoration handle floating label
+              return field;
+            case LabelPosition.none:
+              return field;
+          }
         }
 
         // Regular dropdown without filter
@@ -330,43 +354,65 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           decoration: effectiveDecoration,
         );
 
-        if (widget.labelPosition == LabelPosition.none) {
-          return dropdown;
-        }
-
-        final labelText = widget.label;
-        final requiredIndicator = widget.isRequired ? ' *' : '';
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: labelText,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  if (widget.isRequired)
-                    TextSpan(
-                      text: requiredIndicator,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red,
-                      ),
-                    ),
-                ],
+        Widget labelWidget = RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: widget.label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            dropdown,
-          ],
+              if (widget.isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+            ],
+          ),
         );
+
+        switch (widget.labelPosition) {
+          case LabelPosition.top:
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [labelWidget, const SizedBox(height: 8), dropdown],
+            );
+          case LabelPosition.bottom:
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [dropdown, const SizedBox(height: 8), labelWidget],
+            );
+          case LabelPosition.left:
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                labelWidget,
+                const SizedBox(width: 12),
+                Expanded(child: dropdown),
+              ],
+            );
+          case LabelPosition.right:
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: dropdown),
+                const SizedBox(width: 12),
+                labelWidget,
+              ],
+            );
+          case LabelPosition.inBorder:
+            // Let InputDecoration handle floating label
+            return dropdown;
+          case LabelPosition.none:
+            return dropdown;
+        }
       },
     );
   }

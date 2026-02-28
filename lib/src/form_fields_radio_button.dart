@@ -239,13 +239,13 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         );
       case LabelPosition.left:
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(child: labelWidget),
+            IntrinsicWidth(child: labelWidget),
             SizedBox(width: containerGap),
             Expanded(
-              flex: 2,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   radioContainer,
                   errorWidget,
@@ -256,11 +256,11 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         );
       case LabelPosition.right:
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              flex: 2,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   radioContainer,
                   errorWidget,
@@ -268,7 +268,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
               ),
             ),
             SizedBox(width: containerGap),
-            Expanded(child: labelWidget),
+            IntrinsicWidth(child: labelWidget),
           ],
         );
       case LabelPosition.inBorder:
