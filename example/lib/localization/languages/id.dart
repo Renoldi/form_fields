@@ -64,11 +64,16 @@ const Map<String, String> idStrings = {
   'updatePassword': 'Perbarui Kata Sandi',
   'currentPassword': 'Kata Sandi Saat Ini',
   'confirmNewPassword': 'Konfirmasi Kata Sandi Baru',
+  'password': 'Kata Sandi',
+  'username': 'Nama Pengguna',
 
   // Status Messages
   'loadFailed': 'Gagal Dimuat',
   'formValidated': 'Formulir Tervalidasi!',
   'login': 'Masuk',
+  'invalidCredentials': 'Nama pengguna atau kata sandi tidak valid',
+  'loginFailed': 'Gagal Masuk',
+  'signingIn': 'Sedang masuk...',
   'imageUploadComingSoon': 'Unggahan gambar akan hadir segera',
 
   // Settings

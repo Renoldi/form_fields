@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 24),
                       FormFields<String>(
-                        label: 'Username',
+                        label: ExampleLocalizations.of(context).get('username'),
                         currrentValue: viewModel.username,
                         formType: FormType.string,
                         prefixIcon: const Icon(Icons.person),
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       FormFields<String>(
-                        label: 'Password',
+                        label: ExampleLocalizations.of(context).get('password'),
                         currrentValue: viewModel.password,
                         formType: FormType.password,
                         minLengthPassword: 4,
@@ -102,7 +102,8 @@ class _LoginPageState extends State<LoginPage> {
 
                                   showBlockingLoading(
                                     context,
-                                    message: 'Signing in...',
+                                    message: ExampleLocalizations.of(context)
+                                        .get('signingIn'),
                                   );
 
                                   try {
@@ -130,7 +131,8 @@ class _LoginPageState extends State<LoginPage> {
                                     final errorMessage = error
                                             .toString()
                                             .contains('DioException')
-                                        ? 'Invalid username or password'
+                                        ? ExampleLocalizations.of(context)
+                                            .get('invalidCredentials')
                                         : error.toString();
 
                                     viewModel.setError(errorMessage);
@@ -138,7 +140,8 @@ class _LoginPageState extends State<LoginPage> {
                                     if (!context.mounted) return;
                                     await showBlockingResult(
                                       context,
-                                      title: 'Login Failed',
+                                      title: ExampleLocalizations.of(context)
+                                          .get('loginFailed'),
                                       message: errorMessage,
                                       isSuccess: false,
                                     );
@@ -150,7 +153,8 @@ class _LoginPageState extends State<LoginPage> {
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: const Text('Login'),
+                          child: Text(
+                              ExampleLocalizations.of(context).get('login')),
                         ),
                       ),
                       const SizedBox(height: 8),

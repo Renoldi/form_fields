@@ -64,11 +64,16 @@ const Map<String, String> enStrings = {
   'updatePassword': 'Update Password',
   'currentPassword': 'Current Password',
   'confirmNewPassword': 'Confirm New Password',
+  'password': 'Password',
+  'username': 'Username',
 
   // Status Messages
   'loadFailed': 'Load Failed',
   'formValidated': 'Form Validated!',
   'login': 'Login',
+  'invalidCredentials': 'Invalid username or password',
+  'loginFailed': 'Login Failed',
+  'signingIn': 'Signing in...',
   'imageUploadComingSoon': 'Image upload coming soon',
 
   // Settings
