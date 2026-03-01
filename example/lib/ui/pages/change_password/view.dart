@@ -2,28 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'package:form_fields_example/state/pages/change_password_view_model.dart';
+import 'main.dart';
 
-class ChangePasswordPage extends StatelessWidget {
-  final VoidCallback onBack;
-
-  const ChangePasswordPage({
-    super.key,
-    required this.onBack,
-  });
-
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ChangePasswordViewModel(),
-      child: Consumer<ChangePasswordViewModel>(
+    return ChangeNotifierProvider.value(
+      value: viewModel,
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
               title: Text(context.tr('changePassword')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: onBack,
+                onPressed: widget.onBack,
                 tooltip: context.tr('back'),
               ),
             ),
@@ -32,46 +25,41 @@ class ChangePasswordPage extends StatelessWidget {
               children: [
                 FormFields<String>(
                   label: context.tr('currentPassword'),
-                  currrentValue: viewModel.currentPasswordController.text,
+                  currrentValue: viewModel.currentPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   enterText: '',
                   onChanged: (value) {
-                    viewModel.currentPasswordController.text = value;
+                    viewModel.currentPassword = value;
                   },
                 ),
                 const SizedBox(height: 12),
                 FormFields<String>(
                   label: context.tr('password'),
-                  currrentValue: viewModel.newPasswordController.text,
+                  currrentValue: viewModel.newPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   enterText: '',
                   onChanged: (value) {
-                    viewModel.newPasswordController.text = value;
+                    viewModel.newPassword = value;
                   },
                 ),
                 const SizedBox(height: 12),
                 FormFields<String>(
                   label: context.tr('confirmNewPassword'),
-                  currrentValue: viewModel.confirmPasswordController.text,
+                  currrentValue: viewModel.confirmPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   enterText: '',
                   onChanged: (value) {
-                    viewModel.confirmPasswordController.text = value;
+                    viewModel.confirmPassword = value;
                   },
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      final result = viewModel.submit();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(result.message)),
-                      );
-                    },
+                    onPressed: handleSubmit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1F2937),
                       foregroundColor: Colors.white,

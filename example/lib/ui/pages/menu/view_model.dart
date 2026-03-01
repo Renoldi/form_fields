@@ -19,10 +19,10 @@ class MenuItemData {
   });
 }
 
-class MenuViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final AppStateNotifier _appState;
 
-  MenuViewModel(this._appState) {
+  ViewModel(this._appState) {
     _appState.addListener(notifyListeners);
   }
 

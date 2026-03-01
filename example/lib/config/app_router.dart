@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:form_fields_example/ui/pages/login_page.dart';
-import 'package:form_fields_example/ui/pages/menu_page.dart';
+import 'package:form_fields_example/ui/pages/login/main.dart' as login;
+import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
 import 'package:form_fields_example/ui/pages/form_fields_examples_page.dart';
 import 'package:form_fields_example/ui/pages/dropdown_examples_page.dart';
 import 'package:form_fields_example/ui/pages/dropdown_multi_examples_page.dart';
@@ -10,12 +10,14 @@ import 'package:form_fields_example/ui/pages/radio_button_examples_page.dart';
 import 'package:form_fields_example/ui/pages/checkbox_examples_page.dart';
 import 'package:form_fields_example/ui/pages/custom_class_examples_page.dart';
 import 'package:form_fields_example/ui/pages/null_non_null_validation_examples_page.dart';
-import 'package:form_fields_example/ui/pages/settings_page.dart';
 import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
-import 'package:form_fields_example/ui/pages/change_password_page.dart';
-import 'package:form_fields_example/ui/pages/language_page.dart';
-import 'package:form_fields_example/ui/pages/app_info_page.dart';
+import 'package:form_fields_example/ui/pages/change_password/main.dart'
+    as change_password;
+import 'package:form_fields_example/ui/pages/settings/main.dart' as settings;
+import 'package:form_fields_example/ui/pages/language/main.dart' as language;
+import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
 import 'package:form_fields_example/localization/localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'app_routes.dart';
 
@@ -61,14 +63,17 @@ GoRouter createAppRouter(AppStateNotifier appState) {
       GoRoute(
         path: AppRoute.login.path,
         name: AppRoute.login.name,
-        builder: (context, state) => LoginPage(
-          onLoginSuccess: () => context.goToRoute(AppRoute.menu),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => login.ViewModel(),
+          child: login.Presenter(
+            onLoginSuccess: () => context.goToRoute(AppRoute.menu),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoute.menu.path,
         name: AppRoute.menu.name,
-        builder: (context, state) => MenuPage(
+        builder: (context, state) => menu.Presenter(
           onLogout: () => context.goToRoute(AppRoute.login),
           onMenuItemTap: (routeName) => context.pushNamed(routeName),
           onOpenSettings: () async {
@@ -82,42 +87,51 @@ GoRouter createAppRouter(AppStateNotifier appState) {
       GoRoute(
         path: AppRoute.settings.path,
         name: AppRoute.settings.name,
-        builder: (context, state) => SettingsPage(
-          onBack: () => context.pop(),
-          onLogout: () => context.goToRoute(AppRoute.login),
-          onOpenProfile: () => context.pushRoute(AppRoute.profile),
-          onOpenChangePassword: () =>
-              context.pushRoute(AppRoute.changePassword),
-          onOpenLanguage: () => context.pushRoute(AppRoute.language),
-          onOpenAppInfo: () => context.pushRoute(AppRoute.appInfo),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => settings.ViewModel(context.read<AppStateNotifier>()),
+          child: settings.Presenter(
+            onBack: () => context.pop(),
+            onLogout: () => context.goToRoute(AppRoute.login),
+            onOpenProfile: () => context.pushRoute(AppRoute.profile),
+            onOpenChangePassword: () =>
+                context.pushRoute(AppRoute.changePassword),
+            onOpenLanguage: () => context.pushRoute(AppRoute.language),
+            onOpenAppInfo: () => context.pushRoute(AppRoute.appInfo),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoute.profile.path,
         name: AppRoute.profile.name,
-        builder: (context, state) => profile.View(
+        builder: (context, state) => profile.Presenter(
           onBack: () => context.pop(),
         ),
       ),
       GoRoute(
         path: AppRoute.changePassword.path,
         name: AppRoute.changePassword.name,
-        builder: (context, state) => ChangePasswordPage(
+        builder: (context, state) => change_password.Presenter(
           onBack: () => context.pop(),
         ),
       ),
       GoRoute(
         path: AppRoute.language.path,
         name: AppRoute.language.name,
-        builder: (context, state) => LanguagePage(
-          onBack: () => context.pop(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => language.ViewModel(context.read<AppStateNotifier>()),
+          child: language.Presenter(
+            onBack: () => context.pop(),
+          ),
         ),
       ),
       GoRoute(
         path: AppRoute.appInfo.path,
         name: AppRoute.appInfo.name,
-        builder: (context, state) => AppInfoPage(
-          onBack: () => context.pop(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => app_info.ViewModel(),
+          child: app_info.Presenter(
+            onBack: () => context.pop(),
+          ),
         ),
       ),
 

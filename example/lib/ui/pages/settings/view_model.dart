@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 
-class SettingsViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final AppStateNotifier _appState;
 
-  SettingsViewModel(this._appState) {
+  ViewModel(this._appState) {
     _appState.addListener(notifyListeners);
   }
 

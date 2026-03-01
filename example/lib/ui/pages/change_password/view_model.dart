@@ -10,17 +10,15 @@ class ChangePasswordResult {
   });
 }
 
-class ChangePasswordViewModel extends ChangeNotifier {
-  final TextEditingController currentPasswordController =
-      TextEditingController();
-  final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+class ViewModel extends ChangeNotifier {
+  String currentPassword = '';
+  String newPassword = '';
+  String confirmPassword = '';
 
   ChangePasswordResult submit() {
-    final current = currentPasswordController.text.trim();
-    final next = newPasswordController.text.trim();
-    final confirm = confirmPasswordController.text.trim();
+    final current = currentPassword.trim();
+    final next = newPassword.trim();
+    final confirm = confirmPassword.trim();
 
     if (current.isEmpty || next.isEmpty || confirm.isEmpty) {
       return const ChangePasswordResult(
@@ -41,21 +39,14 @@ class ChangePasswordViewModel extends ChangeNotifier {
       );
     }
 
-    currentPasswordController.clear();
-    newPasswordController.clear();
-    confirmPasswordController.clear();
+    currentPassword = '';
+    newPassword = '';
+    confirmPassword = '';
+    notifyListeners();
 
     return const ChangePasswordResult(
       isSuccess: true,
       message: 'Password updated successfully.',
     );
-  }
-
-  @override
-  void dispose() {
-    currentPasswordController.dispose();
-    newPasswordController.dispose();
-    confirmPasswordController.dispose();
-    super.dispose();
   }
 }

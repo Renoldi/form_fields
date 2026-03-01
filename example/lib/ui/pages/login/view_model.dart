@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:form_fields_example/data/models/user.dart';
 
-class LoginViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   String? errorMessage;
   String username = '';
   String password = '';

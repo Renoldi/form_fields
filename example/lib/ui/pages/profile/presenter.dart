@@ -1,26 +1,29 @@
-import 'package:flutter/material.dart' hide View;
+import 'package:flutter/material.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
-import 'main.dart';
+import 'package:provider/provider.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/localization/localizations.dart';
+import 'main.dart' as main;
 
-class View extends StatefulWidget {
+class Presenter extends StatefulWidget {
   final VoidCallback onBack;
 
-  const View({
+  const Presenter({
     super.key,
     required this.onBack,
   });
 
   @override
-  State<View> createState() => ViewState();
+  State<Presenter> createState() => main.View();
 }
 
-abstract class PresenterState extends State<View> {
-  ViewModel viewModel = ViewModel();
+abstract class PresenterState extends State<Presenter> {
+  late final main.ViewModel viewModel;
 
   @override
   void initState() {
     super.initState();
-    viewModel = ViewModel();
+    viewModel = main.ViewModel();
     viewModel.loadUserData(context.read<AppStateNotifier>());
   }
 

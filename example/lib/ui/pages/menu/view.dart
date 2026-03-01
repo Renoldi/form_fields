@@ -1,55 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'package:form_fields_example/state/app_state_notifier.dart';
-import 'package:form_fields_example/state/pages/menu_view_model.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
+import 'presenter.dart';
+import 'view_model.dart';
 
-class MenuPage extends StatefulWidget {
-  final VoidCallback onLogout;
-  final void Function(String routeName) onMenuItemTap;
-  final Future<void> Function() onOpenSettings;
-  final Future<void> Function() onOpenProfile;
-
-  const MenuPage({
-    super.key,
-    required this.onLogout,
-    required this.onMenuItemTap,
-    required this.onOpenSettings,
-    required this.onOpenProfile,
-  });
-
-  @override
-  State<MenuPage> createState() => _MenuPageState();
-}
-
-class _MenuPageState extends State<MenuPage> {
-  late final MenuViewModel _viewModel;
-
-  @override
-  void initState() {
-    super.initState();
-    _viewModel = MenuViewModel(context.read<AppStateNotifier>());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _viewModel.loadUser();
-    });
-  }
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
-
-  Future<void> _openSettings() async {
-    await widget.onOpenSettings();
-  }
-
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: _viewModel,
-      child: Consumer<MenuViewModel>(
+      value: viewModel,
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           return PopScope(
             canPop: false,
@@ -67,15 +28,12 @@ class _MenuPageState extends State<MenuPage> {
                 elevation: 0,
                 actions: [
                   IconButton(
-                    onPressed: _openSettings,
+                    onPressed: handleOpenSettings,
                     tooltip: context.tr('settings'),
                     icon: const Icon(Icons.settings),
                   ),
                   IconButton(
-                    onPressed: () {
-                      viewModel.appState.logout();
-                      widget.onLogout();
-                    },
+                    onPressed: handleLogout,
                     tooltip: context.tr('logout'),
                     icon: const Icon(Icons.logout),
                   ),
@@ -90,20 +48,7 @@ class _MenuPageState extends State<MenuPage> {
                     children: [
                       if (viewModel.appState.currentUser != null)
                         InkWell(
-                          onTap: () async {
-                            await widget.onOpenProfile();
-                            if (!context.mounted) return;
-                            final error =
-                                await viewModel.loadUser(forceRefresh: true);
-                            if (error != null) {
-                              if (!context.mounted) return;
-                              await BlockingDialog(context).showResult(
-                                title: context.tr('loadFailed'),
-                                message: error,
-                                isSuccess: false,
-                              );
-                            }
-                          },
+                          onTap: handleOpenProfile,
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 20),
@@ -181,7 +126,7 @@ class _MenuPageState extends State<MenuPage> {
                             subtitle: item.subtitle,
                             icon: item.icon,
                             color: item.color,
-                            onTap: () => widget.onMenuItemTap(item.routeName),
+                            onTap: () => handleMenuItemTap(item.routeName),
                           );
                         },
                       ),
