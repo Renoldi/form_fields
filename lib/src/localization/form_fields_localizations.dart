@@ -120,3 +120,12 @@ class FormFieldsLocalizationsDelegate
   @override
   bool shouldReload(FormFieldsLocalizationsDelegate old) => false;
 }
+
+/// Extension for convenient context-based form field localization access
+extension FormFieldsLocalizationContextExtension on BuildContext {
+  /// Get FormFieldsLocalizations instance
+  FormFieldsLocalizations get l => FormFieldsLocalizations.of(this);
+
+  /// Translate a form field localization key
+  String formTr(String key) => FormFieldsLocalizations.of(this).get(key);
+}

@@ -1016,7 +1016,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // ============================================================================
 
   String? _validateRequired(String? value, String label, bool isRequired,
-      FormFieldsController vm, FormFieldsLocalizations l10n) {
+      FormFieldsController vm, BuildContext context) {
     // print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
 
     // === CUSTOM VALIDATOR (Run first if provided) ===
@@ -1031,7 +1031,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     if (isRequired) {
       if (value == null || value.isEmpty) {
         // print('  → RETURNING ERROR!');
-        return l10n.getWithLabel('required', label);
+        return context.l.getWithLabel('required', label);
       }
     }
 
@@ -1046,9 +1046,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // For phone validation, validate the full number with country code
         final localDigits = _extractLocalPhoneDigits(value ?? '');
         final fullPhone = '$_selectedCountryCode$localDigits';
-        return FormFieldValidators.phone(vm.label, l10n)(fullPhone);
+        return FormFieldValidators.phone(vm.label, context.l)(fullPhone);
       case FormType.email:
-        return FormFieldValidators.email(vm.label, l10n)(value);
+        return FormFieldValidators.email(vm.label, context.l)(value);
       case FormType.password:
         // Use custom validator if provided
         if (widget.customPasswordValidator != null) {
@@ -1057,7 +1057,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // Check minimum length
         if (value!.length < widget.minLengthPassword) {
           final errorText = widget.minLengthPasswordErrorText ??
-              l10n.getWithValue('passwordMinLength', widget.minLengthPassword);
+              context.l
+                  .getWithValue('passwordMinLength', widget.minLengthPassword);
           return errorText;
         }
         break;
@@ -1070,14 +1071,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
       final parsed = int.tryParse(cleaned);
       if (parsed == null) {
-        return l10n.getWithLabel('enterValidInteger', vm.label);
+        return context.l.getWithLabel('enterValidInteger', vm.label);
       }
     } else if (_isDoubleType()) {
       final cleaned =
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
       final parsed = double.tryParse(cleaned);
       if (parsed == null) {
-        return l10n.getWithLabel('enterValidNumber', vm.label);
+        return context.l.getWithLabel('enterValidNumber', vm.label);
       }
     }
 
@@ -1166,7 +1167,6 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _notifier,
       child: Consumer<FormFieldsNotifier>(
@@ -1296,7 +1296,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     widget.label,
                     widget.isRequired,
                     vm,
-                    l10n,
+                    context,
                   ),
                   controller: vm.controller,
                   onTap: () async {
@@ -1340,10 +1340,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         prefix: widget.prefix,
                         prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
                         hintText:
-                            '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}',
+                            '${widget.enterText == 'Enter ' ? context.l.enterPrefix : widget.enterText}${vm.label}',
                         labelText: widget.labelPosition ==
                                 LabelPosition.inBorder
-                            ? '${widget.enterText == 'Enter ' ? l10n.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
+                            ? '${widget.enterText == 'Enter ' ? context.l.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
                             : null,
                         focusedErrorBorder: widget.borderType == BorderType.none
                             ? InputBorder.none
