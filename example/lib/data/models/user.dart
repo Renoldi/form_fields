@@ -35,6 +35,28 @@ class User {
     return fullName.isEmpty ? username : fullName;
   }
 
+  User copyWith({
+    int? id,
+    String? username,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? image,
+    String? accessToken,
+    String? refreshToken,
+  }) {
+    return User(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      image: image ?? this.image,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+    );
+  }
+
   // Authentication methods using global HttpService
 
   static Future<User> login({

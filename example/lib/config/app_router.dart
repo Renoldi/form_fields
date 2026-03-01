@@ -11,7 +11,7 @@ import 'package:form_fields_example/ui/pages/checkbox_examples_page.dart';
 import 'package:form_fields_example/ui/pages/custom_class_examples_page.dart';
 import 'package:form_fields_example/ui/pages/null_non_null_validation_examples_page.dart';
 import 'package:form_fields_example/ui/pages/settings_page.dart';
-import 'package:form_fields_example/ui/pages/profile_page.dart';
+import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
 import 'package:form_fields_example/ui/pages/change_password_page.dart';
 import 'package:form_fields_example/ui/pages/language_page.dart';
 import 'package:form_fields_example/ui/pages/app_info_page.dart';
@@ -95,7 +95,7 @@ GoRouter createAppRouter(AppStateNotifier appState) {
       GoRoute(
         path: AppRoute.profile.path,
         name: AppRoute.profile.name,
-        builder: (context, state) => ProfilePage(
+        builder: (context, state) => profile.View(
           onBack: () => context.pop(),
         ),
       ),

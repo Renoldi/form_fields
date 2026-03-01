@@ -1,44 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide View;
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
-import 'package:form_fields_example/state/pages/profile_view_model.dart';
-import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
+import 'package:form_fields_example/localization/localizations.dart';
+import 'presenter.dart';
+import 'view_model.dart';
 
-class ProfilePage extends StatefulWidget {
-  final VoidCallback onBack;
-
-  const ProfilePage({
-    super.key,
-    required this.onBack,
-  });
-
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
-  late final ProfileViewModel _viewModel;
-
-  @override
-  void initState() {
-    super.initState();
-    _viewModel = ProfileViewModel();
-    _viewModel.loadUserData(context.read<AppStateNotifier>());
-  }
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
-
+class ViewState extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: _viewModel,
-      child: Consumer<ProfileViewModel>(
+      value: viewModel,
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           final appState = context.watch<AppStateNotifier>();
           final user = appState.currentUser;
@@ -59,7 +32,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Profile Image
                     Center(
                       child: Stack(
                         children: [
@@ -86,7 +58,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          context.tr('imageUploadComingSoon')),
+                                        context.tr('imageUploadComingSoon'),
+                                      ),
                                     ),
                                   );
                                 },
@@ -97,17 +70,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 32),
-
-                    // First Name Field
                     FormFields<String>(
                       label: context.tr('firstName'),
-                      currrentValue: viewModel.firstNameController.text,
+                      currrentValue: viewModel.user.firstName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       enterText: '',
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
-                        viewModel.firstNameController.text = value;
+                        viewModel.user =
+                            viewModel.user.copyWith(firstName: value);
                       },
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -117,17 +89,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Last Name Field
                     FormFields<String>(
                       label: context.tr('lastName'),
-                      currrentValue: viewModel.lastNameController.text,
+                      currrentValue: viewModel.user.lastName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       enterText: '',
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
-                        viewModel.lastNameController.text = value;
+                        viewModel.user =
+                            viewModel.user.copyWith(lastName: value);
                       },
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -137,17 +108,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Email Field
                     FormFields<String>(
                       label: context.tr('email'),
-                      currrentValue: viewModel.emailController.text,
+                      currrentValue: viewModel.user.email ?? '',
                       formType: FormType.email,
                       labelPosition: LabelPosition.inBorder,
                       enterText: '',
                       prefixIcon: const Icon(Icons.email_outlined),
                       onChanged: (value) {
-                        viewModel.emailController.text = value;
+                        viewModel.user = viewModel.user.copyWith(email: value);
                       },
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -160,12 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Username Field (read-only)
                     IgnorePointer(
                       child: FormFields<String>(
                         label: context.tr('username'),
-                        currrentValue: viewModel.usernameController.text,
+                        currrentValue: viewModel.user.username ?? '',
                         formType: FormType.string,
                         labelPosition: LabelPosition.inBorder,
                         enterText: '',
@@ -173,49 +140,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         inputDecoration: InputDecoration(
                           helperText: context.tr('usernameCannotBeChanged'),
                         ),
-                        onChanged: (value) {
-                          viewModel.usernameController.text = value;
-                        },
+                        onChanged: (value) {},
                       ),
                     ),
                     const SizedBox(height: 32),
-
-                    // Update Button
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton.icon(
                         onPressed: viewModel.isLoading
                             ? null
-                            : () async {
-                                final dialog = BlockingDialog(context);
-
-                                dialog.showLoading(
-                                  message: context.tr('updatingProfile'),
-                                );
-                                final error =
-                                    await viewModel.updateProfile(appState);
-                                if (!context.mounted) return;
-
-                                dialog.hide();
-                                if (error == null) {
-                                  await dialog.showResult(
-                                    isSuccess: true,
-                                    title: context.tr('success'),
-                                    message: context
-                                        .tr('profileUpdatedSuccessfully'),
-                                  );
-                                  if (context.mounted) {
-                                    Navigator.of(context).pop();
-                                  }
-                                } else {
-                                  await dialog.showResult(
-                                    isSuccess: false,
-                                    title: context.tr('updateFailed'),
-                                    message: error,
-                                  );
-                                }
-                              },
+                            : () => handleUpdateProfile(appState),
                         icon: viewModel.isLoading
                             ? const SizedBox(
                                 width: 20,
@@ -223,13 +158,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.save),
-                        label: Text(viewModel.isLoading
-                            ? context.tr('updating')
-                            : context.tr('updateProfile')),
+                        label: Text(
+                          viewModel.isLoading
+                              ? context.tr('updating')
+                              : context.tr('updateProfile'),
+                        ),
                         style: ElevatedButton.styleFrom(
                           textStyle: const TextStyle(
                             fontSize: 16,
