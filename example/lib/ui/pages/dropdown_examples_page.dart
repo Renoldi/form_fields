@@ -186,7 +186,7 @@ class DropdownExamplesPage extends StatelessWidget {
                   // Example 6: Label at Left
                   buildFieldTitle('Label Top', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'Top',
+                    label: l.get('positionTop'),
                     labelPosition: LabelPosition.top,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown1,
@@ -196,7 +196,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       context, 'Selected (Top)', viewModel.dropdown1),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'Bottom',
+                    label: l.get('positionBottom'),
                     labelPosition: LabelPosition.bottom,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown2,
@@ -206,7 +206,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       context, 'Selected (Bottom)', viewModel.dropdown2),
                   buildFieldTitle('Label Left', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'Left',
+                    label: l.get('positionLeft'),
                     labelPosition: LabelPosition.left,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown3,
@@ -216,7 +216,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       context, 'Selected (Left)', viewModel.dropdown3),
                   buildFieldTitle('Label Right', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'Right',
+                    label: l.get('positionRight'),
                     labelPosition: LabelPosition.right,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown4,
@@ -226,7 +226,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       context, 'Selected (Right)', viewModel.dropdown4),
                   buildFieldTitle('Label In Border', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'InBorder',
+                    label: l.get('positionInBorder'),
                     labelPosition: LabelPosition.inBorder,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown5,
@@ -236,7 +236,7 @@ class DropdownExamplesPage extends StatelessWidget {
                       context, 'Selected (InBorder)', viewModel.dropdown5),
                   buildFieldTitle('Label None', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: 'None',
+                    label: l.get('positionNone'),
                     labelPosition: LabelPosition.none,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown6,
