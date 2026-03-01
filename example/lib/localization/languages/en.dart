@@ -67,6 +67,14 @@ const Map<String, String> enStrings = {
   'password': 'Password',
   'username': 'Username',
 
+  // Label Positions
+  'positionTop': 'Top',
+  'positionBottom': 'Bottom',
+  'positionLeft': 'Left',
+  'positionRight': 'Right',
+  'positionInBorder': 'InBorder',
+  'positionNone': 'None',
+
   // Status Messages
   'loadFailed': 'Load Failed',
   'formValidated': 'Form Validated!',

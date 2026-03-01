@@ -67,6 +67,14 @@ const Map<String, String> idStrings = {
   'password': 'Kata Sandi',
   'username': 'Nama Pengguna',
 
+  // Label Positions
+  'positionTop': 'Atas',
+  'positionBottom': 'Bawah',
+  'positionLeft': 'Kiri',
+  'positionRight': 'Kanan',
+  'positionInBorder': 'DiBorder',
+  'positionNone': 'Tidak Ada',
+
   // Status Messages
   'loadFailed': 'Gagal Dimuat',
   'formValidated': 'Formulir Tervalidasi!',
