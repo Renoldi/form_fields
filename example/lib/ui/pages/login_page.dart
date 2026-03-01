@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/example_localizations.dart'
-    as loc;
+import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/login_view_model.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
@@ -48,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                           size: 48, color: Color(0xFF1F2937)),
                       const SizedBox(height: 12),
                       Text(
-                        loc.ExampleLocalizations.of(context).get('login'),
+                        context.tr('login'),
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -57,8 +56,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 24),
                       FormFields<String>(
-                        label: loc.ExampleLocalizations.of(context)
-                            .get('username'),
+                        label: context.tr('username'),
                         currrentValue: viewModel.username,
                         formType: FormType.string,
                         prefixIcon: const Icon(Icons.person),
@@ -71,8 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       FormFields<String>(
-                        label: loc.ExampleLocalizations.of(context)
-                            .get('password'),
+                        label: context.tr('password'),
                         currrentValue: viewModel.password,
                         formType: FormType.password,
                         minLengthPassword: 4,
@@ -105,9 +102,7 @@ class _LoginPageState extends State<LoginPage> {
 
                                   showBlockingLoading(
                                     context,
-                                    message:
-                                        loc.ExampleLocalizations.of(context)
-                                            .get('signingIn'),
+                                    message: context.tr('signingIn'),
                                   );
 
                                   try {
@@ -135,8 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                                     final errorMessage = error
                                             .toString()
                                             .contains('DioException')
-                                        ? loc.ExampleLocalizations.of(context)
-                                            .get('invalidCredentials')
+                                        ? context.tr('invalidCredentials')
                                         : error.toString();
 
                                     viewModel.setError(errorMessage);
@@ -144,9 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                                     if (!context.mounted) return;
                                     await showBlockingResult(
                                       context,
-                                      title:
-                                          loc.ExampleLocalizations.of(context)
-                                              .get('loginFailed'),
+                                      title: context.tr('loginFailed'),
                                       message: errorMessage,
                                       isSuccess: false,
                                     );
@@ -158,8 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: Text(loc.ExampleLocalizations.of(context)
-                              .get('login')),
+                          child: Text(context.tr('login')),
                         ),
                       ),
                       const SizedBox(height: 8),

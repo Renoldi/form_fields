@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/example_localizations.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/profile_view_model.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
@@ -44,11 +44,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
           return Scaffold(
             appBar: AppBar(
-              title: Text(ExampleLocalizations.of(context).get('editProfile')),
+              title: Text(loc.Localizations.of(context).get('editProfile')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: widget.onBack,
-                tooltip: ExampleLocalizations.of(context).get('back'),
+                tooltip: loc.Localizations.of(context).get('back'),
               ),
             ),
             body: SingleChildScrollView(
@@ -85,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                          ExampleLocalizations.of(context)
+                                          loc.Localizations.of(context)
                                               .get('imageUploadComingSoon')),
                                     ),
                                   );

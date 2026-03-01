@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/example_localizations.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/pages/app_info_view_model.dart';
 
 class AppInfoPage extends StatelessWidget {
@@ -19,11 +19,11 @@ class AppInfoPage extends StatelessWidget {
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(ExampleLocalizations.of(context).get('appInfo')),
+              title: Text(context.tr('appInfo')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
-                tooltip: ExampleLocalizations.of(context).get('back'),
+                tooltip: context.tr('back'),
               ),
             ),
             body: ListView(
@@ -31,7 +31,7 @@ class AppInfoPage extends StatelessWidget {
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(ExampleLocalizations.of(context).get('version')),
+                  title: Text(context.tr('version')),
                   subtitle: Text(viewModel.appVersion),
                 ),
               ],

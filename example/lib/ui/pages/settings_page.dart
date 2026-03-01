@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/example_localizations.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/settings_view_model.dart';
 
@@ -30,42 +30,36 @@ class SettingsPage extends StatelessWidget {
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(ExampleLocalizations.of(context).get('settings')),
+              title: Text(context.tr('settings')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
-                tooltip: ExampleLocalizations.of(context).get('back'),
+                tooltip: context.tr('back'),
               ),
             ),
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _SectionCard(
-                  title: ExampleLocalizations.of(context)
-                      .get('accountAndSecurity'),
+                  title: context.tr('accountAndSecurity'),
                   icon: Icons.security,
                   child: Column(
                     children: [
                       _SettingsTile(
-                        title:
-                            ExampleLocalizations.of(context).get('editProfile'),
-                        subtitle: ExampleLocalizations.of(context)
-                            .get('updatePersonalInformation'),
+                        title: context.tr('editProfile'),
+                        subtitle: context.tr('updatePersonalInformation'),
                         icon: Icons.person,
                         onTap: onOpenProfile,
                       ),
                       _SettingsTile(
-                        title: ExampleLocalizations.of(context)
-                            .get('changePassword'),
-                        subtitle: ExampleLocalizations.of(context)
-                            .get('updateAccountPassword'),
+                        title: context.tr('changePassword'),
+                        subtitle: context.tr('updateAccountPassword'),
                         icon: Icons.lock,
                         onTap: onOpenChangePassword,
                       ),
                       _SettingsTile(
-                        title: ExampleLocalizations.of(context).get('logout'),
-                        subtitle: ExampleLocalizations.of(context)
-                            .get('signOutOfYourAccount'),
+                        title: context.tr('logout'),
+                        subtitle: context.tr('signOutOfYourAccount'),
                         icon: Icons.logout,
                         onTap: () => viewModel.logout(onLogout),
                       ),
@@ -74,10 +68,10 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: ExampleLocalizations.of(context).get('preferences'),
+                  title: context.tr('preferences'),
                   icon: Icons.tune,
                   child: _SettingsTile(
-                    title: ExampleLocalizations.of(context).get('language'),
+                    title: context.tr('language'),
                     subtitle: viewModel.languageLabel,
                     icon: Icons.language,
                     onTap: onOpenLanguage,
@@ -85,12 +79,11 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: ExampleLocalizations.of(context).get('about'),
+                  title: context.tr('about'),
                   icon: Icons.info_outline,
                   child: _SettingsTile(
-                    title: ExampleLocalizations.of(context).get('appInfo'),
-                    subtitle: ExampleLocalizations.of(context)
-                        .get('aboutDescription'),
+                    title: context.tr('appInfo'),
+                    subtitle: context.tr('aboutDescription'),
                     icon: Icons.info_outline,
                     onTap: onOpenAppInfo,
                   ),

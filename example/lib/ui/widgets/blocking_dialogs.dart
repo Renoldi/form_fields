@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields_example/localization/example_localizations.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 
 Future<void> showBlockingLoading(
   BuildContext context, {
   String? message,
 }) {
-  final l10n = ExampleLocalizations.of(context);
-  final displayMessage = message ?? l10n.get('loading');
+  final displayMessage = message ?? context.tr('password');
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -63,7 +62,7 @@ Future<void> showBlockingResult(
   required bool isSuccess,
 }) {
   final color = isSuccess ? Colors.green : Colors.red;
-  final l10n = ExampleLocalizations.of(context);
+  final l10n = loc.Localizations.of(context);
 
   return showDialog<void>(
     context: context,
@@ -100,7 +99,7 @@ Future<void> showBlockingResult(
 }
 
 Future<void> showExitConfirmDialog(BuildContext context) {
-  final l10n = ExampleLocalizations.of(context);
+  final l10n = loc.Localizations.of(context);
   return showDialog<void>(
     context: context,
     barrierDismissible: false,

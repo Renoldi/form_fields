@@ -4,7 +4,7 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'config/app_router.dart';
 import 'state/app_state_notifier.dart';
-import 'localization/example_localizations.dart';
+import 'localization/localizations.dart' as loc;
 
 void main() {
   runApp(const MyApp());
@@ -72,13 +72,13 @@ class _AppContentState extends State<_AppContent> {
       ),
       locale: widget.appState.locale,
       localizationsDelegates: const [
-        ExampleLocalizationsDelegate(),
+        loc.LocalizationsDelegate(),
         FormFieldsLocalizationsDelegate(),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: ExampleLocalizations.supportedLocales,
+      supportedLocales: loc.Localizations.supportedLocales,
       routerConfig: _routerConfig,
     );
   }
