@@ -16,6 +16,60 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // Logic Methods
+  Future<void> _handleLogin(LoginViewModel viewModel) async {
+    viewModel.clearError();
+    if (!mounted) return;
+
+    final appState = context.read<AppStateNotifier>();
+    final dialog = BlockingDialog(context);
+
+    dialog.showLoading(message: context.tr('signingIn'));
+
+    try {
+      final user = await viewModel.login();
+      if (!mounted) return;
+
+      appState.updateUserAfterLogin(user: user);
+      dialog.hide();
+
+      if (mounted) widget.onLoginSuccess();
+    } catch (error) {
+      if (!mounted) return;
+
+      final errorMessage = error.toString().contains('DioException')
+          ? context.tr('invalidCredentials')
+          : error.toString();
+
+      viewModel.setError(errorMessage);
+
+      dialog.hide();
+
+      await dialog.showResult(
+        title: context.tr('loginFailed'),
+        message: errorMessage,
+        isSuccess: false,
+      );
+    }
+  }
+
+  void _onUsernameChanged(String value, LoginViewModel viewModel) {
+    viewModel.username = value;
+    if (viewModel.errorMessage != null) {
+      viewModel.clearError();
+    }
+    viewModel.notify();
+  }
+
+  void _onPasswordChanged(String value, LoginViewModel viewModel) {
+    viewModel.password = value;
+    if (viewModel.errorMessage != null) {
+      viewModel.clearError();
+    }
+    viewModel.notify();
+  }
+
+  // View Methods
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -27,145 +81,115 @@ class _LoginPageState extends State<LoginPage> {
             body: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.lock,
-                          size: 48, color: Color(0xFF1F2937)),
-                      const SizedBox(height: 12),
-                      Text(
-                        context.tr('login'),
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      FormFields<String>(
-                        label: context.tr('username'),
-                        currrentValue: viewModel.username,
-                        formType: FormType.string,
-                        prefixIcon: const Icon(Icons.person),
-                        onChanged: (value) {
-                          viewModel.setUsername(value);
-                          if (viewModel.errorMessage != null) {
-                            viewModel.clearError();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      FormFields<String>(
-                        label: context.tr('password'),
-                        currrentValue: viewModel.password,
-                        formType: FormType.password,
-                        minLengthPassword: 4,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        onChanged: (value) {
-                          viewModel.setPassword(value);
-                          if (viewModel.errorMessage != null) {
-                            viewModel.clearError();
-                          }
-                        },
-                      ),
-                      if (viewModel.errorMessage != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          viewModel.errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ],
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: viewModel.canSubmit
-                              ? () async {
-                                  viewModel.clearError();
-
-                                  if (!mounted) return;
-                                  final appState =
-                                      context.read<AppStateNotifier>();
-
-                                  showBlockingLoading(
-                                    context,
-                                    message: context.tr('signingIn'),
-                                  );
-
-                                  try {
-                                    final user = await viewModel.login();
-
-                                    if (!context.mounted) return;
-
-                                    // Update app state with logged in user
-                                    appState.updateUserAfterLogin(
-                                      user: user,
-                                      username: viewModel.username.trim(),
-                                      password: viewModel.password.trim(),
-                                    );
-
-                                    if (!context.mounted) return;
-                                    hideBlockingDialog(context);
-
-                                    if (!context.mounted) return;
-                                    widget.onLoginSuccess();
-                                  } catch (error) {
-                                    if (!context.mounted) return;
-
-                                    hideBlockingDialog(context);
-
-                                    final errorMessage = error
-                                            .toString()
-                                            .contains('DioException')
-                                        ? context.tr('invalidCredentials')
-                                        : error.toString();
-
-                                    viewModel.setError(errorMessage);
-
-                                    if (!context.mounted) return;
-                                    await showBlockingResult(
-                                      context,
-                                      title: context.tr('loginFailed'),
-                                      message: errorMessage,
-                                      isSuccess: false,
-                                    );
-                                  }
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1F2937),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(context.tr('login')),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Use username: emilys | password: emilyspass',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _buildLoginCard(viewModel),
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildLoginCard(LoginViewModel viewModel) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 24),
+          _buildUsernameField(viewModel),
+          const SizedBox(height: 16),
+          _buildPasswordField(viewModel),
+          if (viewModel.errorMessage != null) ...[
+            const SizedBox(height: 12),
+            _buildErrorMessage(viewModel.errorMessage!),
+          ],
+          const SizedBox(height: 20),
+          _buildLoginButton(viewModel),
+          const SizedBox(height: 8),
+          _buildHintText(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.lock, size: 48, color: Color(0xFF1F2937)),
+        const SizedBox(height: 12),
+        Text(
+          context.tr('login'),
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUsernameField(LoginViewModel viewModel) {
+    return FormFields<String>(
+      label: context.tr('username'),
+      currrentValue: viewModel.username,
+      formType: FormType.string,
+      prefixIcon: const Icon(Icons.person),
+      onChanged: (value) => _onUsernameChanged(value, viewModel),
+    );
+  }
+
+  Widget _buildPasswordField(LoginViewModel viewModel) {
+    return FormFields<String>(
+      label: context.tr('password'),
+      currrentValue: viewModel.password,
+      formType: FormType.password,
+      minLengthPassword: 4,
+      prefixIcon: const Icon(Icons.lock_outline),
+      onChanged: (value) => _onPasswordChanged(value, viewModel),
+    );
+  }
+
+  Widget _buildErrorMessage(String message) {
+    return Text(
+      message,
+      style: const TextStyle(color: Colors.red),
+    );
+  }
+
+  Widget _buildLoginButton(LoginViewModel viewModel) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: viewModel.canSubmit ? () => _handleLogin(viewModel) : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1F2937),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        child: Text(context.tr('login')),
+      ),
+    );
+  }
+
+  Widget _buildHintText() {
+    return const Text(
+      'Use username: emilys | password: emilyspass',
+      style: TextStyle(fontSize: 12, color: Colors.black54),
     );
   }
 }

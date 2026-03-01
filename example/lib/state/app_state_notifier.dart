@@ -10,8 +10,6 @@ class AppStateNotifier extends ChangeNotifier {
   bool _isLoadingUser = false;
   User? _currentUser;
   String? _userError;
-  String _lastUsername = '';
-  String _lastPassword = '';
   String _accessToken = '';
   String _refreshToken = '';
   bool _isInitialized = false;
@@ -112,14 +110,10 @@ class AppStateNotifier extends ChangeNotifier {
   /// Update app state after successful login with User class
   void updateUserAfterLogin({
     required User user,
-    required String username,
-    required String password,
   }) {
     _currentUser = user;
     _userError = null;
     _isLoggedIn = true;
-    _lastUsername = username;
-    _lastPassword = password;
     _accessToken = user.accessToken ?? '';
     _refreshToken = user.refreshToken ?? '';
 
@@ -176,8 +170,6 @@ class AppStateNotifier extends ChangeNotifier {
         httpClient.setAuthToken(_accessToken);
       }
 
-      _lastUsername = username;
-      _lastPassword = password;
       _accessToken = user.accessToken ?? '';
       _refreshToken = user.refreshToken ?? '';
       return true;
@@ -195,8 +187,8 @@ class AppStateNotifier extends ChangeNotifier {
     final accessToken = _accessToken.isNotEmpty
         ? _accessToken
         : (_currentUser?.accessToken ?? '');
-    final username = _lastUsername.isEmpty ? 'kminchelle' : _lastUsername;
-    final password = _lastPassword.isEmpty ? '0lelplR' : _lastPassword;
+    final username = _currentUser?.username ?? 'kminchelle';
+    final password = '0lelplR';
 
     _setUserLoading(true);
     try {

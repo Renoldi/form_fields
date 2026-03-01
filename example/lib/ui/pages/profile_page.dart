@@ -188,18 +188,18 @@ class _ProfilePageState extends State<ProfilePage> {
                         onPressed: viewModel.isLoading
                             ? null
                             : () async {
-                                showBlockingLoading(
-                                  context,
+                                final dialog = BlockingDialog(context);
+
+                                dialog.showLoading(
                                   message: context.tr('updatingProfile'),
                                 );
                                 final error =
                                     await viewModel.updateProfile(appState);
                                 if (!context.mounted) return;
 
-                                hideBlockingDialog(context);
+                                dialog.hide();
                                 if (error == null) {
-                                  await showBlockingResult(
-                                    context,
+                                  await dialog.showResult(
                                     isSuccess: true,
                                     title: context.tr('success'),
                                     message: context
@@ -209,8 +209,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     Navigator.of(context).pop();
                                   }
                                 } else {
-                                  await showBlockingResult(
-                                    context,
+                                  await dialog.showResult(
                                     isSuccess: false,
                                     title: context.tr('updateFailed'),
                                     message: error,

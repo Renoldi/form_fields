@@ -55,7 +55,7 @@ class _MenuPageState extends State<MenuPage> {
             canPop: false,
             onPopInvokedWithResult: (didPop, result) async {
               if (didPop) return;
-              await showExitConfirmDialog(context);
+              await BlockingDialog(context).showExitConfirm();
             },
             child: Scaffold(
               backgroundColor: const Color(0xFFF5F5F5),
@@ -97,8 +97,7 @@ class _MenuPageState extends State<MenuPage> {
                                 await viewModel.loadUser(forceRefresh: true);
                             if (error != null) {
                               if (!context.mounted) return;
-                              await showBlockingResult(
-                                context,
+                              await BlockingDialog(context).showResult(
                                 title: context.tr('loadFailed'),
                                 message: error,
                                 isSuccess: false,
