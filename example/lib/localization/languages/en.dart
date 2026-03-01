@@ -5,6 +5,8 @@ const Map<String, String> enStrings = {
   // Dialog & Buttons
   'back': 'Back',
   'settings': 'Settings',
+  'menu': 'Menu',
+  'profile': 'Profile',
   'logout': 'Logout',
   'close': 'CLOSE',
   'ok': 'OK',
@@ -83,6 +85,10 @@ const Map<String, String> enStrings = {
   'loginFailed': 'Login Failed',
   'signingIn': 'Signing in...',
   'imageUploadComingSoon': 'Image upload coming soon',
+  'pageNotFound': 'Page Not Found',
+  'pageNotFound404': '404 - Page Not Found',
+  'route': 'Route',
+  'goToMenu': 'Go to Menu',
 
   // Settings
   'accountAndSecurity': 'Account & Security',

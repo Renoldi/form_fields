@@ -15,6 +15,7 @@ import 'package:form_fields_example/ui/pages/profile_page.dart';
 import 'package:form_fields_example/ui/pages/change_password_page.dart';
 import 'package:form_fields_example/ui/pages/language_page.dart';
 import 'package:form_fields_example/ui/pages/app_info_page.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'app_routes.dart';
 
@@ -189,7 +190,7 @@ GoRouter createAppRouter(AppStateNotifier appState) {
     // Error handling
     errorBuilder: (context, state) => Scaffold(
       appBar: AppBar(
-        title: const Text('Page Not Found'),
+        title: Text(context.tr('pageNotFound')),
         backgroundColor: const Color(0xFF1F2937),
         foregroundColor: Colors.white,
       ),
@@ -199,20 +200,20 @@ GoRouter createAppRouter(AppStateNotifier appState) {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            const Text(
-              '404 - Page Not Found',
+            Text(
+              context.tr('pageNotFound404'),
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Route: ${state.uri.path}',
+              '${context.tr('route')}: ${state.uri.path}',
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => context.goToRoute(AppRoute.menu),
               icon: const Icon(Icons.home),
-              label: const Text('Go to Menu'),
+              label: Text(context.tr('goToMenu')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1F2937),
                 foregroundColor: Colors.white,
@@ -232,8 +233,41 @@ Widget _buildExamplePage({
 }) {
   return Scaffold(
     appBar: AppBar(
-      title: Text(route.title),
+      title: Text(context.tr(_routeTitleKey(route))),
     ),
     body: SafeArea(child: child),
   );
+}
+
+String _routeTitleKey(AppRoute route) {
+  switch (route) {
+    case AppRoute.login:
+      return 'login';
+    case AppRoute.menu:
+      return 'menu';
+    case AppRoute.formFields:
+      return 'formFields';
+    case AppRoute.dropdown:
+      return 'dropdown';
+    case AppRoute.dropdownMulti:
+      return 'dropdownMulti';
+    case AppRoute.radioButton:
+      return 'radioButton';
+    case AppRoute.checkbox:
+      return 'checkbox';
+    case AppRoute.customClass:
+      return 'customClass';
+    case AppRoute.validation:
+      return 'nullNonNullValidation';
+    case AppRoute.settings:
+      return 'settings';
+    case AppRoute.profile:
+      return 'profile';
+    case AppRoute.changePassword:
+      return 'changePassword';
+    case AppRoute.language:
+      return 'language';
+    case AppRoute.appInfo:
+      return 'appInfo';
+  }
 }

@@ -5,6 +5,8 @@ const Map<String, String> idStrings = {
   // Dialog & Buttons
   'back': 'Kembali',
   'settings': 'Pengaturan',
+  'menu': 'Menu',
+  'profile': 'Profil',
   'logout': 'Keluar',
   'close': 'TUTUP',
   'ok': 'OK',
@@ -83,6 +85,10 @@ const Map<String, String> idStrings = {
   'loginFailed': 'Gagal Masuk',
   'signingIn': 'Sedang masuk...',
   'imageUploadComingSoon': 'Unggahan gambar akan hadir segera',
+  'pageNotFound': 'Halaman Tidak Ditemukan',
+  'pageNotFound404': '404 - Halaman Tidak Ditemukan',
+  'route': 'Rute',
+  'goToMenu': 'Pergi ke Menu',
 
   // Settings
   'accountAndSecurity': 'Keamanan Akun',
