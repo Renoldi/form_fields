@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/menu_view_model.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
@@ -59,7 +60,8 @@ class _MenuPageState extends State<MenuPage> {
             child: Scaffold(
               backgroundColor: const Color(0xFFF5F5F5),
               appBar: AppBar(
-                title: const Text('FormFields Examples'),
+                title: Text(
+                    ExampleLocalizations.of(context).get('formFieldsExamples')),
                 backgroundColor: const Color(0xFF1F2937),
                 foregroundColor: Colors.white,
                 centerTitle: true,
@@ -67,7 +69,7 @@ class _MenuPageState extends State<MenuPage> {
                 actions: [
                   IconButton(
                     onPressed: _openSettings,
-                    tooltip: 'Settings',
+                    tooltip: ExampleLocalizations.of(context).get('settings'),
                     icon: const Icon(Icons.settings),
                   ),
                   IconButton(
@@ -75,7 +77,7 @@ class _MenuPageState extends State<MenuPage> {
                       viewModel.appState.logout();
                       widget.onLogout();
                     },
-                    tooltip: 'Logout',
+                    tooltip: ExampleLocalizations.of(context).get('logout'),
                     icon: const Icon(Icons.logout),
                   ),
                 ],
@@ -98,7 +100,8 @@ class _MenuPageState extends State<MenuPage> {
                               if (!context.mounted) return;
                               await showBlockingResult(
                                 context,
-                                title: 'Load Failed',
+                                title: ExampleLocalizations.of(context)
+                                    .get('loadFailed'),
                                 message: error,
                                 isSuccess: false,
                               );

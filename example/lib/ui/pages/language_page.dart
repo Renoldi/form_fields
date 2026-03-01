@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/language_view_model.dart';
 
@@ -19,23 +20,23 @@ class LanguagePage extends StatelessWidget {
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Language'),
+              title: Text(ExampleLocalizations.of(context).get('language')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
-                tooltip: 'Back',
+                tooltip: ExampleLocalizations.of(context).get('back'),
               ),
             ),
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _LanguageTile(
-                  title: 'English (US)',
+                  title: ExampleLocalizations.of(context).get('englishUS'),
                   selected: viewModel.isEnglish,
                   onTap: viewModel.setEnglish,
                 ),
                 _LanguageTile(
-                  title: 'Indonesian (ID)',
+                  title: ExampleLocalizations.of(context).get('indonesianID'),
                   selected: viewModel.isIndonesian,
                   onTap: viewModel.setIndonesian,
                 ),

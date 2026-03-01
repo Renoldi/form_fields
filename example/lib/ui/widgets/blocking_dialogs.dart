@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 
 Future<void> showBlockingLoading(
   BuildContext context, {
-  String message = 'Loading...',
+  String? message,
 }) {
+  final l10n = ExampleLocalizations.of(context);
+  final displayMessage = message ?? l10n.get('loading');
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -32,7 +35,7 @@ Future<void> showBlockingLoading(
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
                     Text(
-                      message,
+                      displayMessage,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -60,6 +63,7 @@ Future<void> showBlockingResult(
   required bool isSuccess,
 }) {
   final color = isSuccess ? Colors.green : Colors.red;
+  final l10n = ExampleLocalizations.of(context);
 
   return showDialog<void>(
     context: context,
@@ -86,7 +90,7 @@ Future<void> showBlockingResult(
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-              child: const Text('OK'),
+              child: Text(l10n.get('ok')),
             ),
           ],
         ),
@@ -96,25 +100,26 @@ Future<void> showBlockingResult(
 }
 
 Future<void> showExitConfirmDialog(BuildContext context) {
+  final l10n = ExampleLocalizations.of(context);
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (context) {
       return AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.exit_to_app, color: Colors.redAccent),
-            SizedBox(width: 8),
-            Text('Exit Application'),
+            const Icon(Icons.exit_to_app, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Text(l10n.get('exitApplication')),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to close the application? Any unsaved changes may be lost.',
+        content: Text(
+          l10n.get('exitWarning'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-            child: const Text('Stay'),
+            child: Text(l10n.get('stay')),
           ),
           FilledButton(
             onPressed: () {
@@ -122,7 +127,7 @@ Future<void> showExitConfirmDialog(BuildContext context) {
               // Close the app by popping the root navigator.
               Navigator.of(context, rootNavigator: true).maybePop();
             },
-            child: const Text('Exit'),
+            child: Text(l10n.get('exit')),
           ),
         ],
       );

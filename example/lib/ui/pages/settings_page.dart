@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/settings_view_model.dart';
 
@@ -29,36 +30,42 @@ class SettingsPage extends StatelessWidget {
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Settings'),
+              title: Text(ExampleLocalizations.of(context).get('settings')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
-                tooltip: 'Back',
+                tooltip: ExampleLocalizations.of(context).get('back'),
               ),
             ),
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 _SectionCard(
-                  title: 'Account & Security',
+                  title: ExampleLocalizations.of(context)
+                      .get('accountAndSecurity'),
                   icon: Icons.security,
                   child: Column(
                     children: [
                       _SettingsTile(
-                        title: 'Edit Profile',
-                        subtitle: 'Update your personal information',
+                        title:
+                            ExampleLocalizations.of(context).get('editProfile'),
+                        subtitle: ExampleLocalizations.of(context)
+                            .get('updatePersonalInformation'),
                         icon: Icons.person,
                         onTap: onOpenProfile,
                       ),
                       _SettingsTile(
-                        title: 'Change Password',
-                        subtitle: 'Update your account password',
+                        title: ExampleLocalizations.of(context)
+                            .get('changePassword'),
+                        subtitle: ExampleLocalizations.of(context)
+                            .get('updateAccountPassword'),
                         icon: Icons.lock,
                         onTap: onOpenChangePassword,
                       ),
                       _SettingsTile(
-                        title: 'Logout',
-                        subtitle: 'Sign out of your account',
+                        title: ExampleLocalizations.of(context).get('logout'),
+                        subtitle: ExampleLocalizations.of(context)
+                            .get('signOutOfYourAccount'),
                         icon: Icons.logout,
                         onTap: () => viewModel.logout(onLogout),
                       ),
@@ -67,10 +74,10 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: 'Preferences',
+                  title: ExampleLocalizations.of(context).get('preferences'),
                   icon: Icons.tune,
                   child: _SettingsTile(
-                    title: 'Language',
+                    title: ExampleLocalizations.of(context).get('language'),
                     subtitle: viewModel.languageLabel,
                     icon: Icons.language,
                     onTap: onOpenLanguage,
@@ -78,11 +85,12 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 _SectionCard(
-                  title: 'About',
+                  title: ExampleLocalizations.of(context).get('about'),
                   icon: Icons.info_outline,
                   child: _SettingsTile(
-                    title: 'App Info',
-                    subtitle: 'Version and application details',
+                    title: ExampleLocalizations.of(context).get('appInfo'),
+                    subtitle: ExampleLocalizations.of(context)
+                        .get('aboutDescription'),
                     icon: Icons.info_outline,
                     onTap: onOpenAppInfo,
                   ),

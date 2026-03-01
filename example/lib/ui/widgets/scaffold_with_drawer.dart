@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/config/app_routes.dart';
 
@@ -10,37 +11,38 @@ class ScaffoldWithDrawer extends StatelessWidget {
 
   const ScaffoldWithDrawer({super.key, required this.child});
 
-  String _getTitle(String location) {
+  String _getTitle(String location, ExampleLocalizations l10n) {
     if (location == AppRoute.formFields.path) {
-      return 'FormFields Examples';
+      return l10n.get('formFieldsExamples');
     } else if (location == AppRoute.dropdown.path) {
-      return 'Dropdown Examples';
+      return l10n.get('dropdownExamples');
     } else if (location == AppRoute.dropdownMulti.path) {
-      return 'Multi-Select Dropdown Examples';
+      return l10n.get('multiSelectDropdownExamples');
     } else if (location == AppRoute.radioButton.path) {
-      return 'Radio Button Examples';
+      return l10n.get('radioButtonExamples');
     } else if (location == AppRoute.checkbox.path) {
-      return 'Checkbox Examples';
+      return l10n.get('checkboxExamples');
     } else if (location == AppRoute.customClass.path) {
-      return 'Custom Class Examples';
+      return l10n.get('customClassExamples');
     } else if (location == AppRoute.validation.path) {
-      return 'Null/Non-Null Validation Examples';
+      return l10n.get('validationExamples');
     } else {
-      return 'FormFields Examples';
+      return l10n.get('formFieldsExamples');
     }
   }
 
   void _showLanguageDialog(BuildContext context) {
     final currentLocale = Localizations.localeOf(context);
+    final l10n = ExampleLocalizations.of(context);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.language, color: Colors.blue),
-            SizedBox(width: 12),
-            Text('Select Language'),
+            const Icon(Icons.language, color: Colors.blue),
+            const SizedBox(width: 12),
+            Text(l10n.get('selectLanguage')),
           ],
         ),
         content: Column(
@@ -48,16 +50,16 @@ class ScaffoldWithDrawer extends StatelessWidget {
           children: [
             _LanguageOption(
               flag: '🇺🇸',
-              language: 'English',
-              subtitle: 'United States',
+              language: l10n.get('english'),
+              subtitle: l10n.get('unitedStates'),
               locale: const Locale('en', 'US'),
               isSelected: currentLocale.languageCode == 'en',
             ),
             const Divider(),
             _LanguageOption(
               flag: '🇮🇩',
-              language: 'Indonesian',
-              subtitle: 'Indonesia',
+              language: l10n.get('indonesian'),
+              subtitle: l10n.get('indonesia'),
               locale: const Locale('id', 'ID'),
               isSelected: currentLocale.languageCode == 'id',
             ),
@@ -66,7 +68,7 @@ class ScaffoldWithDrawer extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('CLOSE'),
+            child: Text(l10n.get('close')),
           ),
         ],
       ),
@@ -77,6 +79,7 @@ class ScaffoldWithDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentLocation = GoRouterState.of(context).uri.toString();
     final currentLocale = Localizations.localeOf(context);
+    final l10n = ExampleLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -89,9 +92,9 @@ class ScaffoldWithDrawer extends StatelessWidget {
               context.goNamed(AppRoute.menu.name);
             }
           },
-          tooltip: 'Back',
+          tooltip: l10n.get('back'),
         ),
-        title: Text(_getTitle(currentLocation)),
+        title: Text(_getTitle(currentLocation, l10n)),
         backgroundColor: const Color(0xFF1F2937),
         foregroundColor: Colors.white,
         actions: [
@@ -121,7 +124,7 @@ class ScaffoldWithDrawer extends StatelessWidget {
           ),
         ],
       ),
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(l10n: l10n),
       body: child,
     );
   }
@@ -170,7 +173,9 @@ class _LanguageOption extends StatelessWidget {
 
 // Custom Drawer Widget
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  final ExampleLocalizations l10n;
+
+  const AppDrawer({super.key, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -225,9 +230,9 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'FormFields',
-                    style: TextStyle(
+                  Text(
+                    l10n.get('formFields'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -235,7 +240,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Complete Examples',
+                    l10n.get('completeExamples'),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
@@ -248,8 +253,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.text_fields,
-              title: 'FormFields',
-              subtitle: 'Text, Number, Date & Time',
+              title: l10n.get('formFields'),
+              subtitle: l10n.get('formFieldsDesc'),
               routeName: AppRoute.formFields.name,
               isSelected: currentLocation == AppRoute.formFields.path,
               color: Colors.blue,
@@ -258,8 +263,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.arrow_drop_down_circle,
-              title: 'Dropdown',
-              subtitle: 'Single Select Dropdown',
+              title: l10n.get('dropdown'),
+              subtitle: l10n.get('singleSelectDropdown'),
               routeName: AppRoute.dropdown.name,
               isSelected: currentLocation == AppRoute.dropdown.path,
               color: Colors.green,
@@ -268,8 +273,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.library_add_check,
-              title: 'Dropdown Multi',
-              subtitle: 'Multi-Select Dropdown',
+              title: l10n.get('dropdownMulti'),
+              subtitle: l10n.get('multiSelectDropdown'),
               routeName: AppRoute.dropdownMulti.name,
               isSelected: currentLocation == AppRoute.dropdownMulti.path,
               color: Colors.purple,
@@ -278,8 +283,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.radio_button_checked,
-              title: 'Radio Button',
-              subtitle: 'All Radio Button Examples',
+              title: l10n.get('radioButton'),
+              subtitle: l10n.get('allRadioButtonExamples'),
               routeName: AppRoute.radioButton.name,
               isSelected: currentLocation == AppRoute.radioButton.path,
               color: Colors.orange,
@@ -288,8 +293,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.check_box,
-              title: 'Checkbox',
-              subtitle: 'All Checkbox Examples',
+              title: l10n.get('checkbox'),
+              subtitle: l10n.get('allCheckboxExamples'),
               routeName: AppRoute.checkbox.name,
               isSelected: currentLocation == AppRoute.checkbox.path,
               color: Colors.pink,
@@ -298,8 +303,8 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.class_,
-              title: 'Custom Class',
-              subtitle: 'Generic Types with Models',
+              title: l10n.get('customClass'),
+              subtitle: l10n.get('genericTypesWithModels'),
               routeName: AppRoute.customClass.name,
               isSelected: currentLocation == AppRoute.customClass.path,
               color: Colors.teal,
@@ -308,14 +313,14 @@ class AppDrawer extends StatelessWidget {
             _buildDrawerItem(
               context: context,
               icon: Icons.rule,
-              title: 'Null/Non-Null Validation',
-              subtitle: 'Nullable vs Non-Nullable Types',
+              title: l10n.get('nullNonNullValidation'),
+              subtitle: l10n.get('nullableVsNonNullable'),
               routeName: AppRoute.validation.name,
               isSelected: currentLocation == AppRoute.validation.path,
               color: Colors.indigo,
             ),
             const SizedBox(height: 16),
-            _buildLanguageSection(context),
+            _buildLanguageSection(context, l10n),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -328,14 +333,14 @@ class AppDrawer extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.info_outline,
+                        const Icon(Icons.info_outline,
                             color: Colors.white70, size: 20),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
-                          'About',
-                          style: TextStyle(
+                          l10n.get('about'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -345,7 +350,7 @@ class AppDrawer extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Comprehensive examples showcasing all properties and features of the FormFields package.',
+                      l10n.get('aboutDescription'),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
@@ -361,7 +366,8 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildLanguageSection(BuildContext context) {
+  Widget _buildLanguageSection(
+      BuildContext context, ExampleLocalizations l10n) {
     final currentLocale = Localizations.localeOf(context);
 
     return Padding(
@@ -403,9 +409,9 @@ class AppDrawer extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Language / Bahasa',
-                          style: TextStyle(
+                        Text(
+                          l10n.get('language'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -414,8 +420,8 @@ class AppDrawer extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           currentLocale.languageCode == 'id'
-                              ? '🇮🇩 Indonesian'
-                              : '🇺🇸 English',
+                              ? '🇮🇩 ${l10n.get("indonesian")}'
+                              : '🇺🇸 ${l10n.get("english")}',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
@@ -463,7 +469,7 @@ class AppDrawer extends StatelessWidget {
                             const Text('🇺🇸', style: TextStyle(fontSize: 20)),
                             const SizedBox(width: 8),
                             Text(
-                              'English',
+                              l10n.get('english'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: currentLocale.languageCode == 'en'
@@ -512,7 +518,7 @@ class AppDrawer extends StatelessWidget {
                             const Text('🇮🇩', style: TextStyle(fontSize: 20)),
                             const SizedBox(width: 8),
                             Text(
-                              'Indonesian',
+                              l10n.get('indonesian'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: currentLocale.languageCode == 'id'

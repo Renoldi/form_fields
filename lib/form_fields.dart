@@ -14,6 +14,7 @@
 /// ---------------------------------------------------------------------------
 /// import 'package:form_fields/form_fields.dart';
 ///
+// ignore: unintended_html_in_doc_comment
 /// FormFields<String>(
 ///   label: 'Email',
 ///   formType: FormType.email,

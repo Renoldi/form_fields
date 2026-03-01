@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/state/pages/login_view_model.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
@@ -45,8 +46,8 @@ class _LoginPageState extends State<LoginPage> {
                       const Icon(Icons.lock,
                           size: 48, color: Color(0xFF1F2937)),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Login',
+                      Text(
+                        ExampleLocalizations.of(context).get('login'),
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,

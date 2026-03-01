@@ -6,6 +6,7 @@
 /// Supports all label positions, field types, and professional UI out of the box.
 ///
 /// Example:
+// ignore: unintended_html_in_doc_comment
 ///   FormFields<String>(
 ///     label: 'Email',
 ///     formType: FormType.email,

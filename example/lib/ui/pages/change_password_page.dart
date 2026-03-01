@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/example_localizations.dart';
 import 'package:form_fields_example/state/pages/change_password_view_model.dart';
 
 class ChangePasswordPage extends StatelessWidget {
@@ -18,11 +19,12 @@ class ChangePasswordPage extends StatelessWidget {
         builder: (context, viewModel, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Change Password'),
+              title:
+                  Text(ExampleLocalizations.of(context).get('changePassword')),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
-                tooltip: 'Back',
+                tooltip: ExampleLocalizations.of(context).get('back'),
               ),
             ),
             body: ListView(
@@ -31,24 +33,27 @@ class ChangePasswordPage extends StatelessWidget {
                 TextField(
                   controller: viewModel.currentPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Current Password',
+                  decoration: InputDecoration(
+                    labelText:
+                        ExampleLocalizations.of(context).get('currentPassword'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: viewModel.newPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'New Password',
+                  decoration: InputDecoration(
+                    labelText: ExampleLocalizations.of(context)
+                        .get('confirmNewPassword'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: viewModel.confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm New Password',
+                  decoration: InputDecoration(
+                    labelText: ExampleLocalizations.of(context)
+                        .get('confirmNewPassword'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -65,7 +70,8 @@ class ChangePasswordPage extends StatelessWidget {
                       backgroundColor: const Color(0xFF1F2937),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Update Password'),
+                    child: Text(
+                        ExampleLocalizations.of(context).get('updatePassword')),
                   ),
                 ),
               ],
