@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:form_fields_example/data/models/user.dart';
 import 'package:form_fields_example/data/services/http_service.dart';
+import 'package:form_fields_example/config/error_position.dart';
 
 /// Manages global app state including locale preference and authentication
 class AppStateNotifier extends ChangeNotifier {
@@ -13,6 +14,7 @@ class AppStateNotifier extends ChangeNotifier {
   String _accessToken = '';
   String _refreshToken = '';
   bool _isInitialized = false;
+  ErrorPosition _errorPosition = ErrorPosition.top;
 
   /// Global HTTP service instance
   final HttpService httpClient = HttpService.instance;
@@ -33,6 +35,12 @@ class AppStateNotifier extends ChangeNotifier {
       _accessToken = prefs.getString(_keyAccessToken) ?? '';
       _refreshToken = prefs.getString(_keyRefreshToken) ?? '';
       _isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
+
+      // Load error position preference
+      final errorPosString = prefs.getString('error_position');
+      if (errorPosString != null) {
+        _errorPosition = ErrorPositionExtension.fromString(errorPosString);
+      }
 
       // Verify token if logged in
       if (_isLoggedIn && _accessToken.isNotEmpty) {
@@ -102,8 +110,19 @@ class AppStateNotifier extends ChangeNotifier {
 
   String get refreshToken => _refreshToken;
 
+  ErrorPosition get errorPosition => _errorPosition;
+
   void setLocale(Locale locale) {
     _locale = locale;
+    notifyListeners();
+  }
+
+  void setErrorPosition(ErrorPosition position) {
+    _errorPosition = position;
+    // Save to SharedPreferences
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('error_position', position.toStorageString());
+    });
     notifyListeners();
   }
 

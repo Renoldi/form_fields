@@ -1,6 +1,6 @@
 # FormFields Example - .gitignore
 
-# Ignore files for Dart packages
+# Misc
 *.class
 *.log
 *.pyc
@@ -11,6 +11,7 @@
 .history
 .svn/
 migrate_working_dir/
+local.properties
 
 # IntelliJ related
 *.iml

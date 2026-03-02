@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:form_fields_example/data/services/http_service.dart';
+import 'package:form_fields_example/config/environment.dart';
 
 part 'user.g.dart';
 
@@ -57,14 +58,22 @@ class User {
     );
   }
 
-  // Authentication methods using global HttpService
+  // ============================================================================
+  // AUTHENTICATION METHODS
+  // ============================================================================
+  // All endpoints are managed through EnvironmentConfig for easy environment
+  // switching (production/beta/debug).
 
+  /// User login
+  ///
+  /// Endpoint: POST {authLoginUrl}
+  /// Environment-aware URL from EnvironmentConfig
   static Future<User> login({
     required String username,
     required String password,
   }) async {
     final response = await HttpService.instance.post<Map<String, dynamic>>(
-      '/auth/login',
+      EnvironmentConfig.authLoginUrl,
       data: {
         'username': username,
         'password': password,
@@ -74,11 +83,16 @@ class User {
     return User.fromJson(response);
   }
 
+  /// Get current authenticated user
+  ///
+  /// Endpoint: GET {authMeUrl}
+  /// Requires: Authorization Bearer token
+  /// Environment-aware URL from EnvironmentConfig
   static Future<User> getMe({
     required String accessToken,
   }) async {
     final response = await HttpService.instance.get<Map<String, dynamic>>(
-      '/auth/me',
+      EnvironmentConfig.authMeUrl,
       options: Options(
         headers: {
           'Authorization': 'Bearer $accessToken',
@@ -89,6 +103,11 @@ class User {
     return User.fromJson(response);
   }
 
+  /// Update current user information
+  ///
+  /// Endpoint: PUT {userUpdateUrl}/{id}
+  /// Requires: Authorization Bearer token
+  /// Environment-aware URL from EnvironmentConfig
   static Future<User> updateMe({
     required String accessToken,
     required User user,
@@ -104,7 +123,7 @@ class User {
     data.remove('id');
 
     final response = await HttpService.instance.put<Map<String, dynamic>>(
-      '/users/${user.id}',
+      '${EnvironmentConfig.userUpdateUrl}/${user.id}',
       data: data,
       options: Options(
         headers: {

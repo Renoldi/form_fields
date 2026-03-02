@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'package:form_fields_example/config/error_type.dart';
+import 'package:form_fields_example/data/services/http_service.dart';
 import 'view_model.dart';
 import 'view.dart';
 
@@ -23,7 +25,7 @@ abstract class PresenterState extends State<Presenter> {
     final appState = context.read<AppStateNotifier>();
     final dialog = BlockingDialog(context);
 
-    dialog.showLoading(message: context.tr('signingIn'));
+    await dialog.showLoading(message: context.tr('signingIn'));
 
     try {
       final user = await viewModel.login();
@@ -36,19 +38,28 @@ abstract class PresenterState extends State<Presenter> {
     } catch (error) {
       if (!mounted) return;
 
-      final errorMessage = error.toString().contains('DioException')
-          ? context.tr('invalidCredentials')
-          : error.toString();
-
-      viewModel.setError(errorMessage);
-
       dialog.hide();
 
-      await dialog.showResult(
-        title: context.tr('loginFailed'),
-        message: errorMessage,
-        isSuccess: false,
-      );
+      // HttpException includes error type + message from http_service
+      if (error is HttpException) {
+        viewModel.setError(error.message, type: error.type);
+        await dialog.showError(
+          title: context.tr('loginFailed'),
+          message: error.message,
+          errorType: error.type,
+          errorPosition: appState.errorPosition,
+        );
+      } else {
+        // Fallback for unexpected errors
+        final message = error.toString();
+        viewModel.setError(message, type: ErrorType.server);
+        await dialog.showError(
+          title: context.tr('loginFailed'),
+          message: message,
+          errorType: ErrorType.server,
+          errorPosition: appState.errorPosition,
+        );
+      }
     }
   }
 

@@ -1,8 +1,71 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:form_fields_example/config/error_type.dart';
+import 'package:form_fields_example/config/environment.dart';
 
-/// Global HTTP service for making API requests
-/// Singleton pattern for app-wide access
+/// Custom exception that includes error type for UI classification
+///
+/// Usage in presenter:
+/// ```dart
+/// try {
+///   final user = await User.login(username, password);
+/// } catch (error) {
+///   if (error is HttpException) {
+///     await dialog.showError(
+///       title: 'Login Failed',
+///       message: error.message,
+///       errorType: error.type,
+///     );
+///   }
+/// }
+/// ```
+class HttpException implements Exception {
+  final String message;
+  final ErrorType type;
+  final DioException? originalError;
+
+  /// Create professional HTTP exception with error classification
+  /// - [message]: User-friendly error message for display
+  /// - [type]: ErrorType for UI styling (validation/network/authentication/server)
+  /// - [originalError]: Original DioException for logging/debugging
+  HttpException({
+    required this.message,
+    required this.type,
+    this.originalError,
+  });
+
+  @override
+  String toString() => 'HttpException: $message (type: $type)';
+}
+
+/// Global HTTP service for making API requests with professional error handling
+///
+/// Features:
+/// - Singleton pattern for app-wide access
+/// - Automatic retry with exponential backoff
+/// - Professional error classification (HttpException with ErrorType)
+/// - User-friendly error messages
+/// - Comprehensive logging
+///
+/// Error Handling Pattern:
+/// 1. HttpService throws HttpException with type & message
+/// 2. Presenter catches HttpException
+/// 3. BlockingDialog displays with proper styling
+///
+/// Example usage:
+/// ```dart
+/// try {
+///   final user = await User.login(username, password);
+/// } catch (error) {
+///   if (error is HttpException) {
+///     await BlockingDialog(context).showError(
+///       title: 'Login Failed',
+///       message: error.message,
+///       errorType: error.type,  // Automatic styling!
+///     );
+///   }
+/// }
+/// ```
 class HttpService {
   HttpService._internal({Dio? dio})
       : _dio = dio ?? _createDio(),
@@ -68,17 +131,37 @@ class HttpService {
     Duration? receiveTimeout,
     Map<String, dynamic>? headers,
   }) {
-    final effectiveBaseUrl = baseUrl ?? 'https://dummyjson.com';
+    // Use environment config by default if no baseUrl provided
+    final envConfig = EnvironmentConfig.config;
+    final effectiveBaseUrl = baseUrl ?? envConfig.baseUrl;
+
+    _staticLogger.i('');
     _staticLogger
-        .i('🚀 HttpService initialized with Base URL: $effectiveBaseUrl');
+        .i('╔═══════════════════════════════════════════════════════════╗');
+    _staticLogger
+        .i('║ 🌍 HttpService Initialization                            ║');
+    _staticLogger
+        .i('╠═══════════════════════════════════════════════════════════╣');
+    _staticLogger.i('║ Environment: ${envConfig.name.padRight(49)}║');
+    _staticLogger.i('║ Base URL:    ${effectiveBaseUrl.padRight(49)}║');
+    _staticLogger.i('║ API Path:    ${envConfig.apiVersion.padRight(49)}║');
+    _staticLogger
+        .i('╚═══════════════════════════════════════════════════════════╝');
+    _staticLogger.i('');
 
     final dio = Dio(
       BaseOptions(
         baseUrl: effectiveBaseUrl,
-        connectTimeout: connectTimeout ?? const Duration(seconds: 10),
-        sendTimeout: sendTimeout ?? const Duration(seconds: 10),
-        receiveTimeout: receiveTimeout ?? const Duration(seconds: 15),
-        headers: headers ?? {'Content-Type': 'application/json'},
+        connectTimeout:
+            connectTimeout ?? Duration(seconds: envConfig.connectTimeout),
+        sendTimeout: sendTimeout ?? Duration(seconds: envConfig.sendTimeout),
+        receiveTimeout:
+            receiveTimeout ?? Duration(seconds: envConfig.receiveTimeout),
+        headers: headers ??
+            {
+              'Content-Type': 'application/json',
+              ...envConfig.customHeaders,
+            },
       ),
     );
 
@@ -283,7 +366,13 @@ class HttpService {
           _logger
               .e('❌ Request failed permanently: ${error.requestOptions.uri}');
           _logger.e('   Final error type: $errorType');
-          rethrow;
+
+          // Throw professional HttpException with type info for UI handling
+          throw HttpException(
+            message: _getErrorMessage(error),
+            type: _classifyErrorType(error),
+            originalError: error,
+          );
         }
         _logger.i('🔄 Retrying after ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
@@ -341,6 +430,63 @@ class HttpService {
         return 'Unknown Error';
       case DioExceptionType.badCertificate:
         return 'Bad Certificate';
+    }
+  }
+
+  /// Classify DioException into ErrorType for professional error display
+  /// Enables presenters to use BlockingDialog.showError() with proper styling
+  ErrorType _classifyErrorType(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+        return ErrorType.network;
+      case DioExceptionType.badResponse:
+        final status = error.response?.statusCode ?? 0;
+        if (status == 401 || status == 403) {
+          return ErrorType.authentication;
+        }
+        if (status >= 500) {
+          return ErrorType.server;
+        }
+        return ErrorType.validation;
+      case DioExceptionType.cancel:
+      case DioExceptionType.unknown:
+      case DioExceptionType.badCertificate:
+        return ErrorType.server;
+    }
+  }
+
+  /// Get user-friendly error message from DioException
+  /// Used with BlockingDialog for professional error presentation
+  String _getErrorMessage(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Request timed out. Please check your connection and try again.';
+      case DioExceptionType.connectionError:
+        return 'Connection error. Please check your internet connection.';
+      case DioExceptionType.badResponse:
+        final status = error.response?.statusCode ?? 0;
+        if (status == 401) {
+          return 'Your session has expired. Please log in again.';
+        }
+        if (status == 403) {
+          return 'You do not have permission to access this resource.';
+        }
+        if (status >= 500) {
+          return 'Server error. Please try again later.';
+        }
+        return error.response?.statusMessage ??
+            'Invalid request. Please try again.';
+      case DioExceptionType.cancel:
+        return 'Request was cancelled.';
+      case DioExceptionType.unknown:
+        return 'An unexpected error occurred. Please try again.';
+      case DioExceptionType.badCertificate:
+        return 'Security certificate error. Unable to connect securely.';
     }
   }
 }
