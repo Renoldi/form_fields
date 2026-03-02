@@ -5,18 +5,23 @@
   - [How to Use Each Property](#how-to-use-each-property-detailed) — Code examples for every property.
 - [FormFieldsCheckbox](#2-formfieldscheckbox) — Checkbox group widget for multi-selection with custom item builders.
   - [Properties](#properties-1)
+  - [Properties Example](#properties-example)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
 - [FormFieldsDropdownMulti](#3-formfieldsdropdownmulti) — Multi-select dropdown with chips, filtering, and selection limits.
   - [Properties](#properties-2)
+  - [Properties Example](#properties-example-1)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
 - [FormFieldsDropdown](#4-formfieldsdropdown) — Single-select dropdown with search, custom labels, and decoration.
   - [Properties](#properties-3)
+  - [Properties Example](#properties-example-2)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
 - [FormFieldsRadioButton](#5-formfieldsradiobutton) — Radio button group with sectioning, custom widgets, and advanced styling.
   - [Properties](#properties-4)
+  - [Properties Example](#properties-example-3)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
 - [FormFieldsSelect](#6-formfieldsselect) — Unified selection widget for dropdown, multi-select, radio, and checkbox.
   - [Properties](#properties-5)
+  - [Properties Example](#properties-example-4)
   - [How to Use Each Property](#how-to-use-each-property-detailed)
 - [Utilities & Advanced Usage](#utilities--advanced-usage) — Enums, validators, controller, and null-safety patterns.
 
@@ -184,6 +189,9 @@ FormFields<Country>(
 | itemMarginTop      | double                               | Top margin for each item.                   |
 | itemMarginBottom   | double                               | Bottom margin for each item.                |
 | itemMarginHorizontal| double                              | Horizontal margin for each item.            |
+| indicatorVerticalAlignment| IndicatorVerticalAlignment      | Vertical alignment of indicator and content.|
+| horizontalSideBySide| bool                                | Force compact horizontal side-by-side items.|
+| textRightPadding   | double                               | Padding to the right of item text/content.  |
 | itemBorderColor    | Color?                               | Border color for each item.                 |
 | itemBorderWidth    | double                               | Border width for each item.                 |
 | itemBorderRadius   | double                               | Border radius for each item.                |
@@ -191,87 +199,24 @@ FormFields<Country>(
 | itemBuilder        | Widget Function(T, bool)?            | Custom widget builder for items.            |
 | validator          | FormFieldValidator<List<T>>?         | Custom validation logic.                    |
 
+### Properties Example
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Weekdays',
+  items: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  initialValue: ['Mon'],
+  direction: Axis.vertical,
+  horizontalSideBySide: true,
+  indicatorVerticalAlignment: IndicatorVerticalAlignment.center,
+  textRightPadding: 8,
+  itemMarginBottom: 8,
+  itemMarginHorizontal: 4,
+  onChanged: (values) {},
+)
+```
+
 ### How to Use Each Property (Detailed)
-- **label**
-```dart
-FormFieldsCheckbox<String>(label: 'Hobbies', items: ['A'], onChanged: (v) {})
-```
-- **items**
-```dart
-FormFieldsCheckbox<String>(items: ['A', 'B'], label: 'L', onChanged: (v) {})
-```
-- **onChanged**
-```dart
-FormFieldsCheckbox<String>(onChanged: (values) {}, label: 'L', items: ['A'])
-```
-- **initialValue**
-```dart
-FormFieldsCheckbox<String>(initialValue: ['A'], label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **isRequired**
-```dart
-FormFieldsCheckbox<String>(isRequired: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **direction**
-```dart
-FormFieldsCheckbox<String>(direction: Axis.horizontal, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **radius**
-```dart
-FormFieldsCheckbox<String>(radius: 20, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **borderColor**
-```dart
-FormFieldsCheckbox<String>(borderColor: Colors.green, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **errorBorderColor**
-```dart
-FormFieldsCheckbox<String>(errorBorderColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **activeColor**
-```dart
-FormFieldsCheckbox<String>(activeColor: Colors.blue, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemPadding**
-```dart
-FormFieldsCheckbox<String>(itemPadding: EdgeInsets.all(8), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginTop**
-```dart
-FormFieldsCheckbox<String>(itemMarginTop: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginBottom**
-```dart
-FormFieldsCheckbox<String>(itemMarginBottom: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginHorizontal**
-```dart
-FormFieldsCheckbox<String>(itemMarginHorizontal: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderColor**
-```dart
-FormFieldsCheckbox<String>(itemBorderColor: Colors.black, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderWidth**
-```dart
-FormFieldsCheckbox<String>(itemBorderWidth: 2, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderRadius**
-```dart
-FormFieldsCheckbox<String>(itemBorderRadius: 12, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemLabelBuilder**
-```dart
-FormFieldsCheckbox<String>(itemLabelBuilder: (item) => 'Label', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBuilder**
-```dart
-FormFieldsCheckbox<String>(itemBuilder: (item, selected) => Text(item), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **validator**
-```dart
-FormFieldsCheckbox<String>(validator: (v) => v.isEmpty ? 'Select' : null, label: 'L', items: ['A'], onChanged: (v) {})
-```
+Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
 
 ### Custom Class
 ```dart
@@ -325,95 +270,26 @@ FormFieldsCheckbox<Hobby>(
 | enableFilter       | bool                                 | Enable search/filter.                       |
 | filterHintText     | String?                              | Filter hint text.                           |
 
+### Properties Example
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  initialValues: ['English'],
+  isRequired: true,
+  minSelections: 1,
+  maxSelections: 3,
+  enableFilter: true,
+  filterHintText: 'Search...',
+  showItemCount: true,
+  chipBackgroundColor: Colors.teal.shade100,
+  chipTextColor: Colors.teal.shade900,
+  onChanged: (values) {},
+)
+```
+
 ### How to Use Each Property (Detailed)
-- **label**
-```dart
-FormFieldsDropdownMulti<String>(label: 'Languages', items: ['A'], onChanged: (v) {})
-```
-- **items**
-```dart
-FormFieldsDropdownMulti<String>(items: ['A', 'B'], label: 'L', onChanged: (v) {})
-```
-- **onChanged**
-```dart
-FormFieldsDropdownMulti<String>(onChanged: (values) {}, label: 'L', items: ['A'])
-```
-- **initialValues**
-```dart
-FormFieldsDropdownMulti<String>(initialValues: ['A'], label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemLabelBuilder**
-```dart
-FormFieldsDropdownMulti<String>(itemLabelBuilder: (item) => 'Label', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **validator**
-```dart
-FormFieldsDropdownMulti<String>(validator: (v) => v.isEmpty ? 'Select' : null, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **isRequired**
-```dart
-FormFieldsDropdownMulti<String>(isRequired: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **minSelections**
-```dart
-FormFieldsDropdownMulti<String>(minSelections: 2, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **maxSelections**
-```dart
-FormFieldsDropdownMulti<String>(maxSelections: 3, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **labelPosition**
-```dart
-FormFieldsDropdownMulti<String>(labelPosition: LabelPosition.left, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **borderType**
-```dart
-FormFieldsDropdownMulti<String>(borderType: BorderType.underlineInputBorder, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **radius**
-```dart
-FormFieldsDropdownMulti<String>(radius: 16, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **borderColor**
-```dart
-FormFieldsDropdownMulti<String>(borderColor: Colors.green, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **focusedBorderColor**
-```dart
-FormFieldsDropdownMulti<String>(focusedBorderColor: Colors.blue, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **errorBorderColor**
-```dart
-FormFieldsDropdownMulti<String>(errorBorderColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **hintText**
-```dart
-FormFieldsDropdownMulti<String>(hintText: 'Choose', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **showItemCount**
-```dart
-FormFieldsDropdownMulti<String>(showItemCount: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **chipBackgroundColor**
-```dart
-FormFieldsDropdownMulti<String>(chipBackgroundColor: Colors.yellow, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **chipTextColor**
-```dart
-FormFieldsDropdownMulti<String>(chipTextColor: Colors.black, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **chipDeleteIconColor**
-```dart
-FormFieldsDropdownMulti<String>(chipDeleteIconColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **enableFilter**
-```dart
-FormFieldsDropdownMulti<String>(enableFilter: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **filterHintText**
-```dart
-FormFieldsDropdownMulti<String>(filterHintText: 'Search...', label: 'L', items: ['A'], onChanged: (v) {})
-```
+Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
 
 ### Custom Class
 ```dart
@@ -465,83 +341,23 @@ FormFieldsDropdownMulti<Language>(
 | enableFilter       | bool                                 | Enable search/filter.                       |
 | filterHintText     | String?                              | Filter hint text.                           |
 
+### Properties Example
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: 'USA',
+  isRequired: true,
+  enableFilter: true,
+  filterHintText: 'Search country...',
+  borderColor: Colors.indigo,
+  focusedBorderColor: Colors.indigo.shade700,
+  onChanged: (value) {},
+)
+```
+
 ### How to Use Each Property (Detailed)
-- **label**
-```dart
-FormFieldsDropdown<String>(label: 'Country', items: ['A'], onChanged: (v) {})
-```
-- **items**
-```dart
-FormFieldsDropdown<String>(items: ['A', 'B'], label: 'L', onChanged: (v) {})
-```
-- **onChanged**
-```dart
-FormFieldsDropdown<String>(onChanged: (value) {}, label: 'L', items: ['A'])
-```
-- **initialValue**
-```dart
-FormFieldsDropdown<String>(initialValue: 'A', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **isRequired**
-```dart
-FormFieldsDropdown<String>(isRequired: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemLabelBuilder**
-```dart
-FormFieldsDropdown<String>(itemLabelBuilder: (item) => 'Label', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **labelPosition**
-```dart
-FormFieldsDropdown<String>(labelPosition: LabelPosition.left, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **borderType**
-```dart
-FormFieldsDropdown<String>(borderType: BorderType.underlineInputBorder, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **radius**
-```dart
-FormFieldsDropdown<String>(radius: 16, onChanged: (v) {})
-```
-- **borderColor**
-```dart
-FormFieldsDropdown<String>(borderColor: Colors.green, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **focusedBorderColor**
-```dart
-FormFieldsDropdown<String>(focusedBorderColor: Colors.blue, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **errorBorderColor**
-```dart
-FormFieldsDropdown<String>(errorBorderColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **decoration**
-```dart
-FormFieldsDropdown<String>(decoration: InputDecoration(hintText: 'Hint'), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **prefixIcon**
-```dart
-FormFieldsDropdown<String>(prefixIcon: Icon(Icons.flag), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **suffixIcon**
-```dart
-FormFieldsDropdown<String>(suffixIcon: Icon(Icons.clear), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **hintText**
-```dart
-FormFieldsDropdown<String>(hintText: 'Choose', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **enabled**
-```dart
-FormFieldsDropdown<String>(enabled: false, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **enableFilter**
-```dart
-FormFieldsDropdown<String>(enableFilter: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **filterHintText**
-```dart
-FormFieldsDropdown<String>(filterHintText: 'Search...', label: 'L', items: ['A'], onChanged: (v) {})
-```
+Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
 
 ### Custom Class
 ```dart
@@ -601,129 +417,27 @@ FormFieldsDropdown<Country>(
 | containerGap       | double                               | Gap between items.                          |
 | itemMarginTop      | double                               | Top margin for each item.                   |
 | itemMarginBottom   | double                               | Bottom margin for each item.                |
+| indicatorVerticalAlignment| IndicatorVerticalAlignment      | Vertical alignment of indicator and content.|
+| horizontalSideBySide| bool                                | Force compact horizontal side-by-side items.|
 | validator          | FormFieldValidator<T>?               | Custom validation logic.                    |
 
+### Properties Example
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Marital Status',
+  items: ['Single', 'Married', 'Divorced'],
+  initialValue: 'Single',
+  direction: Axis.vertical,
+  horizontalSideBySide: true,
+  indicatorVerticalAlignment: IndicatorVerticalAlignment.center,
+  textRightPadding: 8,
+  itemMarginBottom: 8,
+  onChanged: (value) {},
+)
+```
+
 ### How to Use Each Property (Detailed)
-- **label**
-```dart
-FormFieldsRadioButton<String>(label: 'Gender', items: ['A'], onChanged: (v) {})
-```
-- **items**
-```dart
-FormFieldsRadioButton<String>(items: ['A', 'B'], label: 'L', onChanged: (v) {})
-```
-- **sections**
-```dart
-FormFieldsRadioButton<String>(sections: {'Group': ['A', 'B']}, label: 'L', onChanged: (v) {})
-```
-- **onChanged**
-```dart
-FormFieldsRadioButton<String>(onChanged: (value) {}, label: 'L', items: ['A'])
-```
-- **itemLabelBuilder**
-```dart
-FormFieldsRadioButton<String>(itemLabelBuilder: (item) => 'Label', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBuilder**
-```dart
-FormFieldsRadioButton<String>(itemBuilder: (item, selected) => Text(item), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **initialValue**
-```dart
-FormFieldsRadioButton<String>(initialValue: 'A', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **isRequired**
-```dart
-FormFieldsRadioButton<String>(isRequired: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **direction**
-```dart
-FormFieldsRadioButton<String>(direction: Axis.horizontal, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **radius**
-```dart
-FormFieldsRadioButton<String>(radius: 20, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **borderColor**
-```dart
-FormFieldsRadioButton<String>(borderColor: Colors.green, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **errorBorderColor**
-```dart
-FormFieldsRadioButton<String>(errorBorderColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **activeColor**
-```dart
-FormFieldsRadioButton<String>(activeColor: Colors.blue, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemPadding**
-```dart
-FormFieldsRadioButton<String>(itemPadding: EdgeInsets.all(8), label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **sectionSpacing**
-```dart
-FormFieldsRadioButton<String>(sectionSpacing: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderColor**
-```dart
-FormFieldsRadioButton<String>(itemBorderColor: Colors.black, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderWidth**
-```dart
-FormFieldsRadioButton<String>(itemBorderWidth: 2, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderRadius**
-```dart
-FormFieldsRadioButton<String>(itemBorderRadius: 12, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **textRightPadding**
-```dart
-FormFieldsRadioButton<String>(textRightPadding: 8, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemTextMarginRight**
-```dart
-FormFieldsRadioButton<String>(itemTextMarginRight: 8, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **selectedItemBackgroundColor**
-```dart
-FormFieldsRadioButton<String>(selectedItemBackgroundColor: Colors.yellow, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **selectedItemTextColor**
-```dart
-FormFieldsRadioButton<String>(selectedItemTextColor: Colors.black, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **hoverBackgroundColor**
-```dart
-FormFieldsRadioButton<String>(hoverBackgroundColor: Colors.grey, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemShadow**
-```dart
-FormFieldsRadioButton<String>(itemShadow: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **labelPosition**
-```dart
-FormFieldsRadioButton<String>(labelPosition: LabelPosition.left, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **containerPadding**
-```dart
-FormFieldsRadioButton<String>(containerPadding: 16, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **containerGap**
-```dart
-FormFieldsRadioButton<String>(containerGap: 8, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginTop**
-```dart
-FormFieldsRadioButton<String>(itemMarginTop: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginBottom**
-```dart
-FormFieldsRadioButton<String>(itemMarginBottom: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **validator**
-```dart
-FormFieldsRadioButton<String>(validator: (v) => v == null ? 'Select' : null, label: 'L', items: ['A'], onChanged: (v) {})
-```
+Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
 
 ### Custom Class
 ```dart
@@ -780,95 +494,25 @@ FormFieldsRadioButton<Gender>(
 | enableFilter       | bool                                 | Enable search/filter.                       |
 | filterHintText     | String                               | Filter hint text.                           |
 
+### Properties Example
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Skills',
+  items: ['Dart', 'Flutter', 'Firebase'],
+  initialValues: ['Dart'],
+  isRequired: true,
+  enableFilter: true,
+  filterHintText: 'Search skills...',
+  borderColor: Colors.teal,
+  itemBorderRadius: 10,
+  itemMarginBottom: 6,
+  onMultiChanged: (values) {},
+)
+```
+
 ### How to Use Each Property (Detailed)
-- **formType**
-```dart
-FormFieldsSelect<String>(formType: FormType.dropdown, label: 'Country', items: ['A'], onChanged: (v) {})
-```
-- **label**
-```dart
-FormFieldsSelect<String>(label: 'Country', items: ['A'], onChanged: (v) {})
-```
-- **items**
-```dart
-FormFieldsSelect<String>(items: ['A', 'B'], label: 'L', onChanged: (v) {})
-```
-- **onChanged**
-```dart
-FormFieldsSelect<String>(onChanged: (value) {}, label: 'L', items: ['A'])
-```
-- **initialValue**
-```dart
-FormFieldsSelect<String>(initialValue: 'A', label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **isRequired**
-```dart
-FormFieldsSelect<String>(isRequired: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **minSelections**
-```dart
-FormFieldsSelect<String>(minSelections: 1, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **maxSelections**
-```dart
-FormFieldsSelect<String>(maxSelections: 3, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **labelPosition**
-```dart
-FormFieldsSelect<String>(labelPosition: LabelPosition.left, onChanged: (v) {})
-```
-- **borderType**
-```dart
-FormFieldsSelect<String>(borderType: BorderType.underlineInputBorder, onChanged: (v) {})
-```
-- **radius**
-```dart
-FormFieldsSelect<String>(radius: 16, onChanged: (v) {})
-```
-- **borderColor**
-```dart
-FormFieldsSelect<String>(borderColor: Colors.green, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **focusedBorderColor**
-```dart
-FormFieldsSelect<String>(focusedBorderColor: Colors.blue, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **errorBorderColor**
-```dart
-FormFieldsSelect<String>(errorBorderColor: Colors.red, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderColor**
-```dart
-FormFieldsSelect<String>(itemBorderColor: Colors.black, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderWidth**
-```dart
-FormFieldsSelect<String>(itemBorderWidth: 2, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemBorderRadius**
-```dart
-FormFieldsSelect<String>(itemBorderRadius: 12, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginTop**
-```dart
-FormFieldsSelect<String>(itemMarginTop: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginBottom**
-```dart
-FormFieldsSelect<String>(itemMarginBottom: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **itemMarginHorizontal**
-```dart
-FormFieldsSelect<String>(itemMarginHorizontal: 10, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **enableFilter**
-```dart
-FormFieldsSelect<String>(enableFilter: true, label: 'L', items: ['A'], onChanged: (v) {})
-```
-- **filterHintText**
-```dart
-FormFieldsSelect<String>(filterHintText: 'Search...', label: 'L', items: ['A'], onChanged: (v) {})
-```
+Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
 
 ### Custom Class
 ```dart
