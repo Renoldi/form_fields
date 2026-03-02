@@ -2,9 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
 /// Widget to show current language and demonstrate localized text
-class LanguageIndicator extends StatelessWidget {
+class LanguageIndicator extends StatefulWidget {
   const LanguageIndicator({super.key});
 
+  @override
+  State<LanguageIndicator> createState() => LanguageIndicatorView();
+}
+
+abstract class LanguageIndicatorPresenterState
+    extends State<LanguageIndicator> {
+  late final LanguageIndicatorViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = LanguageIndicatorViewModel();
+  }
+}
+
+class LanguageIndicatorView extends LanguageIndicatorPresenterState {
   @override
   Widget build(BuildContext context) {
     final currentLocale = Localizations.localeOf(context);
@@ -97,12 +113,13 @@ class LanguageIndicator extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildExampleRow(
+                viewModel.buildExampleRow(
                     l10n.get('langExampleSearch'), l10n.searchHint),
-                _buildExampleRow(l10n.get('langExampleCancel'), l10n.cancel),
-                _buildExampleRow(
+                viewModel.buildExampleRow(
+                    l10n.get('langExampleCancel'), l10n.cancel),
+                viewModel.buildExampleRow(
                     l10n.get('langExampleSelect'), l10n.selectPrefix),
-                _buildExampleRow(
+                viewModel.buildExampleRow(
                     l10n.get('langExampleEnter'), l10n.enterPrefix),
               ],
             ),
@@ -122,8 +139,10 @@ class LanguageIndicator extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildExampleRow(String label, String value) {
+class LanguageIndicatorViewModel {
+  Widget buildExampleRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(

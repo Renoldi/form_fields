@@ -6,7 +6,7 @@ import 'form_fields_dropdown.dart';
 import 'form_fields_dropdown_multi.dart';
 import 'form_fields_radio_button.dart';
 
-class FormFieldsSelect<T> extends StatelessWidget {
+class FormFieldsSelect<T> extends StatefulWidget {
   // ============================================================================
   // CORE
   // ============================================================================
@@ -92,97 +92,115 @@ class FormFieldsSelect<T> extends StatelessWidget {
   });
 
   @override
+  State<FormFieldsSelect<T>> createState() => _FormFieldsSelectView<T>();
+}
+
+abstract class _FormFieldsSelectPresenterState<T>
+    extends State<FormFieldsSelect<T>> {
+  late final _FormFieldsSelectViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _FormFieldsSelectViewModel();
+  }
+}
+
+class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
+  @override
   Widget build(BuildContext context) {
-    switch (formType) {
+    switch (widget.formType) {
       case FormType.dropdown:
         return FormFieldsDropdown<T>(
-          label: label,
-          items: items,
-          initialValue: initialValue,
-          isRequired: isRequired,
-          itemLabelBuilder: itemLabelBuilder,
-          onChanged: onChanged ?? (_) {},
-          validator: validator,
-          labelPosition: labelPosition,
-          borderType: borderType,
-          radius: radius,
-          borderColor: borderColor,
-          focusedBorderColor: focusedBorderColor,
-          errorBorderColor: errorBorderColor,
-          enableFilter: enableFilter,
-          filterHintText: filterHintText,
+          label: widget.label,
+          items: widget.items,
+          initialValue: widget.initialValue,
+          isRequired: widget.isRequired,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          onChanged: widget.onChanged ?? (_) {},
+          validator: widget.validator,
+          labelPosition: widget.labelPosition,
+          borderType: widget.borderType,
+          radius: widget.radius,
+          borderColor: widget.borderColor,
+          focusedBorderColor: widget.focusedBorderColor,
+          errorBorderColor: widget.errorBorderColor,
+          enableFilter: widget.enableFilter,
+          filterHintText: widget.filterHintText,
         );
 
       case FormType.dropdownMulti:
         return FormFieldsDropdownMulti<T>(
-          label: label,
-          items: items,
-          initialValues: initialValues ?? [],
-          isRequired: isRequired,
-          itemLabelBuilder: itemLabelBuilder,
-          onChanged: onMultiChanged ?? (_) {},
-          validator: multiValidator,
-          labelPosition: labelPosition,
-          borderType: borderType,
-          radius: radius,
-          borderColor: borderColor,
-          focusedBorderColor: focusedBorderColor,
-          errorBorderColor: errorBorderColor,
-          enableFilter: enableFilter,
-          filterHintText: filterHintText,
+          label: widget.label,
+          items: widget.items,
+          initialValues: widget.initialValues ?? [],
+          isRequired: widget.isRequired,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          onChanged: widget.onMultiChanged ?? (_) {},
+          validator: widget.multiValidator,
+          labelPosition: widget.labelPosition,
+          borderType: widget.borderType,
+          radius: widget.radius,
+          borderColor: widget.borderColor,
+          focusedBorderColor: widget.focusedBorderColor,
+          errorBorderColor: widget.errorBorderColor,
+          enableFilter: widget.enableFilter,
+          filterHintText: widget.filterHintText,
         );
 
       case FormType.radioButton:
         return FormFieldsRadioButton<T>(
-          label: label,
-          items: items,
-          initialValue: initialValue,
-          isRequired: isRequired,
-          itemLabelBuilder: itemLabelBuilder,
-          onChanged: onChanged ?? (_) {},
-          validator: validator,
-          labelPosition: labelPosition,
-          radius: radius,
-          borderColor: borderColor,
-          errorBorderColor: errorBorderColor,
-          activeColor: focusedBorderColor,
-          itemMarginTop: itemMarginTop,
-          itemMarginBottom: itemMarginBottom,
-          itemBorderColor: itemBorderColor,
-          itemBorderWidth: itemBorderWidth,
-          itemBorderRadius: itemBorderRadius,
+          label: widget.label,
+          items: widget.items,
+          initialValue: widget.initialValue,
+          isRequired: widget.isRequired,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          onChanged: widget.onChanged ?? (_) {},
+          validator: widget.validator,
+          labelPosition: widget.labelPosition,
+          radius: widget.radius,
+          borderColor: widget.borderColor,
+          errorBorderColor: widget.errorBorderColor,
+          activeColor: widget.focusedBorderColor,
+          itemMarginTop: widget.itemMarginTop,
+          itemMarginBottom: widget.itemMarginBottom,
+          itemBorderColor: widget.itemBorderColor,
+          itemBorderWidth: widget.itemBorderWidth,
+          itemBorderRadius: widget.itemBorderRadius,
         );
 
       case FormType.checkbox:
         return FormFieldsCheckbox<T>(
-          label: label,
-          items: items,
-          initialValue: initialValues ?? [],
-          isRequired: isRequired,
-          itemLabelBuilder: itemLabelBuilder,
-          onChanged: onMultiChanged ?? (_) {},
-          validator: multiValidator != null
-              ? (List<T>? values) => multiValidator!(values)
+          label: widget.label,
+          items: widget.items,
+          initialValue: widget.initialValues ?? [],
+          isRequired: widget.isRequired,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          onChanged: widget.onMultiChanged ?? (_) {},
+          validator: widget.multiValidator != null
+              ? (List<T>? values) => widget.multiValidator!(values)
               : null,
-          radius: radius,
-          borderColor: borderColor,
-          errorBorderColor: errorBorderColor,
-          activeColor: focusedBorderColor,
-          itemMarginTop: itemMarginTop,
-          itemMarginBottom: itemMarginBottom,
-          itemMarginHorizontal: itemMarginHorizontal,
-          itemBorderColor: itemBorderColor,
-          itemBorderWidth: itemBorderWidth,
-          itemBorderRadius: itemBorderRadius,
+          radius: widget.radius,
+          borderColor: widget.borderColor,
+          errorBorderColor: widget.errorBorderColor,
+          activeColor: widget.focusedBorderColor,
+          itemMarginTop: widget.itemMarginTop,
+          itemMarginBottom: widget.itemMarginBottom,
+          itemMarginHorizontal: widget.itemMarginHorizontal,
+          itemBorderColor: widget.itemBorderColor,
+          itemBorderWidth: widget.itemBorderWidth,
+          itemBorderRadius: widget.itemBorderRadius,
         );
 
       default:
         // For all other FormType values (string, phone, password, email, etc.)
         // that are not supported by FormFieldsSelect
         throw UnimplementedError(
-          'FormType.$formType is not supported by FormFieldsSelect. '
+          'FormType.${widget.formType} is not supported by FormFieldsSelect. '
           'This widget only supports dropdown, dropdownMulti, radioButton, and checkbox.',
         );
     }
   }
 }
+
+class _FormFieldsSelectViewModel {}

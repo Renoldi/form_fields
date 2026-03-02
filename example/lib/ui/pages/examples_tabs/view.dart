@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/state/pages/examples_tabs_view_model.dart';
-import 'checkbox_examples_page.dart';
-import 'custom_class_examples_page.dart';
-import 'dropdown_examples_page.dart';
-import 'dropdown_multi_examples_page.dart';
-import 'form_fields_examples_page.dart';
-import 'null_non_null_validation_examples_page.dart';
-import 'radio_button_examples_page.dart';
+import 'package:form_fields_example/ui/pages/form_fields_examples/main.dart'
+    as form_fields_examples;
+import 'package:form_fields_example/ui/pages/dropdown_examples/main.dart'
+    as dropdown_examples;
+import 'package:form_fields_example/ui/pages/dropdown_multi_examples/main.dart'
+    as dropdown_multi_examples;
+import 'package:form_fields_example/ui/pages/radio_button_examples/main.dart'
+    as radio_button_examples;
+import 'package:form_fields_example/ui/pages/checkbox_examples/main.dart'
+    as checkbox_examples;
+import 'package:form_fields_example/ui/pages/custom_class_examples/main.dart'
+    as custom_class_examples;
+import 'package:form_fields_example/ui/pages/null_non_null_validation_examples/main.dart'
+    as null_non_null_validation_examples;
+import 'presenter.dart';
+import 'view_model.dart';
 
-class ExamplesTabsPage extends StatelessWidget {
-  const ExamplesTabsPage({super.key});
-
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -152,13 +158,13 @@ class ExamplesTabsPage extends StatelessWidget {
               ),
               body: const TabBarView(
                 children: [
-                  FormFieldsExamplesPage(),
-                  DropdownExamplesPage(),
-                  DropdownMultiExamplesPage(),
-                  RadioButtonExamplesPage(),
-                  CheckboxExamplesPage(),
-                  CustomClassExamplesPage(),
-                  NullNonNullValidationExamplesPage(),
+                  form_fields_examples.Presenter(),
+                  dropdown_examples.Presenter(),
+                  dropdown_multi_examples.Presenter(),
+                  radio_button_examples.Presenter(),
+                  checkbox_examples.Presenter(),
+                  custom_class_examples.Presenter(),
+                  null_non_null_validation_examples.Presenter(),
                 ],
               ),
             ),

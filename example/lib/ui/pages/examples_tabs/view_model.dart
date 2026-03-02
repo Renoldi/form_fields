@@ -118,7 +118,7 @@ class ExamplesTabsViewModel extends ChangeNotifier {
   }
 }
 
-class _LanguageOption extends StatelessWidget {
+class _LanguageOption extends StatefulWidget {
   final String flag;
   final String language;
   final String subtitle;
@@ -134,27 +134,44 @@ class _LanguageOption extends StatelessWidget {
   });
 
   @override
+  State<_LanguageOption> createState() => _LanguageOptionView();
+}
+
+abstract class _LanguageOptionPresenterState extends State<_LanguageOption> {
+  late final _LanguageOptionViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _LanguageOptionViewModel();
+  }
+}
+
+class _LanguageOptionView extends _LanguageOptionPresenterState {
+  @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Text(
-        flag,
+        widget.flag,
         style: const TextStyle(fontSize: 18),
       ),
       title: Text(
-        language,
+        widget.language,
         style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-      subtitle: Text(subtitle),
-      trailing: isSelected
+      subtitle: Text(widget.subtitle),
+      trailing: widget.isSelected
           ? const Icon(Icons.check_circle, color: Colors.blue)
           : null,
-      selected: isSelected,
+      selected: widget.isSelected,
       onTap: () {
-        context.read<AppStateNotifier>().setLocale(locale);
+        context.read<AppStateNotifier>().setLocale(widget.locale);
         Navigator.pop(context);
       },
     );
   }
 }
+
+class _LanguageOptionViewModel {}

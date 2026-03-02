@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CheckboxExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   List<String> checkbox1 = [];

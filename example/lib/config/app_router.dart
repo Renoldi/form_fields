@@ -3,13 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:form_fields_example/ui/pages/login/main.dart' as login;
 import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
-import 'package:form_fields_example/ui/pages/form_fields_examples_page.dart';
-import 'package:form_fields_example/ui/pages/dropdown_examples_page.dart';
-import 'package:form_fields_example/ui/pages/dropdown_multi_examples_page.dart';
-import 'package:form_fields_example/ui/pages/radio_button_examples_page.dart';
-import 'package:form_fields_example/ui/pages/checkbox_examples_page.dart';
-import 'package:form_fields_example/ui/pages/custom_class_examples_page.dart';
-import 'package:form_fields_example/ui/pages/null_non_null_validation_examples_page.dart';
+import 'package:form_fields_example/ui/pages/form_fields_examples/main.dart'
+    as form_fields_examples;
+import 'package:form_fields_example/ui/pages/dropdown_examples/main.dart'
+    as dropdown_examples;
+import 'package:form_fields_example/ui/pages/dropdown_multi_examples/main.dart'
+    as dropdown_multi_examples;
+import 'package:form_fields_example/ui/pages/radio_button_examples/main.dart'
+    as radio_button_examples;
+import 'package:form_fields_example/ui/pages/checkbox_examples/main.dart'
+    as checkbox_examples;
+import 'package:form_fields_example/ui/pages/custom_class_examples/main.dart'
+    as custom_class_examples;
+import 'package:form_fields_example/ui/pages/null_non_null_validation_examples/main.dart'
+    as null_non_null_validation_examples;
 import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
 import 'package:form_fields_example/ui/pages/change_password/main.dart'
     as change_password;
@@ -142,7 +149,10 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.formFields,
-          child: const FormFieldsExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => form_fields_examples.FormFieldsExamplesViewModel(),
+            child: const form_fields_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -151,7 +161,10 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.dropdown,
-          child: const DropdownExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => dropdown_examples.DropdownExamplesViewModel(),
+            child: const dropdown_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -160,7 +173,11 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.dropdownMulti,
-          child: const DropdownMultiExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) =>
+                dropdown_multi_examples.DropdownMultiExamplesViewModel(),
+            child: const dropdown_multi_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -169,7 +186,10 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.radioButton,
-          child: const RadioButtonExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => radio_button_examples.RadioButtonExamplesViewModel(),
+            child: const radio_button_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -178,7 +198,10 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.checkbox,
-          child: const CheckboxExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => checkbox_examples.ViewModel(),
+            child: const checkbox_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -187,7 +210,10 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.customClass,
-          child: const CustomClassExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => custom_class_examples.CustomClassExamplesViewModel(),
+            child: const custom_class_examples.Presenter(),
+          ),
         ),
       ),
       GoRoute(
@@ -196,7 +222,11 @@ GoRouter createAppRouter(AppStateNotifier appState) {
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.validation,
-          child: const NullNonNullValidationExamplesPage(),
+          child: ChangeNotifierProvider(
+            create: (_) => null_non_null_validation_examples
+                .NullNonNullValidationExamplesViewModel(),
+            child: const null_non_null_validation_examples.Presenter(),
+          ),
         ),
       ),
     ],

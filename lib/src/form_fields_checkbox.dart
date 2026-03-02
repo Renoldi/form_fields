@@ -59,7 +59,7 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
         );
 }
 
-class _FormFieldsCheckboxBody<T> extends StatelessWidget {
+class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final String label;
   final FormFieldState<List<T>> state;
   final List<T> items;
@@ -103,10 +103,28 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
   });
 
   @override
+  State<_FormFieldsCheckboxBody<T>> createState() =>
+      _FormFieldsCheckboxBodyView<T>();
+}
+
+abstract class _FormFieldsCheckboxBodyPresenterState<T>
+    extends State<_FormFieldsCheckboxBody<T>> {
+  late final _FormFieldsCheckboxBodyViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _FormFieldsCheckboxBodyViewModel();
+  }
+}
+
+class _FormFieldsCheckboxBodyView<T>
+    extends _FormFieldsCheckboxBodyPresenterState<T> {
+  @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
-    final selectedValues = state.value ?? [];
-    final hasError = state.hasError;
+    final selectedValues = widget.state.value ?? [];
+    final hasError = widget.state.hasError;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,14 +133,14 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: label,
+                text: widget.label,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
               ),
-              if (isRequired)
+              if (widget.isRequired)
                 const TextSpan(
                   text: ' *',
                   style: TextStyle(
@@ -137,23 +155,24 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: itemBorderColor == null
+            border: widget.itemBorderColor == null
                 ? Border.all(
-                    color: hasError ? errorBorderColor : borderColor,
+                    color:
+                        hasError ? widget.errorBorderColor : widget.borderColor,
                     width: 1.5,
                   )
                 : null,
-            borderRadius: BorderRadius.circular(radius),
+            borderRadius: BorderRadius.circular(widget.radius),
           ),
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: direction == Axis.horizontal
+          child: widget.direction == Axis.horizontal
               ? Wrap(
-                  children: items
+                  children: widget.items
                       .map((item) => _buildItem(item, selectedValues))
                       .toList(),
                 )
               : Column(
-                  children: items
+                  children: widget.items
                       .map((item) => _buildItem(item, selectedValues))
                       .toList(),
                 ),
@@ -162,11 +181,11 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              state.errorText?.isEmpty ?? true
-                  ? l.selectAtLeastOne(label)
-                  : state.errorText!,
+              widget.state.errorText?.isEmpty ?? true
+                  ? l.selectAtLeastOne(widget.label)
+                  : widget.state.errorText!,
               style: TextStyle(
-                color: errorBorderColor,
+                color: widget.errorBorderColor,
                 fontSize: 12,
               ),
             ),
@@ -177,24 +196,27 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
 
   Widget _buildItem(T item, List<T> selectedValues) {
     final isSelected = selectedValues.contains(item);
-    final itemBorder = itemBorderColor == null
+    final itemBorder = widget.itemBorderColor == null
         ? null
-        : Border.all(color: itemBorderColor!, width: itemBorderWidth);
+        : Border.all(
+            color: widget.itemBorderColor!,
+            width: widget.itemBorderWidth,
+          );
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        itemMarginHorizontal,
-        itemMarginTop,
-        itemMarginHorizontal,
-        itemMarginBottom,
+        widget.itemMarginHorizontal,
+        widget.itemMarginTop,
+        widget.itemMarginHorizontal,
+        widget.itemMarginBottom,
       ),
       child: Container(
         decoration: BoxDecoration(
           border: itemBorder,
-          borderRadius: BorderRadius.circular(itemBorderRadius),
+          borderRadius: BorderRadius.circular(widget.itemBorderRadius),
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(itemBorderRadius),
+          borderRadius: BorderRadius.circular(widget.itemBorderRadius),
           onTap: () {
             final updated = List<T>.from(selectedValues);
 
@@ -204,17 +226,17 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
               updated.add(item);
             }
 
-            state.didChange(updated);
-            onChanged(updated);
+            widget.state.didChange(updated);
+            widget.onChanged(updated);
           },
           child: Padding(
-            padding: itemPadding,
+            padding: widget.itemPadding,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Checkbox(
                   value: isSelected,
-                  activeColor: activeColor,
+                  activeColor: widget.activeColor,
                   onChanged: (checked) {
                     final updated = List<T>.from(selectedValues);
 
@@ -224,17 +246,17 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
                       updated.remove(item);
                     }
 
-                    state.didChange(updated);
-                    onChanged(updated);
+                    widget.state.didChange(updated);
+                    widget.onChanged(updated);
                   },
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: itemBuilder != null
-                      ? itemBuilder!(item, isSelected)
+                  child: widget.itemBuilder != null
+                      ? widget.itemBuilder!(item, isSelected)
                       : Text(
-                          itemLabelBuilder != null
-                              ? itemLabelBuilder!(item)
+                          widget.itemLabelBuilder != null
+                              ? widget.itemLabelBuilder!(item)
                               : item.toString(),
                         ),
                 ),
@@ -246,3 +268,5 @@ class _FormFieldsCheckboxBody<T> extends StatelessWidget {
     );
   }
 }
+
+class _FormFieldsCheckboxBodyViewModel {}

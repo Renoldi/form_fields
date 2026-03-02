@@ -10,16 +10,36 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => View();
+}
+
+abstract class PresenterState extends State<MyApp> {
+  late final ViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = ViewModel();
+  }
+
+  @override
+  void dispose() {
+    viewModel.dispose();
+    super.dispose();
+  }
+}
+
+class View extends PresenterState {
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AppStateNotifier(),
+    return ChangeNotifierProvider.value(
+      value: viewModel.appState,
       child: Consumer<AppStateNotifier>(
         builder: (context, appState, _) {
-          // Wait for auth state to initialize before showing UI
           if (!appState.isInitialized) {
             return const MaterialApp(
               home: Scaffold(
@@ -30,56 +50,47 @@ class MyApp extends StatelessWidget {
             );
           }
 
-          return _AppContent(appState: appState);
+          return MaterialApp.router(
+            title: 'FormFields - Complete Examples',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+              useMaterial3: true,
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF1F2937),
+                foregroundColor: Colors.white,
+              ),
+            ),
+            locale: appState.locale,
+            localizationsDelegates: const [
+              loc.LocalizationsDelegate(),
+              FormFieldsLocalizationsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: loc.Localizations.supportedLocales,
+            routerConfig: viewModel.routerConfig,
+          );
         },
       ),
     );
   }
 }
 
-class _AppContent extends StatefulWidget {
-  final AppStateNotifier appState;
+class ViewModel {
+  final AppStateNotifier appState = AppStateNotifier();
+  late final routerConfig = createAppRouter(appState);
 
-  const _AppContent({required this.appState});
-
-  @override
-  State<_AppContent> createState() => _AppContentState();
-}
-
-class _AppContentState extends State<_AppContent> {
-  late final _routerConfig = createAppRouter(widget.appState);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'FormFields - Complete Examples',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-          },
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1F2937),
-          foregroundColor: Colors.white,
-        ),
-      ),
-      locale: widget.appState.locale,
-      localizationsDelegates: const [
-        loc.LocalizationsDelegate(),
-        FormFieldsLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: loc.Localizations.supportedLocales,
-      routerConfig: _routerConfig,
-    );
+  void dispose() {
+    appState.dispose();
   }
 }

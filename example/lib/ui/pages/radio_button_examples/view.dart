@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/state/pages/radio_button_examples_view_model.dart';
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
+import 'presenter.dart';
+import 'view_model.dart';
 
-class RadioButtonExamplesPage extends StatelessWidget {
-  const RadioButtonExamplesPage({super.key});
-
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -194,173 +193,6 @@ class RadioButtonExamplesPage extends StatelessWidget {
                   ),
                   buildResultDisplay(
                       context, l.get('selectedFrequency'), viewModel.radio8),
-
-                  buildSectionTitle(l.get('radioSectionedLayout'),
-                      Colors.orange.shade700, Colors.orange.shade400),
-
-                  // Example 9: Sectioned Radio Buttons with Horizontal Layout
-                  buildFieldTitle(
-                      l.get('sectionedHorizontal'), Colors.orange.shade600),
-                  FormFieldsRadioButton<String>(
-                    label: l.get('subscriptionPlan'),
-                    initialValue: viewModel.radio1,
-                    sections: {
-                      l.get('cloudServices'): [
-                        l.get('starter'),
-                        l.get('professional'),
-                        l.get('enterprise')
-                      ],
-                      l.get('supportLevel'): [
-                        l.get('basic'),
-                        l.get('premiumSupport'),
-                        l.get('twentyFourSeven')
-                      ],
-                      l.get('duration'): [
-                        l.get('monthly'),
-                        l.get('quarterly'),
-                        l.get('yearly')
-                      ],
-                    },
-                    isRequired: true,
-                    borderColor: Colors.green.shade600,
-                    activeColor: Colors.green.shade600,
-                    sectionSpacing: 16,
-                    onChanged: (value) => viewModel.setRadio1(value ?? ''),
-                  ),
-                  buildResultDisplay(
-                      context, l.get('selectedPlan'), viewModel.radio1),
-
-                  // Example 9b: Sectioned with Item Borders
-                  buildFieldTitle(
-                      l.get('sectionedItemBorders'), Colors.orange.shade600),
-                  FormFieldsRadioButton<String>(
-                    label: l.get('preferences'),
-                    initialValue: viewModel.radio2,
-                    sections: {
-                      l.get('theme'): [
-                        l.get('light'),
-                        l.get('dark'),
-                        l.get('auto')
-                      ],
-                      l.get('notifications'): [
-                        l.get('all'),
-                        l.get('important'),
-                        l.get('none')
-                      ],
-                    },
-                    isRequired: true,
-                    borderColor: Colors.grey,
-                    activeColor: Colors.teal,
-                    itemBorderColor: Colors.teal.shade300,
-                    itemBorderWidth: 1.5,
-                    itemBorderRadius: 6,
-                    textRightPadding: 8,
-                    sectionSpacing: 16,
-                    onChanged: (value) => viewModel.setRadio2(value ?? ''),
-                  ),
-                  buildResultDisplay(
-                      context, l.get('selectedPreference'), viewModel.radio2),
-
-                  // Example 9c: Beautiful Styled with Selection Highlights
-                  buildFieldTitle(
-                      l.get('beautifulStyling'), Colors.orange.shade600),
-                  FormFieldsRadioButton<String>(
-                    label: l.get('deliveryOption'),
-                    initialValue: viewModel.radio5,
-                    items: [
-                      l.get('pickup'),
-                      l.get('standardDelivery'),
-                      l.get('expressDelivery')
-                    ],
-                    isRequired: true,
-                    borderColor: Colors.orange.shade300,
-                    activeColor: Colors.orange.shade600,
-                    selectedItemBackgroundColor: Colors.orange.shade50,
-                    selectedItemTextColor: Colors.orange.shade900,
-                    hoverBackgroundColor: Colors.orange.shade100,
-                    itemBorderColor: Colors.orange.shade300,
-                    itemBorderWidth: 1.5,
-                    itemBorderRadius: 10,
-                    itemShadow: true,
-                    direction: Axis.vertical,
-                    itemPadding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 12),
-                    onChanged: (value) => viewModel.setRadio5(value ?? ''),
-                  ),
-                  buildResultDisplay(
-                      context, l.get('selectedOption'), viewModel.radio5),
-
-                  buildSectionTitle(l.get('radioMoreOptions'),
-                      Colors.orange.shade700, Colors.orange.shade400),
-
-                  // Example 10: Many Options - Vertical
-                  buildFieldTitle(
-                      l.get('manyOptionsVertical'), Colors.orange.shade600),
-                  FormFieldsRadioButton<String>(
-                    label: l.get('countryLabel'),
-                    initialValue: viewModel.radio2,
-                    items: const [
-                      'United States',
-                      'United Kingdom',
-                      'Canada',
-                      'Australia',
-                      'Germany',
-                      'France',
-                      'Japan',
-                      'China',
-                      'India',
-                      'Brazil',
-                      'Mexico',
-                      'Italy',
-                      'Spain',
-                      'Russia',
-                      'South Korea',
-                      'Argentina',
-                      'Netherlands',
-                      'Sweden',
-                      'Switzerland',
-                      'Belgium',
-                      'Poland',
-                      'Norway',
-                      'Austria',
-                      'Denmark',
-                      'Finland',
-                      'Ireland',
-                      'Portugal',
-                      'Greece',
-                      'New Zealand',
-                      'Singapore',
-                    ],
-                    isRequired: true,
-                    direction: Axis.vertical,
-                    borderColor: Colors.blue,
-                    activeColor: Colors.blue,
-                    itemPadding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    onChanged: (value) => viewModel.setRadio2(value ?? ''),
-                  ),
-                  buildResultDisplay(
-                      context, l.get('selectedCountry'), viewModel.radio2),
-
-                  // Example 11: Underline Border Type
-                  buildFieldTitle(
-                      l.get('underlineBorderType'), Colors.orange.shade600),
-                  FormFieldsRadioButton<String>(
-                    label: l.get('accountType'),
-                    initialValue: viewModel.radio3,
-                    items: [
-                      l.get('accountPersonal'),
-                      l.get('accountBusiness'),
-                      l.get('accountStudent'),
-                    ],
-                    isRequired: true,
-                    direction: Axis.horizontal,
-                    borderColor: Colors.cyan,
-                    activeColor: Colors.cyan,
-                    onChanged: (value) => viewModel.setRadio3(value ?? ''),
-                  ),
-                  buildResultDisplay(
-                      context, l.get('selectedAccountType'), viewModel.radio3),
 
                   const SizedBox(height: 32),
 

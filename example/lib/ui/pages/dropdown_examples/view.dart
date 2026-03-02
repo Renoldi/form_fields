@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/state/pages/dropdown_examples_view_model.dart';
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
+import 'presenter.dart';
+import 'view_model.dart';
 
-class DropdownExamplesPage extends StatelessWidget {
-  const DropdownExamplesPage({super.key});
-
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

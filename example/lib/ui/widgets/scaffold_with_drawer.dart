@@ -7,11 +7,27 @@ import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/config/app_routes.dart';
 
 // Scaffold with Drawer wrapper
-class ScaffoldWithDrawer extends StatelessWidget {
+class ScaffoldWithDrawer extends StatefulWidget {
   final Widget child;
 
   const ScaffoldWithDrawer({super.key, required this.child});
 
+  @override
+  State<ScaffoldWithDrawer> createState() => ScaffoldWithDrawerView();
+}
+
+abstract class ScaffoldWithDrawerPresenterState
+    extends State<ScaffoldWithDrawer> {
+  late final ScaffoldWithDrawerViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = ScaffoldWithDrawerViewModel();
+  }
+}
+
+class ScaffoldWithDrawerView extends ScaffoldWithDrawerPresenterState {
   void _showLanguageDialog(BuildContext context) {
     final currentLocale = Localizations.localeOf(context);
 
@@ -103,12 +119,12 @@ class ScaffoldWithDrawer extends StatelessWidget {
         ],
       ),
       drawer: const AppDrawer(),
-      body: child,
+      body: widget.child,
     );
   }
 }
 
-class _LanguageOption extends StatelessWidget {
+class _LanguageOption extends StatefulWidget {
   final String flag;
   final String language;
   final String subtitle;
@@ -124,25 +140,40 @@ class _LanguageOption extends StatelessWidget {
   });
 
   @override
+  State<_LanguageOption> createState() => _LanguageOptionView();
+}
+
+abstract class _LanguageOptionPresenterState extends State<_LanguageOption> {
+  late final _LanguageOptionViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _LanguageOptionViewModel();
+  }
+}
+
+class _LanguageOptionView extends _LanguageOptionPresenterState {
+  @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Text(
-        flag,
+        widget.flag,
         style: const TextStyle(fontSize: 32),
       ),
       title: Text(
-        language,
+        widget.language,
         style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-      subtitle: Text(subtitle),
-      trailing: isSelected
+      subtitle: Text(widget.subtitle),
+      trailing: widget.isSelected
           ? const Icon(Icons.check_circle, color: Colors.blue)
           : null,
-      selected: isSelected,
+      selected: widget.isSelected,
       onTap: () {
-        context.read<AppStateNotifier>().setLocale(locale);
+        context.read<AppStateNotifier>().setLocale(widget.locale);
         Navigator.pop(context);
       },
     );
@@ -150,9 +181,24 @@ class _LanguageOption extends StatelessWidget {
 }
 
 // Custom Drawer Widget
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
 
+  @override
+  State<AppDrawer> createState() => AppDrawerView();
+}
+
+abstract class AppDrawerPresenterState extends State<AppDrawer> {
+  late final AppDrawerViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = AppDrawerViewModel();
+  }
+}
+
+class AppDrawerView extends AppDrawerPresenterState {
   @override
   Widget build(BuildContext context) {
     final currentLocation = GoRouterState.of(context).uri.toString();
@@ -579,3 +625,9 @@ class AppDrawer extends StatelessWidget {
     );
   }
 }
+
+class ScaffoldWithDrawerViewModel {}
+
+class _LanguageOptionViewModel {}
+
+class AppDrawerViewModel {}

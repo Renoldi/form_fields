@@ -142,7 +142,7 @@ class View extends PresenterState {
   }
 }
 
-class _MenuItem extends StatelessWidget {
+class _MenuItem extends StatefulWidget {
   final String title;
   final String subtitle;
   final IconData icon;
@@ -158,9 +158,24 @@ class _MenuItem extends StatelessWidget {
   });
 
   @override
+  State<_MenuItem> createState() => _MenuItemView();
+}
+
+abstract class _MenuItemPresenterState extends State<_MenuItem> {
+  late final _MenuItemViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _MenuItemViewModel();
+  }
+}
+
+class _MenuItemView extends _MenuItemPresenterState {
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
@@ -170,28 +185,28 @@ class _MenuItem extends StatelessWidget {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.1),
+              color: widget.color.withValues(alpha: 0.1),
               border: Border.all(
-                color: color,
+                color: widget.color,
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.2),
+                  color: widget.color.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Icon(
-              icon,
+              widget.icon,
               size: 36,
-              color: color,
+              color: widget.color,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            title,
+            widget.title,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
@@ -204,7 +219,7 @@ class _MenuItem extends StatelessWidget {
           const SizedBox(height: 2),
           Flexible(
             child: Text(
-              subtitle,
+              widget.subtitle,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -220,3 +235,5 @@ class _MenuItem extends StatelessWidget {
     );
   }
 }
+
+class _MenuItemViewModel {}

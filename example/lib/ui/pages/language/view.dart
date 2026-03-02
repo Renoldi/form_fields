@@ -39,7 +39,7 @@ class View extends PresenterState {
   }
 }
 
-class _LanguageTile extends StatelessWidget {
+class _LanguageTile extends StatefulWidget {
   final String title;
   final bool selected;
   final VoidCallback onTap;
@@ -51,14 +51,31 @@ class _LanguageTile extends StatelessWidget {
   });
 
   @override
+  State<_LanguageTile> createState() => _LanguageTileView();
+}
+
+abstract class _LanguageTilePresenterState extends State<_LanguageTile> {
+  late final _LanguageTileViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _LanguageTileViewModel();
+  }
+}
+
+class _LanguageTileView extends _LanguageTilePresenterState {
+  @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      trailing: selected
+      title: Text(widget.title),
+      trailing: widget.selected
           ? const Icon(Icons.check_circle, color: Colors.green)
           : const Icon(Icons.circle_outlined, color: Colors.grey),
-      onTap: onTap,
+      onTap: widget.onTap,
     );
   }
 }
+
+class _LanguageTileViewModel {}

@@ -77,7 +77,7 @@ class View extends PresenterState {
   }
 }
 
-class _SectionCard extends StatelessWidget {
+class _SectionCard extends StatefulWidget {
   final String title;
   final IconData icon;
   final Widget child;
@@ -88,6 +88,21 @@ class _SectionCard extends StatelessWidget {
     required this.child,
   });
 
+  @override
+  State<_SectionCard> createState() => _SectionCardView();
+}
+
+abstract class _SectionCardPresenterState extends State<_SectionCard> {
+  late final _SectionCardViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _SectionCardViewModel();
+  }
+}
+
+class _SectionCardView extends _SectionCardPresenterState {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -104,10 +119,10 @@ class _SectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF1F2937)),
+                Icon(widget.icon, color: const Color(0xFF1F2937)),
                 const SizedBox(width: 8),
                 Text(
-                  title,
+                  widget.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -116,7 +131,7 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            child,
+            widget.child,
           ],
         ),
       ),
@@ -124,7 +139,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
+class _SettingsTile extends StatefulWidget {
   final String title;
   final String subtitle;
   final IconData icon;
@@ -138,14 +153,33 @@ class _SettingsTile extends StatelessWidget {
   });
 
   @override
+  State<_SettingsTile> createState() => _SettingsTileView();
+}
+
+abstract class _SettingsTilePresenterState extends State<_SettingsTile> {
+  late final _SettingsTileViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _SettingsTileViewModel();
+  }
+}
+
+class _SettingsTileView extends _SettingsTilePresenterState {
+  @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: const Color(0xFF1F2937)),
-      title: Text(title),
-      subtitle: Text(subtitle),
+      leading: Icon(widget.icon, color: const Color(0xFF1F2937)),
+      title: Text(widget.title),
+      subtitle: Text(widget.subtitle),
       trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+      onTap: widget.onTap,
     );
   }
 }
+
+class _SectionCardViewModel {}
+
+class _SettingsTileViewModel {}

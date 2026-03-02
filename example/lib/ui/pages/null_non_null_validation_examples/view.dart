@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/state/pages/null_non_null_validation_examples_view_model.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
+import 'presenter.dart';
+import 'view_model.dart';
 
 final logger = Logger();
 
-class NullNonNullValidationExamplesPage extends StatelessWidget {
-  const NullNonNullValidationExamplesPage({super.key});
+class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

@@ -82,7 +82,7 @@ class FormFieldsRadioButton<T> extends FormField<T> {
         );
 }
 
-class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
+class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final String label;
   final FormFieldState<T> state;
   final List<T> items;
@@ -146,24 +146,42 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
   });
 
   @override
+  State<_FormFieldsRadioButtonBody<T>> createState() =>
+      _FormFieldsRadioButtonBodyView<T>();
+}
+
+abstract class _FormFieldsRadioButtonBodyPresenterState<T>
+    extends State<_FormFieldsRadioButtonBody<T>> {
+  late final _FormFieldsRadioButtonBodyViewModel viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel = _FormFieldsRadioButtonBodyViewModel();
+  }
+}
+
+class _FormFieldsRadioButtonBodyView<T>
+    extends _FormFieldsRadioButtonBodyPresenterState<T> {
+  @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
-    final hasError = state.hasError;
-    final hasSections = sections.isNotEmpty;
+    final hasError = widget.state.hasError;
+    final hasSections = widget.sections.isNotEmpty;
 
     // Build label widget
     final labelWidget = RichText(
       text: TextSpan(
         children: [
           TextSpan(
-            text: label,
+            text: widget.label,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: hasError ? const Color(0xFFB71C1C) : Colors.black87,
             ),
           ),
-          if (isRequired)
+          if (widget.isRequired)
             const TextSpan(
               text: ' *',
               style: TextStyle(
@@ -179,15 +197,16 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
     // Build radio container
     final radioContainer = Container(
       decoration: BoxDecoration(
-        border: itemBorderColor == null
+        border: widget.itemBorderColor == null
             ? Border.all(
-                color: hasError ? const Color(0xFFB71C1C) : borderColor,
+                color: hasError ? const Color(0xFFB71C1C) : widget.borderColor,
                 width: 1.5,
               )
             : null,
-        borderRadius:
-            itemBorderColor == null ? BorderRadius.circular(radius) : null,
-        boxShadow: itemShadow && !hasError
+        borderRadius: widget.itemBorderColor == null
+            ? BorderRadius.circular(widget.radius)
+            : null,
+        boxShadow: widget.itemShadow && !hasError
             ? [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.04),
@@ -197,7 +216,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
               ]
             : [],
       ),
-      padding: EdgeInsets.all(containerPadding),
+      padding: EdgeInsets.all(widget.containerPadding),
       child: hasSections ? _buildSections() : _buildSimpleItems(),
     );
 
@@ -206,7 +225,8 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         ? Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              state.errorText ?? l.getWithLabel('selectRequired', label),
+              widget.state.errorText ??
+                  l.getWithLabel('selectRequired', widget.label),
               style: const TextStyle(
                 color: Color(0xFFB71C1C),
                 fontSize: 12,
@@ -216,13 +236,13 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
         : const SizedBox.shrink();
 
     // Handle label position
-    switch (labelPosition) {
+    switch (widget.labelPosition) {
       case LabelPosition.top:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             labelWidget,
-            SizedBox(height: containerGap),
+            SizedBox(height: widget.containerGap),
             radioContainer,
             errorWidget,
           ],
@@ -232,7 +252,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             radioContainer,
-            SizedBox(height: containerGap),
+            SizedBox(height: widget.containerGap),
             labelWidget,
             errorWidget,
           ],
@@ -242,7 +262,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IntrinsicWidth(child: labelWidget),
-            SizedBox(width: containerGap),
+            SizedBox(width: widget.containerGap),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,7 +287,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: containerGap),
+            SizedBox(width: widget.containerGap),
             IntrinsicWidth(child: labelWidget),
           ],
         );
@@ -295,7 +315,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...sections.entries.toList().asMap().entries.map((entry) {
+        ...widget.sections.entries.toList().asMap().entries.map((entry) {
           int index = entry.key;
           MapEntry<String, List<T>> sectionEntry = entry.value;
           final sectionName = sectionEntry.key;
@@ -304,7 +324,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (index > 0) SizedBox(height: sectionSpacing),
+              if (index > 0) SizedBox(height: widget.sectionSpacing),
               // Section title
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -335,26 +355,26 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
 
   /// Build simple items (backward compatibility)
   Widget _buildSimpleItems() {
-    return direction == Axis.horizontal
+    return widget.direction == Axis.horizontal
         ? Wrap(
             alignment: WrapAlignment.start,
             spacing: 8,
             runSpacing: 4,
-            children: items.map((e) => _buildItem(e)).toList(),
+            children: widget.items.map((e) => _buildItem(e)).toList(),
           )
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.map((e) => _buildItem(e)).toList(),
+            children: widget.items.map((e) => _buildItem(e)).toList(),
           );
   }
 
   Widget _buildItem(T item) {
-    final selected = state.value == item;
+    final selected = widget.state.value == item;
 
     return Padding(
       padding: EdgeInsets.only(
-        top: itemMarginTop,
-        bottom: itemMarginBottom,
+        top: widget.itemMarginTop,
+        bottom: widget.itemMarginBottom,
       ),
       child: StatefulBuilder(
         builder: (context, setHoverState) {
@@ -364,8 +384,8 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
             child: Builder(
               builder: (context) {
                 final containerColor = selected
-                    ? (selectedItemBackgroundColor ??
-                        activeColor.withValues(alpha: 0.1))
+                    ? (widget.selectedItemBackgroundColor ??
+                        widget.activeColor.withValues(alpha: 0.1))
                     : Colors.transparent;
 
                 final itemBox = AnimatedContainer(
@@ -373,19 +393,22 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                   curve: Curves.easeInOut,
                   decoration: BoxDecoration(
                     color: containerColor,
-                    border: itemBorderColor != null
+                    border: widget.itemBorderColor != null
                         ? Border.all(
-                            color: selected ? activeColor : itemBorderColor!,
+                            color: selected
+                                ? widget.activeColor
+                                : widget.itemBorderColor!,
                             width: selected
-                                ? itemBorderWidth + 0.5
-                                : itemBorderWidth,
+                                ? widget.itemBorderWidth + 0.5
+                                : widget.itemBorderWidth,
                           )
                         : null,
-                    borderRadius: BorderRadius.circular(itemBorderRadius),
-                    boxShadow: itemShadow && selected
+                    borderRadius:
+                        BorderRadius.circular(widget.itemBorderRadius),
+                    boxShadow: widget.itemShadow && selected
                         ? [
                             BoxShadow(
-                              color: activeColor.withValues(alpha: 0.15),
+                              color: widget.activeColor.withValues(alpha: 0.15),
                               blurRadius: 12,
                               offset: const Offset(0, 3),
                             ),
@@ -394,14 +417,16 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                   ),
                   child: InkWell(
                     onTap: () {
-                      state.didChange(item);
-                      onChanged(item);
+                      widget.state.didChange(item);
+                      widget.onChanged(item);
                     },
-                    hoverColor: (hoverBackgroundColor ?? activeColor)
-                        .withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(itemBorderRadius),
+                    hoverColor:
+                        (widget.hoverBackgroundColor ?? widget.activeColor)
+                            .withValues(alpha: 0.08),
+                    borderRadius:
+                        BorderRadius.circular(widget.itemBorderRadius),
                     child: Padding(
-                      padding: itemPadding,
+                      padding: widget.itemPadding,
                       child: Row(
                         mainAxisSize: MainAxisSize.max,
                         children: [
@@ -412,7 +437,8 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: selected ? activeColor : Colors.grey,
+                                color:
+                                    selected ? widget.activeColor : Colors.grey,
                                 width: 2,
                               ),
                             ),
@@ -423,47 +449,48 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                                       height: 12,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: activeColor,
+                                        color: widget.activeColor,
                                       ),
                                     ),
                                   )
                                 : null,
                           ),
                           const SizedBox(width: 12),
-                          itemBuilder != null
+                          widget.itemBuilder != null
                               ? Expanded(
                                   child: Padding(
                                     padding: EdgeInsets.only(
-                                      right: textRightPadding +
-                                          itemTextMarginRight,
+                                      right: widget.textRightPadding +
+                                          widget.itemTextMarginRight,
                                     ),
                                     child: DefaultTextStyle(
                                       style: TextStyle(
                                         color: selected
-                                            ? (selectedItemTextColor ??
+                                            ? (widget.selectedItemTextColor ??
                                                 Colors.black87)
                                             : Colors.black54,
                                         fontWeight: selected
                                             ? FontWeight.w600
                                             : FontWeight.w500,
                                       ),
-                                      child: itemBuilder!(item, selected),
+                                      child:
+                                          widget.itemBuilder!(item, selected),
                                     ),
                                   ),
                                 )
                               : Expanded(
                                   child: Padding(
                                     padding: EdgeInsets.only(
-                                      right: textRightPadding +
-                                          itemTextMarginRight,
+                                      right: widget.textRightPadding +
+                                          widget.itemTextMarginRight,
                                     ),
                                     child: Text(
-                                      itemLabelBuilder != null
-                                          ? itemLabelBuilder!(item)
+                                      widget.itemLabelBuilder != null
+                                          ? widget.itemLabelBuilder!(item)
                                           : item.toString(),
                                       style: TextStyle(
                                         color: selected
-                                            ? (selectedItemTextColor ??
+                                            ? (widget.selectedItemTextColor ??
                                                 Colors.black87)
                                             : Colors.black54,
                                         fontWeight: selected
@@ -483,7 +510,7 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
                 );
 
                 // Wrap with border container if no itemBorderColor
-                if (itemBorderColor == null) {
+                if (widget.itemBorderColor == null) {
                   return itemBox;
                 }
 
@@ -496,3 +523,5 @@ class _FormFieldsRadioButtonBody<T> extends StatelessWidget {
     );
   }
 }
+
+class _FormFieldsRadioButtonBodyViewModel {}
