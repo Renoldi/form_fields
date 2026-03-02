@@ -216,7 +216,317 @@ FormFieldsCheckbox<String>(
 ```
 
 ### How to Use Each Property (Detailed)
-Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
+- **label** — The label displayed above or beside the checkbox group.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Select Your Preferences',
+  items: ['Option1', 'Option2'],
+  onChanged: (values) {},
+)
+```
+
+- **items** — The list of items to display as checkboxes.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Days',
+  items: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+  onChanged: (values) {},
+)
+```
+
+- **onChanged** — Callback when the selection changes, returns the list of selected values.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  onChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
+```
+
+- **initialValue** — Initial selected values.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  initialValue: ['A', 'B'],
+  onChanged: (values) {},
+)
+```
+
+- **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+```dart
+FormFieldsCheckbox<User>(
+  label: 'Users',
+  items: users,
+  itemLabelBuilder: (user) => '${user.name} (${user.email})',
+  onChanged: (values) {},
+)
+```
+
+- **itemBuilder** — Custom widget builder for individual items.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['Premium', 'Standard', 'Basic'],
+  itemBuilder: (item, isSelected) => Container(
+    padding: EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: isSelected ? Colors.blue : Colors.grey,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(item, style: TextStyle(color: Colors.white)),
+  ),
+  onChanged: (values) {},
+)
+```
+
+- **isRequired** — Whether at least one checkbox must be selected.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Required Selection',
+  items: ['Yes', 'No'],
+  isRequired: true,
+  onChanged: (values) {},
+)
+```
+
+- **direction** — Layout direction: vertical or horizontal.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  direction: Axis.horizontal,
+  onChanged: (values) {},
+)
+```
+
+- **horizontalSideBySide** — Force compact horizontal side-by-side layout with wrapping.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['Option 1', 'Option 2', 'Option 3'],
+  horizontalSideBySide: true,
+  onChanged: (values) {},
+)
+```
+
+- **indicatorVerticalAlignment** — Vertical alignment of the checkbox indicator relative to the text (top, center, bottom).
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['Multi-line\nOption 1', 'Multi-line\nOption 2'],
+  indicatorVerticalAlignment: IndicatorVerticalAlignment.top,
+  onChanged: (values) {},
+)
+```
+
+- **textRightPadding** — Padding to the right of the text for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  textRightPadding: 12,
+  onChanged: (values) {},
+)
+```
+
+- **radius** — Border radius for the group container.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  radius: 16,
+  onChanged: (values) {},
+)
+```
+
+- **borderColor** — Border color for the group container.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  borderColor: Colors.teal,
+  onChanged: (values) {},
+)
+```
+
+- **errorBorderColor** — Border color when validation fails.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  isRequired: true,
+  errorBorderColor: Colors.red,
+  onChanged: (values) {},
+)
+```
+
+- **activeColor** — Color of the checkbox when selected.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  activeColor: Colors.green,
+  onChanged: (values) {},
+)
+```
+
+- **itemPadding** — Padding for each checkbox item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemPadding: EdgeInsets.all(12),
+  onChanged: (values) {},
+)
+```
+
+- **itemBorderColor** — Border color for each individual item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: Colors.grey,
+  onChanged: (values) {},
+)
+```
+
+- **itemBorderWidth** — Border width for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderWidth: 2,
+  onChanged: (values) {},
+)
+```
+
+- **itemBorderRadius** — Border radius for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderRadius: 8,
+  onChanged: (values) {},
+)
+```
+
+- **selectedItemBackgroundColor** — Background color for selected items.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemBackgroundColor: Colors.blue.shade100,
+  onChanged: (values) {},
+)
+```
+
+- **selectedItemTextColor** — Text color for selected items.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemTextColor: Colors.blue,
+  onChanged: (values) {},
+)
+```
+
+- **hoverBackgroundColor** — Background color when hovering over items.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  hoverBackgroundColor: Colors.grey.shade200,
+  onChanged: (values) {},
+)
+```
+
+- **itemShadow** — Whether to show shadow for items.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemShadow: true,
+  onChanged: (values) {},
+)
+```
+
+- **labelPosition** — Position of the label (top, left, right, etc.).
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  labelPosition: LabelPosition.left,
+  onChanged: (values) {},
+)
+```
+
+- **containerPadding** — Padding for the entire checkbox group container.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  containerPadding: 16,
+  onChanged: (values) {},
+)
+```
+
+- **containerGap** — Gap between items in the container.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  containerGap: 12,
+  onChanged: (values) {},
+)
+```
+
+- **itemMarginTop** — Top margin for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginTop: 4,
+  onChanged: (values) {},
+)
+```
+
+- **itemMarginBottom** — Bottom margin for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginBottom: 8,
+  onChanged: (values) {},
+)
+```
+
+- **itemMarginHorizontal** — Horizontal margin for each item.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginHorizontal: 6,
+  onChanged: (values) {},
+)
+```
+
+- **validator** — Custom validation logic.
+```dart
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  validator: (values) {
+    if (values == null || values.length < 2) {
+      return 'Please select at least 2 options';
+    }
+    return null;
+  },
+  onChanged: (values) {},
+)
+```
 
 ### Custom Class
 ```dart
@@ -289,7 +599,231 @@ FormFieldsDropdownMulti<String>(
 ```
 
 ### How to Use Each Property (Detailed)
-Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
+- **label** — The label displayed for the dropdown multi-select widget.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Select Languages',
+  items: ['English', 'Spanish', 'French'],
+  onChanged: (values) {},
+)
+```
+
+- **items** — The list of items available for selection.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German', 'Italian'],
+  onChanged: (values) {},
+)
+```
+
+- **onChanged** — Callback when the selection changes, returns the list of selected values.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  onChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
+```
+
+- **initialValues** — Initial selected values.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  initialValues: ['English', 'Spanish'],
+  onChanged: (values) {},
+)
+```
+
+- **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+```dart
+FormFieldsDropdownMulti<Language>(
+  label: 'Languages',
+  items: languages,
+  itemLabelBuilder: (lang) => '${lang.name} (${lang.code})',
+  onChanged: (values) {},
+)
+```
+
+- **validator** — Custom validation logic.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  validator: (values) {
+    if (values == null || values.isEmpty) {
+      return 'Please select at least one language';
+    }
+    return null;
+  },
+  onChanged: (values) {},
+)
+```
+
+- **isRequired** — Whether at least one item must be selected.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  isRequired: true,
+  onChanged: (values) {},
+)
+```
+
+- **minSelections** — Minimum number of selections required.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German'],
+  minSelections: 2,
+  onChanged: (values) {},
+)
+```
+
+- **maxSelections** — Maximum number of selections allowed.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German'],
+  maxSelections: 3,
+  onChanged: (values) {},
+)
+```
+
+- **labelPosition** — Position of the label (top, left, right, etc.).
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  labelPosition: LabelPosition.left,
+  onChanged: (values) {},
+)
+```
+
+- **borderType** — Border style for the dropdown.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  borderType: BorderType.underlineInputBorder,
+  onChanged: (values) {},
+)
+```
+
+- **radius** — Border radius for the dropdown field.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  radius: 12,
+  onChanged: (values) {},
+)
+```
+
+- **borderColor** — Border color for the dropdown.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  borderColor: Colors.teal,
+  onChanged: (values) {},
+)
+```
+
+- **focusedBorderColor** — Border color when the dropdown is focused.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  focusedBorderColor: Colors.teal.shade700,
+  onChanged: (values) {},
+)
+```
+
+- **errorBorderColor** — Border color when validation fails.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  isRequired: true,
+  errorBorderColor: Colors.red,
+  onChanged: (values) {},
+)
+```
+
+- **hintText** — Hint text displayed when no items are selected.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  hintText: 'Select your languages',
+  onChanged: (values) {},
+)
+```
+
+- **showItemCount** — Show the count of selected items.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  showItemCount: true,
+  onChanged: (values) {},
+)
+```
+
+- **chipBackgroundColor** — Background color for selected item chips.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipBackgroundColor: Colors.blue.shade100,
+  onChanged: (values) {},
+)
+```
+
+- **chipTextColor** — Text color for selected item chips.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipTextColor: Colors.blue.shade900,
+  onChanged: (values) {},
+)
+```
+
+- **chipDeleteIconColor** — Delete icon color for selected item chips.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipDeleteIconColor: Colors.red,
+  onChanged: (values) {},
+)
+```
+
+- **enableFilter** — Enable search/filter functionality.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French', 'German', 'Italian'],
+  enableFilter: true,
+  onChanged: (values) {},
+)
+```
+
+- **filterHintText** — Hint text for the filter/search field.
+```dart
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  enableFilter: true,
+  filterHintText: 'Search languages...',
+  onChanged: (values) {},
+)
+```
 
 ### Custom Class
 ```dart
@@ -357,7 +891,215 @@ FormFieldsDropdown<String>(
 ```
 
 ### How to Use Each Property (Detailed)
-Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
+- **items** — The list of items available for selection.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Australia'],
+  onChanged: (value) {},
+)
+```
+
+- **label** — The label displayed for the dropdown widget.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Select Your Country',
+  items: ['USA', 'Canada'],
+  onChanged: (value) {},
+)
+```
+
+- **onChanged** — Callback when the selection changes, returns the selected value.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  onChanged: (selectedValue) {
+    print('Selected: $selectedValue');
+  },
+)
+```
+
+- **initialValue** — Initial selected value.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: 'USA',
+  onChanged: (value) {},
+)
+```
+
+- **validator** — Custom validation logic.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select a country';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
+```
+
+- **isRequired** — Whether selection is required.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  isRequired: true,
+  onChanged: (value) {},
+)
+```
+
+- **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+```dart
+FormFieldsDropdown<Country>(
+  label: 'Country',
+  items: countries,
+  itemLabelBuilder: (country) => '${country.name} (${country.code})',
+  onChanged: (value) {},
+)
+```
+
+- **labelPosition** — Position of the label (top, left, right, etc.).
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+```
+
+- **borderType** — Border style for the dropdown.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  borderType: BorderType.underlineInputBorder,
+  onChanged: (value) {},
+)
+```
+
+- **radius** — Border radius for the dropdown field.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  radius: 12,
+  onChanged: (value) {},
+)
+```
+
+- **borderColor** — Border color for the dropdown.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  borderColor: Colors.indigo,
+  onChanged: (value) {},
+)
+```
+
+- **focusedBorderColor** — Border color when the dropdown is focused.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  focusedBorderColor: Colors.indigo.shade700,
+  onChanged: (value) {},
+)
+```
+
+- **errorBorderColor** — Border color when validation fails.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  isRequired: true,
+  errorBorderColor: Colors.red,
+  onChanged: (value) {},
+)
+```
+
+- **decoration** — Custom input decoration.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  decoration: InputDecoration(
+    hintText: 'Choose a country',
+    filled: true,
+    fillColor: Colors.grey.shade100,
+  ),
+  onChanged: (value) {},
+)
+```
+
+- **prefixIcon** — Icon displayed before the dropdown field.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  prefixIcon: Icon(Icons.public),
+  onChanged: (value) {},
+)
+```
+
+- **suffixIcon** — Icon displayed after the dropdown field.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  suffixIcon: Icon(Icons.arrow_drop_down),
+  onChanged: (value) {},
+)
+```
+
+- **hintText** — Hint text displayed when no item is selected.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  hintText: 'Select your country',
+  onChanged: (value) {},
+)
+```
+
+- **enabled** — Whether the dropdown is enabled or disabled.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  enabled: false,
+  onChanged: (value) {},
+)
+```
+
+- **enableFilter** — Enable search/filter functionality.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Australia', 'Germany'],
+  enableFilter: true,
+  onChanged: (value) {},
+)
+```
+
+- **filterHintText** — Hint text for the filter/search field.
+```dart
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  enableFilter: true,
+  filterHintText: 'Search country...',
+  onChanged: (value) {},
+)
+```
 
 ### Custom Class
 ```dart
@@ -437,7 +1179,344 @@ FormFieldsRadioButton<String>(
 ```
 
 ### How to Use Each Property (Detailed)
-Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
+- **label** — The label displayed for the radio button group.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Marital Status',
+  items: ['Single', 'Married', 'Divorced'],
+  onChanged: (value) {},
+)
+```
+
+- **items** — The list of items to display as radio buttons.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  onChanged: (value) {},
+)
+```
+
+- **sections** — Map of sectioned items for grouped radio buttons.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Vehicle Type',
+  sections: {
+    'Two Wheelers': ['Bike', 'Scooter'],
+    'Four Wheelers': ['Car', 'SUV', 'Truck'],
+  },
+  onChanged: (value) {},
+)
+```
+
+- **onChanged** — Callback when the selection changes, returns the selected value.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female'],
+  onChanged: (selectedValue) {
+    print('Selected: $selectedValue');
+  },
+)
+```
+
+- **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+```dart
+FormFieldsRadioButton<Gender>(
+  label: 'Gender',
+  items: genders,
+  itemLabelBuilder: (gender) => gender.label,
+  onChanged: (value) {},
+)
+```
+
+- **itemBuilder** — Custom widget builder for individual items.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Plan',
+  items: ['Basic', 'Premium', 'Enterprise'],
+  itemBuilder: (item, isSelected) => Container(
+    padding: EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: isSelected ? Colors.blue : Colors.grey.shade200,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(item, style: TextStyle(
+      color: isSelected ? Colors.white : Colors.black,
+    )),
+  ),
+  onChanged: (value) {},
+)
+```
+
+- **initialValue** — Initial selected value.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: 'Male',
+  onChanged: (value) {},
+)
+```
+
+- **isRequired** — Whether a selection is required.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female'],
+  isRequired: true,
+  onChanged: (value) {},
+)
+```
+
+- **direction** — Layout direction: vertical or horizontal.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  direction: Axis.horizontal,
+  onChanged: (value) {},
+)
+```
+
+- **horizontalSideBySide** — Force compact horizontal side-by-side layout with wrapping.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['Option 1', 'Option 2', 'Option 3'],
+  horizontalSideBySide: true,
+  onChanged: (value) {},
+)
+```
+
+- **indicatorVerticalAlignment** — Vertical alignment of the radio indicator relative to the text (top, center, bottom).
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['Multi-line\nOption 1', 'Multi-line\nOption 2'],
+  indicatorVerticalAlignment: IndicatorVerticalAlignment.top,
+  onChanged: (value) {},
+)
+```
+
+- **textRightPadding** — Padding to the right of the text for each item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  textRightPadding: 12,
+  onChanged: (value) {},
+)
+```
+
+- **radius** — Border radius for the group container.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  radius: 16,
+  onChanged: (value) {},
+)
+```
+
+- **borderColor** — Border color for the group container.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  borderColor: Colors.teal,
+  onChanged: (value) {},
+)
+```
+
+- **errorBorderColor** — Border color when validation fails.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  isRequired: true,
+  errorBorderColor: Colors.red,
+  onChanged: (value) {},
+)
+```
+
+- **activeColor** — Color of the radio button when selected.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  activeColor: Colors.green,
+  onChanged: (value) {},
+)
+```
+
+- **itemPadding** — Padding for each radio button item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemPadding: EdgeInsets.all(12),
+  onChanged: (value) {},
+)
+```
+
+- **sectionSpacing** — Spacing between sections (when using sections).
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  sections: {
+    'Group 1': ['A', 'B'],
+    'Group 2': ['C', 'D'],
+  },
+  sectionSpacing: 16,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderColor** — Border color for each individual item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: Colors.grey,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderWidth** — Border width for each item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderWidth: 2,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderRadius** — Border radius for each item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderRadius: 8,
+  onChanged: (value) {},
+)
+```
+
+- **itemTextMarginRight** — Margin to the right of item text.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemTextMarginRight: 8,
+  onChanged: (value) {},
+)
+```
+
+- **selectedItemBackgroundColor** — Background color for selected item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemBackgroundColor: Colors.blue.shade100,
+  onChanged: (value) {},
+)
+```
+
+- **selectedItemTextColor** — Text color for selected item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemTextColor: Colors.blue,
+  onChanged: (value) {},
+)
+```
+
+- **hoverBackgroundColor** — Background color when hovering over items.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  hoverBackgroundColor: Colors.grey.shade200,
+  onChanged: (value) {},
+)
+```
+
+- **itemShadow** — Whether to show shadow for items.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemShadow: true,
+  onChanged: (value) {},
+)
+```
+
+- **labelPosition** — Position of the label (top, left, right, etc.).
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+```
+
+- **containerPadding** — Padding for the entire radio group container.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  containerPadding: 16,
+  onChanged: (value) {},
+)
+```
+
+- **containerGap** — Gap between items in the container.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  containerGap: 12,
+  onChanged: (value) {},
+)
+```
+
+- **itemMarginTop** — Top margin for each item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginTop: 4,
+  onChanged: (value) {},
+)
+```
+
+- **itemMarginBottom** — Bottom margin for each item.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginBottom: 8,
+  onChanged: (value) {},
+)
+```
+
+- **validator** — Custom validation logic.
+```dart
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select an option';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
+```
 
 ### Custom Class
 ```dart
@@ -512,7 +1591,316 @@ FormFieldsSelect<String>(
 ```
 
 ### How to Use Each Property (Detailed)
-Use the `Properties Example` above as the recommended baseline, then customize only the properties you need.
+- **formType** — The type of selection widget to display (dropdown, dropdownMulti, radioButton, checkbox).
+```dart
+// Single select dropdown
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  onChanged: (value) {},
+)
+
+// Multi-select dropdown
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Skills',
+  items: ['Dart', 'Flutter', 'Firebase'],
+  onMultiChanged: (values) {},
+)
+
+// Radio button group
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Gender',
+  items: ['Male', 'Female'],
+  onChanged: (value) {},
+)
+
+// Checkbox group
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Interests',
+  items: ['Sports', 'Music', 'Reading'],
+  onMultiChanged: (values) {},
+)
+```
+
+- **label** — The label displayed for the select widget.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Select Your Country',
+  items: ['USA', 'Canada'],
+  onChanged: (value) {},
+)
+```
+
+- **items** — The list of items available for selection.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Australia'],
+  onChanged: (value) {},
+)
+```
+
+- **initialValue** — Initial value for single select (dropdown, radioButton).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: 'USA',
+  onChanged: (value) {},
+)
+```
+
+- **initialValues** — Initial values for multi-select (dropdownMulti, checkbox).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Interests',
+  items: ['Sports', 'Music', 'Reading'],
+  initialValues: ['Sports', 'Music'],
+  onMultiChanged: (values) {},
+)
+```
+
+- **onChanged** — Callback for single value changes (dropdown, radioButton).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  onChanged: (selectedValue) {
+    print('Selected: $selectedValue');
+  },
+)
+```
+
+- **onMultiChanged** — Callback for multi-value changes (dropdownMulti, checkbox).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Interests',
+  items: ['Sports', 'Music', 'Reading'],
+  onMultiChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
+```
+
+- **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+```dart
+FormFieldsSelect<Country>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: countries,
+  itemLabelBuilder: (country) => '${country.name} (${country.code})',
+  onChanged: (value) {},
+)
+```
+
+- **validator** — Validator for single value selections.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select a country';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
+```
+
+- **multiValidator** — Validator for multi-value selections.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Skills',
+  items: ['Dart', 'Flutter', 'Firebase'],
+  multiValidator: (values) {
+    if (values == null || values.length < 2) {
+      return 'Please select at least 2 skills';
+    }
+    return null;
+  },
+  onMultiChanged: (values) {},
+)
+```
+
+- **isRequired** — Whether selection is required.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  isRequired: true,
+  onChanged: (value) {},
+)
+```
+
+- **labelPosition** — Position of the label (top, left, right, etc.).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+```
+
+- **borderType** — Border style for the widget.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  borderType: BorderType.underlineInputBorder,
+  onChanged: (value) {},
+)
+```
+
+- **radius** — Border radius.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  radius: 12,
+  onChanged: (value) {},
+)
+```
+
+- **borderColor** — Border color.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  borderColor: Colors.teal,
+  onChanged: (value) {},
+)
+```
+
+- **focusedBorderColor** — Border color when focused.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  focusedBorderColor: Colors.teal.shade700,
+  onChanged: (value) {},
+)
+```
+
+- **errorBorderColor** — Border color when validation fails.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  isRequired: true,
+  errorBorderColor: Colors.red,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderColor** — Border color for each item (applicable to radioButton and checkbox).
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: Colors.grey,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderWidth** — Border width for each item.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderWidth: 2,
+  onChanged: (value) {},
+)
+```
+
+- **itemBorderRadius** — Border radius for each item.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderRadius: 10,
+  onChanged: (value) {},
+)
+```
+
+- **itemMarginTop** — Top margin for each item.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginTop: 4,
+  onChanged: (value) {},
+)
+```
+
+- **itemMarginBottom** — Bottom margin for each item.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginBottom: 6,
+  onChanged: (value) {},
+)
+```
+
+- **itemMarginHorizontal** — Horizontal margin for each item.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemMarginHorizontal: 8,
+  onChanged: (value) {},
+)
+```
+
+- **enableFilter** — Enable search/filter functionality.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK', 'Australia', 'Germany'],
+  enableFilter: true,
+  onChanged: (value) {},
+)
+```
+
+- **filterHintText** — Hint text for the filter/search field.
+```dart
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  enableFilter: true,
+  filterHintText: 'Search country...',
+  onChanged: (value) {},
+)
+```
 
 ### Custom Class
 ```dart
