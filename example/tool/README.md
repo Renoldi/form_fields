@@ -34,10 +34,11 @@ When you run this tool, it:
 3. ✅ Updates `lib/config/environment.dart` with API URLs
 4. ✅ Updates `android/app/build.gradle.kts` with Android settings
 5. ✅ Updates `android/app/src/main/AndroidManifest.xml` with permissions
-6. ✅ Updates iOS/macOS/Web/Windows/Linux configs (if present)
-7. ✅ **🆕 Updates iOS/macOS `Podfile` with permission_handler configuration**
-8. ✅ **🆕 Updates iOS/macOS `Info.plist` with permission descriptions**
-9. ✅ **🆕 Automatically builds for selected platforms** with auto-fix for errors
+6. ✅ **🆕 Updates `android/.../MainActivity.kt` package name** to match namespace
+7. ✅ Updates iOS/macOS/Web/Windows/Linux configs (if present)
+8. ✅ **🆕 Updates iOS/macOS `Podfile` with permission_handler configuration**
+9. ✅ **🆕 Updates iOS/macOS `Info.plist` with permission descriptions**
+10. ✅ **🆕 Automatically builds for selected platforms** with auto-fix for errors
 
 ## Configuration Storage
 
@@ -92,7 +93,8 @@ dart run tool/configure_build.dart \
   --maps-key=AIzaSyPROD_KEY \
   --camera=true \
   --gallery=true \
-  --notification=true
+  --notification=true \
+  --main-activity-path=android/app/src/main/kotlin/com/mycompany/awesomeapp/MainActivity.kt
 ```
 
 ## Available Options
@@ -102,18 +104,54 @@ dart run tool/configure_build.dart \
 | `--env` | Environment (debug/beta/production) | `debug` |
 | `--namespace` | Android package name | `com.example.form_fields_example` |
 | `--base-url` | API base URL | Environment-specific |
-| `--compile-sdk` | Android compile SDK | `34` |
+| `--compile-sdk` | Android compile SDK | `36` |
 | `--ndk-version` | Android NDK version | `27.0.12077973` |
 | `--min-sdk` | Minimum Android SDK | `21` |
-| `--target-sdk` | Target Android SDK | `34` |
+| `--target-sdk` | Target Android SDK | `36` |
 | `--version-code` | App version code | `1` |
 | `--version-name` | App version name | `1.0.0` |
 | `--maps-key` | Google Maps API key | Environment placeholder |
+| `--main-activity-path` | Path to MainActivity.kt (relative to project root) | `android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt` |
 | `--camera` | Enable camera permission (Android + iOS/macOS) | `true` |
 | `--gallery` | Enable gallery/photos permission (Android + iOS/macOS) | `true` |
 | `--notification` | Enable notification permission (Android + iOS/macOS) | `true` |
 | `--platform` | Build platforms (android/ios/macos/windows/linux/web/all) | `android` |
 | `--skip-build` | Skip automatic build | `false` |
+
+## Android MainActivity.kt Configuration
+
+The tool automatically updates your `MainActivity.kt` package name to match your configured namespace:
+
+### Default Behavior
+By default, the tool updates the MainActivity at:
+```
+android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt
+```
+
+### Custom MainActivity.kt Path
+If your MainActivity is in a different location, use `--main-activity-path`:
+
+```bash
+dart run tool/configure_build.dart \
+  --env=production \
+  --main-activity-path=android/app/src/main/kotlin/com/mycompany/myapp/MainActivity.kt
+```
+
+### Example: Environment-Specific Package Names
+When you run the tool with different environments, the package name is automatically updated:
+
+```bash
+# Debug - updates to: package com.example.form_fields_example.debug
+dart run tool/configure_build.dart --env=debug
+
+# Beta - updates to: package com.example.form_fields_example.beta
+dart run tool/configure_build.dart --env=beta
+
+# Production - updates to: package com.example.form_fields_example
+dart run tool/configure_build.dart --env=production
+```
+
+This keeps your build.gradle.kts, AndroidManifest.xml, and MainActivity.kt all synchronized!
 
 ## Automatic Multi-Platform Building
 

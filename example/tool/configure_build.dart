@@ -62,6 +62,7 @@ class _Config {
     required this.showHelp,
     required this.skipBuild,
     required this.buildPlatforms,
+    required this.mainActivityPath,
   });
 
   final String environment;
@@ -80,6 +81,7 @@ class _Config {
   final bool showHelp;
   final bool skipBuild;
   final List<String> buildPlatforms;
+  final String mainActivityPath;
 
   String get environmentEnum => 'AppEnvironment.$environment';
 
@@ -149,6 +151,8 @@ _Config _parseArgs(List<String> args) {
       showHelp: true,
       skipBuild: false,
       buildPlatforms: ['android'],
+      mainActivityPath:
+          'android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt',
     );
   }
 
@@ -193,6 +197,8 @@ _Config _parseArgs(List<String> args) {
     showHelp: false,
     skipBuild: _parseBool(map['skip-build'], false),
     buildPlatforms: _parsePlatforms(map['platform']),
+    mainActivityPath: map['main-activity-path'] ??
+        'android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt',
   );
 }
 
@@ -247,6 +253,7 @@ Options:
   --camera=true|false
   --gallery=true|false
   --notification=true|false
+  --main-activity-path=android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt
   --platform=android|ios|macos|windows|linux|web|all (comma-separated or 'all')
   --skip-build       Skip build after configuration
 
@@ -519,8 +526,7 @@ String _androidPermissionLines(_Config config) {
 }
 
 void _updateMainActivity(String root, _Config config, List<String> changes) {
-  final path =
-      '$root/android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt';
+  final path = '$root/${config.mainActivityPath}';
   final file = File(path);
   if (!file.existsSync()) return;
 
