@@ -227,18 +227,36 @@ FormFieldsCheckbox<String>(
 
 - **items** — The list of items to display as checkboxes.
 ```dart
+// Non-nullable type
 FormFieldsCheckbox<String>(
   label: 'Days',
   items: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+  onChanged: (values) {},
+)
+
+// Nullable type (allows null items)
+FormFieldsCheckbox<String?>(
+  label: 'Days',
+  items: ['Monday', 'Tuesday', null, 'Thursday', 'Friday'],
   onChanged: (values) {},
 )
 ```
 
 - **onChanged** — Callback when the selection changes, returns the list of selected values.
 ```dart
+// Non-nullable type
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
+  onChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
+
+// Nullable type
+FormFieldsCheckbox<String?>(
+  label: 'Options',
+  items: ['A', null, 'C'],
   onChanged: (selectedValues) {
     print('Selected: $selectedValues');
   },
@@ -247,26 +265,53 @@ FormFieldsCheckbox<String>(
 
 - **initialValue** — Initial selected values.
 ```dart
+// With initial values
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   initialValue: ['A', 'B'],
   onChanged: (values) {},
 )
+
+// Nullable: No items selected initially
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  initialValue: null,
+  onChanged: (values) {},
+)
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
 ```dart
+// With custom label builder
 FormFieldsCheckbox<User>(
   label: 'Users',
   items: users,
   itemLabelBuilder: (user) => '${user.name} (${user.email})',
   onChanged: (values) {},
 )
+
+// Nullable: Uses toString() by default
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemLabelBuilder: null,
+  onChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsCheckbox<String?>(
+  label: 'Options',
+  items: ['A', 'B', null, 'D'],
+  itemLabelBuilder: (item) => item ?? 'None',
+  onChanged: (values) {},
+)
 ```
 
 - **itemBuilder** — Custom widget builder for individual items.
 ```dart
+// With custom item builder
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['Premium', 'Standard', 'Basic'],
@@ -277,6 +322,29 @@ FormFieldsCheckbox<String>(
       borderRadius: BorderRadius.circular(8),
     ),
     child: Text(item, style: TextStyle(color: Colors.white)),
+  ),
+  onChanged: (values) {},
+)
+
+// Nullable: Uses default checkbox rendering
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['Premium', 'Standard', 'Basic'],
+  itemBuilder: null,
+  onChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsCheckbox<String?>(
+  label: 'Options',
+  items: ['Premium', null, 'Basic'],
+  itemBuilder: (item, isSelected) => Container(
+    padding: EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: isSelected ? Colors.blue : Colors.grey,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(item ?? 'Not specified', style: TextStyle(color: Colors.white)),
   ),
   onChanged: (values) {},
 )
@@ -385,10 +453,19 @@ FormFieldsCheckbox<String>(
 
 - **itemBorderColor** — Border color for each individual item.
 ```dart
+// With custom border color
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   itemBorderColor: Colors.grey,
+  onChanged: (values) {},
+)
+
+// Nullable: No border color applied
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: null,
   onChanged: (values) {},
 )
 ```
@@ -415,30 +492,57 @@ FormFieldsCheckbox<String>(
 
 - **selectedItemBackgroundColor** — Background color for selected items.
 ```dart
+// With custom background color
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   selectedItemBackgroundColor: Colors.blue.shade100,
   onChanged: (values) {},
 )
+
+// Nullable: No background color change on selection
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemBackgroundColor: null,
+  onChanged: (values) {},
+)
 ```
 
 - **selectedItemTextColor** — Text color for selected items.
 ```dart
+// With custom text color
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   selectedItemTextColor: Colors.blue,
   onChanged: (values) {},
 )
+
+// Nullable: No text color change on selection
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemTextColor: null,
+  onChanged: (values) {},
+)
 ```
 
 - **hoverBackgroundColor** — Background color when hovering over items.
 ```dart
+// With hover effect
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   hoverBackgroundColor: Colors.grey.shade200,
+  onChanged: (values) {},
+)
+
+// Nullable: No hover background color
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  hoverBackgroundColor: null,
   onChanged: (values) {},
 )
 ```
@@ -515,12 +619,34 @@ FormFieldsCheckbox<String>(
 
 - **validator** — Custom validation logic.
 ```dart
+// With validation
 FormFieldsCheckbox<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   validator: (values) {
     if (values == null || values.length < 2) {
       return 'Please select at least 2 options';
+    }
+    return null;
+  },
+  onChanged: (values) {},
+)
+
+// Nullable: No custom validation
+FormFieldsCheckbox<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  validator: null,
+  onChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsCheckbox<String?>(
+  label: 'Options',
+  items: ['A', null, 'C'],
+  validator: (values) {
+    if (values == null || values.isEmpty) {
+      return 'Please select at least one option';
     }
     return null;
   },
@@ -610,18 +736,36 @@ FormFieldsDropdownMulti<String>(
 
 - **items** — The list of items available for selection.
 ```dart
+// Non-nullable type
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French', 'German', 'Italian'],
+  onChanged: (values) {},
+)
+
+// Nullable type (allows null items)
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages',
+  items: ['English', 'Spanish', null, 'German', 'Italian'],
   onChanged: (values) {},
 )
 ```
 
 - **onChanged** — Callback when the selection changes, returns the list of selected values.
 ```dart
+// Non-nullable type
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish'],
+  onChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
+
+// Nullable type
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages',
+  items: ['English', null, 'Spanish'],
   onChanged: (selectedValues) {
     print('Selected: $selectedValues');
   },
@@ -630,29 +774,77 @@ FormFieldsDropdownMulti<String>(
 
 - **initialValues** — Initial selected values.
 ```dart
+// With initial values
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French'],
   initialValues: ['English', 'Spanish'],
   onChanged: (values) {},
 )
+
+// Nullable: No items selected initially
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  initialValues: null,
+  onChanged: (values) {},
+)
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
 ```dart
+// With custom label builder
 FormFieldsDropdownMulti<Language>(
   label: 'Languages',
   items: languages,
   itemLabelBuilder: (lang) => '${lang.name} (${lang.code})',
   onChanged: (values) {},
 )
+
+// Nullable: Uses toString() by default
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  itemLabelBuilder: null,
+  onChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages',
+  items: ['English', null, 'Spanish'],
+  itemLabelBuilder: (item) => item ?? 'Unspecified',
+  onChanged: (values) {},
+)
 ```
 
 - **validator** — Custom validation logic.
 ```dart
+// With validation
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French'],
+  validator: (values) {
+    if (values == null || values.isEmpty) {
+      return 'Please select at least one language';
+    }
+    return null;
+  },
+  onChanged: (values) {},
+)
+
+// Nullable: No custom validation
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  validator: null,
+  onChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsDropdownMulti<String?>(
+  label: 'Languages',
+  items: ['English', null, 'Spanish'],
   validator: (values) {
     if (values == null || values.isEmpty) {
       return 'Please select at least one language';
@@ -675,20 +867,38 @@ FormFieldsDropdownMulti<String>(
 
 - **minSelections** — Minimum number of selections required.
 ```dart
+// With minimum selections
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French', 'German'],
   minSelections: 2,
   onChanged: (values) {},
 )
+
+// Nullable: No minimum requirement
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  minSelections: null,
+  onChanged: (values) {},
+)
 ```
 
 - **maxSelections** — Maximum number of selections allowed.
 ```dart
+// With maximum selections
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French', 'German'],
   maxSelections: 3,
+  onChanged: (values) {},
+)
+
+// Nullable: No maximum limit
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  maxSelections: null,
   onChanged: (values) {},
 )
 ```
@@ -756,10 +966,19 @@ FormFieldsDropdownMulti<String>(
 
 - **hintText** — Hint text displayed when no items are selected.
 ```dart
+// With hint text
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish'],
   hintText: 'Select your languages',
+  onChanged: (values) {},
+)
+
+// Nullable: No hint text displayed
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  hintText: null,
   onChanged: (values) {},
 )
 ```
@@ -776,30 +995,57 @@ FormFieldsDropdownMulti<String>(
 
 - **chipBackgroundColor** — Background color for selected item chips.
 ```dart
+// With custom chip color
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish'],
   chipBackgroundColor: Colors.blue.shade100,
   onChanged: (values) {},
 )
+
+// Nullable: Uses default chip background
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipBackgroundColor: null,
+  onChanged: (values) {},
+)
 ```
 
 - **chipTextColor** — Text color for selected item chips.
 ```dart
+// With custom text color
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish'],
   chipTextColor: Colors.blue.shade900,
   onChanged: (values) {},
 )
+
+// Nullable: Uses default chip text color
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipTextColor: null,
+  onChanged: (values) {},
+)
 ```
 
 - **chipDeleteIconColor** — Delete icon color for selected item chips.
 ```dart
+// With custom delete icon color
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish'],
   chipDeleteIconColor: Colors.red,
+  onChanged: (values) {},
+)
+
+// Nullable: Uses default delete icon color
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish'],
+  chipDeleteIconColor: null,
   onChanged: (values) {},
 )
 ```
@@ -816,11 +1062,21 @@ FormFieldsDropdownMulti<String>(
 
 - **filterHintText** — Hint text for the filter/search field.
 ```dart
+// With filter hint text
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
   items: ['English', 'Spanish', 'French'],
   enableFilter: true,
   filterHintText: 'Search languages...',
+  onChanged: (values) {},
+)
+
+// Nullable: Default or no hint text in filter
+FormFieldsDropdownMulti<String>(
+  label: 'Languages',
+  items: ['English', 'Spanish', 'French'],
+  enableFilter: true,
+  filterHintText: null,
   onChanged: (values) {},
 )
 ```
@@ -893,9 +1149,17 @@ FormFieldsDropdown<String>(
 ### How to Use Each Property (Detailed)
 - **items** — The list of items available for selection.
 ```dart
+// Non-nullable type
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada', 'UK', 'Australia'],
+  onChanged: (value) {},
+)
+
+// Nullable type (allows null items)
+FormFieldsDropdown<String?>(
+  label: 'Country',
+  items: ['USA', 'Canada', null, 'Australia'],
   onChanged: (value) {},
 )
 ```
@@ -911,6 +1175,7 @@ FormFieldsDropdown<String>(
 
 - **onChanged** — Callback when the selection changes, returns the selected value.
 ```dart
+// With callback
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
@@ -918,23 +1183,70 @@ FormFieldsDropdown<String>(
     print('Selected: $selectedValue');
   },
 )
+
+// Nullable: No callback action (read-only mode)
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  onChanged: null,
+)
+
+// With nullable type
+FormFieldsDropdown<String?>(
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
+  onChanged: (selectedValue) {
+    print('Selected: ${selectedValue ?? "None"}');
+  },
+)
 ```
 
 - **initialValue** — Initial selected value.
 ```dart
+// With initial value
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada', 'UK'],
   initialValue: 'USA',
   onChanged: (value) {},
 )
+
+// Nullable: No item selected initially
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: null,
+  onChanged: (value) {},
+)
 ```
 
 - **validator** — Custom validation logic.
 ```dart
+// With validation
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select a country';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
+
+// Nullable: No custom validation
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  validator: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsDropdown<String?>(
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
   validator: (value) {
     if (value == null) {
       return 'Please select a country';
@@ -957,10 +1269,27 @@ FormFieldsDropdown<String>(
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
 ```dart
+// With custom label builder
 FormFieldsDropdown<Country>(
   label: 'Country',
   items: countries,
   itemLabelBuilder: (country) => '${country.name} (${country.code})',
+  onChanged: (value) {},
+)
+
+// Nullable: Uses toString() by default
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  itemLabelBuilder: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsDropdown<String?>(
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
+  itemLabelBuilder: (item) => item ?? 'Not Selected',
   onChanged: (value) {},
 )
 ```
@@ -1028,6 +1357,7 @@ FormFieldsDropdown<String>(
 
 - **decoration** — Custom input decoration.
 ```dart
+// With custom decoration
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
@@ -1038,34 +1368,69 @@ FormFieldsDropdown<String>(
   ),
   onChanged: (value) {},
 )
+
+// Nullable: Uses default decoration
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  decoration: null,
+  onChanged: (value) {},
+)
 ```
 
 - **prefixIcon** — Icon displayed before the dropdown field.
 ```dart
+// With prefix icon
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
   prefixIcon: Icon(Icons.public),
   onChanged: (value) {},
 )
+
+// Nullable: No prefix icon
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  prefixIcon: null,
+  onChanged: (value) {},
+)
 ```
 
 - **suffixIcon** — Icon displayed after the dropdown field.
 ```dart
+// With suffix icon
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
   suffixIcon: Icon(Icons.arrow_drop_down),
   onChanged: (value) {},
 )
+
+// Nullable: Uses default dropdown arrow
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  suffixIcon: null,
+  onChanged: (value) {},
+)
 ```
 
 - **hintText** — Hint text displayed when no item is selected.
 ```dart
+// With hint text
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada'],
   hintText: 'Select your country',
+  onChanged: (value) {},
+)
+
+// Nullable: No hint text displayed
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  hintText: null,
   onChanged: (value) {},
 )
 ```
@@ -1092,11 +1457,21 @@ FormFieldsDropdown<String>(
 
 - **filterHintText** — Hint text for the filter/search field.
 ```dart
+// With filter hint text
 FormFieldsDropdown<String>(
   label: 'Country',
   items: ['USA', 'Canada', 'UK'],
   enableFilter: true,
   filterHintText: 'Search country...',
+  onChanged: (value) {},
+)
+
+// Nullable: Default or no hint text in filter
+FormFieldsDropdown<String>(
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  enableFilter: true,
+  filterHintText: null,
   onChanged: (value) {},
 )
 ```
@@ -1190,15 +1565,35 @@ FormFieldsRadioButton<String>(
 
 - **items** — The list of items to display as radio buttons.
 ```dart
+// With items list
 FormFieldsRadioButton<String>(
   label: 'Gender',
   items: ['Male', 'Female', 'Other'],
+  onChanged: (value) {},
+)
+
+// Nullable: Use sections instead
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: null,
+  sections: {
+    'Group 1': ['A', 'B'],
+    'Group 2': ['C', 'D'],
+  },
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsRadioButton<String?>(
+  label: 'Gender',
+  items: ['Male', 'Female', null],
   onChanged: (value) {},
 )
 ```
 
 - **sections** — Map of sectioned items for grouped radio buttons.
 ```dart
+// With sections
 FormFieldsRadioButton<String>(
   label: 'Vehicle Type',
   sections: {
@@ -1207,10 +1602,19 @@ FormFieldsRadioButton<String>(
   },
   onChanged: (value) {},
 )
+
+// Nullable: Use items instead
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female'],
+  sections: null,
+  onChanged: (value) {},
+)
 ```
 
 - **onChanged** — Callback when the selection changes, returns the selected value.
 ```dart
+// Non-nullable type
 FormFieldsRadioButton<String>(
   label: 'Gender',
   items: ['Male', 'Female'],
@@ -1218,20 +1622,47 @@ FormFieldsRadioButton<String>(
     print('Selected: $selectedValue');
   },
 )
+
+// Nullable type
+FormFieldsRadioButton<String?>(
+  label: 'Gender',
+  items: ['Male', 'Female', null],
+  onChanged: (selectedValue) {
+    print('Selected: ${selectedValue ?? "Not specified"}');
+  },
+)
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
 ```dart
+// With custom label builder
 FormFieldsRadioButton<Gender>(
   label: 'Gender',
   items: genders,
   itemLabelBuilder: (gender) => gender.label,
   onChanged: (value) {},
 )
+
+// Nullable: Uses toString() by default
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemLabelBuilder: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsRadioButton<String?>(
+  label: 'Options',
+  items: ['A', null, 'C'],
+  itemLabelBuilder: (item) => item ?? 'None',
+  onChanged: (value) {},
+)
 ```
 
 - **itemBuilder** — Custom widget builder for individual items.
 ```dart
+// With custom item builder
 FormFieldsRadioButton<String>(
   label: 'Plan',
   items: ['Basic', 'Premium', 'Enterprise'],
@@ -1247,14 +1678,48 @@ FormFieldsRadioButton<String>(
   ),
   onChanged: (value) {},
 )
+
+// Nullable: Uses default radio button rendering
+FormFieldsRadioButton<String>(
+  label: 'Plan',
+  items: ['Basic', 'Premium', 'Enterprise'],
+  itemBuilder: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsRadioButton<String?>(
+  label: 'Plan',
+  items: ['Basic', 'Premium', null],
+  itemBuilder: (item, isSelected) => Container(
+    padding: EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: isSelected ? Colors.blue : Colors.grey.shade200,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(item ?? 'No plan', style: TextStyle(
+      color: isSelected ? Colors.white : Colors.black,
+    )),
+  ),
+  onChanged: (value) {},
+)
 ```
 
 - **initialValue** — Initial selected value.
 ```dart
+// With initial value
 FormFieldsRadioButton<String>(
   label: 'Gender',
   items: ['Male', 'Female', 'Other'],
   initialValue: 'Male',
+  onChanged: (value) {},
+)
+
+// Nullable: No item selected initially
+FormFieldsRadioButton<String>(
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  initialValue: null,
   onChanged: (value) {},
 )
 ```
@@ -1375,10 +1840,19 @@ FormFieldsRadioButton<String>(
 
 - **itemBorderColor** — Border color for each individual item.
 ```dart
+// With custom border color
 FormFieldsRadioButton<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   itemBorderColor: Colors.grey,
+  onChanged: (value) {},
+)
+
+// Nullable: No border color applied
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: null,
   onChanged: (value) {},
 )
 ```
@@ -1415,30 +1889,57 @@ FormFieldsRadioButton<String>(
 
 - **selectedItemBackgroundColor** — Background color for selected item.
 ```dart
+// With custom background color
 FormFieldsRadioButton<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   selectedItemBackgroundColor: Colors.blue.shade100,
   onChanged: (value) {},
 )
+
+// Nullable: No background color change on selection
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemBackgroundColor: null,
+  onChanged: (value) {},
+)
 ```
 
 - **selectedItemTextColor** — Text color for selected item.
 ```dart
+// With custom text color
 FormFieldsRadioButton<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   selectedItemTextColor: Colors.blue,
   onChanged: (value) {},
 )
+
+// Nullable: No text color change on selection
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  selectedItemTextColor: null,
+  onChanged: (value) {},
+)
 ```
 
 - **hoverBackgroundColor** — Background color when hovering over items.
 ```dart
+// With hover effect
 FormFieldsRadioButton<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
   hoverBackgroundColor: Colors.grey.shade200,
+  onChanged: (value) {},
+)
+
+// Nullable: No hover background color
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  hoverBackgroundColor: null,
   onChanged: (value) {},
 )
 ```
@@ -1505,9 +2006,31 @@ FormFieldsRadioButton<String>(
 
 - **validator** — Custom validation logic.
 ```dart
+// With validation
 FormFieldsRadioButton<String>(
   label: 'Options',
   items: ['A', 'B', 'C'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select an option';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
+
+// Nullable: No custom validation
+FormFieldsRadioButton<String>(
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  validator: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsRadioButton<String?>(
+  label: 'Options',
+  items: ['A', null, 'C'],
   validator: (value) {
     if (value == null) {
       return 'Please select an option';
@@ -1638,16 +2161,26 @@ FormFieldsSelect<String>(
 
 - **items** — The list of items available for selection.
 ```dart
+// Non-nullable type
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
   label: 'Country',
   items: ['USA', 'Canada', 'UK', 'Australia'],
   onChanged: (value) {},
 )
+
+// Nullable type (allows null items)
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', null, 'Australia'],
+  onChanged: (value) {},
+)
 ```
 
 - **initialValue** — Initial value for single select (dropdown, radioButton).
 ```dart
+// With initial value
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
   label: 'Country',
@@ -1655,10 +2188,20 @@ FormFieldsSelect<String>(
   initialValue: 'USA',
   onChanged: (value) {},
 )
+
+// Nullable: No item selected initially
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada', 'UK'],
+  initialValue: null,
+  onChanged: (value) {},
+)
 ```
 
 - **initialValues** — Initial values for multi-select (dropdownMulti, checkbox).
 ```dart
+// With initial values
 FormFieldsSelect<String>(
   formType: FormType.checkbox,
   label: 'Interests',
@@ -1666,10 +2209,20 @@ FormFieldsSelect<String>(
   initialValues: ['Sports', 'Music'],
   onMultiChanged: (values) {},
 )
+
+// Nullable: No items selected initially
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Interests',
+  items: ['Sports', 'Music', 'Reading'],
+  initialValues: null,
+  onMultiChanged: (values) {},
+)
 ```
 
 - **onChanged** — Callback for single value changes (dropdown, radioButton).
 ```dart
+// With callback
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
   label: 'Country',
@@ -1678,10 +2231,32 @@ FormFieldsSelect<String>(
     print('Selected: $selectedValue');
   },
 )
+
+// Nullable: No callback action (when using onMultiChanged instead)
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  onChanged: null,
+  onMultiChanged: (values) {
+    print('Selected: $values');
+  },
+)
+
+// With nullable type
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
+  onChanged: (selectedValue) {
+    print('Selected: ${selectedValue ?? "None"}');
+  },
+)
 ```
 
 - **onMultiChanged** — Callback for multi-value changes (dropdownMulti, checkbox).
 ```dart
+// With callback
 FormFieldsSelect<String>(
   formType: FormType.checkbox,
   label: 'Interests',
@@ -1690,10 +2265,32 @@ FormFieldsSelect<String>(
     print('Selected: $selectedValues');
   },
 )
+
+// Nullable: No callback action (when using onChanged instead)
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  onMultiChanged: null,
+  onChanged: (value) {
+    print('Selected: $value');
+  },
+)
+
+// With nullable type for multi-select
+FormFieldsSelect<String?>(
+  formType: FormType.checkbox,
+  label: 'Interests',
+  items: ['Sports', null, 'Reading'],
+  onMultiChanged: (selectedValues) {
+    print('Selected: $selectedValues');
+  },
+)
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
 ```dart
+// With custom label builder
 FormFieldsSelect<Country>(
   formType: FormType.dropdown,
   label: 'Country',
@@ -1701,10 +2298,29 @@ FormFieldsSelect<Country>(
   itemLabelBuilder: (country) => '${country.name} (${country.code})',
   onChanged: (value) {},
 )
+
+// Nullable: Uses toString() by default
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  itemLabelBuilder: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
+  itemLabelBuilder: (item) => item ?? 'Unspecified',
+  onChanged: (value) {},
+)
 ```
 
 - **validator** — Validator for single value selections.
 ```dart
+// With validation
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
   label: 'Country',
@@ -1717,14 +2333,61 @@ FormFieldsSelect<String>(
   },
   onChanged: (value) {},
 )
+
+// Nullable: No custom validation
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', 'Canada'],
+  validator: null,
+  onChanged: (value) {},
+)
+
+// With nullable type
+FormFieldsSelect<String?>(
+  formType: FormType.dropdown,
+  label: 'Country',
+  items: ['USA', null, 'Canada'],
+  validator: (value) {
+    if (value == null) {
+      return 'Please select a country';
+    }
+    return null;
+  },
+  onChanged: (value) {},
+)
 ```
 
 - **multiValidator** — Validator for multi-value selections.
 ```dart
+// With validation
 FormFieldsSelect<String>(
   formType: FormType.checkbox,
   label: 'Skills',
   items: ['Dart', 'Flutter', 'Firebase'],
+  multiValidator: (values) {
+    if (values == null || values.length < 2) {
+      return 'Please select at least 2 skills';
+    }
+    return null;
+  },
+  onMultiChanged: (values) {},
+)
+
+// Nullable: No custom validation
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Skills',
+  items: ['Dart', 'Flutter', 'Firebase'],
+  multiValidator: null,
+  onMultiChanged: (values) {},
+)
+
+// With nullable type
+FormFieldsSelect<String?>(
+  formType: FormType.checkbox,
+  label: 'Skills',
+  items: ['Dart', null, 'Firebase'],
   multiValidator: (values) {
     if (values == null || values.length < 2) {
       return 'Please select at least 2 skills';
@@ -1815,11 +2478,21 @@ FormFieldsSelect<String>(
 
 - **itemBorderColor** — Border color for each item (applicable to radioButton and checkbox).
 ```dart
+// With custom border color
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
   label: 'Options',
   items: ['A', 'B', 'C'],
   itemBorderColor: Colors.grey,
+  onChanged: (value) {},
+)
+
+// Nullable: No border color applied
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Options',
+  items: ['A', 'B', 'C'],
+  itemBorderColor: null,
   onChanged: (value) {},
 )
 ```
