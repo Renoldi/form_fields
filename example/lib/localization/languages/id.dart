@@ -110,4 +110,14 @@ const Map<String, String> idStrings = {
   'updatePersonalInformation': 'Perbarui informasi pribadi Anda',
   'updateAccountPassword': 'Perbarui kata sandi akun Anda',
   'signOutOfYourAccount': 'Keluar dari akun Anda',
+
+  // Permissions
+  'permissionRequired': '🔐 Izin Diperlukan',
+  'permissionsDenied':
+      'Izin berikut ditolak secara permanen:\n\n{permissions}\n\nIzin ini diperlukan agar aplikasi berfungsi dengan baik. Silakan aktifkan di Pengaturan Aplikasi.',
+  'openSettings': 'Buka Pengaturan',
+  'cancel': 'Batal',
+  'camera': 'Kamera',
+  'photos': 'Foto',
+  'notification': 'Notifikasi',
 };

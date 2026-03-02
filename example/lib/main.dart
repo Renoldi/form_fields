@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:logger/logger.dart';
 
 // Local configuration & state management
 import 'config/app_router.dart';
@@ -18,6 +19,12 @@ import 'config/environment.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
+
+// ============================================================================
+// GLOBAL LOGGER INSTANCE
+// ============================================================================
+
+final logger = Logger();
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -73,22 +80,21 @@ void _printStartupInfo() {
   final config = BuildConfig.current;
   final divider = '=' * 60;
 
-  debugPrint('\n$divider');
-  debugPrint('🚀 APP STARTUP');
-  debugPrint(divider);
+  logger.i('\n$divider');
+  logger.i('🚀 APP STARTUP');
+  logger.i(divider);
 
   // Environment Info
-  debugPrint(
-      '\n📍 ENVIRONMENT: ${EnvironmentConfig.currentName.toUpperCase()}');
-  debugPrint('   Base URL: ${EnvironmentConfig.currentBaseUrl}');
+  logger.i('\n📍 ENVIRONMENT: ${EnvironmentConfig.currentName.toUpperCase()}');
+  logger.i('   Base URL: ${EnvironmentConfig.currentBaseUrl}');
 
   // Build Configuration
-  debugPrint('\n⚙️  BUILD CONFIGURATION:');
-  debugPrint('   Android Namespace: ${config.androidNamespace}');
-  debugPrint('   Version: ${config.versionName} (${config.versionCode})');
-  debugPrint('   Min SDK: ${config.androidMinSdk}');
-  debugPrint('   Target SDK: ${config.androidTargetSdk}');
-  debugPrint('   Compile SDK: ${config.androidCompileSdk}');
+  logger.i('\n⚙️  BUILD CONFIGURATION:');
+  logger.i('   Android Namespace: ${config.androidNamespace}');
+  logger.i('   Version: ${config.versionName} (${config.versionCode})');
+  logger.i('   Min SDK: ${config.androidMinSdk}');
+  logger.i('   Target SDK: ${config.androidTargetSdk}');
+  logger.i('   Compile SDK: ${config.androidCompileSdk}');
 
   // API Keys Status
   final mapsKeyStatus = config.androidMapsApiKey.contains('DEBUG') ||
@@ -96,36 +102,36 @@ void _printStartupInfo() {
           config.androidMapsApiKey.contains('PROD')
       ? '⚠️  Placeholder'
       : '✅ Configured';
-  debugPrint('   Maps API Key: $mapsKeyStatus');
+  logger.i('   Maps API Key: $mapsKeyStatus');
 
   // Permissions
-  debugPrint('\n🔐 CONFIGURED PERMISSIONS:');
+  logger.i('\n🔐 CONFIGURED PERMISSIONS:');
   final hasCamera = config.hasAndroidPermission('android.permission.CAMERA');
   final hasGallery =
       config.hasAndroidPermission('android.permission.READ_MEDIA_IMAGES');
   final hasNotification =
       config.hasAndroidPermission('android.permission.POST_NOTIFICATIONS');
 
-  debugPrint('   📷 Camera: ${hasCamera ? "✅ Enabled" : "❌ Disabled"}');
-  debugPrint('   🖼️  Gallery: ${hasGallery ? "✅ Enabled" : "❌ Disabled"}');
-  debugPrint(
+  logger.i('   📷 Camera: ${hasCamera ? "✅ Enabled" : "❌ Disabled"}');
+  logger.i('   🖼️  Gallery: ${hasGallery ? "✅ Enabled" : "❌ Disabled"}');
+  logger.i(
       '   🔔 Notifications: ${hasNotification ? "✅ Enabled" : "❌ Disabled"}');
-  debugPrint('   📋 Total: ${config.androidPermissions.length} permissions');
+  logger.i('   📋 Total: ${config.androidPermissions.length} permissions');
 
   // Platform Info
-  debugPrint('\n📱 PLATFORM:');
-  debugPrint('   OS: ${defaultTargetPlatform.name}');
-  debugPrint('   Web: ${kIsWeb ? "Yes" : "No"}');
-  debugPrint('   Debug Mode: ${kDebugMode ? "Yes" : "No"}');
+  logger.i('\n📱 PLATFORM:');
+  logger.i('   OS: ${defaultTargetPlatform.name}');
+  logger.i('   Web: ${kIsWeb ? "Yes" : "No"}');
+  logger.i('   Debug Mode: ${kDebugMode ? "Yes" : "No"}');
 
   // Production Readiness
   if (config.isProductionReady) {
-    debugPrint('\n✅ Status: PRODUCTION READY');
+    logger.i('\n✅ Status: PRODUCTION READY');
   } else {
-    debugPrint('\n⚠️  Status: Development (API keys need configuration)');
+    logger.i('\n⚠️  Status: Development (API keys need configuration)');
   }
 
-  debugPrint('\n$divider\n');
+  logger.i('\n$divider\n');
 }
 
 // ============================================================================
@@ -173,43 +179,39 @@ abstract class PresenterState extends State<MyApp> {
     // Only request permissions that are enabled in build configuration
     if (config.hasAndroidPermission('android.permission.CAMERA')) {
       permissions.add(Permission.camera);
-      if (kDebugMode) debugPrint('📷 Requesting Camera permission...');
+      logger.i('📷 Requesting Camera permission...');
     }
 
     if (config.hasAndroidPermission('android.permission.READ_MEDIA_IMAGES') ||
         config
             .hasAndroidPermission('android.permission.READ_EXTERNAL_STORAGE')) {
       permissions.add(Permission.photos);
-      if (kDebugMode) debugPrint('🖼️  Requesting Gallery permission...');
+      logger.i('🖼️  Requesting Gallery permission...');
     }
 
     if (config.hasAndroidPermission('android.permission.POST_NOTIFICATIONS')) {
       permissions.add(Permission.notification);
-      if (kDebugMode) debugPrint('🔔 Requesting Notification permission...');
+      logger.i('🔔 Requesting Notification permission...');
     }
 
     // If no permissions configured, skip
     if (permissions.isEmpty) {
-      if (kDebugMode) {
-        debugPrint('ℹ️  No runtime permissions configured');
-      }
+      logger.i('ℹ️  No runtime permissions configured');
       return;
     }
 
     // Request all configured permissions
     final statuses = await permissions.request();
 
-    if (kDebugMode) {
-      debugPrint('\n📋 Permission Results:');
-      for (final entry in statuses.entries) {
-        final icon = entry.value.isGranted
-            ? '✅'
-            : entry.value.isDenied
-                ? '❌'
-                : '⚠️';
-        debugPrint(
-            '   $icon ${entry.key.toString().split('.').last}: ${entry.value}');
-      }
+    logger.i('\n📋 Permission Results:');
+    for (final entry in statuses.entries) {
+      final icon = entry.value.isGranted
+          ? '✅'
+          : entry.value.isDenied
+              ? '❌'
+              : '⚠️';
+      logger.i(
+          '   $icon ${entry.key.toString().split('.').last}: ${entry.value}');
     }
 
     // Check for permanently denied permissions
@@ -225,34 +227,43 @@ abstract class PresenterState extends State<MyApp> {
 
   Future<void> _showPermissionSettingsDialog(
       List<Permission> deniedPermissions) async {
+    // Convert permission names to localization keys
     final permissionNames = deniedPermissions.map((p) {
       final name = p.toString().split('.').last;
-      return name[0].toUpperCase() + name.substring(1);
+      switch (name) {
+        case 'camera':
+          return 'Camera';
+        case 'photos':
+          return 'Photos';
+        case 'notification':
+          return 'Notification';
+        default:
+          return name[0].toUpperCase() + name.substring(1);
+      }
     }).join(', ');
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('🔐 Permission Required'),
+          title: Text(dialogContext.tr('permissionRequired')),
           content: Text(
-            'The following permissions were permanently denied:\n\n'
-            '$permissionNames\n\n'
-            'These permissions are required for the app to function properly. '
-            'Please enable them in App Settings.',
+            dialogContext
+                .tr('permissionsDenied')
+                .replaceFirst('{permissions}', permissionNames),
             style: const TextStyle(fontSize: 14),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(dialogContext.tr('cancel')),
             ),
             FilledButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 await openAppSettings();
               },
-              child: const Text('Open Settings'),
+              child: Text(dialogContext.tr('openSettings')),
             ),
           ],
         );

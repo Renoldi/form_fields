@@ -110,4 +110,14 @@ const Map<String, String> enStrings = {
   'updatePersonalInformation': 'Update your personal information',
   'updateAccountPassword': 'Update your account password',
   'signOutOfYourAccount': 'Sign out of your account',
+
+  // Permissions
+  'permissionRequired': '🔐 Permission Required',
+  'permissionsDenied':
+      'The following permissions were permanently denied:\n\n{permissions}\n\nThese permissions are required for the app to function properly. Please enable them in App Settings.',
+  'openSettings': 'Open Settings',
+  'cancel': 'Cancel',
+  'camera': 'Camera',
+  'photos': 'Photos',
+  'notification': 'Notification',
 };
