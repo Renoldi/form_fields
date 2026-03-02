@@ -2,6 +2,20 @@
 
 The Form Fields package provides comprehensive multi-language support for all validation messages, error text, and UI elements. **US English is the default language**, with built-in support for Indonesian and easy addition of new languages.
 
+---
+
+## 📑 Navigation
+
+- [Supported Languages](#supported-languages) — Current language support
+- [Quick Start](#quick-start) — Get localization working in 3 steps
+- [Common Usage](#common-usage) — Common localization patterns
+- [Adding Custom Languages](#adding-custom-languages) — Add Spanish, French, or any language to your project
+- [Advanced Features](#advanced-features) — Runtime switching, custom validators, API reference
+- [Troubleshooting](#troubleshooting) — Common issues and solutions
+- [Contributing](#contributing) — Help translate to your language
+
+---
+
 ## Supported Languages
 
 | Language | Code | Status | Count |
@@ -9,6 +23,8 @@ The Form Fields package provides comprehensive multi-language support for all va
 | 🇺🇸 English (US) | `en_US` | ✅ Default | 50+ strings |
 | 🇮🇩 Indonesian | `id_ID` | ✅ Included | 50+ strings |
 | 🌍 Your Language | `{lang}_{COUNTRY}` | ➕ Add yours | - |
+
+---
 
 ## Quick Start
 
@@ -79,72 +95,61 @@ FormFields<String>(
 // Shows: "Enter a valid email address" (en) or "Masukkan alamat email yang valid" (id)
 ```
 
-## Localized Validators
+---
 
-All validators support automatic localization:
+## Common Usage
+
+### Localized Validators
+
+All validators support automatic localization. Access via `FormFieldsLocalizations.of(context)`:
 
 ```dart
 final l10n = FormFieldsLocalizations.of(context);
 
-// Email validator with localization
+// Email validator
 FormFieldValidators.email(label, l10n);
 
-// Phone validator with localization
+// Phone validator
 FormFieldValidators.phone(label, l10n);
 
-// Password validator with localization
+// Password validator
 FormFieldValidators.password(label, l10n: l10n);
 
-// Number validator with localization
+// Number validator
 FormFieldValidators.number(label, l10n: l10n);
 
-// Min/Max length validators with localization
+// Length validators
 FormFieldValidators.minLength(label, 8, l10n: l10n);
 FormFieldValidators.maxLength(label, 20, l10n: l10n);
 
-// Range validator with localization
+// Range validator
 FormFieldValidators.range(label, 18, 65, l10n: l10n);
 
-// Pattern validator with localization
+// Pattern validator
 FormFieldValidators.pattern(label, '^[a-z]+\$', l10n: l10n);
 ```
 
-## Accessing Localized Strings
+### Accessing Localized Strings
 
-### Simple Getters
-
-```dart
-final l10n = FormFieldsLocalizations.of(context);
-
-String cancelText = l10n.cancel;  
-// "CANCEL" (English) or "BATAL" (Indonesian)
-
-String okText = l10n.ok;  
-// "OK" (both languages)
-
-String doneText = l10n.done;  
-// "DONE" (English) or "SELESAI" (Indonesian)
-
-String searchHint = l10n.searchHint;
-// "Search..." (English) or "Cari..." (Indonesian)
-```
-
-### Methods with Parameters
+Get localized text in your code:
 
 ```dart
 final l10n = FormFieldsLocalizations.of(context);
 
-// With label
-String msg = l10n.enter('Email');
-// "Enter Email" (English) or "Masukkan Email" (Indonesian)
+// Simple getters
+String cancel = l10n.cancel;          // "CANCEL" (en) or "BATAL" (id)
+String ok = l10n.ok;                  // "OK"
+String done = l10n.done;              // "DONE" (en) or "SELESAI" (id)
+String search = l10n.searchHint;      // "Search..." (en) or "Cari..." (id)
 
-String msg = l10n.select('Country');
-// "Select Country" (English) or "Pilih Country" (Indonesian)
+// With label parameter
+String msg = l10n.enter('Email');     // "Enter Email" (en) or "Masukkan Email" (id)
+String msg = l10n.select('Country');  // "Select Country" (en) or "Pilih Country" (id)
 
-// With value
+// With value parameter
 String msg = l10n.getWithValue('passwordMinLength', 8);
-// "Password must be at least 8 characters" (English)
-// "Kata sandi harus minimal 8 karakter" (Indonesian)
+// "Password must be at least 8 characters" (en)
+// "Kata sandi harus minimal 8 karakter" (id)
 
 // With multiple parameters
 String msg = l10n.getWithParams('betweenValue', {
@@ -152,177 +157,356 @@ String msg = l10n.getWithParams('betweenValue', {
   'min': 18,
   'max': 65,
 });
-// "Age must be between 18 and 65" (English)
-// "Umur harus antara 18 dan 65" (Indonesian)
-```
-
-### Generic Methods
-
-```dart
-final l10n = FormFieldsLocalizations.of(context);
+// "Age must be between 18 and 65" (en)
+// "Umur harus antara 18 dan 65" (id)
 
 // Get by key
-l10n.get('required')  // Returns translated string for key
-
-// Replace {label}
-l10n.getWithLabel('tooShort', 'Password')
-
-// Replace {value}
-l10n.getWithValue('selectAtLeast', 3)
-
-// Replace multiple values
-l10n.getWithParams('invalid', {'label': 'Email'})
+l10n.get('required')           // Generic getter
+l10n.getWithLabel('key', 'Phone')    // Replace {label}
 ```
 
-## Automatically Localized Elements
+### Automatically Localized Elements
 
-All of these automatically adapt to the selected language:
+These adapt to your app's locale:
 
-✅ **Validation Messages**
-- `"required"` → `"Email is required"` / `"Email wajib diisi"`
-- `"enterValidEmail"` → `"Enter valid email address"` / `"Masukkan alamat email yang valid"`
-- `"tooShort"` → `"{label} is too short"` / `"{label} terlalu pendek"`
+✅ **Validation Messages** - `"Email is required"` / `"Email wajib diisi"`  
+✅ **Search/Filter Hints** - `"Search..."` / `"Cari..."`  
+✅ **Button Text** - OK, Cancel, Done  
+✅ **Field Error Messages** - Email, phone, password validation  
+✅ **Selection Dialogs** - Dropdown and multi-select hints  
 
-✅ **Form Elements**
-- Search/Filter hints
-- Button text (OK, Cancel, Done)
-- Selection dialogs
-- Field-specific error messages
+---
 
-✅ **Password Validation**
-- Minimum length requirements
-- Character requirements (uppercase, numbers, special chars)
-- All customizable error messages
+## Adding Custom Languages
 
-## Language File Structure
+If you've imported the `form_fields` package into your project and need to add a language not included in the package (e.g., Spanish, French, Portuguese), follow these steps:
 
-All language files require these core keys:
+### Step 1: Create a Custom Language File
+
+Create a new file in your project's `lib/localization/` directory (or any location you prefer):
+
+**Example: `lib/localization/es_es_localizations.dart`** (Spanish)
 
 ```dart
-final Map<String, String> {lang}_{country}Strings = {
-  // === COMMON ACTIONS ===
-  'cancel': '...',
-  'ok': '...',
-  'done': '...',
-  'submit': '...',
-  'validate': '...',
+/// Spanish (Spain) localization strings for FormFields
+class EsESLocalizations {
+  static const Map<String, String> strings = {
+    // === COMMON ACTIONS ===
+    'cancel': 'CANCELAR',
+    'ok': 'ACEPTAR',
+    'done': 'HECHO',
+    'submit': 'ENVIAR',
+    'validate': 'VALIDAR',
+    'select': 'Seleccionar {label}',
+    'selectPrefix': 'Seleccionar',
 
-  // === VALIDATION - REQUIRED & GENERAL ===
-  'required': '{label} ...',
-  'enterPrefix': '...',
-  'enter': 'Enter {label}',
-  'enterValid': '...',
+    // === SEARCH/FILTER ===
+    'searchHint': 'Buscar...',
+    'typeToSearch': 'Escribe para buscar {label}...',
+    'noResultsFound': 'No hay resultados',
 
-  // === EMAIL VALIDATION ===
-  'enterValidEmail': '...',
-  'emailRequired': '...',
+    // === FIELD TYPES & LABELS ===
+    'fieldTypeString': 'texto',
+    'fieldTypeEmail': 'correo electrónico',
+    'fieldTypePhone': 'teléfono',
+    'fieldTypePassword': 'contraseña',
+    'fieldTypeNumber': 'número',
+    'fieldTypeInteger': 'número entero',
+    'fieldTypeDate': 'fecha',
+    'fieldTypeTime': 'hora',
+    'fieldTypeDateRange': 'rango de fechas',
 
-  // === PHONE VALIDATION ===
-  'enterValidPhone': '...',
-  'phoneRequired': '...',
+    // === VALIDATION - REQUIRED & GENERAL ===
+    'required': '{label} es obligatorio',
+    'enterPrefix': 'Ingresa ',
+    'enter': 'Ingresa {label}',
+    'enterValid': 'Ingresa un {type} válido para {label}',
+    'enterValidEmail': 'Ingresa una dirección de correo válida',
+    'emailRequired': 'El correo es obligatorio',
 
-  // === INTEGER VALIDATION ===
-  'enterValidInteger': '...',
-  'integerRequired': '...',
+    // === PHONE VALIDATION ===
+    'enterValidPhone': 'Ingresa un número de teléfono válido',
+    'phoneRequired': 'El número de teléfono es obligatorio',
 
-  // === NUMBER/DECIMAL VALIDATION ===
-  'enterValidNumber': '...',
-  'numberRequired': '...',
+    // === PASSWORD VALIDATION ===
+    'passwordRequired': 'La contraseña es obligatoria',
+    'passwordMinLength': 'La contraseña debe tener al menos {value} caracteres',
+    'passwordNeedsUppercase': 'Debe contener una letra mayúscula',
+    'passwordNeedsNumber': 'Debe contener un número',
+    'passwordNeedsSpecialChar': 'Debe contener un carácter especial',
 
-  // === PASSWORD VALIDATION ===
-  'passwordRequired': '...',
-  'passwordMinLength': '... {value} ...',
-  'passwordNeedsUppercase': '...',
-  'passwordNeedsNumber': '...',
+    // === LENGTH VALIDATION ===
+    'tooShort': '{label} es demasiado corto',
+    'tooLong': '{label} es demasiado largo',
 
-  // === LENGTH VALIDATION ===
-  'tooShort': '{label} ... {value} ...',
-  'tooLong': '{label} ... {value} ...',
+    // === RANGE & VALUE VALIDATION ===
+    'minimumValue': '{label} debe ser al menos {value}',
+    'maximumValue': '{label} no debe exceder {value}',
+    'betweenValue': '{label} debe estar entre {min} y {max}',
 
-  // === RANGE VALIDATION ===
-  'minimumValue': '{label} ...',
-  'maximumValue': '{label} ...',
-  'betweenValue': '{label} ... {min} ... {max}',
+    // === SELECTION/DROPDOWN ===
+    'selectAtLeastOne': 'Selecciona al menos uno',
+    'selectAtLeast': 'Selecciona al menos {value} elementos',
+    'selectAtMost': 'Selecciona como máximo {value} elementos',
 
-  // === FIELD TYPES ===
-  'fieldTypeString': '...',
-  'fieldTypeEmail': '...',
-  'fieldTypePhone': '...',
-  // ... add all other keys
+    // === ERRORS & MESSAGES ===
+    'invalid': '{label} no es válido',
+    'error': 'Error',
+    'success': 'Éxito',
+    'warning': 'Advertencia',
+    'validationFailed': 'La validación falló',
+  };
+}
+```
+
+### Step 2: Create a Custom Localization Delegate
+
+Create `lib/localization/custom_localizations_delegate.dart`:
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
+import 'es_es_localizations.dart';
+
+class CustomFormFieldsLocalizations extends FormFieldsLocalizations {
+  final String _languageCode;
+  final String _countryCode;
+
+  CustomFormFieldsLocalizations(this._languageCode, this._countryCode);
+
+  static const LocalizationsDelegate<FormFieldsLocalizations> delegate =
+      _CustomLocalizationsDelegate();
+
+  @override
+  String get(String key, [Map<String, dynamic>? params]) {
+    // Try to get from custom language first
+    final localeKey = '${_languageCode}_${_countryCode}'.toUpperCase();
+    
+    if (localeKey == 'ES_ES') {
+      String? value = EsESLocalizations.strings[key];
+      if (value != null && params != null) {
+        // Replace placeholders
+        params.forEach((k, v) {
+          value = value!.replaceAll('{$k}', v.toString());
+        });
+        return value!;
+      }
+      return value ?? key;
+    }
+
+    // Fall back to package localization
+    return super.get(key, params);
+  }
+
+  static Future<CustomFormFieldsLocalizations> load(Locale locale) {
+    return SynchronousFuture<CustomFormFieldsLocalizations>(
+      CustomFormFieldsLocalizations(
+        locale.languageCode,
+        locale.countryCode ?? 'ES',
+      ),
+    );
+  }
+}
+
+class _CustomLocalizationsDelegate
+    extends LocalizationsDelegate<FormFieldsLocalizations> {
+  const _CustomLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) {
+    // Support Spanish and all package-supported locales
+    return locale.languageCode == 'es' ||
+        FormFieldsLocalizations.isSupported(locale);
+  }
+
+  @override
+  Future<FormFieldsLocalizations> load(Locale locale) {
+    if (locale.languageCode == 'es') {
+      return CustomFormFieldsLocalizations.load(locale);
+    }
+    return FormFieldsLocalizations.load(locale);
+  }
+
+  @override
+  bool shouldReload(LocalizationsDelegate<FormFieldsLocalizations> old) =>
+      false;
+}
+```
+
+### Step 3: Update Your App Configuration
+
+Update your `MaterialApp` in `main.dart` or your app widget:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_fields/form_fields.dart';
+import 'localization/custom_localizations_delegate.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'My App',
+      locale: const Locale('es', 'ES'),  // Set to Spanish
+      localizationsDelegates: [
+        CustomFormFieldsLocalizations.delegate,  // Use custom delegate
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),  // English
+        Locale('id', 'ID'),  // Indonesian (from package)
+        Locale('es', 'ES'),  // Spanish (custom)
+      ],
+      home: const HomePage(),
+    );
+  }
+}
+```
+
+### Step 4: Use in Your App
+
+Your form fields will now display in Spanish:
+
+```dart
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _email = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = FormFieldsLocalizations.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mi Aplicación')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FormFields<String>(
+          label: 'Correo Electrónico',
+          formType: FormType.email,
+          isRequired: true,
+          onChanged: (value) => setState(() => _email = value),
+          currrentValue: _email,
+          // Will show Spanish validation messages from custom locale
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Complete Translation Keys to Include
+
+To ensure all form fields work properly in your custom language, include ALL these keys:
+
+```dart
+const Map<String, String> customLanguageStrings = {
+  // Common actions
+  'cancel', 'ok', 'done', 'submit', 'validate', 'select', 'selectPrefix',
+  
+  // Search/Filter
+  'searchHint', 'typeToSearch', 'noResultsFound',
+  
+  // Field labels
+  'fieldTypeString', 'fieldTypeEmail', 'fieldTypePhone', 'fieldTypePassword',
+  'fieldTypeNumber', 'fieldTypeInteger', 'fieldTypeDate', 'fieldTypeTime',
+  'fieldTypeDateRange',
+  
+  // Validation
+  'required', 'enterPrefix', 'enter', 'enterValid',
+  'enterValidEmail', 'emailRequired',
+  'enterValidPhone', 'phoneRequired',
+  'enterValidInteger', 'integerRequired',
+  'enterValidNumber', 'numberRequired',
+  
+  // Password validation
+  'passwordRequired', 'passwordMinLength', 'passwordTooShort',
+  'passwordNeedsUppercase', 'passwordNeedsLowercase',
+  'passwordNeedsNumber', 'passwordNeedsSpecialChar',
+  
+  // Length validation
+  'tooShort', 'tooLong',
+  
+  // Range validation
+  'minimumValue', 'maximumValue', 'betweenValue',
+  
+  // Selection
+  'selectAtLeastOne', 'selectAtLeast', 'selectAtMost', 'selectExactly',
+  
+  // Date/Time
+  'selectDate', 'selectTime', 'selectDateRange', 'dateRequired', 'timeRequired',
+  
+  // Other
+  'invalid', 'invalidFormat', 'error', 'success', 'warning', 'validationFailed',
+  'selectedItems', 'noItemsSelected', 'clear', 'clearAll',
 };
 ```
 
-See [localization/languages/en_us.dart](lib/src/localization/languages/en_us.dart) for complete list of keys.
+### Switching Languages at Runtime
 
-## Adding a New Language
-
-### Step 1: Create Language File
-
-Create `lib/src/localization/languages/{lang}_{country}.dart`:
-
-**Example: Spanish (es_es.dart)**
+To support language switching without restarting your app:
 
 ```dart
-/// Spanish (Spain) language strings
-final Map<String, String> esESStrings = {
-  // === COMMON ACTIONS ===
-  'cancel': 'CANCELAR',
-  'ok': 'ACEPTAR',
-  'done': 'LISTO',
-  'submit': 'ENVIAR',
-  'validate': 'VALIDAR',
-  'select': 'Seleccionar {label}',
-  'selectPrefix': 'Seleccionar',
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-  // === SEARCH/FILTER ===
-  'searchHint': 'Buscar...',
-  'typeToSearch': 'Escribe para buscar {label}...',
-  'noResultsFound': 'No hay resultados',
+  @override
+  State<MyApp> createState() => _MyAppState();
 
-  // === FIELD TYPES & LABELS ===
-  'fieldTypeString': 'texto',
-  'fieldTypeEmail': 'correo electrónico',
-  'fieldTypePhone': 'teléfono',
-  'fieldTypePassword': 'contraseña',
-  'fieldTypeNumber': 'número',
-  'fieldTypeInteger': 'número entero',
-  'fieldTypeDate': 'fecha',
-  'fieldTypeTime': 'hora',
-  'fieldTypeDateRange': 'rango de fechas',
+  static _MyAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>()!;
+}
 
-  // === VALIDATION - REQUIRED & GENERAL ===
-  'required': '{label} es obligatorio',
-  'enterPrefix': 'Ingresa ',
-  'enter': 'Ingresa {label}',
-  'enterValid': 'Ingresa un {type} válido para {label}',
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en', 'US');
 
-  // === EMAIL VALIDATION ===
-  'enterValidEmail': 'Ingresa una dirección de correo válida',
-  'emailRequired': 'La dirección de correo es obligatoria',
+  void setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
 
-  // === PHONE VALIDATION ===
-  'enterValidPhone': 'Ingresa un número de teléfono válido',
-  'phoneRequired': 'El número de teléfono es obligatorio',
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: [
+        CustomFormFieldsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('es', 'ES'),
+        Locale('id', 'ID'),
+      ],
+      home: const HomePage(),
+    );
+  }
+}
 
-  // === INTEGER VALIDATION ===
-  'enterValidInteger': 'Ingresa un número entero válido para {label}',
-  'integerRequired': 'El número entero es obligatorio',
+// Usage in a button or menu
+MyApp.of(context).setLocale(const Locale('es', 'ES')); // Switch to Spanish
+```
 
-  // === NUMBER/DECIMAL VALIDATION ===
-  'enterValidNumber': 'Ingresa un número válido para {label}',
-  'numberRequired': 'El número es obligatorio',
+---
 
-  // === PASSWORD VALIDATION ===
-  'passwordRequired': 'La contraseña es obligatoria',
-  'passwordMinLength': 'La contraseña debe tener al menos {value} caracteres',
-  'passwordTooShort': 'La contraseña debe tener {value}+ caracteres',
-  'passwordNeedsUppercase': 'Debe contener una letra mayúscula',
-  'passwordNeedsLowercase': 'Debe contener una letra minúscula',
-  'passwordNeedsNumber': 'Debe contener un número',
-  'passwordNeedsSpecialChar': 'Debe contener un carácter especial',
-
-  // === LENGTH VALIDATION ===
-  'tooShort': '{label} es demasiado corto (mínimo {value} caracteres)',
+## Advanced Features
   'tooLong': '{label} es demasiado largo (máximo {value} caracteres)',
 
   // === RANGE VALIDATION ===
@@ -474,23 +658,57 @@ class _MyAppState extends State<MyApp> {
 MyApp.of(context).setLocale(const Locale('id', 'ID'));  // Switch to Indonesian
 ```
 
-## Testing Localization
+---
 
-Test your app in different languages:
+## Advanced Features
+
+### Runtime Language Switching
+
+Change language without restarting your app using a stateful widget approach:
 
 ```dart
-// Set in code
-MaterialApp(
-  locale: const Locale('id', 'ID'),  // Indonesian
-  // or
-  locale: const Locale('es', 'ES'),  // Spanish
-)
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-// Or run from terminal
-flutter run --dart-define=LOCALE=id_ID
+  @override
+  State<MyApp> createState() => _MyAppState();
+
+  static _MyAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>()!;
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en', 'US');
+
+  void setLocale(Locale locale) {
+    setState(() => _locale = locale);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: const [
+        FormFieldsLocalizationsDelegate(),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('id', 'ID'),
+      ],
+      home: const HomePage(),
+    );
+  }
+}
+
+// Usage - Switch language from anywhere
+MyApp.of(context).setLocale(const Locale('id', 'ID'));
 ```
 
-## Complete Example
+### Complete Working Example
+
+A full example of localized form validation:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -527,7 +745,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _email = '';
-  String _phone = '';
   String _password = '';
 
   @override
@@ -535,14 +752,11 @@ class _HomePageState extends State<HomePage> {
     final l10n = FormFieldsLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Form with Localization'),
-      ),
-      body: Form(
+      appBar: AppBar(title: const Text('Form')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: ListView(
-          padding: const EdgeInsets.all(16),
           children: [
-            // Email with localized validator
             FormFields<String>(
               label: 'Email',
               formType: FormType.email,
@@ -552,41 +766,20 @@ class _HomePageState extends State<HomePage> {
               currrentValue: _email,
             ),
             const SizedBox(height: 16),
-
-            // Phone with localized validator
-            FormFields<String>(
-              label: 'Phone',
-              formType: FormType.phone,
-              isRequired: true,
-              validator: FormFieldValidators.phone(_phone, l10n),
-              onChanged: (value) => setState(() => _phone = value),
-              currrentValue: _phone,
-            ),
-            const SizedBox(height: 16),
-
-            // Password with localized validator
             FormFields<String>(
               label: 'Password',
               formType: FormType.password,
               isRequired: true,
               minLengthPassword: 8,
-              validator: FormFieldValidators.minLength(
-                'Password',
-                8,
-                l10n: l10n,
-              ),
+              validator: FormFieldValidators.minLength('Password', 8, l10n: l10n),
               onChanged: (value) => setState(() => _password = value),
               currrentValue: _password,
             ),
-            const SizedBox(height: 32),
-
-            // Submit button with localized text
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.get('formSubmitted')),
-                  ),
+                  SnackBar(content: Text(l10n.get('formSubmitted'))),
                 );
               },
               child: Text(l10n.get('submit')),
@@ -599,439 +792,113 @@ class _HomePageState extends State<HomePage> {
 }
 ```
 
+### Testing Different Languages
+
+Test localization in various languages:
+
+```dart
+// Set in your app
+MaterialApp(
+  locale: const Locale('id', 'ID'),  // Indonesian
+)
+
+// Or add custom locales for quick testing
+const List<Locale> testLocales = [
+  Locale('en', 'US'),  // English
+  Locale('id', 'ID'),  // Indonesian
+  Locale('es', 'ES'),  // Spanish (custom)
+];
+```
+
+---
+
 ## Troubleshooting
 
-**Q: Validation messages still show in English**
+### Q: Translations still show in English
 
-A: Make sure `FormFieldsLocalizationsDelegate()` is added first in `localizationsDelegates`:
+**A:** Make sure `FormFieldsLocalizationsDelegate()` is **first** in `localizationsDelegates`:
 
 ```dart
 localizationsDelegates: const [
-  FormFieldsLocalizationsDelegate(),  // Must be first!
+  FormFieldsLocalizationsDelegate(),  // ✓ Must be first!
   GlobalMaterialLocalizations.delegate,
   // ...
 ]
 ```
 
-**Q: How do I get all available keys?**
+### Q: How do I find all translation keys?
 
-A: Check the language files:
-- [localization/languages/en_us.dart](lib/src/localization/languages/en_us.dart)
-- [localization/languages/id_id.dart](lib/src/localization/languages/id_id.dart)
+**A:** Check the package language files:
+- [lib/src/localization/languages/en_us.dart](lib/src/localization/languages/en_us.dart) - English (reference)
+- [lib/src/localization/languages/id_id.dart](lib/src/localization/languages/id_id.dart) - Indonesian
 
-**Q: Can I mix multiple languages in one screen?**
+Or in your custom language, copy all keys from English.
 
-A: No, the locale is set app-wide. To use different languages, change the app locale and rebuild.
+### Q: What if a translation key is missing?
 
-**Q: What if a translation key is missing?**
+**A:** The package returns the key name as a fallback. Ensure your custom language has all keys from `en_us.dart`.
 
-A: The package will return the key name as a fallback. Ensure all keys from `en_us.dart` are present in new language files.
+### Q: Can I mix multiple languages in one screen?
 
-## Contributing Translations
+**A:** No. Localization is set app-wide. Change the app locale and rebuild the widget tree to switch languages.
 
-We welcome translations for new languages! To contribute:
+### Q: What about RTL languages (Arabic, Hebrew)?
 
-1. Create a language file with all keys and translations
-2. Test thoroughly in your language
-3. Submit a
- PR with the new language file and registration
+**A:** Add `supportedLocales` and handle RTL direction in your app:
 
-**Popular languages to contribute:**
-- Spanish (es_ES / es_MX)
-- French (fr_FR)
-- German (de_DE)
-- Portuguese (pt_BR)
-- Chinese (zh_CN)
-- Japanese (ja_JP)
-- Russian (ru_RU)
-- And more!
+```dart
+MaterialApp(
+  localizationsDelegates: [
+    FormFieldsLocalizationsDelegate(),
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ],
+)
+```
+
+---
+
+## Contributing
+
+### Help Translate the Package
+
+We welcome translations! To contribute a new language:
+
+1. **Copy** [lib/src/localization/languages/en_us.dart](lib/src/localization/languages/en_us.dart)
+2. **Create** `lib/src/localization/languages/{lang}_{country}.dart`
+3. **Translate** all values (keys stay the same)
+4. **Register** in [lib/src/localization/form_fields_localizations.dart](lib/src/localization/form_fields_localizations.dart)
+5. **Test** your translations thoroughly
+6. **Submit** a pull request
+
+**Popular languages needed:**
+- 🇪🇸 Spanish (es_ES, es_MX)
+- 🇫🇷 French (fr_FR, fr_CA)
+- 🇩🇪 German (de_DE)
+- 🇨🇳 Chinese (zh_CN, zh_TW)
+- 🇯🇵 Japanese (ja_JP)
+- 🇵🇹 Portuguese (pt_BR, pt_PT)
+- 🇷🇺 Russian (ru_RU)
+- 🇸🇦 Arabic (ar_SA)
+- 🇮🇳 Hindi (hi_IN)
+
+---
 
 ## Performance Notes
 
-- Localization has minimal performance impact
-- Translations are loaded once at app startup
-- Language switching requires app rebuild
-- Custom overrides with `hintText` or `validator` parameters take precedence over localized strings
+- **Minimal Impact**: Localization adds negligible overhead
+- **Once Per App Start**: Translations load once at startup
+- **Efficient Lookup**: String lookups use map-based access  
+- **Custom Overrides**: Field parameters (validator, hintText) override localized strings
 
-## Support
+---
 
-For issues or questions:
-- Create a GitHub issue
-- Check the example app for implementation details
-- Refer to [Flutter Localization Documentation](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+## Need Help?
 
-The Form Fields package now supports multi-language functionality with US English as the default language.
+- **Issues?** Create a [GitHub issue](https://github.com/enerren/form_fields/issues)
+- **Examples?** Check [example/lib](example/lib) folder
+- **Flutter Docs?** See [Flutter Localization](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
 
-## Supported Languages
+---
 
-Currently supported languages:
-- 🇺🇸 **English (US)** - Default language
-- 🇮🇩 **Indonesian (ID)** - Example implementation
-
-## Quick Start
-
-### 1. Basic Usage (Using Default Language)
-
-The package works out of the box with US English as the default language. No configuration needed:
-
-```dart
-import 'package:form_fields/form_fields.dart';
-
-FormFieldsDropdown<String>(
-  label: 'Country',
-  items: countries,
-  onChanged: (value) => setState(() => selectedCountry = value),
-  enableFilter: true,  // Shows "Search..." in English
-)
-```
-
-### 2. Adding Localization Support to Your App
-
-To enable multi-language support in your Flutter app:
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:form_fields/form_fields.dart';
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      // Add the FormFieldsLocalizationsDelegate
-      localizationsDelegates: const [
-        FormFieldsLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      
-      // Specify supported locales
-      supportedLocales: FormFieldsLocalizations.supportedLocales,
-      
-      // Your app configuration
-      home: MyHomePage(),
-    );
-  }
-}
-```
-
-### 3. Using Localization in Custom Validators
-
-Access localized strings in your code:
-
-```dart
-FormFieldsDropdown<String>(
-  label: 'Country',
-  items: countries,
-  validator: (value) {
-    final l10n = FormFieldsLocalizations.of(context);
-    if (value == null) {
-      return l10n.select('Country'); // Returns "Select Country" or translated
-    }
-    return null;
-  },
-  onChanged: (value) => setState(() => selectedCountry = value),
-)
-```
-
-## Built-in Localized Text
-
-The following UI elements are automatically localized:
-
-### Dialog Actions
-- Cancel button: `CANCEL` / `BATAL`
-- OK button: `OK` / `OK`
-- Done button: `DONE` / `SELESAI`
-
-### Filter/Search
-- Search hint: `Search...` / `Cari...`
-- Type to search: `Type to search {label}...` / `Ketik untuk mencari {label}...`
-
-### Validation Messages
-- Select: `Select {label}` / `Pilih {label}`
-- Select at least one: `Select at least one {label}` / `Pilih setidaknya satu {label}`
-- Select at least X: `Select at least {value} items` / `Pilih setidaknya {value} item`
-- Select at most X: `Select at most {value} items` / `Pilih maksimal {value} item`
-
-### Field Hints
-- Enter: `Enter {label}` / `Masukkan {label}`
-- Enter valid email: `Enter valid email address` / `Masukkan alamat email yang valid`
-- Enter valid phone: `Enter valid phone number` / `Masukkan nomor telepon yang valid`
-
-### Password Validation
-- Minimum length: `Password must be at least {value} characters` / `Kata sandi harus minimal {value} karakter`
-- Needs uppercase: `Must contain uppercase letter` / `Harus mengandung huruf besar`
-- Needs number: `Must contain a number` / `Harus mengandung angka`
-
-## Advanced Localization API
-
-### Accessing Localizations
-
-```dart
-// In a widget with BuildContext
-final l10n = FormFieldsLocalizations.of(context);
-
-// Get simple string
-String cancelText = l10n.cancel; // "CANCEL"
-
-// Get string with label replacement
-String selectCountry = l10n.select('Country'); // "Select Country"
-
-// Get string with value replacement
-String minPassword = l10n.passwordMinLength(8); // "Password must be at least 8 characters"
-
-// Get string with multiple parameters
-String customMessage = l10n.getWithParams('tooShort', {
-  'label': 'Password',
-  'value': 8,
-}); // "Password is too short (minimum 8 characters)"
-```
-
-### Available Methods
-
-```dart
-// Simple getters
-l10n.cancel                 // "CANCEL"
-l10n.searchHint             // "Search..."
-
-// Methods with label
-l10n.select('Country')      // "Select Country"
-l10n.enter('Email')         // "Enter Email"
-
-// Methods with value
-l10n.selectAtLeast(2)       // "Select at least 2 items"
-l10n.selectAtMost(5)        // "Select at most 5 items"
-l10n.passwordMinLength(8)   // "Password must be at least 8 characters"
-
-// Generic methods
-l10n.get('key')                           // Get by key
-l10n.getWithLabel('key', 'Label')        // Replace {label}
-l10n.getWithValue('key', 5)              // Replace {value}
-l10n.getWithParams('key', {'x': 'y'})    // Replace {x} with y
-```
-
-## Adding a New Language
-
-To add a new language (e.g., Spanish):
-
-### Step 1: Create Language File
-
-Create `lib/src/localization/languages/es_es.dart`:
-
-```dart
-/// Spanish (Spain) language strings
-final Map<String, String> esESStrings = {
-  'cancel': 'CANCELAR',
-  'ok': 'ACEPTAR',
-  'select': 'Seleccionar {label}',
-  'searchHint': 'Buscar...',
-  'selectAtLeastOne': 'Seleccione al menos uno {label}',
-  'enter': 'Introducir {label}',
-  'enterValidEmail': 'Ingrese una dirección de correo válida',
-  'passwordMinLength': 'La contraseña debe tener al menos {value} caracteres',
-  // ... add all other keys from en_us.dart or id_id.dart
-};
-```
-
-### Step 2: Register Language
-
-Update `lib/src/localization/form_fields_localizations.dart`:
-
-```dart
-import 'languages/es_es.dart';
-
-static final Map<String, Map<String, String>> _supportedLanguages = {
-  'en_US': enUSStrings,
-  'id_ID': idIDStrings,
-  'es_ES': esESStrings,  // Add this line
-};
-```
-
-### Step 3: Use in Your App
-
-The new language will automatically be available when you set the locale:
-
-```dart
-MaterialApp(
-  locale: const Locale('es', 'ES'),
-  localizationsDelegates: const [
-    FormFieldsLocalizationsDelegate(),
-    // ... other delegates
-  ],
-  supportedLocales: FormFieldsLocalizations.supportedLocales,
-)
-```
-
-## Custom Filter Hints
-
-You can override the default filter hint text:
-
-```dart
-FormFieldsDropdown<String>(
-  label: 'Country',
-  items: countries,
-  enableFilter: true,
-  filterHintText: 'Type to search countries...', // Custom hint
-  onChanged: (value) => setState(() => selectedCountry = value),
-)
-```
-
-## Customizing Hint Text
-
-You can provide custom hint text for any field:
-
-```dart
-FormFieldsDropdown<String>(
-  label: 'Country',
-  items: countries,
-  hintText: 'Please select your country', // Custom hint
-  onChanged: (value) => setState(() => selectedCountry = value),
-)
-```
-
-## Language File Structure
-
-All language files must contain these keys:
-
-```dart
-{
-  // Actions
-  'cancel', 'ok', 'done',
-  
-  // Selection
-  'select', 'selectPrefix', 'selectAtLeastOne', 'selectAtLeast', 'selectAtMost',
-  
-  // Search
-  'searchHint', 'typeToSearch', 'noResultsFound',
-  
-  // Validation
-  'enter', 'enterPrefix', 'enterValid', 'enterValidEmail', 'enterValidPhone',
-  'enterValidInteger', 'enterValidNumber',
-  
-  // Password
-  'passwordMinLength', 'passwordRequired', 'passwordTooShort',
-  'passwordNeedsUppercase', 'passwordNeedsNumber', 'passwordNeedsSpecialChar',
-  
-  // Field Types
-  'fieldTypeString', 'fieldTypeEmail', 'fieldTypePhone', 'fieldTypeNumber',
-  'fieldTypeInteger', 'fieldTypeDate', 'fieldTypeTime',
-  
-  // Errors
-  'required', 'invalid', 'tooShort', 'tooLong', 'minimumValue', 'maximumValue',
-  
-  // Hints
-  'selectDate', 'selectTime', 'selectDateRange', 'selectFromList', 'selectMultiple',
-  
-  // Accessibility
-  'selectedItems', 'noItemsSelected', 'tapToSelect', 'tapToEdit', 'tapToRemove',
-}
-```
-
-## Example: Complete Form with Localization
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:form_fields/form_fields.dart';
-
-class LocalizedForm extends StatefulWidget {
-  @override
-  _LocalizedFormState createState() => _LocalizedFormState();
-}
-
-class _LocalizedFormState extends State<LocalizedForm> {
-  String? selectedCountry;
-  List<String> selectedLanguages = [];
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = FormFieldsLocalizations.of(context);
-
-    return Column(
-      children: [
-        // Dropdown with filter - automatically localized
-        FormFieldsDropdown<String>(
-          label: 'Country',
-          items: ['USA', 'Indonesia', 'Spain', 'France'],
-          enableFilter: true, // Shows localized "Search..." or "Cari..."
-          isRequired: true,
-          onChanged: (value) => setState(() => selectedCountry = value),
-        ),
-        
-        // Multi-select dropdown - automatically localized
-        FormFieldsDropdownMulti<String>(
-          label: 'Languages',
-          items: ['English', 'Indonesian', 'Spanish', 'French'],
-          enableFilter: true,
-          isRequired: true,
-          onChanged: (value) => setState(() => selectedLanguages = value),
-        ),
-        
-        // Custom validation with localization
-        FormFieldsDropdown<String>(
-          label: 'Priority',
-          items: ['Low', 'Medium', 'High'],
-          validator: (value) {
-            if (value == null) {
-              return l10n.select('Priority'); // Localized message
-            }
-            return null;
-          },
-          onChanged: (value) {},
-        ),
-      ],
-    );
-  }
-}
-```
-
-## Testing Localization
-
-To test your app in different languages:
-
-```dart
-// Run with specific locale
-flutter run --dart-define=LOCALE=id_ID
-
-// Or set in your app
-MaterialApp(
-  locale: const Locale('id', 'ID'), // Indonesian
-  // or
-  locale: const Locale('en', 'US'), // English (default)
-)
-```
-
-## Contributing New Languages
-
-We welcome contributions for new language translations! To contribute:
-
-1. Create a new language file in `lib/src/localization/languages/`
-2. Copy all keys from `en_us.dart`
-3. Translate all values
-4. Register in `form_fields_localizations.dart`
-5. Submit a pull request
-
-Popular languages we'd love to support:
-- Spanish (es_ES)
-- French (fr_FR)
-- German (de_DE)
-- Chinese (zh_CN)
-- Japanese (ja_JP)
-- Portuguese (pt_BR)
-- Arabic (ar_SA)
-- Hindi (hi_IN)
-- And more!
-
-## Notes
-
-- **Default Behavior**: If no localization delegate is added, the package automatically uses US English
-- **Fallback**: If a translation is missing, the English text is shown
-- **Performance**: Localization has minimal performance impact
-- **Custom Overrides**: You can always override any text by providing `hintText`, `filterHintText`, or custom `validator` messages
-
-## Support
-
-For issues or questions about localization:
-- Create an issue on GitHub
-- Check the example app for implementation details
-- Refer to Flutter's official localization documentation
+**Happy translating! 🌍**
