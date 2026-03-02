@@ -145,6 +145,8 @@ class View extends PresenterState {
                     initialValue: viewModel.selectedPlan,
                     isRequired: true,
                     direction: Axis.vertical,
+                    indicatorVerticalAlignment:
+                        IndicatorVerticalAlignment.center,
                     activeColor: Colors.purple,
                     itemLabelBuilder: (plan) =>
                         '${plan.name} - \$${plan.price}/month',
@@ -165,67 +167,34 @@ class View extends PresenterState {
                         ),
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Custom radio button indicator
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color:
-                                        selected ? Colors.purple : Colors.grey,
-                                    width: 2,
-                                  ),
+                              Text(
+                                plan.name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      selected ? Colors.purple : Colors.black87,
                                 ),
-                                child: selected
-                                    ? Center(
-                                        child: Container(
-                                          width: 12,
-                                          height: 12,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.purple,
-                                          ),
-                                        ),
-                                      )
-                                    : null,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      plan.name,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: selected
-                                            ? Colors.purple
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '\$${plan.price}/month',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: selected
-                                            ? Colors.purple.shade700
-                                            : Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      plan.features,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 4),
+                              Text(
+                                '\$${plan.price}/month',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selected
+                                      ? Colors.purple.shade700
+                                      : Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                plan.features,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
@@ -262,6 +231,8 @@ class View extends PresenterState {
                     initialValue: viewModel.selectedInterests,
                     isRequired: false,
                     direction: Axis.vertical,
+                    indicatorVerticalAlignment:
+                        IndicatorVerticalAlignment.center,
                     activeColor: Colors.green,
                     itemBuilder: (interest, selected) {
                       return Container(
@@ -281,21 +252,6 @@ class View extends PresenterState {
                         ),
                         child: Row(
                           children: [
-                            Checkbox(
-                              value: selected,
-                              onChanged: (checked) {
-                                final updated = List<Interest>.from(
-                                    viewModel.selectedInterests);
-                                if (checked == true) {
-                                  updated.add(interest);
-                                } else {
-                                  updated.remove(interest);
-                                }
-                                viewModel.setSelectedInterests(updated);
-                              },
-                              activeColor: interest.color,
-                            ),
-                            const SizedBox(width: 8),
                             Container(
                               width: 24,
                               height: 24,

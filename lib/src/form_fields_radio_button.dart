@@ -35,6 +35,9 @@ class FormFieldsRadioButton<T> extends FormField<T> {
     double containerGap = 8,
     double itemMarginTop = 4,
     double itemMarginBottom = 4,
+    IndicatorVerticalAlignment indicatorVerticalAlignment =
+        IndicatorVerticalAlignment.center,
+    bool horizontalSideBySide = false,
     FormFieldValidator<T>? validator,
   })  : assert(items != null || sections != null,
             'Either items or sections must be provided'),
@@ -77,6 +80,8 @@ class FormFieldsRadioButton<T> extends FormField<T> {
               containerGap: containerGap,
               itemMarginTop: itemMarginTop,
               itemMarginBottom: itemMarginBottom,
+              indicatorVerticalAlignment: indicatorVerticalAlignment,
+              horizontalSideBySide: horizontalSideBySide,
             );
           },
         );
@@ -112,6 +117,8 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final double containerGap;
   final double itemMarginTop;
   final double itemMarginBottom;
+  final IndicatorVerticalAlignment indicatorVerticalAlignment;
+  final bool horizontalSideBySide;
 
   const _FormFieldsRadioButtonBody({
     required this.label,
@@ -143,6 +150,8 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
     required this.containerGap,
     required this.itemMarginTop,
     required this.itemMarginBottom,
+    required this.indicatorVerticalAlignment,
+    required this.horizontalSideBySide,
   });
 
   @override
@@ -163,6 +172,17 @@ abstract class _FormFieldsRadioButtonBodyPresenterState<T>
 
 class _FormFieldsRadioButtonBodyView<T>
     extends _FormFieldsRadioButtonBodyPresenterState<T> {
+  CrossAxisAlignment get _itemCrossAxisAlignment {
+    switch (widget.indicatorVerticalAlignment) {
+      case IndicatorVerticalAlignment.top:
+        return CrossAxisAlignment.start;
+      case IndicatorVerticalAlignment.center:
+        return CrossAxisAlignment.center;
+      case IndicatorVerticalAlignment.bottom:
+        return CrossAxisAlignment.end;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
@@ -355,7 +375,7 @@ class _FormFieldsRadioButtonBodyView<T>
 
   /// Build simple items (backward compatibility)
   Widget _buildSimpleItems() {
-    return widget.direction == Axis.horizontal
+    return (widget.direction == Axis.horizontal || widget.horizontalSideBySide)
         ? Wrap(
             alignment: WrapAlignment.start,
             spacing: 8,
@@ -370,6 +390,42 @@ class _FormFieldsRadioButtonBodyView<T>
 
   Widget _buildItem(T item) {
     final selected = widget.state.value == item;
+    final isCompactHorizontal = widget.horizontalSideBySide;
+
+    final itemContent = widget.itemBuilder != null
+        ? Padding(
+            padding: EdgeInsets.only(
+              right: widget.textRightPadding + widget.itemTextMarginRight,
+            ),
+            child: DefaultTextStyle(
+              style: TextStyle(
+                color: selected
+                    ? (widget.selectedItemTextColor ?? Colors.black87)
+                    : Colors.black54,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+              child: widget.itemBuilder!(item, selected),
+            ),
+          )
+        : Padding(
+            padding: EdgeInsets.only(
+              right: widget.textRightPadding + widget.itemTextMarginRight,
+            ),
+            child: Text(
+              widget.itemLabelBuilder != null
+                  ? widget.itemLabelBuilder!(item)
+                  : item.toString(),
+              style: TextStyle(
+                color: selected
+                    ? (widget.selectedItemTextColor ?? Colors.black87)
+                    : Colors.black54,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: selected ? 14 : 13.5,
+              ),
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -428,7 +484,10 @@ class _FormFieldsRadioButtonBodyView<T>
                     child: Padding(
                       padding: widget.itemPadding,
                       child: Row(
-                        mainAxisSize: MainAxisSize.max,
+                        crossAxisAlignment: _itemCrossAxisAlignment,
+                        mainAxisSize: isCompactHorizontal
+                            ? MainAxisSize.min
+                            : MainAxisSize.max,
                         children: [
                           // Custom radio button indicator (replaces Radio widget)
                           Container(
@@ -456,53 +515,12 @@ class _FormFieldsRadioButtonBodyView<T>
                                 : null,
                           ),
                           const SizedBox(width: 12),
-                          widget.itemBuilder != null
-                              ? Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: widget.textRightPadding +
-                                          widget.itemTextMarginRight,
-                                    ),
-                                    child: DefaultTextStyle(
-                                      style: TextStyle(
-                                        color: selected
-                                            ? (widget.selectedItemTextColor ??
-                                                Colors.black87)
-                                            : Colors.black54,
-                                        fontWeight: selected
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
-                                      ),
-                                      child:
-                                          widget.itemBuilder!(item, selected),
-                                    ),
-                                  ),
-                                )
-                              : Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: widget.textRightPadding +
-                                          widget.itemTextMarginRight,
-                                    ),
-                                    child: Text(
-                                      widget.itemLabelBuilder != null
-                                          ? widget.itemLabelBuilder!(item)
-                                          : item.toString(),
-                                      style: TextStyle(
-                                        color: selected
-                                            ? (widget.selectedItemTextColor ??
-                                                Colors.black87)
-                                            : Colors.black54,
-                                        fontWeight: selected
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
-                                        fontSize: selected ? 14 : 13.5,
-                                      ),
-                                      softWrap: true,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
+                          if (isCompactHorizontal)
+                            itemContent
+                          else
+                            Expanded(
+                              child: itemContent,
+                            ),
                         ],
                       ),
                     ),

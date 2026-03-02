@@ -32,6 +32,7 @@ class View extends PresenterState {
                     items: [l.get('male'), l.get('female'), l.get('other')],
                     isRequired: true,
                     direction: Axis.vertical,
+                    indicatorVerticalAlignment: IndicatorVerticalAlignment.top,
                     onChanged: (value) => viewModel.setRadio1(value ?? ''),
                   ),
                   buildResultDisplay(
@@ -50,6 +51,7 @@ class View extends PresenterState {
                     ],
                     isRequired: true,
                     direction: Axis.horizontal,
+                    horizontalSideBySide: true,
                     onChanged: (value) => viewModel.setRadio2(value ?? ''),
                   ),
                   buildResultDisplay(context, l.get('selectedMaritalStatus'),
@@ -76,6 +78,8 @@ class View extends PresenterState {
                     errorBorderColor: Colors.red.shade700,
                     activeColor: Colors.purple,
                     radius: 15,
+                    indicatorVerticalAlignment:
+                        IndicatorVerticalAlignment.center,
                     onChanged: (value) => viewModel.setRadio3(value ?? ''),
                   ),
                   buildResultDisplay(
@@ -115,6 +119,7 @@ class View extends PresenterState {
                     items: const ['⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐'],
                     isRequired: true,
                     direction: Axis.horizontal,
+                    horizontalSideBySide: true,
                     borderColor: Colors.amber,
                     activeColor: Colors.amber,
                     onChanged: (value) => viewModel.setRadio5(value ?? ''),
@@ -187,6 +192,8 @@ class View extends PresenterState {
                     direction: Axis.vertical,
                     borderColor: Colors.indigo,
                     activeColor: Colors.indigo,
+                    indicatorVerticalAlignment:
+                        IndicatorVerticalAlignment.bottom,
                     itemPadding:
                         const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                     onChanged: (value) => viewModel.setRadio8(value ?? ''),

@@ -23,3 +23,6 @@ enum LabelPosition { top, bottom, left, right, inBorder, none }
 
 /// Border styles for input fields
 enum BorderType { outlineInputBorder, underlineInputBorder, none }
+
+/// Vertical alignment for selection indicator and item content row
+enum IndicatorVerticalAlignment { top, center, bottom }

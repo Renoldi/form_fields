@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'utilities/enums.dart';
 import 'localization/form_fields_localizations.dart';
 
 class FormFieldsCheckbox<T> extends FormField<List<T>> {
@@ -18,6 +19,10 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
     double itemMarginTop = 4,
     double itemMarginBottom = 4,
     double itemMarginHorizontal = 0,
+    IndicatorVerticalAlignment indicatorVerticalAlignment =
+        IndicatorVerticalAlignment.center,
+    bool horizontalSideBySide = false,
+    double textRightPadding = 0,
     Color? itemBorderColor,
     double itemBorderWidth = 1.0,
     double itemBorderRadius = 8,
@@ -48,6 +53,9 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
               itemMarginTop: itemMarginTop,
               itemMarginBottom: itemMarginBottom,
               itemMarginHorizontal: itemMarginHorizontal,
+              indicatorVerticalAlignment: indicatorVerticalAlignment,
+              horizontalSideBySide: horizontalSideBySide,
+              textRightPadding: textRightPadding,
               itemBorderColor: itemBorderColor,
               itemBorderWidth: itemBorderWidth,
               itemBorderRadius: itemBorderRadius,
@@ -73,6 +81,9 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final double itemMarginTop;
   final double itemMarginBottom;
   final double itemMarginHorizontal;
+  final IndicatorVerticalAlignment indicatorVerticalAlignment;
+  final bool horizontalSideBySide;
+  final double textRightPadding;
   final Color? itemBorderColor;
   final double itemBorderWidth;
   final double itemBorderRadius;
@@ -94,6 +105,9 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     required this.itemMarginTop,
     required this.itemMarginBottom,
     required this.itemMarginHorizontal,
+    required this.indicatorVerticalAlignment,
+    required this.horizontalSideBySide,
+    required this.textRightPadding,
     this.itemBorderColor,
     required this.itemBorderWidth,
     required this.itemBorderRadius,
@@ -120,6 +134,17 @@ abstract class _FormFieldsCheckboxBodyPresenterState<T>
 
 class _FormFieldsCheckboxBodyView<T>
     extends _FormFieldsCheckboxBodyPresenterState<T> {
+  CrossAxisAlignment get _itemCrossAxisAlignment {
+    switch (widget.indicatorVerticalAlignment) {
+      case IndicatorVerticalAlignment.top:
+        return CrossAxisAlignment.start;
+      case IndicatorVerticalAlignment.center:
+        return CrossAxisAlignment.center;
+      case IndicatorVerticalAlignment.bottom:
+        return CrossAxisAlignment.end;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
@@ -165,7 +190,8 @@ class _FormFieldsCheckboxBodyView<T>
             borderRadius: BorderRadius.circular(widget.radius),
           ),
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: widget.direction == Axis.horizontal
+          child: (widget.direction == Axis.horizontal ||
+                  widget.horizontalSideBySide)
               ? Wrap(
                   children: widget.items
                       .map((item) => _buildItem(item, selectedValues))
@@ -196,11 +222,26 @@ class _FormFieldsCheckboxBodyView<T>
 
   Widget _buildItem(T item, List<T> selectedValues) {
     final isSelected = selectedValues.contains(item);
+    final isCompactHorizontal = widget.horizontalSideBySide;
     final itemBorder = widget.itemBorderColor == null
         ? null
         : Border.all(
             color: widget.itemBorderColor!,
             width: widget.itemBorderWidth,
+          );
+
+    final itemContent = widget.itemBuilder != null
+        ? Padding(
+            padding: EdgeInsets.only(right: widget.textRightPadding),
+            child: widget.itemBuilder!(item, isSelected),
+          )
+        : Padding(
+            padding: EdgeInsets.only(right: widget.textRightPadding),
+            child: Text(
+              widget.itemLabelBuilder != null
+                  ? widget.itemLabelBuilder!(item)
+                  : item.toString(),
+            ),
           );
 
     return Padding(
@@ -232,7 +273,9 @@ class _FormFieldsCheckboxBodyView<T>
           child: Padding(
             padding: widget.itemPadding,
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: _itemCrossAxisAlignment,
+              mainAxisSize:
+                  isCompactHorizontal ? MainAxisSize.min : MainAxisSize.max,
               children: [
                 Checkbox(
                   value: isSelected,
@@ -251,15 +294,12 @@ class _FormFieldsCheckboxBodyView<T>
                   },
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: widget.itemBuilder != null
-                      ? widget.itemBuilder!(item, isSelected)
-                      : Text(
-                          widget.itemLabelBuilder != null
-                              ? widget.itemLabelBuilder!(item)
-                              : item.toString(),
-                        ),
-                ),
+                if (isCompactHorizontal)
+                  itemContent
+                else
+                  Expanded(
+                    child: itemContent,
+                  ),
               ],
             ),
           ),
