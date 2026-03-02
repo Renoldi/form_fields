@@ -49,6 +49,7 @@ abstract class PresenterState extends State<Presenter> {
         isSuccess: true,
         title: context.tr('success'),
         message: context.tr('profileUpdatedSuccessfully'),
+        errorPosition: appState.errorPosition,
       );
       if (mounted) {
         Navigator.of(context).pop();
@@ -58,6 +59,7 @@ abstract class PresenterState extends State<Presenter> {
         isSuccess: false,
         title: context.tr('updateFailed'),
         message: error,
+        errorPosition: appState.errorPosition,
       );
     }
   }

@@ -11,6 +11,7 @@
 /// - Get environment-specific settings: BuildConfig.androidConfig()
 /// - Access API keys: BuildConfig.current.mapsApiKey
 /// - Get permissions: BuildConfig.current.androidPermissions
+library;
 
 import 'package:form_fields_example/config/environment.dart';
 import 'package:form_fields_example/config/build_settings.dart';

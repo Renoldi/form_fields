@@ -46,13 +46,13 @@ void main() {
   // ========================================================================
 
   // Option 1: DEBUG Environment (default)
-  EnvironmentConfig.current = AppEnvironment.production;
+  EnvironmentConfig.current = AppEnvironment.debug;
 
   // Option 2: BETA Environment (uncomment to use)
-  // EnvironmentConfig.current = AppEnvironment.production;
+  // EnvironmentConfig.current = AppEnvironment.debug;
 
   // Option 3: PRODUCTION Environment (uncomment to use)
-  // EnvironmentConfig.current = AppEnvironment.production;
+  // EnvironmentConfig.current = AppEnvironment.debug;
 
   // ========================================================================
   // BUILD CONFIGURATION

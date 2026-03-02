@@ -177,7 +177,7 @@ dart run tool/configure_build.dart --env=debug --platform=android,ios,macos
 dart run tool/configure_build.dart --env=production --platform=all
 
 # Skip build
-dart run tool/configure_build.dart --env=debug --skip-build
+dart run tool/configure_build.dart --env=debug --skip-build'??/
 ```
 
 ### What happens:

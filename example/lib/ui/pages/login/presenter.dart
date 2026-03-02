@@ -25,7 +25,8 @@ abstract class PresenterState extends State<Presenter> {
     final appState = context.read<AppStateNotifier>();
     final dialog = BlockingDialog(context);
 
-    await dialog.showLoading(message: context.tr('signingIn'));
+    // Don't await - let dialog show while we process login
+    dialog.showLoading(message: context.tr('signingIn'));
 
     try {
       final user = await viewModel.login();

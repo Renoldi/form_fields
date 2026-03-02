@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.form_fields_example"
+    namespace = "com.example.form_fields_example.debug"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 
@@ -21,14 +21,14 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.form_fields_example"
+        applicationId = "com.example.form_fields_example.debug"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
-        manifestPlaceholders["MAPS_API_KEY"] = "PRODUCTION_GOOGLE_MAPS_API_KEY"}
+        manifestPlaceholders["MAPS_API_KEY"] = "DEBUG_GOOGLE_MAPS_API_KEY"}
 
     buildTypes {
         release {
