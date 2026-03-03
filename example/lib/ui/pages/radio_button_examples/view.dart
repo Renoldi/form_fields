@@ -210,6 +210,132 @@ class View extends PresenterState {
                   buildResultDisplay(context, context.tr('selectedFrequency'),
                       viewModel.radio8),
 
+                  buildSectionTitle(context.tr('rbLabelPositions'),
+                      Colors.orange.shade700, Colors.orange.shade400),
+
+                  // Example 9: Label Position Bottom
+                  buildFieldTitle(
+                      context.tr('rbLabelBottom'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('communicationMethod'),
+                    initialValue: viewModel.radio9,
+                    items: [
+                      context.tr('email'),
+                      context.tr('phone'),
+                      context.tr('sms'),
+                      context.tr('pushNotification')
+                    ],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.cyan,
+                    activeColor: Colors.cyan,
+                    labelPosition: LabelPosition.bottom,
+                    onChanged: (value) => viewModel.setRadio9(value ?? ''),
+                  ),
+                  buildResultDisplay(context,
+                      context.tr('selectedCommunication'), viewModel.radio9),
+
+                  // Example 10: Label Position Top
+                  buildFieldTitle(
+                      context.tr('rbLabelTop'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('theme'),
+                    initialValue: viewModel.radio10,
+                    items: [
+                      context.tr('light'),
+                      context.tr('dark'),
+                      context.tr('system')
+                    ],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.lime,
+                    activeColor: Colors.lime,
+                    labelPosition: LabelPosition.top,
+                    onChanged: (value) => viewModel.setRadio10(value ?? ''),
+                  ),
+                  buildResultDisplay(
+                      context, context.tr('selectedTheme'), viewModel.radio10),
+
+                  // Example 11: Label Position Left
+                  buildFieldTitle(
+                      context.tr('rbLabelLeft'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('accessibility'),
+                    initialValue: viewModel.radio11,
+                    items: [context.tr('enabled'), context.tr('disabled')],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.pink,
+                    activeColor: Colors.pink,
+                    labelPosition: LabelPosition.left,
+                    onChanged: (value) => viewModel.setRadio11(value ?? ''),
+                  ),
+                  buildResultDisplay(context,
+                      context.tr('selectedAccessibility'), viewModel.radio11),
+
+                  // Example 12: Label Position Right
+                  buildFieldTitle(
+                      context.tr('rbLabelRight'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('visibility'),
+                    initialValue: viewModel.radio12,
+                    items: [
+                      context.tr('public'),
+                      context.tr('private'),
+                      context.tr('restricted')
+                    ],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.deepOrange,
+                    activeColor: Colors.deepOrange,
+                    labelPosition: LabelPosition.right,
+                    onChanged: (value) => viewModel.setRadio12(value ?? ''),
+                  ),
+                  buildResultDisplay(context, context.tr('selectedVisibility'),
+                      viewModel.radio12),
+
+                  // Example 13: Label Position InBorder
+                  buildFieldTitle(
+                      context.tr('rbLabelInBorder'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('verificationStatus'),
+                    initialValue: viewModel.radio13,
+                    items: [
+                      context.tr('verified'),
+                      context.tr('pending'),
+                      context.tr('unverified')
+                    ],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.green,
+                    activeColor: Colors.green,
+                    labelPosition: LabelPosition.inBorder,
+                    onChanged: (value) => viewModel.setRadio13(value ?? ''),
+                  ),
+                  buildResultDisplay(context,
+                      context.tr('selectedVerification'), viewModel.radio13),
+
+                  // Example 14: Label Position None
+                  buildFieldTitle(
+                      context.tr('rbLabelNone'), Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('notificationPreference'),
+                    initialValue: viewModel.radio14,
+                    items: [
+                      context.tr('on'),
+                      context.tr('off'),
+                      context.tr('quiet')
+                    ],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderColor: Colors.blue,
+                    activeColor: Colors.blue,
+                    labelPosition: LabelPosition.none,
+                    onChanged: (value) => viewModel.setRadio14(value ?? ''),
+                  ),
+                  buildResultDisplay(context,
+                      context.tr('selectedNotification'), viewModel.radio14),
+
                   const SizedBox(height: 32),
 
                   // Submit Button

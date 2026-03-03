@@ -108,6 +108,15 @@ const Map<String, String> enStrings = {
   // Checkbox Examples - Label Positions
   'cbLabelPositions': 'Label Position Examples',
   'cbLabelBottom': 'Label Below Checkboxes',
+
+  // Radio Button Examples - Label Positions
+  'rbLabelPositions': 'Radio Label Position Examples',
+  'rbLabelBottom': 'Label Below Radio Buttons',
+  'rbLabelTop': 'Label Above Radio Buttons',
+  'rbLabelLeft': 'Label to the Left of Radio Buttons',
+  'rbLabelRight': 'Label to the Right of Radio Buttons',
+  'rbLabelInBorder': 'Label Hidden (InBorder)',
+  'rbLabelNone': 'Label Hidden (None)',
   'cbLabelLeft': 'Label to the Left',
   'cbPreferences': 'Preferences',
   'cbPermissions': 'Permissions',
@@ -149,4 +158,37 @@ const Map<String, String> enStrings = {
   'camera': 'Camera',
   'photos': 'Photos',
   'notification': 'Notification',
+
+  // Radio Button Communication Methods
+  'communicationMethod': 'Communication Method',
+  'phone': 'Phone',
+  'sms': 'SMS',
+  'pushNotification': 'Push Notification',
+  'selectedCommunication': 'Selected Communication',
+
+  // Radio Button - Position Examples Items
+  'theme': 'Theme',
+  'light': 'Light',
+  'dark': 'Dark',
+  'system': 'System',
+  'selectedTheme': 'Selected Theme',
+  'accessibility': 'Accessibility',
+  'enabled': 'Enabled',
+  'disabled': 'Disabled',
+  'selectedAccessibility': 'Selected Accessibility',
+  'visibility': 'Visibility',
+  'public': 'Public',
+  'private': 'Private',
+  'restricted': 'Restricted',
+  'selectedVisibility': 'Selected Visibility',
+  'verificationStatus': 'Verification Status',
+  'verified': 'Verified',
+  'pending': 'Pending',
+  'unverified': 'Unverified',
+  'selectedVerification': 'Selected Verification',
+  'notificationPreference': 'Notification Preference',
+  'on': 'On',
+  'off': 'Off',
+  'quiet': 'Quiet',
+  'selectedNotification': 'Selected Notification',
 };

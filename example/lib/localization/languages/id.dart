@@ -108,6 +108,15 @@ const Map<String, String> idStrings = {
   // Checkbox Examples - Label Positions
   'cbLabelPositions': 'Contoh Posisi Label',
   'cbLabelBottom': 'Label di Bawah Kotak Centang',
+
+  // Radio Button Examples - Label Positions
+  'rbLabelPositions': 'Contoh Posisi Label Radio',
+  'rbLabelBottom': 'Label di Bawah Tombol Radio',
+  'rbLabelTop': 'Label di Atas Tombol Radio',
+  'rbLabelLeft': 'Label di Sebelah Kiri Tombol Radio',
+  'rbLabelRight': 'Label di Sebelah Kanan Tombol Radio',
+  'rbLabelInBorder': 'Label Tersembunyi (DiBorder)',
+  'rbLabelNone': 'Label Tersembunyi (Tidak Ada)',
   'cbLabelLeft': 'Label di Sebelah Kiri',
   'cbPreferences': 'Preferensi',
   'cbPermissions': 'Izin',
@@ -149,4 +158,37 @@ const Map<String, String> idStrings = {
   'camera': 'Kamera',
   'photos': 'Foto',
   'notification': 'Notifikasi',
+
+  // Radio Button Communication Methods
+  'communicationMethod': 'Metode Komunikasi',
+  'phone': 'Telepon',
+  'sms': 'SMS',
+  'pushNotification': 'Notifikasi Push',
+  'selectedCommunication': 'Komunikasi Terpilih',
+
+  // Radio Button - Position Examples Items
+  'theme': 'Tema',
+  'light': 'Terang',
+  'dark': 'Gelap',
+  'system': 'Sistem',
+  'selectedTheme': 'Tema Terpilih',
+  'accessibility': 'Aksesibilitas',
+  'enabled': 'Diaktifkan',
+  'disabled': 'Dinonaktifkan',
+  'selectedAccessibility': 'Aksesibilitas Terpilih',
+  'visibility': 'Visibilitas',
+  'public': 'Publik',
+  'private': 'Pribadi',
+  'restricted': 'Terbatas',
+  'selectedVisibility': 'Visibilitas Terpilih',
+  'verificationStatus': 'Status Verifikasi',
+  'verified': 'Terverifikasi',
+  'pending': 'Menunggu',
+  'unverified': 'Belum Diverifikasi',
+  'selectedVerification': 'Verifikasi Terpilih',
+  'notificationPreference': 'Preferensi Notifikasi',
+  'on': 'Aktif',
+  'off': 'Nonaktif',
+  'quiet': 'Senyap',
+  'selectedNotification': 'Notifikasi Terpilih',
 };
