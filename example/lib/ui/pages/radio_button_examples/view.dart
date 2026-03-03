@@ -13,13 +13,12 @@ class View extends PresenterState {
       create: (_) => RadioButtonExamplesViewModel(),
       child: Consumer<RadioButtonExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = loc.Localizations.of(context);
-
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildSectionTitle(context.tr('radioButtonBasicExamples'),
                       Colors.orange.shade700, Colors.orange.shade400),
@@ -377,8 +376,6 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = loc.Localizations.of(context);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

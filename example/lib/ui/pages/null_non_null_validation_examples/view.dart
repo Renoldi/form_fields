@@ -16,7 +16,7 @@ class View extends PresenterState {
       create: (_) => NullNonNullValidationExamplesViewModel(),
       child: Consumer<NullNonNullValidationExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = loc.Localizations.of(context);
+          loc.Localizations.of(context);
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
@@ -490,7 +490,7 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = loc.Localizations.of(context);
+    loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -612,7 +612,7 @@ class View extends PresenterState {
 
   Widget buildResultDisplay(String label, dynamic value,
       {bool isOptional = false}) {
-    final l = FormFieldsLocalizations.load(
+    FormFieldsLocalizations.load(
       WidgetsBinding.instance.platformDispatcher.locale,
     );
     final displayValue = value ?? context.tr('notSet');

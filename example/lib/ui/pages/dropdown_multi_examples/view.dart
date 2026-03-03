@@ -14,7 +14,7 @@ class View extends PresenterState {
       create: (_) => DropdownMultiExamplesViewModel(),
       child: Consumer<DropdownMultiExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = loc.Localizations.of(context);
+          loc.Localizations.of(context);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -351,7 +351,7 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = loc.Localizations.of(context);
+    loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

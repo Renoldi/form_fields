@@ -17,12 +17,12 @@ class View extends PresenterState {
       create: (_) => FormFieldsExamplesViewModel(),
       child: Consumer<FormFieldsExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = loc.Localizations.of(context);
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Language indicator showing current locale
                   const LanguageIndicator(),
@@ -467,7 +467,6 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

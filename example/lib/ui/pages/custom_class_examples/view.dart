@@ -13,7 +13,7 @@ class View extends PresenterState {
       create: (_) => CustomClassExamplesViewModel(),
       child: Consumer<CustomClassExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = loc.Localizations.of(context);
+          loc.Localizations.of(context);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -453,7 +453,7 @@ class View extends PresenterState {
     BuildContext context,
     CustomClassExamplesViewModel viewModel,
   ) {
-    final l = loc.Localizations.of(context);
+    loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
