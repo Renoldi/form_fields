@@ -24,6 +24,7 @@ const Map<String, String> enStrings = {
 
   // Complete Examples
   'completeExamples': 'Complete Examples',
+  'examplesTitle': 'Examples',
   'formFieldsExamples': 'FormFields Examples',
   'dropdownExamples': 'Dropdown Examples',
   'multiSelectDropdownExamples': 'Multi-Select Dropdown Examples',
@@ -31,6 +32,19 @@ const Map<String, String> enStrings = {
   'checkboxExamples': 'Checkbox Examples',
   'customClassExamples': 'Custom Class Examples',
   'validationExamples': 'Null/Non-Null Validation Examples',
+  'tabFormFields': 'FormFields',
+  'tabDropdown': 'Dropdown',
+  'tabDropdownMulti': 'Dropdown Multi',
+  'tabRadioButton': 'Radio Button',
+  'tabCheckbox': 'Checkbox',
+  'tabCustomClass': 'Custom Class',
+  'tabValidation': 'Validation',
+  'selectLanguageTitle': 'Select Language',
+  'languageEnglish': 'English',
+  'languageEnglishRegion': 'English (US)',
+  'languageIndonesian': 'Indonesian',
+  'languageIndonesianRegion': 'Indonesian (ID)',
+  'closeButton': 'Close',
 
   // Menu Items
   'formFields': 'FormFields',
@@ -90,6 +104,21 @@ const Map<String, String> enStrings = {
   'positionRight': 'Right',
   'positionInBorder': 'InBorder',
   'positionNone': 'None',
+
+  // Checkbox Examples - Label Positions
+  'cbLabelPositions': 'Label Position Examples',
+  'cbLabelBottom': 'Label Below Checkboxes',
+  'cbLabelLeft': 'Label to the Left',
+  'cbPreferences': 'Preferences',
+  'cbPermissions': 'Permissions',
+  'cbLabelTop': 'Label Above Checkboxes',
+  'cbLabelRight': 'Label to the Right',
+  'cbLabelInBorder': 'Label Hidden (InBorder)',
+  'cbLabelNone': 'Label Hidden (None)',
+  'cbNotifications': 'Notifications',
+  'cbThemes': 'Themes',
+  'cbFeatures': 'Features',
+  'cbOptions': 'Options',
 
   // Status Messages
   'loadFailed': 'Load Failed',

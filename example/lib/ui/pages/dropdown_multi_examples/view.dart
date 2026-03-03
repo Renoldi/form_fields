@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 import 'presenter.dart';
@@ -13,7 +14,7 @@ class View extends PresenterState {
       create: (_) => DropdownMultiExamplesViewModel(),
       child: Consumer<DropdownMultiExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -50,7 +51,7 @@ class View extends PresenterState {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                l.get('dmHeaderTitle'),
+                                context.tr('dmHeaderTitle'),
                                 style: const TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -59,7 +60,7 @@ class View extends PresenterState {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                l.get('dmHeaderSubtitle'),
+                                context.tr('dmHeaderSubtitle'),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.white70,
@@ -81,9 +82,9 @@ class View extends PresenterState {
 
                   // Example 1: Basic Multi-Select
                   buildFieldTitle(
-                      l.get('dmBasicTitle'), Colors.purple.shade600),
+                      context.tr('dmBasicTitle'), Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmSelectProgramming'),
+                    label: context.tr('dmSelectProgramming'),
                     initialValues: viewModel.multiDropdown1,
                     items: const [
                       'Dart',
@@ -120,14 +121,14 @@ class View extends PresenterState {
                     isRequired: true,
                     onChanged: viewModel.setMultiDropdown1,
                   ),
-                  buildResultDisplay(context, l.get('dmProgramming'),
+                  buildResultDisplay(context, context.tr('dmProgramming'),
                       viewModel.multiDropdown1),
 
                   // Example 2: With Min/Max Constraints
                   buildFieldTitle(
-                      l.get('dmMinMaxTitle'), Colors.purple.shade600),
+                      context.tr('dmMinMaxTitle'), Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmSkills'),
+                    label: context.tr('dmSkills'),
                     initialValues: viewModel.multiDropdown2,
                     items: const [
                       'Flutter',
@@ -148,14 +149,14 @@ class View extends PresenterState {
                     chipDeleteIconColor: Colors.blue.shade700,
                     onChanged: viewModel.setMultiDropdown2,
                   ),
-                  buildResultDisplay(context, l.get('dmSelectedSkills'),
+                  buildResultDisplay(context, context.tr('dmSelectedSkills'),
                       viewModel.multiDropdown2),
 
                   // Example 3: Custom Styled
                   buildFieldTitle(
-                      l.get('dmCustomChipTitle'), Colors.purple.shade600),
+                      context.tr('dmCustomChipTitle'), Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmInterests'),
+                    label: context.tr('dmInterests'),
                     initialValues: viewModel.multiDropdown3,
                     items: const [
                       'Gaming',
@@ -173,14 +174,14 @@ class View extends PresenterState {
                     chipDeleteIconColor: Colors.white,
                     onChanged: viewModel.setMultiDropdown3,
                   ),
-                  buildResultDisplay(context, l.get('dmSelectedInterests'),
+                  buildResultDisplay(context, context.tr('dmSelectedInterests'),
                       viewModel.multiDropdown3),
 
                   // Example 4: With Item Count Display
                   buildFieldTitle(
-                      l.get('dmItemCountTitle'), Colors.purple.shade600),
+                      context.tr('dmItemCountTitle'), Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmFrameworks'),
+                    label: context.tr('dmFrameworks'),
                     initialValues: viewModel.multiDropdown4,
                     items: const [
                       'React',
@@ -199,14 +200,16 @@ class View extends PresenterState {
                     chipDeleteIconColor: Colors.orange.shade700,
                     onChanged: viewModel.setMultiDropdown4,
                   ),
-                  buildResultDisplay(context, l.get('dmSelectedFrameworks'),
+                  buildResultDisplay(
+                      context,
+                      context.tr('dmSelectedFrameworks'),
                       viewModel.multiDropdown4),
 
                   // Example 5: Custom Borders and Hint
-                  buildFieldTitle(
-                      l.get('dmCustomBorderTitle'), Colors.purple.shade600),
+                  buildFieldTitle(context.tr('dmCustomBorderTitle'),
+                      Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmCountriesVisited'),
+                    label: context.tr('dmCountriesVisited'),
                     initialValues: viewModel.multiDropdown5,
                     items: const [
                       'USA',
@@ -241,7 +244,7 @@ class View extends PresenterState {
                       'Singapore',
                     ],
                     isRequired: false,
-                    hintText: l.get('dmHintCountries'),
+                    hintText: context.tr('dmHintCountries'),
                     borderColor: Colors.grey.shade400,
                     focusedBorderColor: Colors.purple,
                     errorBorderColor: Colors.red.shade700,
@@ -253,14 +256,14 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context,
-                      l.get('dmSelectedCountriesVisited'),
+                      context.tr('dmSelectedCountriesVisited'),
                       viewModel.multiDropdown5),
 
                   // Example 6: With Filter/Search
                   buildFieldTitle(
-                      l.get('dmWithFilterTitle'), Colors.purple.shade600),
+                      context.tr('dmWithFilterTitle'), Colors.purple.shade600),
                   FormFieldsDropdownMulti<String>(
-                    label: l.get('dmSelectProgrammingFilter'),
+                    label: context.tr('dmSelectProgrammingFilter'),
                     initialValues: viewModel.multiDropdown6,
                     items: const [
                       'Dart',
@@ -296,7 +299,7 @@ class View extends PresenterState {
                     ],
                     isRequired: false,
                     enableFilter: true,
-                    filterHintText: l.get('dmFilterLanguages'),
+                    filterHintText: context.tr('dmFilterLanguages'),
                     chipBackgroundColor: Colors.indigo.shade100,
                     chipTextColor: Colors.indigo.shade900,
                     chipDeleteIconColor: Colors.indigo.shade700,
@@ -304,7 +307,7 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context,
-                      l.get('dmSelectedLanguagesFiltered'),
+                      context.tr('dmSelectedLanguagesFiltered'),
                       viewModel.multiDropdown6),
 
                   const SizedBox(height: 32),
@@ -327,7 +330,7 @@ class View extends PresenterState {
                         ),
                       ),
                       child: Text(
-                        l.get('validateFormButton'),
+                        context.tr('validateFormButton'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -348,14 +351,14 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text(l.get('dmFormValidated')),
+            Text(context.tr('dmFormValidated')),
           ],
         ),
         backgroundColor: Colors.purple,

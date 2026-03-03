@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'presenter.dart';
@@ -10,38 +11,38 @@ class View extends PresenterState {
   Widget build(BuildContext context) {
     return Consumer<ViewModel>(
       builder: (context, viewModel, _) {
-        final l = FormFieldsLocalizations.of(context);
         return Form(
           key: viewModel.formKey,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildSectionTitle(l.get('cbBasicExamples'),
+                buildSectionTitle(context.tr('cbBasicExamples'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
                 // Example 1: Single Selection - Vertical
                 buildFieldTitle(
-                    l.get('cbSingleVertical'), Colors.pink.shade600),
+                    context.tr('cbSingleVertical'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbTermsConditions'),
+                  label: context.tr('cbTermsConditions'),
                   initialValue: viewModel.checkbox1,
-                  items: [l.get('iAgreeTerms')],
+                  items: [context.tr('iAgreeTerms')],
                   isRequired: true,
                   direction: Axis.vertical,
                   indicatorVerticalAlignment: IndicatorVerticalAlignment.top,
                   onChanged: viewModel.setCheckbox1,
                 ),
                 buildResultDisplay(
-                    context, l.get('cbTermsAgreed'), viewModel.checkbox1),
+                    context, context.tr('cbTermsAgreed'), viewModel.checkbox1),
 
                 // Example 2: Single Selection - Horizontal
                 buildFieldTitle(
-                    l.get('cbSingleHorizontal'), Colors.pink.shade600),
+                    context.tr('cbSingleHorizontal'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbNewsletter'),
+                  label: context.tr('cbNewsletter'),
                   initialValue: viewModel.checkbox2,
-                  items: [l.get('cbSubscribeWeekly')],
+                  items: [context.tr('cbSubscribeWeekly')],
                   isRequired: false,
                   direction: Axis.horizontal,
                   horizontalSideBySide: true,
@@ -49,17 +50,17 @@ class View extends PresenterState {
                   activeColor: Colors.blue,
                   onChanged: viewModel.setCheckbox2,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbNewsletterResult'), viewModel.checkbox2),
+                buildResultDisplay(context, context.tr('cbNewsletterResult'),
+                    viewModel.checkbox2),
 
-                buildSectionTitle(l.get('cbMultipleSelection'),
+                buildSectionTitle(context.tr('cbMultipleSelection'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
                 // Example 3: Multiple Selection - Vertical
                 buildFieldTitle(
-                    l.get('cbMultipleVertical'), Colors.pink.shade600),
+                    context.tr('cbMultipleVertical'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbHobbies'),
+                  label: context.tr('cbHobbies'),
                   initialValue: viewModel.checkbox3,
                   items: const [
                     'Reading',
@@ -93,14 +94,14 @@ class View extends PresenterState {
                   horizontalSideBySide: true,
                   onChanged: viewModel.setCheckbox3,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbSelectedHobbies'), viewModel.checkbox3),
+                buildResultDisplay(context, context.tr('cbSelectedHobbies'),
+                    viewModel.checkbox3),
 
                 // Example 4: Multiple Selection - Horizontal
                 buildFieldTitle(
-                    l.get('cbMultipleHorizontal'), Colors.pink.shade600),
+                    context.tr('cbMultipleHorizontal'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbLanguages'),
+                  label: context.tr('cbLanguages'),
                   initialValue: viewModel.checkbox4,
                   items: const [
                     'Dart',
@@ -132,16 +133,17 @@ class View extends PresenterState {
                   activeColor: Colors.teal,
                   onChanged: viewModel.setCheckbox4,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbSelectedLanguages'), viewModel.checkbox4),
+                buildResultDisplay(context, context.tr('cbSelectedLanguages'),
+                    viewModel.checkbox4),
 
-                buildSectionTitle(l.get('cbCustomStyling'),
+                buildSectionTitle(context.tr('cbCustomStyling'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
                 // Example 5: Custom Border & Colors
-                buildFieldTitle(l.get('cbCustomBorder'), Colors.pink.shade600),
+                buildFieldTitle(
+                    context.tr('cbCustomBorder'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbSkills'),
+                  label: context.tr('cbSkills'),
                   initialValue: viewModel.checkbox5,
                   items: const [
                     'Leadership',
@@ -182,13 +184,14 @@ class View extends PresenterState {
                   indicatorVerticalAlignment: IndicatorVerticalAlignment.center,
                   onChanged: viewModel.setCheckbox5,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbSelectedSkills'), viewModel.checkbox5),
+                buildResultDisplay(context, context.tr('cbSelectedSkills'),
+                    viewModel.checkbox5),
 
                 // Example 6: Custom Item Padding
-                buildFieldTitle(l.get('cbCustomPadding'), Colors.pink.shade600),
+                buildFieldTitle(
+                    context.tr('cbCustomPadding'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbContactMethods'),
+                  label: context.tr('cbContactMethods'),
                   initialValue: viewModel.checkbox6,
                   items: const ['Email', 'Phone', 'SMS', 'WhatsApp'],
                   isRequired: false,
@@ -202,17 +205,17 @@ class View extends PresenterState {
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                   onChanged: viewModel.setCheckbox6,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbContactMethods'), viewModel.checkbox6),
+                buildResultDisplay(context, context.tr('cbContactMethods'),
+                    viewModel.checkbox6),
 
-                buildSectionTitle(l.get('cbLayoutVariations'),
+                buildSectionTitle(context.tr('cbLayoutVariations'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
                 // Example 7: Horizontal Layout
                 buildFieldTitle(
-                    l.get('cbHorizontalLayout'), Colors.pink.shade600),
+                    context.tr('cbHorizontalLayout'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbDaysOfWeek'),
+                  label: context.tr('cbDaysOfWeek'),
                   initialValue: viewModel.checkbox7,
                   items: const [
                     'Mon',
@@ -238,13 +241,13 @@ class View extends PresenterState {
                   onChanged: viewModel.setCheckbox7,
                 ),
                 buildResultDisplay(
-                    context, l.get('cbSelectedDays'), viewModel.checkbox7),
+                    context, context.tr('cbSelectedDays'), viewModel.checkbox7),
 
                 // Example 8: Vertical Layout with Custom Colors
                 buildFieldTitle(
-                    l.get('cbVerticalLayout'), Colors.pink.shade600),
+                    context.tr('cbVerticalLayout'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbFeatures'),
+                  label: context.tr('cbFeatures'),
                   initialValue: viewModel.checkbox8,
                   items: const ['WiFi', 'Parking', 'Gym', 'Pool'],
                   isRequired: false,
@@ -254,17 +257,17 @@ class View extends PresenterState {
                   indicatorVerticalAlignment: IndicatorVerticalAlignment.bottom,
                   onChanged: viewModel.setCheckbox8,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbSelectedFeatures'), viewModel.checkbox8),
+                buildResultDisplay(context, context.tr('cbSelectedFeatures'),
+                    viewModel.checkbox8),
 
-                buildSectionTitle(l.get('cbAdvancedFeatures'),
+                buildSectionTitle(context.tr('cbAdvancedFeatures'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
                 // Example 9: Custom Validation
                 buildFieldTitle(
-                    l.get('cbCustomValidation'), Colors.pink.shade600),
+                    context.tr('cbCustomValidation'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbRestrictedMinOptions'),
+                  label: context.tr('cbRestrictedMinOptions'),
                   initialValue: viewModel.checkbox3,
                   items: const ['Option A', 'Option B', 'Option C', 'Option D'],
                   isRequired: true,
@@ -273,22 +276,25 @@ class View extends PresenterState {
                   activeColor: Colors.red,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return l.get('cbMinSelections');
+                      return context.tr('cbMinSelections');
                     }
                     if (value.length < 2) {
-                      return l.get('cbMinSelections');
+                      return context.tr('cbMinSelections');
                     }
                     return null;
                   },
                   onChanged: viewModel.setCheckbox3,
                 ),
-                buildResultDisplay(context, l.get('cbCustomValidationResult'),
+                buildResultDisplay(
+                    context,
+                    context.tr('cbCustomValidationResult'),
                     viewModel.checkbox3),
 
                 // Example 10: Custom Styling
-                buildFieldTitle(l.get('cbCustomPadding'), Colors.pink.shade600),
+                buildFieldTitle(
+                    context.tr('cbCustomPadding'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbDietaryRestrictions'),
+                  label: context.tr('cbDietaryRestrictions'),
                   initialValue: viewModel.checkbox4,
                   items: const [
                     'Vegetarian',
@@ -325,14 +331,14 @@ class View extends PresenterState {
                       const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                   onChanged: viewModel.setCheckbox4,
                 ),
-                buildResultDisplay(context, l.get('cbDietaryRestrictions'),
+                buildResultDisplay(context, context.tr('cbDietaryRestrictions'),
                     viewModel.checkbox4),
 
                 // Example 11: Horizontal Layout with Custom Border
                 buildFieldTitle(
-                    l.get('cbNotificationsLayout'), Colors.pink.shade600),
+                    context.tr('cbNotificationsLayout'), Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbNotifications'),
+                  label: context.tr('cbNotifications'),
                   initialValue: viewModel.checkbox5,
                   items: const ['Push', 'Email', 'SMS', 'In-App'],
                   isRequired: false,
@@ -348,14 +354,14 @@ class View extends PresenterState {
                   itemMarginHorizontal: 4,
                   onChanged: viewModel.setCheckbox5,
                 ),
-                buildResultDisplay(
-                    context, l.get('cbNotifications'), viewModel.checkbox5),
+                buildResultDisplay(context, context.tr('cbNotifications'),
+                    viewModel.checkbox5),
 
                 // Example 12: Many Options
-                buildFieldTitle(
-                    l.get('cbManyOptionsScrollable'), Colors.pink.shade600),
+                buildFieldTitle(context.tr('cbManyOptionsScrollable'),
+                    Colors.pink.shade600),
                 FormFieldsCheckbox<String>(
-                  label: l.get('cbCountriesVisited'),
+                  label: context.tr('cbCountriesVisited'),
                   initialValue: viewModel.checkbox6,
                   items: const [
                     'United States',
@@ -397,8 +403,124 @@ class View extends PresenterState {
                       const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                   onChanged: viewModel.setCheckbox6,
                 ),
-                buildResultDisplay(context, l.get('cbSelectedCountriesVisited'),
+                buildResultDisplay(
+                    context,
+                    context.tr('cbSelectedCountriesVisited'),
                     viewModel.checkbox6),
+
+                buildSectionTitle(context.tr('cbLabelPositions'),
+                    Colors.pink.shade700, Colors.pink.shade400),
+
+                // Example 13: Label Position - Bottom
+                buildFieldTitle(
+                    context.tr('cbLabelBottom'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbPreferences'),
+                  initialValue: viewModel.checkbox9,
+                  items: const ['Dark Mode', 'Notifications', 'Analytics'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.blue,
+                  activeColor: Colors.blue,
+                  labelPosition: LabelPosition.bottom,
+                  containerGap: 12,
+                  onChanged: viewModel.setCheckbox9,
+                ),
+                buildResultDisplay(
+                    context, context.tr('cbPreferences'), viewModel.checkbox9),
+
+                // Example 14: Label Position - Left
+                buildFieldTitle(
+                    context.tr('cbLabelLeft'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbPermissions'),
+                  initialValue: viewModel.checkbox10,
+                  items: const ['Read', 'Write', 'Delete', 'Admin'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.green,
+                  activeColor: Colors.green,
+                  labelPosition: LabelPosition.left,
+                  containerGap: 16,
+                  onChanged: viewModel.setCheckbox10,
+                ),
+                buildResultDisplay(
+                    context, context.tr('cbPermissions'), viewModel.checkbox10),
+
+                const SizedBox(height: 32),
+
+                // Submit Button
+
+                // Example 15: Label Position - Top (Default)
+                buildFieldTitle(context.tr('cbLabelTop'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbNotifications'),
+                  initialValue: viewModel.checkbox11,
+                  items: const ['Email', 'SMS', 'Push'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.purple,
+                  activeColor: Colors.purple,
+                  labelPosition: LabelPosition.top,
+                  containerGap: 8,
+                  onChanged: viewModel.setCheckbox11,
+                ),
+                buildResultDisplay(context, context.tr('cbNotifications'),
+                    viewModel.checkbox11),
+
+                // Example 16: Label Position - Right
+                buildFieldTitle(
+                    context.tr('cbLabelRight'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbThemes'),
+                  initialValue: viewModel.checkbox12,
+                  items: const ['Light', 'Dark', 'Auto'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.orange,
+                  activeColor: Colors.orange,
+                  labelPosition: LabelPosition.right,
+                  containerGap: 16,
+                  onChanged: viewModel.setCheckbox12,
+                ),
+                buildResultDisplay(
+                    context, context.tr('cbThemes'), viewModel.checkbox12),
+
+                // Example 17: Label Position - InBorder
+                buildFieldTitle(
+                    context.tr('cbLabelInBorder'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbFeatures'),
+                  initialValue: viewModel.checkbox13,
+                  items: const ['Feature A', 'Feature B', 'Feature C'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.red,
+                  activeColor: Colors.red,
+                  labelPosition: LabelPosition.inBorder,
+                  containerGap: 8,
+                  onChanged: viewModel.setCheckbox13,
+                ),
+                buildResultDisplay(
+                    context, context.tr('cbFeatures'), viewModel.checkbox13),
+
+                // Example 18: Label Position - None
+                buildFieldTitle(
+                    context.tr('cbLabelNone'), Colors.pink.shade600),
+                FormFieldsCheckbox<String>(
+                  label: context.tr('cbOptions'),
+                  initialValue: viewModel.checkbox14,
+                  items: const ['Option 1', 'Option 2', 'Option 3'],
+                  isRequired: false,
+                  direction: Axis.vertical,
+                  borderColor: Colors.teal,
+                  activeColor: Colors.teal,
+                  labelPosition: LabelPosition.none,
+                  containerGap: 8,
+                  onChanged: viewModel.setCheckbox14,
+                ),
+                buildResultDisplay(
+                    context, context.tr('cbOptions'), viewModel.checkbox14),
 
                 const SizedBox(height: 32),
 
@@ -416,7 +538,7 @@ class View extends PresenterState {
                       ),
                     ),
                     child: Text(
-                      l.get('validateFormButton'),
+                      context.tr('validateFormButton'),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

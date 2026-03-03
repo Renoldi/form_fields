@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'presenter.dart';
 import 'view_model.dart';
@@ -12,7 +13,7 @@ class View extends PresenterState {
       create: (_) => CustomClassExamplesViewModel(),
       child: Consumer<CustomClassExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -45,7 +46,7 @@ class View extends PresenterState {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                l.get('ccHeaderTitle'),
+                                context.tr('ccHeaderTitle'),
                                 style: const TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -54,7 +55,7 @@ class View extends PresenterState {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                l.get('ccHeaderSubtitle'),
+                                context.tr('ccHeaderSubtitle'),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.white70,
@@ -70,12 +71,12 @@ class View extends PresenterState {
                   const SizedBox(height: 32),
 
                   // Example 1: Dropdown with Custom Class
-                  buildSectionTitle(l.get('ccSectionDropdownCustomClass'),
+                  buildSectionTitle(context.tr('ccSectionDropdownCustomClass'),
                       Colors.teal.shade700, Colors.teal.shade400),
                   buildFieldTitle(
-                      l.get('ccFieldCountryFlag'), Colors.teal.shade600),
+                      context.tr('ccFieldCountryFlag'), Colors.teal.shade600),
                   FormFieldsDropdown<Country>(
-                    label: l.get('ccSelectCountry'),
+                    label: context.tr('ccSelectCountry'),
                     items: viewModel.countries,
                     initialValue: viewModel.selectedCountry,
                     isRequired: true,
@@ -83,7 +84,7 @@ class View extends PresenterState {
                         '${country.flag} ${country.name}',
                     onChanged: viewModel.setSelectedCountry,
                   ),
-                  buildResultDisplay(context, l.get('ccSelectedCountry'),
+                  buildResultDisplay(context, context.tr('ccSelectedCountry'),
                       viewModel.selectedCountry),
 
                   const SizedBox(height: 16),
@@ -99,12 +100,14 @@ class View extends PresenterState {
                   const SizedBox(height: 32),
 
                   // Example 2: Multi-Select Dropdown with Custom Class
-                  buildSectionTitle(l.get('ccSectionMultiSelectCustomClass'),
-                      Colors.teal.shade700, Colors.teal.shade400),
-                  buildFieldTitle(
-                      l.get('ccFieldSkillsCategories'), Colors.teal.shade600),
+                  buildSectionTitle(
+                      context.tr('ccSectionMultiSelectCustomClass'),
+                      Colors.teal.shade700,
+                      Colors.teal.shade400),
+                  buildFieldTitle(context.tr('ccFieldSkillsCategories'),
+                      Colors.teal.shade600),
                   FormFieldsDropdownMulti<Skill>(
-                    label: l.get('ccSelectSkills'),
+                    label: context.tr('ccSelectSkills'),
                     items: viewModel.skills,
                     initialValues: viewModel.selectedSkills,
                     isRequired: true,
@@ -118,7 +121,7 @@ class View extends PresenterState {
                     showItemCount: true,
                     onChanged: viewModel.setSelectedSkills,
                   ),
-                  buildResultDisplay(context, l.get('ccSelectedSkills'),
+                  buildResultDisplay(context, context.tr('ccSelectedSkills'),
                       viewModel.selectedSkills),
 
                   const SizedBox(height: 16),
@@ -135,12 +138,12 @@ class View extends PresenterState {
                   const SizedBox(height: 32),
 
                   // Example 3: Radio Button with Custom Class
-                  buildSectionTitle(l.get('ccSectionRadioCustomClass'),
+                  buildSectionTitle(context.tr('ccSectionRadioCustomClass'),
                       Colors.teal.shade700, Colors.teal.shade400),
                   buildFieldTitle(
-                      l.get('ccFieldPlanSelection'), Colors.teal.shade600),
+                      context.tr('ccFieldPlanSelection'), Colors.teal.shade600),
                   FormFieldsRadioButton<SubscriptionPlan>(
-                    label: l.get('ccSelectPlan'),
+                    label: context.tr('ccSelectPlan'),
                     items: viewModel.plans,
                     initialValue: viewModel.selectedPlan,
                     isRequired: true,
@@ -204,8 +207,8 @@ class View extends PresenterState {
                     },
                     onChanged: viewModel.setSelectedPlan,
                   ),
-                  buildResultDisplay(
-                      context, l.get('ccSelectedPlan'), viewModel.selectedPlan),
+                  buildResultDisplay(context, context.tr('ccSelectedPlan'),
+                      viewModel.selectedPlan),
 
                   const SizedBox(height: 16),
 
@@ -221,12 +224,12 @@ class View extends PresenterState {
                   const SizedBox(height: 32),
 
                   // Example 4: Checkbox with Custom Class
-                  buildSectionTitle(l.get('ccSectionCheckboxCustomClass'),
+                  buildSectionTitle(context.tr('ccSectionCheckboxCustomClass'),
                       Colors.teal.shade700, Colors.teal.shade400),
-                  buildFieldTitle(
-                      l.get('ccFieldInterestsSelection'), Colors.teal.shade600),
+                  buildFieldTitle(context.tr('ccFieldInterestsSelection'),
+                      Colors.teal.shade600),
                   FormFieldsCheckbox<Interest>(
-                    label: l.get('ccSelectInterests'),
+                    label: context.tr('ccSelectInterests'),
                     items: viewModel.interests,
                     initialValue: viewModel.selectedInterests,
                     isRequired: false,
@@ -278,7 +281,7 @@ class View extends PresenterState {
                     },
                     onChanged: viewModel.setSelectedInterests,
                   ),
-                  buildResultDisplay(context, l.get('ccSelectedInterests'),
+                  buildResultDisplay(context, context.tr('ccSelectedInterests'),
                       viewModel.selectedInterests),
 
                   const SizedBox(height: 16),
@@ -295,17 +298,19 @@ class View extends PresenterState {
                   const SizedBox(height: 32),
 
                   // Example 5: Dropdown with Filter and Custom Class
-                  buildSectionTitle(l.get('ccSectionDropdownFilterCustomClass'),
-                      Colors.teal.shade700, Colors.teal.shade400),
-                  buildFieldTitle(l.get('ccFieldCountrySearchFilter'),
+                  buildSectionTitle(
+                      context.tr('ccSectionDropdownFilterCustomClass'),
+                      Colors.teal.shade700,
+                      Colors.teal.shade400),
+                  buildFieldTitle(context.tr('ccFieldCountrySearchFilter'),
                       Colors.teal.shade600),
                   FormFieldsDropdown<Country>(
-                    label: l.get('ccSelectCountryFilter'),
+                    label: context.tr('ccSelectCountryFilter'),
                     items: viewModel.countries,
                     initialValue: viewModel.selectedCountryWithFilter,
                     isRequired: true,
                     enableFilter: true,
-                    filterHintText: l.get('ccSearchCountriesHint'),
+                    filterHintText: context.tr('ccSearchCountriesHint'),
                     itemLabelBuilder: (country) =>
                         '${country.flag} ${country.name}',
                     borderColor: Colors.orange,
@@ -314,7 +319,7 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context,
-                      l.get('ccSelectedCountryFiltered'),
+                      context.tr('ccSelectedCountryFiltered'),
                       viewModel.selectedCountryWithFilter),
 
                   const SizedBox(height: 16),
@@ -332,18 +337,18 @@ class View extends PresenterState {
 
                   // Example 6: Multi-Select Dropdown with Filter and Custom Class
                   buildSectionTitle(
-                      l.get('ccSectionMultiSelectFilterCustomClass'),
+                      context.tr('ccSectionMultiSelectFilterCustomClass'),
                       Colors.teal.shade700,
                       Colors.teal.shade400),
-                  buildFieldTitle(
-                      l.get('ccFieldSkillsSearchFilter'), Colors.teal.shade600),
+                  buildFieldTitle(context.tr('ccFieldSkillsSearchFilter'),
+                      Colors.teal.shade600),
                   FormFieldsDropdownMulti<Skill>(
-                    label: l.get('ccSelectSkillsFilter'),
+                    label: context.tr('ccSelectSkillsFilter'),
                     items: viewModel.skills,
                     initialValues: viewModel.selectedSkillsWithFilter,
                     isRequired: false,
                     enableFilter: true,
-                    filterHintText: l.get('ccSearchSkillsHint'),
+                    filterHintText: context.tr('ccSearchSkillsHint'),
                     itemLabelBuilder: (skill) =>
                         '${skill.name} (${skill.category})',
                     chipBackgroundColor: Colors.indigo.shade100,
@@ -352,7 +357,9 @@ class View extends PresenterState {
                     showItemCount: true,
                     onChanged: viewModel.setSelectedSkillsWithFilter,
                   ),
-                  buildResultDisplay(context, l.get('ccSelectedSkillsFiltered'),
+                  buildResultDisplay(
+                      context,
+                      context.tr('ccSelectedSkillsFiltered'),
                       viewModel.selectedSkillsWithFilter),
 
                   const SizedBox(height: 16),
@@ -386,7 +393,7 @@ class View extends PresenterState {
                         ),
                       ),
                       child: Text(
-                        l.get('validateFormButton'),
+                        context.tr('validateFormButton'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -446,7 +453,7 @@ class View extends PresenterState {
     BuildContext context,
     CustomClassExamplesViewModel viewModel,
   ) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -455,7 +462,7 @@ class View extends PresenterState {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                l.get('ccFormValidated'),
+                context.tr('ccFormValidated'),
                 style: const TextStyle(color: Colors.white),
               ),
             ),

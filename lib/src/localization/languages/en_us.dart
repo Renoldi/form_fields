@@ -35,6 +35,7 @@ const Map<String, String> enUSStrings = {
   // Checkbox
   'checkboxRequired': 'Please select at least one {label}',
   'selectOptions': 'Select options',
+  'cbLabelInBorder': 'Label Hidden (InBorder)',
 
   // Radio
   'radioRequired': 'Please select {label}',

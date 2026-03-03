@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 
 /// Reusable widget to display form field values in a formatted container
 Widget buildResultDisplay<T>(dynamic a, dynamic b, [dynamic c]) {
@@ -22,7 +23,7 @@ Widget buildResultDisplay<T>(dynamic a, dynamic b, [dynamic c]) {
           WidgetsBinding.instance.platformDispatcher.locale,
         );
   final hasValue = value != null && value.toString().isNotEmpty;
-  final displayValue = hasValue ? value.toString() : l.get('notSet');
+  final displayValue = hasValue ? value.toString() : context!.tr('notSet');
 
   return Padding(
     padding: const EdgeInsets.only(top: 12, bottom: 16, left: 16, right: 16),

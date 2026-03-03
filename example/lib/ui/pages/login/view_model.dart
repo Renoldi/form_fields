@@ -5,8 +5,8 @@ import 'package:form_fields_example/config/error_type.dart';
 class ViewModel extends ChangeNotifier {
   String? errorMessage;
   ErrorType? errorType;
-  String username = '';
-  String password = '';
+  String username = 'emilys';
+  String password = 'emilyspass';
 
   bool get canSubmit =>
       username.trim().isNotEmpty && password.trim().isNotEmpty;

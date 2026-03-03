@@ -35,6 +35,7 @@ const Map<String, String> idIDStrings = {
   // Checkbox
   'checkboxRequired': 'Silakan pilih setidaknya satu {label}',
   'selectOptions': 'Pilih opsi',
+  'cbLabelInBorder': 'Label Tersembunyi (DiBorder)',
 
   // Radio
   'radioRequired': 'Silakan pilih {label}',

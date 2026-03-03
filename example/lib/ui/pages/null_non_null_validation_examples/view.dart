@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 import 'presenter.dart';
 import 'view_model.dart';
@@ -15,7 +16,7 @@ class View extends PresenterState {
       create: (_) => NullNonNullValidationExamplesViewModel(),
       child: Consumer<NullNonNullValidationExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
@@ -28,19 +29,19 @@ class View extends PresenterState {
 
                   // ===== STRING VALIDATION PATTERNS =====
                   buildSectionTitle(
-                    l.get('valStringNullable'),
+                    context.tr('valStringNullable'),
                     Colors.blue.shade700,
                     Colors.blue.shade400,
                   ),
-
                   // PATTERN 1: Non-Nullable + isRequired: true
-                  buildFieldTitle(l.get('valPattern1'), Colors.green.shade600),
+                  buildFieldTitle(
+                      context.tr('valPattern1'), Colors.green.shade600),
                   buildDescriptionBox(
-                    l.get('valStringDesc1'),
+                    context.tr('valStringDesc1'),
                     Colors.green,
                   ),
                   FormFields<String>(
-                    label: l.get('ffFullName'),
+                    label: context.tr('ffFullName'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -48,18 +49,19 @@ class View extends PresenterState {
                     onChanged: viewModel.setStringNonNullRequired,
                     currrentValue: viewModel.stringNonNullRequired,
                   ),
-                  buildResultDisplay(
-                      l.get('ffFullName'), viewModel.stringNonNullRequired),
+                  buildResultDisplay(context.tr('ffFullName'),
+                      viewModel.stringNonNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
-                  buildFieldTitle(l.get('valPattern2'), Colors.orange.shade600),
+                  buildFieldTitle(
+                      context.tr('valPattern2'), Colors.orange.shade600),
                   buildDescriptionBox(
-                    l.get('valStringDesc2'),
+                    context.tr('valStringDesc2'),
                     Colors.orange,
                   ),
                   FormFields<String>(
-                    label: l.get('ffMiddleName'),
+                    label: context.tr('ffMiddleName'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -67,19 +69,20 @@ class View extends PresenterState {
                     onChanged: viewModel.setStringNonNullOptional,
                     currrentValue: viewModel.stringNonNullOptional,
                   ),
-                  buildResultDisplay(
-                      l.get('ffMiddleName'), viewModel.stringNonNullOptional,
+                  buildResultDisplay(context.tr('ffMiddleName'),
+                      viewModel.stringNonNullOptional,
                       isOptional: true),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
-                  buildFieldTitle(l.get('valPattern3'), Colors.red.shade600),
+                  buildFieldTitle(
+                      context.tr('valPattern3'), Colors.red.shade600),
                   buildDescriptionBox(
-                    l.get('valStringDesc3'),
+                    context.tr('valStringDesc3'),
                     Colors.red,
                   ),
                   FormFields<String?>(
-                    label: l.get('ffLastName'),
+                    label: context.tr('ffLastName'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -88,17 +91,18 @@ class View extends PresenterState {
                     currrentValue: viewModel.stringNullRequired,
                   ),
                   buildResultDisplay(
-                      l.get('ffLastName'), viewModel.stringNullRequired),
+                      context.tr('ffLastName'), viewModel.stringNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
-                  buildFieldTitle(l.get('valPattern4'), Colors.purple.shade600),
+                  buildFieldTitle(
+                      context.tr('valPattern4'), Colors.purple.shade600),
                   buildDescriptionBox(
-                    l.get('valStringDesc4'),
+                    context.tr('valStringDesc4'),
                     Colors.purple,
                   ),
                   FormFields<String?>(
-                    label: l.get('valNickname'),
+                    label: context.tr('valNickname'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -107,23 +111,23 @@ class View extends PresenterState {
                     currrentValue: viewModel.stringNullOptional,
                   ),
                   buildResultDisplay(
-                      l.get('valNickname'), viewModel.stringNullOptional,
+                      context.tr('valNickname'), viewModel.stringNullOptional,
                       isOptional: true),
                   const SizedBox(height: 32),
 
                   // ===== INT VALIDATION PATTERNS =====
-                  buildSectionTitle(l.get('valIntPatterns'),
+                  buildSectionTitle(context.tr('valIntPatterns'),
                       Colors.teal.shade700, Colors.teal.shade400),
 
                   // PATTERN 1: Non-Nullable + isRequired: true
                   buildFieldTitle(
-                      l.get('valIntPattern1'), Colors.green.shade600),
+                      context.tr('valIntPattern1'), Colors.green.shade600),
                   buildDescriptionBox(
-                    l.get('valIntDesc1'),
+                    context.tr('valIntDesc1'),
                     Colors.green,
                   ),
                   FormFields<int>(
-                    label: l.get('ffAge'),
+                    label: context.tr('ffAge'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -132,18 +136,18 @@ class View extends PresenterState {
                     currrentValue: viewModel.intNonNullRequired,
                   ),
                   buildResultDisplay(
-                      l.get('ffAge'), viewModel.intNonNullRequired),
+                      context.tr('ffAge'), viewModel.intNonNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
                   buildFieldTitle(
-                      l.get('valIntPattern2'), Colors.orange.shade600),
+                      context.tr('valIntPattern2'), Colors.orange.shade600),
                   buildDescriptionBox(
-                    l.get('valIntDesc2'),
+                    context.tr('valIntDesc2'),
                     Colors.orange,
                   ),
                   FormFields<int>(
-                    label: l.get('valPhoneExtension'),
+                    label: context.tr('valPhoneExtension'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -151,19 +155,20 @@ class View extends PresenterState {
                     onChanged: viewModel.setIntNonNullOptional,
                     currrentValue: viewModel.intNonNullOptional,
                   ),
-                  buildResultDisplay(
-                      l.get('valPhoneExtension'), viewModel.intNonNullOptional,
+                  buildResultDisplay(context.tr('valPhoneExtension'),
+                      viewModel.intNonNullOptional,
                       isOptional: true),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
-                  buildFieldTitle(l.get('valIntPattern3'), Colors.red.shade600),
+                  buildFieldTitle(
+                      context.tr('valIntPattern3'), Colors.red.shade600),
                   buildDescriptionBox(
-                    l.get('valIntDesc3'),
+                    context.tr('valIntDesc3'),
                     Colors.red,
                   ),
                   FormFields<int?>(
-                    label: l.get('ffQuantity'),
+                    label: context.tr('ffQuantity'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -172,18 +177,18 @@ class View extends PresenterState {
                     currrentValue: viewModel.intNullRequired,
                   ),
                   buildResultDisplay(
-                      l.get('ffQuantity'), viewModel.intNullRequired),
+                      context.tr('ffQuantity'), viewModel.intNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
                   buildFieldTitle(
-                      l.get('valIntPattern4'), Colors.purple.shade600),
+                      context.tr('valIntPattern4'), Colors.purple.shade600),
                   buildDescriptionBox(
-                    l.get('valIntDesc4'),
+                    context.tr('valIntDesc4'),
                     Colors.purple,
                   ),
                   FormFields<int?>(
-                    label: l.get('valEmployeeId'),
+                    label: context.tr('valEmployeeId'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -192,23 +197,23 @@ class View extends PresenterState {
                     currrentValue: viewModel.intNullOptional,
                   ),
                   buildResultDisplay(
-                      l.get('valEmployeeId'), viewModel.intNullOptional,
+                      context.tr('valEmployeeId'), viewModel.intNullOptional,
                       isOptional: true),
                   const SizedBox(height: 32),
 
                   // ===== DOUBLE VALIDATION PATTERNS =====
-                  buildSectionTitle(l.get('valDoublePatterns'),
+                  buildSectionTitle(context.tr('valDoublePatterns'),
                       Colors.indigo.shade700, Colors.indigo.shade400),
 
                   // PATTERN 1: Non-Nullable + isRequired: true
                   buildFieldTitle(
-                      l.get('valDoublePattern1'), Colors.green.shade600),
+                      context.tr('valDoublePattern1'), Colors.green.shade600),
                   buildDescriptionBox(
-                    l.get('valDoubleDesc1'),
+                    context.tr('valDoubleDesc1'),
                     Colors.green,
                   ),
                   FormFields<double>(
-                    label: l.get('ffProductPrice'),
+                    label: context.tr('ffProductPrice'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -220,19 +225,19 @@ class View extends PresenterState {
                     onChanged: viewModel.setDoubleNonNullRequired,
                     currrentValue: viewModel.doubleNonNullRequired,
                   ),
-                  buildResultDisplay(
-                      l.get('ffProductPrice'), viewModel.doubleNonNullRequired),
+                  buildResultDisplay(context.tr('ffProductPrice'),
+                      viewModel.doubleNonNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
                   buildFieldTitle(
-                      l.get('valDoublePattern2'), Colors.orange.shade600),
+                      context.tr('valDoublePattern2'), Colors.orange.shade600),
                   buildDescriptionBox(
-                    l.get('valDoubleDesc2'),
+                    context.tr('valDoubleDesc2'),
                     Colors.orange,
                   ),
                   FormFields<double>(
-                    label: l.get('valShippingCost'),
+                    label: context.tr('valShippingCost'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -244,20 +249,20 @@ class View extends PresenterState {
                     onChanged: viewModel.setDoubleNonNullOptional,
                     currrentValue: viewModel.doubleNonNullOptional,
                   ),
-                  buildResultDisplay(
-                      l.get('valShippingCost'), viewModel.doubleNonNullOptional,
+                  buildResultDisplay(context.tr('valShippingCost'),
+                      viewModel.doubleNonNullOptional,
                       isOptional: true),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
                   buildFieldTitle(
-                      l.get('valDoublePattern3'), Colors.red.shade600),
+                      context.tr('valDoublePattern3'), Colors.red.shade600),
                   buildDescriptionBox(
-                    l.get('valDoubleDesc3'),
+                    context.tr('valDoubleDesc3'),
                     Colors.red,
                   ),
                   FormFields<double?>(
-                    label: l.get('valDiscountRate'),
+                    label: context.tr('valDiscountRate'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -269,19 +274,19 @@ class View extends PresenterState {
                     onChanged: viewModel.setDoubleNullRequired,
                     currrentValue: viewModel.doubleNullRequired,
                   ),
-                  buildResultDisplay(
-                      l.get('valDiscountRate'), viewModel.doubleNullRequired),
+                  buildResultDisplay(context.tr('valDiscountRate'),
+                      viewModel.doubleNullRequired),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
                   buildFieldTitle(
-                      l.get('valDoublePattern4'), Colors.purple.shade600),
+                      context.tr('valDoublePattern4'), Colors.purple.shade600),
                   buildDescriptionBox(
-                    l.get('valDoubleDesc4'),
+                    context.tr('valDoubleDesc4'),
                     Colors.purple,
                   ),
                   FormFields<double?>(
-                    label: l.get('valCommissionAmount'),
+                    label: context.tr('valCommissionAmount'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -293,39 +298,39 @@ class View extends PresenterState {
                     onChanged: viewModel.setDoubleNullOptional,
                     currrentValue: viewModel.doubleNullOptional,
                   ),
-                  buildResultDisplay(l.get('valCommissionAmount'),
+                  buildResultDisplay(context.tr('valCommissionAmount'),
                       viewModel.doubleNullOptional,
                       isOptional: true),
                   const SizedBox(height: 32),
 
                   // ===== CUSTOM VALIDATION =====
-                  buildSectionTitle(l.get('valCustomValidationSection'),
+                  buildSectionTitle(context.tr('valCustomValidationSection'),
                       Colors.teal.shade700, Colors.teal.shade400),
 
-                  buildFieldTitle(
-                      l.get('valCustomValidation1Title'), Colors.teal.shade600),
+                  buildFieldTitle(context.tr('valCustomValidation1Title'),
+                      Colors.teal.shade600),
                   buildDescriptionBox(
-                    l.get('valCustomValidation1Desc'),
+                    context.tr('valCustomValidation1Desc'),
                     Colors.teal,
                   ),
                   FormFields<String>(
-                    label: l.get('valUsername'),
+                    label: context.tr('valUsername'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.teal,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return l.get('valUsernameRequired');
+                        return context.tr('valUsernameRequired');
                       }
                       if (value.length < 3) {
-                        return l.get('valUsernameMin');
+                        return context.tr('valUsernameMin');
                       }
                       if (value.length > 20) {
-                        return l.get('valUsernameMax');
+                        return context.tr('valUsernameMax');
                       }
                       if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                        return l.get('valUsernameChars');
+                        return context.tr('valUsernameChars');
                       }
                       return null;
                     },
@@ -333,17 +338,17 @@ class View extends PresenterState {
                     currrentValue: viewModel.usernameCustom,
                   ),
                   buildResultDisplay(
-                      l.get('valUsername'), viewModel.usernameCustom),
+                      context.tr('valUsername'), viewModel.usernameCustom),
                   const SizedBox(height: 24),
 
-                  buildFieldTitle(
-                      l.get('valCustomValidation2Title'), Colors.cyan.shade600),
+                  buildFieldTitle(context.tr('valCustomValidation2Title'),
+                      Colors.cyan.shade600),
                   buildDescriptionBox(
-                    l.get('valCustomValidation2Desc'),
+                    context.tr('valCustomValidation2Desc'),
                     Colors.cyan,
                   ),
                   FormFields<String?>(
-                    label: l.get('valEmail'),
+                    label: context.tr('valEmail'),
                     formType: FormType.email,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -356,76 +361,77 @@ class View extends PresenterState {
                       if (!RegExp(
                               r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
                           .hasMatch(value)) {
-                        return l.get('valEmailInvalid');
+                        return context.tr('valEmailInvalid');
                       }
                       // Then check if company domain
                       if (!value.endsWith('@company.com')) {
-                        return l.get('valEmailDomain');
+                        return context.tr('valEmailDomain');
                       }
                       return null;
                     },
                     onChanged: viewModel.setEmailCustom,
                     currrentValue: viewModel.emailCustom,
                   ),
-                  buildResultDisplay(l.get('valEmail'), viewModel.emailCustom,
+                  buildResultDisplay(
+                      context.tr('valEmail'), viewModel.emailCustom,
                       isOptional: true),
                   const SizedBox(height: 24),
 
-                  buildFieldTitle(l.get('valCustomValidation3Title'),
+                  buildFieldTitle(context.tr('valCustomValidation3Title'),
                       Colors.indigo.shade600),
                   buildDescriptionBox(
-                    l.get('valCustomValidation3Desc'),
+                    context.tr('valCustomValidation3Desc'),
                     Colors.indigo,
                   ),
                   FormFields<int>(
-                    label: l.get('valAge'),
+                    label: context.tr('valAge'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.indigo,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return l.get('valAgeRequired');
+                        return context.tr('valAgeRequired');
                       }
                       final age = int.tryParse(value);
                       if (age == null) {
-                        return l.get('valAgeInvalid');
+                        return context.tr('valAgeInvalid');
                       }
                       if (age < 18) {
-                        return l.get('valAgeMin');
+                        return context.tr('valAgeMin');
                       }
                       if (age > 65) {
-                        return l.get('valAgeMax');
+                        return context.tr('valAgeMax');
                       }
                       return null;
                     },
                     onChanged: viewModel.setAgeCustom,
                     currrentValue: viewModel.ageCustom,
                   ),
-                  buildResultDisplay(l.get('valAge'), viewModel.ageCustom),
+                  buildResultDisplay(context.tr('valAge'), viewModel.ageCustom),
                   const SizedBox(height: 32),
 
                   // ===== VALIDATION RULES SUMMARY =====
-                  buildSectionTitle(l.get('valRulesSummaryTitle'),
+                  buildSectionTitle(context.tr('valRulesSummaryTitle'),
                       Colors.grey.shade700, Colors.grey.shade400),
                   buildRuleBox(
-                    l.get('valRule1Title'),
-                    l.get('valRule1Desc'),
+                    context.tr('valRule1Title'),
+                    context.tr('valRule1Desc'),
                     Colors.green,
                   ),
                   buildRuleBox(
-                    l.get('valRule2Title'),
-                    l.get('valRule2Desc'),
+                    context.tr('valRule2Title'),
+                    context.tr('valRule2Desc'),
                     Colors.orange,
                   ),
                   buildRuleBox(
-                    l.get('valRule3Title'),
-                    l.get('valRule3Desc'),
+                    context.tr('valRule3Title'),
+                    context.tr('valRule3Desc'),
                     Colors.red,
                   ),
                   buildRuleBox(
-                    l.get('valRule4Title'),
-                    l.get('valRule4Desc'),
+                    context.tr('valRule4Title'),
+                    context.tr('valRule4Desc'),
                     Colors.purple,
                   ),
                   const SizedBox(height: 32),
@@ -463,7 +469,7 @@ class View extends PresenterState {
                         ),
                       ),
                       child: Text(
-                        l.get('valValidateSubmitButton'),
+                        context.tr('valValidateSubmitButton'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -484,14 +490,14 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text(l.get('valFormValidated')),
+            Text(context.tr('valFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,
@@ -609,8 +615,8 @@ class View extends PresenterState {
     final l = FormFieldsLocalizations.load(
       WidgetsBinding.instance.platformDispatcher.locale,
     );
-    final displayValue = value ?? l.get('notSet');
-    final optionalLabel = l.get('optionalLabel');
+    final displayValue = value ?? context.tr('notSet');
+    final optionalLabel = context.tr('optionalLabel');
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(

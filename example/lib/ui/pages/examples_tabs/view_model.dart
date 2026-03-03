@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/state/app_state_notifier.dart';
 
 class ExamplesTabItem {
@@ -18,7 +18,7 @@ class ExamplesTabItem {
 }
 
 class ExamplesTabsViewModel extends ChangeNotifier {
-  List<Tab> buildTabs(FormFieldsLocalizations l) => [
+  List<Tab> buildTabs(loc.Localizations l) => [
         Tab(text: l.get('tabFormFields')),
         Tab(text: l.get('tabDropdown')),
         Tab(text: l.get('tabDropdownMulti')),
@@ -28,7 +28,7 @@ class ExamplesTabsViewModel extends ChangeNotifier {
         Tab(text: l.get('tabValidation')),
       ];
 
-  List<ExamplesTabItem> buildMenuItems(FormFieldsLocalizations l) => [
+  List<ExamplesTabItem> buildMenuItems(loc.Localizations l) => [
         ExamplesTabItem(
           title: l.get('tabFormFields'),
           icon: Icons.input,
@@ -74,7 +74,7 @@ class ExamplesTabsViewModel extends ChangeNotifier {
       ];
 
   void showLanguageDialog(BuildContext context) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     final currentLocale = Localizations.localeOf(context);
 
     showDialog(

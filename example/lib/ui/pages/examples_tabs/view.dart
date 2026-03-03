@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/pages/form_fields_examples/main.dart'
     as form_fields_examples;
 import 'package:form_fields_example/ui/pages/dropdown_examples/main.dart'
@@ -25,7 +25,7 @@ class View extends PresenterState {
       create: (_) => ExamplesTabsViewModel(),
       child: Consumer<ExamplesTabsViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           final currentLocale = Localizations.localeOf(context);
           final tabs = viewModel.buildTabs(l);
           final menuItems = viewModel.buildMenuItems(l);
@@ -51,7 +51,7 @@ class View extends PresenterState {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            l.get('examplesTitle'),
+                            context.tr('examplesTitle'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 22,
@@ -120,7 +120,7 @@ class View extends PresenterState {
                 ),
               ),
               appBar: AppBar(
-                title: Text(l.get('examplesTitle')),
+                title: Text(context.tr('examplesTitle')),
                 backgroundColor: const Color(0xFF1F2937),
                 foregroundColor: Colors.white,
                 actions: [

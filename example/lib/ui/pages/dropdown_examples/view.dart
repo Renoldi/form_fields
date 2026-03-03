@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 import 'presenter.dart';
@@ -13,7 +14,7 @@ class View extends PresenterState {
       create: (_) => DropdownExamplesViewModel(),
       child: Consumer<DropdownExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
@@ -27,7 +28,7 @@ class View extends PresenterState {
                       Colors.pink.shade700, Colors.pink.shade400),
                   buildFieldTitle('Label Top', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionTop'),
+                    label: context.tr('positionTop'),
                     labelPosition: LabelPosition.top,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelTopValue,
@@ -37,7 +38,7 @@ class View extends PresenterState {
                       context, 'Selected (Top)', viewModel.labelTopValue),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionBottom'),
+                    label: context.tr('positionBottom'),
                     labelPosition: LabelPosition.bottom,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelBottomValue,
@@ -47,7 +48,7 @@ class View extends PresenterState {
                       context, 'Selected (Bottom)', viewModel.labelBottomValue),
                   buildFieldTitle('Label Left', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionLeft'),
+                    label: context.tr('positionLeft'),
                     labelPosition: LabelPosition.left,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelLeftValue,
@@ -57,7 +58,7 @@ class View extends PresenterState {
                       context, 'Selected (Left)', viewModel.labelLeftValue),
                   buildFieldTitle('Label Right', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionRight'),
+                    label: context.tr('positionRight'),
                     labelPosition: LabelPosition.right,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelRightValue,
@@ -67,7 +68,7 @@ class View extends PresenterState {
                       context, 'Selected (Right)', viewModel.labelRightValue),
                   buildFieldTitle('Label In Border', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionInBorder'),
+                    label: context.tr('positionInBorder'),
                     labelPosition: LabelPosition.inBorder,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelInBorderValue,
@@ -78,7 +79,7 @@ class View extends PresenterState {
                       viewModel.labelInBorderValue),
                   buildFieldTitle('Label None', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionNone'),
+                    label: context.tr('positionNone'),
                     labelPosition: LabelPosition.none,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelNoneValue,
@@ -86,27 +87,27 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (None)', viewModel.labelNoneValue),
-                  buildSectionTitle(l.get('ddBasicExamples'),
+                  buildSectionTitle(context.tr('ddBasicExamples'),
                       Colors.green.shade700, Colors.green.shade400),
 
                   // Example 1: Basic Dropdown
                   buildFieldTitle(
-                      l.get('ddBasicRequired'), Colors.green.shade600),
+                      context.tr('ddBasicRequired'), Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddCountry'),
+                    label: context.tr('ddCountry'),
                     initialValue: viewModel.dropdown1,
                     items: viewModel.countries,
                     isRequired: true,
                     onChanged: (value) => viewModel.setDropdown1(value),
                   ),
-                  buildResultDisplay(
-                      context, l.get('ddSelectedCountry'), viewModel.dropdown1),
+                  buildResultDisplay(context, context.tr('ddSelectedCountry'),
+                      viewModel.dropdown1),
 
                   // Example 2: Optional Dropdown
-                  buildFieldTitle(
-                      l.get('ddOptionalNotRequired'), Colors.green.shade600),
+                  buildFieldTitle(context.tr('ddOptionalNotRequired'),
+                      Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddLanguage'),
+                    label: context.tr('ddLanguage'),
                     initialValue: viewModel.dropdown2,
                     items: const [
                       'English',
@@ -116,20 +117,21 @@ class View extends PresenterState {
                       'Chinese'
                     ],
                     isRequired: false,
-                    hintText: l.select(l.get('ddLanguage')),
+                    hintText: FormFieldsLocalizations.of(context)
+                        .select(context.tr('ddLanguage')),
                     onChanged: (value) => viewModel.setDropdown2(value),
                   ),
-                  buildResultDisplay(context, l.get('ddSelectedLanguage'),
+                  buildResultDisplay(context, context.tr('ddSelectedLanguage'),
                       viewModel.dropdown2),
 
-                  buildSectionTitle(l.get('ddCustomStyling'),
+                  buildSectionTitle(context.tr('ddCustomStyling'),
                       Colors.green.shade700, Colors.green.shade400),
 
                   // Example 3: Custom Border & Colors
-                  buildFieldTitle(
-                      l.get('ddCustomBorderColors'), Colors.green.shade600),
+                  buildFieldTitle(context.tr('ddCustomBorderColors'),
+                      Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddColor'),
+                    label: context.tr('ddColor'),
                     initialValue: viewModel.dropdown3,
                     items: viewModel.colors,
                     isRequired: true,
@@ -139,13 +141,14 @@ class View extends PresenterState {
                     radius: 15,
                     onChanged: (value) => viewModel.setDropdown3(value),
                   ),
-                  buildResultDisplay(
-                      context, l.get('ddSelectedColor'), viewModel.dropdown3),
+                  buildResultDisplay(context, context.tr('ddSelectedColor'),
+                      viewModel.dropdown3),
 
                   // Example 4: With Icons
-                  buildFieldTitle(l.get('ddWithIcons'), Colors.green.shade600),
+                  buildFieldTitle(
+                      context.tr('ddWithIcons'), Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddSize'),
+                    label: context.tr('ddSize'),
                     initialValue: viewModel.dropdown4,
                     items: viewModel.sizes,
                     isRequired: true,
@@ -154,19 +157,21 @@ class View extends PresenterState {
                         const Icon(Icons.shopping_bag, color: Colors.teal),
                     suffixIcon:
                         const Icon(Icons.arrow_drop_down, color: Colors.teal),
-                    hintText: l.select(l.get('ddSize')),
+                    hintText: FormFieldsLocalizations.of(context)
+                        .select(context.tr('ddSize')),
                     onChanged: (value) => viewModel.setDropdown4(value),
                   ),
-                  buildResultDisplay(
-                      context, l.get('ddSelectedSize'), viewModel.dropdown4),
+                  buildResultDisplay(context, context.tr('ddSelectedSize'),
+                      viewModel.dropdown4),
 
-                  buildSectionTitle(l.get('ddLabelPositions'),
+                  buildSectionTitle(context.tr('ddLabelPositions'),
                       Colors.green.shade700, Colors.green.shade400),
 
                   // Example 5: Label at Top (default)
-                  buildFieldTitle(l.get('ddLabelTop'), Colors.green.shade600),
+                  buildFieldTitle(
+                      context.tr('ddLabelTop'), Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddShippingMethod'),
+                    label: context.tr('ddShippingMethod'),
                     labelPosition: LabelPosition.top,
                     initialValue: viewModel.dropdown5,
                     items: const [
@@ -179,13 +184,13 @@ class View extends PresenterState {
                     borderColor: Colors.orange,
                     onChanged: (value) => viewModel.setDropdown5(value),
                   ),
-                  buildResultDisplay(context, l.get('ddSelectedShipping'),
+                  buildResultDisplay(context, context.tr('ddSelectedShipping'),
                       viewModel.dropdown5),
 
                   // Example 6: Label at Left
                   buildFieldTitle('Label Top', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionTop'),
+                    label: context.tr('positionTop'),
                     labelPosition: LabelPosition.top,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown1,
@@ -195,7 +200,7 @@ class View extends PresenterState {
                       context, 'Selected (Top)', viewModel.dropdown1),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionBottom'),
+                    label: context.tr('positionBottom'),
                     labelPosition: LabelPosition.bottom,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown2,
@@ -205,7 +210,7 @@ class View extends PresenterState {
                       context, 'Selected (Bottom)', viewModel.dropdown2),
                   buildFieldTitle('Label Left', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionLeft'),
+                    label: context.tr('positionLeft'),
                     labelPosition: LabelPosition.left,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown3,
@@ -215,7 +220,7 @@ class View extends PresenterState {
                       context, 'Selected (Left)', viewModel.dropdown3),
                   buildFieldTitle('Label Right', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionRight'),
+                    label: context.tr('positionRight'),
                     labelPosition: LabelPosition.right,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown4,
@@ -225,7 +230,7 @@ class View extends PresenterState {
                       context, 'Selected (Right)', viewModel.dropdown4),
                   buildFieldTitle('Label In Border', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionInBorder'),
+                    label: context.tr('positionInBorder'),
                     labelPosition: LabelPosition.inBorder,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown5,
@@ -235,7 +240,7 @@ class View extends PresenterState {
                       context, 'Selected (InBorder)', viewModel.dropdown5),
                   buildFieldTitle('Label None', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('positionNone'),
+                    label: context.tr('positionNone'),
                     labelPosition: LabelPosition.none,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.dropdown6,
@@ -244,22 +249,23 @@ class View extends PresenterState {
                   buildResultDisplay(
                       context, 'Selected (None)', viewModel.dropdown6),
 
-                  buildResultDisplay(context, l.get('ddSelectedDepartment'),
-                      viewModel.dropdown8),
+                  buildResultDisplay(context,
+                      context.tr('ddSelectedDepartment'), viewModel.dropdown8),
 
-                  buildSectionTitle(l.get('ddCustomDecoration'),
+                  buildSectionTitle(context.tr('ddCustomDecoration'),
                       Colors.green.shade700, Colors.green.shade400),
 
                   // Example 9: Full Custom InputDecoration
                   buildFieldTitle(
-                      l.get('ddCustomInput'), Colors.green.shade600),
+                      context.tr('ddCustomInput'), Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddTheme'),
+                    label: context.tr('ddTheme'),
                     initialValue: viewModel.dropdown9,
                     items: const ['Light', 'Dark', 'Auto', 'System'],
                     isRequired: false,
                     decoration: InputDecoration(
-                      hintText: l.select(l.get('ddTheme')),
+                      hintText: FormFieldsLocalizations.of(context)
+                          .select(context.tr('ddTheme')),
                       filled: true,
                       fillColor: Colors.grey.shade100,
                       border: OutlineInputBorder(
@@ -283,28 +289,32 @@ class View extends PresenterState {
                     ),
                     onChanged: (value) => viewModel.setDropdown9(value),
                   ),
-                  buildResultDisplay(
-                      context, l.get('ddSelectedTheme'), viewModel.dropdown9),
+                  buildResultDisplay(context, context.tr('ddSelectedTheme'),
+                      viewModel.dropdown9),
 
-                  buildSectionTitle(l.get('ddWithFilter'),
+                  buildSectionTitle(context.tr('ddWithFilter'),
                       Colors.green.shade700, Colors.green.shade400),
 
                   // Example 10: With Search Filter
-                  buildFieldTitle(l.get('ddWithSearch'), Colors.green.shade600),
+                  buildFieldTitle(
+                      context.tr('ddWithSearch'), Colors.green.shade600),
                   FormFieldsDropdown<String>(
-                    label: l.get('ddSelectCountryFilter'),
+                    label: context.tr('ddSelectCountryFilter'),
                     initialValue: viewModel.dropdown10,
                     items: viewModel.countries,
                     isRequired: true,
                     enableFilter: true,
-                    filterHintText: l.searchHint,
+                    filterHintText:
+                        FormFieldsLocalizations.of(context).searchHint,
                     borderColor: Colors.teal,
                     focusedBorderColor: Colors.teal.shade700,
                     radius: 12,
                     onChanged: (value) => viewModel.setDropdown10(value),
                   ),
-                  buildResultDisplay(context,
-                      l.get('ddSelectedCountryFiltered'), viewModel.dropdown10),
+                  buildResultDisplay(
+                      context,
+                      context.tr('ddSelectedCountryFiltered'),
+                      viewModel.dropdown10),
 
                   const SizedBox(height: 32),
 
@@ -326,7 +336,7 @@ class View extends PresenterState {
                         ),
                       ),
                       child: Text(
-                        l.get('validateFormButton'),
+                        context.tr('validateFormButton'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -347,14 +357,14 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text(l.get('ddFormValidated')),
+            Text(context.tr('ddFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,

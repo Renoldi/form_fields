@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
 import 'presenter.dart';
@@ -16,7 +17,7 @@ class View extends PresenterState {
       create: (_) => FormFieldsExamplesViewModel(),
       child: Consumer<FormFieldsExamplesViewModel>(
         builder: (context, viewModel, _) {
-          final l = FormFieldsLocalizations.of(context);
+          final l = loc.Localizations.of(context);
           return Form(
             key: viewModel.formKey,
             child: SingleChildScrollView(
@@ -27,13 +28,14 @@ class View extends PresenterState {
                   const LanguageIndicator(),
 
                   // ========== STRING TYPE ==========
-                  buildSectionTitle(l.get('ffStringTypes'),
+                  buildSectionTitle(context.tr('ffStringTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable String - Basic
-                  buildFieldTitle(l.get('ffStringBasic'), Colors.blue.shade600),
+                  buildFieldTitle(
+                      context.tr('ffStringBasic'), Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffFullName'),
+                    label: context.tr('ffFullName'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -41,13 +43,13 @@ class View extends PresenterState {
                     currrentValue: viewModel.string1,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffFullName'), viewModel.string1),
+                      context, context.tr('ffFullName'), viewModel.string1),
 
                   // Nullable String - Optional
                   buildFieldTitle(
-                      l.get('ffStringOptional'), Colors.blue.shade600),
+                      context.tr('ffStringOptional'), Colors.blue.shade600),
                   FormFields<String?>(
-                    label: l.get('ffMiddleName'),
+                    label: context.tr('ffMiddleName'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -55,13 +57,13 @@ class View extends PresenterState {
                     currrentValue: viewModel.string2,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffMiddleName'), viewModel.string2),
+                      context, context.tr('ffMiddleName'), viewModel.string2),
 
                   // String with All Custom Parameters
                   buildFieldTitle(
-                      l.get('ffStringCustomParams'), Colors.blue.shade600),
+                      context.tr('ffStringCustomParams'), Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffDescription'),
+                    label: context.tr('ffDescription'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -70,7 +72,7 @@ class View extends PresenterState {
                     borderType: BorderType.outlineInputBorder,
                     borderColor: Colors.green,
                     errorBorderColor: Colors.red,
-                    enterText: l.get('enterPrefix'),
+                    enterText: context.tr('enterPrefix'),
                     labelTextStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -80,10 +82,10 @@ class View extends PresenterState {
                         const Icon(Icons.description, color: Colors.green),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return l.get('ffRequired');
+                        return context.tr('ffRequired');
                       }
                       if (value.length < 10) {
-                        return l.get('ffMinChars');
+                        return context.tr('ffMinChars');
                       }
                       return null;
                     },
@@ -92,14 +94,14 @@ class View extends PresenterState {
                     focusNode: viewModel.focusNode1,
                     nextFocusNode: viewModel.focusNode2,
                   ),
-                  buildResultDisplay(
-                      context, l.get('ffDescription'), viewModel.stringCustom),
+                  buildResultDisplay(context, context.tr('ffDescription'),
+                      viewModel.stringCustom),
 
                   // Email with Parameters
-                  buildFieldTitle(
-                      l.get('ffStringEmailFormType'), Colors.blue.shade600),
+                  buildFieldTitle(context.tr('ffStringEmailFormType'),
+                      Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffEmail'),
+                    label: context.tr('ffEmail'),
                     formType: FormType.email,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -109,13 +111,13 @@ class View extends PresenterState {
                     currrentValue: viewModel.email,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffEmail'), viewModel.email),
+                      context, context.tr('ffEmail'), viewModel.email),
 
                   // Phone with Parameters
-                  buildFieldTitle(
-                      l.get('ffStringPhoneFormType'), Colors.blue.shade600),
+                  buildFieldTitle(context.tr('ffStringPhoneFormType'),
+                      Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffPhone'),
+                    label: context.tr('ffPhone'),
                     formType: FormType.phone,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -124,13 +126,13 @@ class View extends PresenterState {
                     currrentValue: viewModel.phone,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffPhone'), viewModel.phone),
+                      context, context.tr('ffPhone'), viewModel.phone),
 
                   // Phone with Country Code Selection
                   buildFieldTitle(
-                      l.get('ffStringPhoneCountry'), Colors.blue.shade600),
+                      context.tr('ffStringPhoneCountry'), Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffPhoneCountryLabel'),
+                    label: context.tr('ffPhoneCountryLabel'),
                     formType: FormType.phone,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -138,14 +140,14 @@ class View extends PresenterState {
                     onChanged: viewModel.updatePhoneWithCountryCode,
                     currrentValue: viewModel.phoneWithCountryCode,
                   ),
-                  buildResultDisplay(context, l.get('ffPhoneCountryCode'),
+                  buildResultDisplay(context, context.tr('ffPhoneCountryCode'),
                       viewModel.phoneWithCountryCode),
 
                   // Phone with Country Code & Formatting Display
-                  buildFieldTitle(
-                      l.get('ffStringPhoneFormatted'), Colors.blue.shade600),
+                  buildFieldTitle(context.tr('ffStringPhoneFormatted'),
+                      Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffPhoneFormattedLabel'),
+                    label: context.tr('ffPhoneFormattedLabel'),
                     formType: FormType.phone,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
@@ -154,32 +156,32 @@ class View extends PresenterState {
                     onChanged: viewModel.updatePhoneFormatted,
                     currrentValue: viewModel.phoneFormatted,
                   ),
-                  buildResultDisplay(context, l.get('ffPhoneFormatted'),
+                  buildResultDisplay(context, context.tr('ffPhoneFormatted'),
                       viewModel.phoneFormatted),
 
                   // Password with All Parameters
                   buildFieldTitle(
-                      l.get('ffStringPassword'), Colors.blue.shade600),
+                      context.tr('ffStringPassword'), Colors.blue.shade600),
                   FormFields<String>(
-                    label: l.get('ffPassword'),
+                    label: context.tr('ffPassword'),
                     formType: FormType.password,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     minLengthPassword: 8,
-                    minLengthPasswordErrorText: l.get('ffPasswordMin'),
+                    minLengthPasswordErrorText: context.tr('ffPasswordMin'),
                     borderColor: Colors.purple,
                     customPasswordValidator: (value) {
                       if (value == null || value.isEmpty) {
-                        return l.get('passwordRequired');
+                        return context.tr('passwordRequired');
                       }
                       if (value.length < 8) {
-                        return l.get('passwordTooShort');
+                        return context.tr('passwordTooShort');
                       }
                       if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                        return l.get('passwordNeedsUppercase');
+                        return context.tr('passwordNeedsUppercase');
                       }
                       if (!RegExp(r'[0-9]').hasMatch(value)) {
-                        return l.get('passwordNeedsNumber');
+                        return context.tr('passwordNeedsNumber');
                       }
                       return null;
                     },
@@ -188,16 +190,17 @@ class View extends PresenterState {
                     focusNode: viewModel.focusNode2,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffPassword'), viewModel.password),
+                      context, context.tr('ffPassword'), viewModel.password),
 
                   // ========== INTEGER TYPE ==========
-                  buildSectionTitle(l.get('ffIntTypes'), Colors.blue.shade700,
-                      Colors.blue.shade400),
+                  buildSectionTitle(context.tr('ffIntTypes'),
+                      Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable Int - Basic
-                  buildFieldTitle(l.get('ffIntBasic'), Colors.blue.shade600),
+                  buildFieldTitle(
+                      context.tr('ffIntBasic'), Colors.blue.shade600),
                   FormFields<int>(
-                    label: l.get('ffAge'),
+                    label: context.tr('ffAge'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: false,
@@ -205,17 +208,19 @@ class View extends PresenterState {
                     onChanged: viewModel.updateInt1,
                     currrentValue: viewModel.int1,
                   ),
-                  buildResultDisplay(context, l.get('ffAge'), viewModel.int1),
+                  buildResultDisplay(
+                      context, context.tr('ffAge'), viewModel.int1),
                   // Nullable Int - With All Parameters
-                  buildFieldTitle(l.get('ffIntOptional'), Colors.blue.shade600),
+                  buildFieldTitle(
+                      context.tr('ffIntOptional'), Colors.blue.shade600),
                   FormFields<int?>(
-                    label: l.get('ffQuantity'),
+                    label: context.tr('ffQuantity'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: true,
                     isRequired: false,
                     borderColor: Colors.teal,
-                    invalidIntegerText: l.get('enterValidInteger'),
+                    invalidIntegerText: context.tr('enterValidInteger'),
                     prefixIcon: const Icon(Icons.inventory, color: Colors.teal),
                     labelTextStyle: const TextStyle(
                       fontSize: 14,
@@ -226,15 +231,16 @@ class View extends PresenterState {
                     currrentValue: viewModel.int2,
                   ),
                   buildResultDisplay(
-                      context, l.get('ffQuantity'), viewModel.int2),
+                      context, context.tr('ffQuantity'), viewModel.int2),
 
-                  buildSectionTitle(l.get('ffDoubleTypes'),
+                  buildSectionTitle(context.tr('ffDoubleTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable Double - With Separators
-                  buildFieldTitle(l.get('ffDoubleBasic'), Colors.blue.shade600),
+                  buildFieldTitle(
+                      context.tr('ffDoubleBasic'), Colors.blue.shade600),
                   FormFields<double>(
-                    label: l.get('ffProductPrice'),
+                    label: context.tr('ffProductPrice'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: true,
@@ -250,19 +256,19 @@ class View extends PresenterState {
                     currrentValue: viewModel.double1,
                   ),
                   buildResultDisplay(
-                      l.get('ffProductPrice'), viewModel.double1),
+                      context.tr('ffProductPrice'), viewModel.double1),
 
                   // Nullable Double - All Parameters
                   buildFieldTitle(
-                      l.get('ffDoubleOptional'), Colors.blue.shade600),
+                      context.tr('ffDoubleOptional'), Colors.blue.shade600),
                   FormFields<double?>(
-                    label: l.get('ffDiscountPercentage'),
+                    label: context.tr('ffDiscountPercentage'),
                     formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.orange,
                     radius: 10,
-                    invalidNumberText: l.get('enterValidNumber'),
+                    invalidNumberText: context.tr('enterValidNumber'),
                     suffix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text('%',
@@ -277,30 +283,31 @@ class View extends PresenterState {
                     currrentValue: viewModel.double2,
                   ),
                   buildResultDisplay(
-                      l.get('ffDiscountPercentage'), viewModel.double2),
+                      context.tr('ffDiscountPercentage'), viewModel.double2),
 
                   // ========== DATETIME TYPE ==========
-                  buildSectionTitle(l.get('ffDateTimeTypes'),
+                  buildSectionTitle(context.tr('ffDateTimeTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable DateTime - Basic
                   buildFieldTitle(
-                      l.get('ffDateTimeBasic'), Colors.blue.shade600),
+                      context.tr('ffDateTimeBasic'), Colors.blue.shade600),
                   FormFields<DateTime>(
-                    label: l.get('ffBirthDate'),
+                    label: context.tr('ffBirthDate'),
                     formType: FormType.dateTime,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     onChanged: viewModel.updateDate1,
                     currrentValue: viewModel.date1,
                   ),
-                  buildResultDisplay(l.get('ffBirthDate'), viewModel.date1),
+                  buildResultDisplay(
+                      context.tr('ffBirthDate'), viewModel.date1),
 
                   // Nullable DateTime - All Parameters
                   buildFieldTitle(
-                      l.get('ffDateTimeOptional'), Colors.blue.shade600),
+                      context.tr('ffDateTimeOptional'), Colors.blue.shade600),
                   FormFields<DateTime?>(
-                    label: l.get('ffEventDate'),
+                    label: context.tr('ffEventDate'),
                     formType: FormType.dateTime,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -318,30 +325,32 @@ class View extends PresenterState {
                     onChanged: viewModel.updateDate2,
                     currrentValue: viewModel.date2,
                   ),
-                  buildResultDisplay(l.get('ffEventDate'), viewModel.date2),
+                  buildResultDisplay(
+                      context.tr('ffEventDate'), viewModel.date2),
 
                   // ========== TIMEOFDAY TYPE ==========
-                  buildSectionTitle(l.get('ffTimeOfDayTypes'),
+                  buildSectionTitle(context.tr('ffTimeOfDayTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable TimeOfDay - Basic
                   buildFieldTitle(
-                      l.get('ffTimeOfDayBasic'), Colors.blue.shade600),
+                      context.tr('ffTimeOfDayBasic'), Colors.blue.shade600),
                   FormFields<TimeOfDay>(
-                    label: l.get('ffMeetingTime'),
+                    label: context.tr('ffMeetingTime'),
                     formType: FormType.timeOfDay,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     onChanged: viewModel.updateTime1,
                     currrentValue: viewModel.time1,
                   ),
-                  buildResultDisplay(l.get('ffMeetingTime'), viewModel.time1),
+                  buildResultDisplay(
+                      context.tr('ffMeetingTime'), viewModel.time1),
 
                   // Nullable TimeOfDay - All Parameters
                   buildFieldTitle(
-                      l.get('ffTimeOfDayOptional'), Colors.blue.shade600),
+                      context.tr('ffTimeOfDayOptional'), Colors.blue.shade600),
                   FormFields<TimeOfDay?>(
-                    label: l.get('ffWakeupTime'),
+                    label: context.tr('ffWakeupTime'),
                     formType: FormType.timeOfDay,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -356,17 +365,18 @@ class View extends PresenterState {
                     onChanged: viewModel.updateTime2,
                     currrentValue: viewModel.time2,
                   ),
-                  buildResultDisplay(l.get('ffWakeupTime'), viewModel.time2),
+                  buildResultDisplay(
+                      context.tr('ffWakeupTime'), viewModel.time2),
 
                   // ========== DATETIMERANGE TYPE ==========
-                  buildSectionTitle(l.get('ffDateRangeTypes'),
+                  buildSectionTitle(context.tr('ffDateRangeTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
 
                   // Non-Nullable DateTimeRange - Basic
                   buildFieldTitle(
-                      l.get('ffDateRangeBasic'), Colors.blue.shade600),
+                      context.tr('ffDateRangeBasic'), Colors.blue.shade600),
                   FormFields<DateTimeRange>(
-                    label: l.get('ffProjectDuration'),
+                    label: context.tr('ffProjectDuration'),
                     formType: FormType.dateTimeRange,
                     labelPosition: LabelPosition.top,
                     useDatePickerForRange: true,
@@ -374,13 +384,13 @@ class View extends PresenterState {
                     currrentValue: viewModel.range1,
                   ),
                   buildResultDisplay(
-                      l.get('ffProjectDuration'), viewModel.range1),
+                      context.tr('ffProjectDuration'), viewModel.range1),
 
                   // Nullable DateTimeRange - All Parameters
                   buildFieldTitle(
-                      l.get('ffDateRangeOptional'), Colors.blue.shade600),
+                      context.tr('ffDateRangeOptional'), Colors.blue.shade600),
                   FormFields<DateTimeRange?>(
-                    label: l.get('ffVacationPeriod'),
+                    label: context.tr('ffVacationPeriod'),
                     formType: FormType.dateTimeRange,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
@@ -399,7 +409,7 @@ class View extends PresenterState {
                     currrentValue: viewModel.range2,
                   ),
                   buildResultDisplay(
-                      l.get('ffVacationPeriod'), viewModel.range2),
+                      context.tr('ffVacationPeriod'), viewModel.range2),
 
                   const SizedBox(height: 32),
 
@@ -436,7 +446,7 @@ class View extends PresenterState {
                         ),
                       ),
                       child: Text(
-                        l.get('submitFormButton'),
+                        context.tr('submitFormButton'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -457,14 +467,14 @@ class View extends PresenterState {
   }
 
   void _showFormData(BuildContext context) {
-    final l = FormFieldsLocalizations.of(context);
+    final l = loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text(l.get('ffFormValidated')),
+            Text(context.tr('ffFormValidated')),
           ],
         ),
         backgroundColor: Colors.green,

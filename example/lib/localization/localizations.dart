@@ -11,7 +11,27 @@ class Localizations {
 
   /// Get localized string by key
   String get(String key) {
-    return _localizedStrings[key] ?? key;
+    final localized = _localizedStrings[key];
+    if (localized != null) return localized;
+
+    final englishFallback = enStrings[key];
+    if (englishFallback != null) return englishFallback;
+
+    return _humanizeKey(key);
+  }
+
+  String _humanizeKey(String key) {
+    if (key.isEmpty) return key;
+
+    final withSpaces = key
+        .replaceAllMapped(
+            RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAll('_', ' ')
+        .trim();
+
+    if (withSpaces.isEmpty) return key;
+
+    return withSpaces[0].toUpperCase() + withSpaces.substring(1);
   }
 
   /// Get the current instance from context

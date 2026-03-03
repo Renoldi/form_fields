@@ -29,6 +29,8 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
     String Function(T item)? itemLabelBuilder,
     Widget Function(T item, bool selected)? itemBuilder,
     FormFieldValidator<List<T>>? validator,
+    LabelPosition labelPosition = LabelPosition.top,
+    double containerGap = 8,
   }) : super(
           initialValue: initialValue ?? [],
           validator: (value) {
@@ -62,6 +64,8 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
               itemLabelBuilder: itemLabelBuilder,
               itemBuilder: itemBuilder,
               isRequired: isRequired,
+              labelPosition: labelPosition,
+              containerGap: containerGap,
             );
           },
         );
@@ -90,6 +94,8 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
   final bool isRequired;
+  final LabelPosition labelPosition;
+  final double containerGap;
 
   const _FormFieldsCheckboxBody({
     required this.label,
@@ -114,6 +120,8 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     this.itemLabelBuilder,
     this.itemBuilder,
     required this.isRequired,
+    required this.labelPosition,
+    required this.containerGap,
   });
 
   @override
@@ -151,47 +159,45 @@ class _FormFieldsCheckboxBodyView<T>
     final selectedValues = widget.state.value ?? [];
     final hasError = widget.state.hasError;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: widget.label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
+    // Build label widget
+    final labelWidget = RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: widget.label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: hasError ? const Color(0xFFB71C1C) : Colors.black87,
+            ),
+          ),
+          if (widget.isRequired)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
               ),
-              if (widget.isRequired)
-                const TextSpan(
-                  text: ' *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: widget.itemBorderColor == null
-                ? Border.all(
-                    color:
-                        hasError ? widget.errorBorderColor : widget.borderColor,
-                    width: 1.5,
-                  )
-                : null,
-            borderRadius: BorderRadius.circular(widget.radius),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: (widget.direction == Axis.horizontal ||
-                  widget.horizontalSideBySide)
+            ),
+        ],
+      ),
+    );
+
+    // Build checkbox container
+    final checkboxContainer = Container(
+      decoration: BoxDecoration(
+        border: widget.itemBorderColor == null
+            ? Border.all(
+                color: hasError ? widget.errorBorderColor : widget.borderColor,
+                width: 1.5,
+              )
+            : null,
+        borderRadius: BorderRadius.circular(widget.radius),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child:
+          (widget.direction == Axis.horizontal || widget.horizontalSideBySide)
               ? Wrap(
                   children: widget.items
                       .map((item) => _buildItem(item, selectedValues))
@@ -202,9 +208,11 @@ class _FormFieldsCheckboxBodyView<T>
                       .map((item) => _buildItem(item, selectedValues))
                       .toList(),
                 ),
-        ),
-        if (hasError)
-          Padding(
+    );
+
+    // Error message
+    final errorWidget = hasError
+        ? Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               widget.state.errorText?.isEmpty ?? true
@@ -215,9 +223,82 @@ class _FormFieldsCheckboxBodyView<T>
                 fontSize: 12,
               ),
             ),
-          ),
-      ],
-    );
+          )
+        : const SizedBox.shrink();
+
+    // Handle label position
+    switch (widget.labelPosition) {
+      case LabelPosition.top:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            labelWidget,
+            SizedBox(height: widget.containerGap),
+            checkboxContainer,
+            errorWidget,
+          ],
+        );
+      case LabelPosition.bottom:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            checkboxContainer,
+            SizedBox(height: widget.containerGap),
+            labelWidget,
+            errorWidget,
+          ],
+        );
+      case LabelPosition.left:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IntrinsicWidth(child: labelWidget),
+            SizedBox(width: widget.containerGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  checkboxContainer,
+                  errorWidget,
+                ],
+              ),
+            ),
+          ],
+        );
+      case LabelPosition.right:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  checkboxContainer,
+                  errorWidget,
+                ],
+              ),
+            ),
+            SizedBox(width: widget.containerGap),
+            IntrinsicWidth(child: labelWidget),
+          ],
+        );
+      case LabelPosition.inBorder:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            checkboxContainer,
+            errorWidget,
+          ],
+        );
+      case LabelPosition.none:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            checkboxContainer,
+            errorWidget,
+          ],
+        );
+    }
   }
 
   Widget _buildItem(T item, List<T> selectedValues) {

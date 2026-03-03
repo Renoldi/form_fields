@@ -24,6 +24,7 @@ const Map<String, String> idStrings = {
 
   // Complete Examples
   'completeExamples': 'Contoh Lengkap',
+  'examplesTitle': 'Contoh',
   'formFieldsExamples': 'Contoh FormFields',
   'dropdownExamples': 'Contoh Dropdown',
   'multiSelectDropdownExamples': 'Contoh Dropdown Multi-Pilih',
@@ -31,6 +32,19 @@ const Map<String, String> idStrings = {
   'checkboxExamples': 'Contoh Kotak Centang',
   'customClassExamples': 'Contoh Kelas Kustom',
   'validationExamples': 'Contoh Validasi Null/Bukan Null',
+  'tabFormFields': 'FormFields',
+  'tabDropdown': 'Dropdown',
+  'tabDropdownMulti': 'Dropdown Multi',
+  'tabRadioButton': 'Tombol Radio',
+  'tabCheckbox': 'Kotak Centang',
+  'tabCustomClass': 'Kelas Kustom',
+  'tabValidation': 'Validasi',
+  'selectLanguageTitle': 'Pilih Bahasa',
+  'languageEnglish': 'English',
+  'languageEnglishRegion': 'English (AS)',
+  'languageIndonesian': 'Indonesian',
+  'languageIndonesianRegion': 'Indonesian (ID)',
+  'closeButton': 'Tutup',
 
   // Menu Items
   'formFields': 'FormFields',
@@ -90,6 +104,21 @@ const Map<String, String> idStrings = {
   'positionRight': 'Kanan',
   'positionInBorder': 'DiBorder',
   'positionNone': 'Tidak Ada',
+
+  // Checkbox Examples - Label Positions
+  'cbLabelPositions': 'Contoh Posisi Label',
+  'cbLabelBottom': 'Label di Bawah Kotak Centang',
+  'cbLabelLeft': 'Label di Sebelah Kiri',
+  'cbPreferences': 'Preferensi',
+  'cbPermissions': 'Izin',
+  'cbLabelTop': 'Label di Atas Kotak Centang',
+  'cbLabelRight': 'Label di Sebelah Kanan',
+  'cbLabelInBorder': 'Label Tersembunyi (DiBorder)',
+  'cbLabelNone': 'Label Tersembunyi (Tidak Ada)',
+  'cbNotifications': 'Notifikasi',
+  'cbThemes': 'Tema',
+  'cbFeatures': 'Fitur',
+  'cbOptions': 'Opsi',
 
   // Status Messages
   'loadFailed': 'Gagal Dimuat',

@@ -11,6 +11,12 @@ class ViewModel extends ChangeNotifier {
   List<String> checkbox6 = [];
   List<String> checkbox7 = [];
   List<String> checkbox8 = [];
+  List<String> checkbox9 = [];
+  List<String> checkbox10 = [];
+  List<String> checkbox11 = [];
+  List<String> checkbox12 = [];
+  List<String> checkbox13 = [];
+  List<String> checkbox14 = [];
 
   void setCheckbox1(List<String> value) {
     checkbox1 = value;
@@ -49,6 +55,36 @@ class ViewModel extends ChangeNotifier {
 
   void setCheckbox8(List<String> value) {
     checkbox8 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox9(List<String> value) {
+    checkbox9 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox10(List<String> value) {
+    checkbox10 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox11(List<String> value) {
+    checkbox11 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox12(List<String> value) {
+    checkbox12 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox13(List<String> value) {
+    checkbox13 = value;
+    notifyListeners();
+  }
+
+  void setCheckbox14(List<String> value) {
+    checkbox14 = value;
     notifyListeners();
   }
 }
