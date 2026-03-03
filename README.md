@@ -557,12 +557,62 @@ FormFieldsCheckbox<String>(
 )
 ```
 
-- **labelPosition** — Position of the label (top, left, right, etc.).
+- **labelPosition** — Position of the label relative to the checkbox group (top, bottom, left, right, inBorder, none).
+
+All supported label positions:
+- `LabelPosition.top` — Label positioned above the checkboxes
+- `LabelPosition.bottom` — Label positioned below the checkboxes
+- `LabelPosition.left` — Label positioned to the left of the checkboxes
+- `LabelPosition.right` — Label positioned to the right of the checkboxes
+- `LabelPosition.inBorder` — Label hidden inside the border
+- `LabelPosition.none` — Label completely hidden
+
 ```dart
+// Label at the top (default)
 FormFieldsCheckbox<String>(
-  label: 'Options',
-  items: ['A', 'B', 'C'],
+  label: 'Preferences',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.top,
+  onChanged: (values) {},
+)
+
+// Label at the bottom
+FormFieldsCheckbox<String>(
+  label: 'Features',
+  items: ['Feature A', 'Feature B'],
+  labelPosition: LabelPosition.bottom,
+  onChanged: (values) {},
+)
+
+// Label on the left
+FormFieldsCheckbox<String>(
+  label: 'Selections',
+  items: ['Item 1', 'Item 2'],
   labelPosition: LabelPosition.left,
+  onChanged: (values) {},
+)
+
+// Label on the right
+FormFieldsCheckbox<String>(
+  label: 'Choices',
+  items: ['Choice A', 'Choice B'],
+  labelPosition: LabelPosition.right,
+  onChanged: (values) {},
+)
+
+// Label hidden in border
+FormFieldsCheckbox<String>(
+  label: 'Permissions',
+  items: ['Read', 'Write', 'Delete'],
+  labelPosition: LabelPosition.inBorder,
+  onChanged: (values) {},
+)
+
+// Label completely hidden
+FormFieldsCheckbox<String>(
+  label: 'Hidden Label',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.none,
   onChanged: (values) {},
 )
 ```
@@ -903,12 +953,62 @@ FormFieldsDropdownMulti<String>(
 )
 ```
 
-- **labelPosition** — Position of the label (top, left, right, etc.).
+- **labelPosition** — Position of the label relative to the dropdown (top, bottom, left, right, inBorder, none).
+
+All supported label positions:
+- `LabelPosition.top` — Label positioned above the dropdown
+- `LabelPosition.bottom` — Label positioned below the dropdown
+- `LabelPosition.left` — Label positioned to the left of the dropdown
+- `LabelPosition.right` — Label positioned to the right of the dropdown
+- `LabelPosition.inBorder` — Label hidden inside the border
+- `LabelPosition.none` — Label completely hidden
+
 ```dart
+// Label at the top (default)
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
-  items: ['English', 'Spanish'],
+  items: ['English', 'Spanish', 'French'],
+  labelPosition: LabelPosition.top,
+  onChanged: (values) {},
+)
+
+// Label at the bottom
+FormFieldsDropdownMulti<String>(
+  label: 'Skills',
+  items: ['JavaScript', 'Dart', 'Python'],
+  labelPosition: LabelPosition.bottom,
+  onChanged: (values) {},
+)
+
+// Label on the left
+FormFieldsDropdownMulti<String>(
+  label: 'Interests',
+  items: ['Music', 'Sports', 'Reading'],
   labelPosition: LabelPosition.left,
+  onChanged: (values) {},
+)
+
+// Label on the right
+FormFieldsDropdownMulti<String>(
+  label: 'Hobbies',
+  items: ['Gaming', 'Coding', 'Art'],
+  labelPosition: LabelPosition.right,
+  onChanged: (values) {},
+)
+
+// Label hidden in border
+FormFieldsDropdownMulti<String>(
+  label: 'Categories',
+  items: ['Tech', 'Science', 'Arts'],
+  labelPosition: LabelPosition.inBorder,
+  onChanged: (values) {},
+)
+
+// Label completely hidden
+FormFieldsDropdownMulti<String>(
+  label: 'Hidden Label',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.none,
   onChanged: (values) {},
 )
 ```
@@ -1294,12 +1394,62 @@ FormFieldsDropdown<String?>(
 )
 ```
 
-- **labelPosition** — Position of the label (top, left, right, etc.).
+- **labelPosition** — Position of the label relative to the dropdown (top, bottom, left, right, inBorder, none).
+
+All supported label positions:
+- `LabelPosition.top` — Label positioned above the dropdown
+- `LabelPosition.bottom` — Label positioned below the dropdown
+- `LabelPosition.left` — Label positioned to the left of the dropdown
+- `LabelPosition.right` — Label positioned to the right of the dropdown
+- `LabelPosition.inBorder` — Label hidden inside the border
+- `LabelPosition.none` — Label completely hidden
+
 ```dart
+// Label at the top (default)
 FormFieldsDropdown<String>(
   label: 'Country',
-  items: ['USA', 'Canada'],
+  items: ['USA', 'Canada', 'UK'],
+  labelPosition: LabelPosition.top,
+  onChanged: (value) {},
+)
+
+// Label at the bottom
+FormFieldsDropdown<String>(
+  label: 'State',
+  items: ['California', 'Texas', 'Florida'],
+  labelPosition: LabelPosition.bottom,
+  onChanged: (value) {},
+)
+
+// Label on the left
+FormFieldsDropdown<String>(
+  label: 'City',
+  items: ['New York', 'Los Angeles', 'Chicago'],
   labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+
+// Label on the right
+FormFieldsDropdown<String>(
+  label: 'Region',
+  items: ['North', 'South', 'East', 'West'],
+  labelPosition: LabelPosition.right,
+  onChanged: (value) {},
+)
+
+// Label hidden in border
+FormFieldsDropdown<String>(
+  label: 'Zone',
+  items: ['Zone A', 'Zone B', 'Zone C'],
+  labelPosition: LabelPosition.inBorder,
+  onChanged: (value) {},
+)
+
+// Label completely hidden
+FormFieldsDropdown<String>(
+  label: 'Hidden Label',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.none,
   onChanged: (value) {},
 )
 ```
@@ -1954,12 +2104,62 @@ FormFieldsRadioButton<String>(
 )
 ```
 
-- **labelPosition** — Position of the label (top, left, right, etc.).
+- **labelPosition** — Position of the label relative to the radio button group (top, bottom, left, right, inBorder, none).
+
+All supported label positions:
+- `LabelPosition.top` — Label positioned above the radio buttons
+- `LabelPosition.bottom` — Label positioned below the radio buttons
+- `LabelPosition.left` — Label positioned to the left of the radio buttons
+- `LabelPosition.right` — Label positioned to the right of the radio buttons
+- `LabelPosition.inBorder` — Label hidden inside the border
+- `LabelPosition.none` — Label completely hidden
+
 ```dart
+// Label at the top (default)
 FormFieldsRadioButton<String>(
-  label: 'Options',
-  items: ['A', 'B', 'C'],
+  label: 'Gender',
+  items: ['Male', 'Female', 'Other'],
+  labelPosition: LabelPosition.top,
+  onChanged: (value) {},
+)
+
+// Label at the bottom
+FormFieldsRadioButton<String>(
+  label: 'Communication Method',
+  items: ['Email', 'Phone', 'SMS'],
+  labelPosition: LabelPosition.bottom,
+  onChanged: (value) {},
+)
+
+// Label on the left
+FormFieldsRadioButton<String>(
+  label: 'Accessibility',
+  items: ['Enabled', 'Disabled'],
   labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+
+// Label on the right
+FormFieldsRadioButton<String>(
+  label: 'Visibility',
+  items: ['Public', 'Private', 'Restricted'],
+  labelPosition: LabelPosition.right,
+  onChanged: (value) {},
+)
+
+// Label hidden in border
+FormFieldsRadioButton<String>(
+  label: 'Status',
+  items: ['Active', 'Inactive'],
+  labelPosition: LabelPosition.inBorder,
+  onChanged: (value) {},
+)
+
+// Label completely hidden
+FormFieldsRadioButton<String>(
+  label: 'Hidden Label',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.none,
   onChanged: (value) {},
 )
 ```
@@ -2409,13 +2609,68 @@ FormFieldsSelect<String>(
 )
 ```
 
-- **labelPosition** — Position of the label (top, left, right, etc.).
+- **labelPosition** — Position of the label relative to the select widget (top, bottom, left, right, inBorder, none).
+
+All supported label positions:
+- `LabelPosition.top` — Label positioned above the widget
+- `LabelPosition.bottom` — Label positioned below the widget
+- `LabelPosition.left` — Label positioned to the left of the widget
+- `LabelPosition.right` — Label positioned to the right of the widget
+- `LabelPosition.inBorder` — Label hidden inside the border
+- `LabelPosition.none` — Label completely hidden
+
 ```dart
+// Label at the top (default)
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
   label: 'Country',
-  items: ['USA', 'Canada'],
+  items: ['USA', 'Canada', 'UK'],
+  labelPosition: LabelPosition.top,
+  onChanged: (value) {},
+)
+
+// Label at the bottom
+FormFieldsSelect<String>(
+  formType: FormType.dropdownMulti,
+  label: 'Skills',
+  items: ['JavaScript', 'Dart', 'Python'],
+  labelPosition: LabelPosition.bottom,
+  onMultiChanged: (values) {},
+)
+
+// Label on the left
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Plan',
+  items: ['Basic', 'Pro', 'Enterprise'],
   labelPosition: LabelPosition.left,
+  onChanged: (value) {},
+)
+
+// Label on the right
+FormFieldsSelect<String>(
+  formType: FormType.checkbox,
+  label: 'Features',
+  items: ['Feature 1', 'Feature 2', 'Feature 3'],
+  labelPosition: LabelPosition.right,
+  onMultiChanged: (values) {},
+)
+
+// Label hidden in border
+FormFieldsSelect<String>(
+  formType: FormType.dropdown,
+  label: 'Status',
+  items: ['Active', 'Inactive'],
+  labelPosition: LabelPosition.inBorder,
+  onChanged: (value) {},
+)
+
+// Label completely hidden
+FormFieldsSelect<String>(
+  formType: FormType.radioButton,
+  label: 'Hidden Label',
+  items: ['Option 1', 'Option 2'],
+  labelPosition: LabelPosition.none,
   onChanged: (value) {},
 )
 ```
