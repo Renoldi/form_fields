@@ -1300,6 +1300,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
   }
 
+  void _handleVisibilityToggleTap(FormFieldsController vm) {
+    vm.obscure = !vm.obscure;
+  }
+
   // ============================================================================
   // VALIDATION & UI BUILDING
   // ============================================================================
@@ -1511,53 +1515,6 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     );
   }
 
-  /// Builds an animated visibility toggle button for password/verification fields
-  Widget _buildVisibilityToggleButton(
-    FormFieldsController vm, {
-    bool compact = false,
-  }) {
-    final isHidden = vm.obscure;
-    final baseFillColor =
-        widget.inputDecoration?.fillColor ?? const Color(0xFFF3F4F6);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: Color.lerp(
-              baseFillColor,
-              Colors.white,
-              isHidden ? 0.15 : 0.05,
-            ) ??
-            baseFillColor,
-        borderRadius: BorderRadius.circular(compact ? 999 : 12),
-        border: Border.all(
-          color: Color.lerp(
-                widget.borderColor,
-                Colors.white,
-                isHidden ? 0.2 : 0.45,
-              ) ??
-              widget.borderColor,
-        ),
-      ),
-      child: IconButton(
-        visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
-        splashRadius: compact ? 18 : 20,
-        iconSize: compact ? 18 : 20,
-        icon: Icon(
-          isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-          color: Color.lerp(
-                const Color(0xFF475569),
-                widget.borderColor,
-                0.55,
-              ) ??
-              const Color(0xFF475569),
-        ),
-        onPressed: () => vm.obscure = !vm.obscure,
-      ),
-    );
-  }
-
   /// Builds a single OTP digit input box
   Widget _buildOtpDigitBox({
     required int index,
@@ -1630,7 +1587,23 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   if (widget.verificationHidden)
                     Padding(
                       padding: const EdgeInsets.only(left: 4),
-                      child: _buildVisibilityToggleButton(vm, compact: true),
+                      child: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        splashRadius: 18,
+                        iconSize: 18,
+                        icon: Icon(
+                          vm.obscure
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          color: Color.lerp(
+                                const Color(0xFF475569),
+                                widget.borderColor,
+                                0.55,
+                              ) ??
+                              const Color(0xFF475569),
+                        ),
+                        onPressed: () => _handleVisibilityToggleTap(vm),
+                      ),
                     ),
                 ],
               ),
@@ -1825,9 +1798,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         suffixIcon: vm.formType == FormType.password ||
                                 (_isVerificationType() &&
                                     widget.verificationHidden)
-                            ? Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: _buildVisibilityToggleButton(vm),
+                            ? IconButton(
+                                splashRadius: 20,
+                                iconSize: 20,
+                                icon: Icon(
+                                  vm.obscure
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  color: Color.lerp(
+                                        const Color(0xFF475569),
+                                        widget.borderColor,
+                                        0.55,
+                                      ) ??
+                                      const Color(0xFF475569),
+                                ),
+                                onPressed: () => _handleVisibilityToggleTap(vm),
                               )
                             : (_isDateTimeType() ||
                                     _isTimeOfDayType() ||
