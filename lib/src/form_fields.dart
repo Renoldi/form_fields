@@ -1595,12 +1595,6 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           vm.obscure
                               ? Icons.visibility_off_rounded
                               : Icons.visibility_rounded,
-                          color: Color.lerp(
-                                const Color(0xFF475569),
-                                widget.borderColor,
-                                0.55,
-                              ) ??
-                              const Color(0xFF475569),
                         ),
                         onPressed: () => _handleVisibilityToggleTap(vm),
                       ),
@@ -1805,12 +1799,6 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                   vm.obscure
                                       ? Icons.visibility_off_rounded
                                       : Icons.visibility_rounded,
-                                  color: Color.lerp(
-                                        const Color(0xFF475569),
-                                        widget.borderColor,
-                                        0.55,
-                                      ) ??
-                                      const Color(0xFF475569),
                                 ),
                                 onPressed: () => _handleVisibilityToggleTap(vm),
                               )
