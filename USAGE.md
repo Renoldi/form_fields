@@ -131,6 +131,7 @@ FormFields<String>(
 ```
 
 **Features:**
+
 - Single line input
 - Text keyboard
 - Optional validation
@@ -151,6 +152,7 @@ FormFields<String>(
 ```
 
 **Validation:**
+
 - Checks for `@` symbol
 - Validates domain format
 - Shows error for invalid email
@@ -171,6 +173,7 @@ FormFields<String>(
 ```
 
 **Format:**
+
 - Expected format: `0` followed by 11 digits: `081234567890`
 - Also accepts: `+081234567890`
 
@@ -190,6 +193,7 @@ FormFields<String>(
 ```
 
 **Features:**
+
 - Hides text by default
 - Visibility toggle button
 - Minimum 6 characters validation
@@ -210,6 +214,7 @@ FormFields<int>(
 ```
 
 **Features:**
+
 - Automatic formatting with thousands separators
 - Validates integer format
 - Returns clean integer value
@@ -229,6 +234,7 @@ FormFields<double>(
 ```
 
 **Features:**
+
 - Decimal point input
 - Thousands separator formatting
 - Returns clean double value
@@ -248,6 +254,7 @@ FormFields<DateTime>(
 ```
 
 **Features:**
+
 - Shows calendar picker
 - Customizable date format (default: `MMM d, yyyy`)
 - Limits to past dates by default
@@ -269,6 +276,7 @@ FormFields<DateTime>(
 ```
 
 **Features:**
+
 - Shows time picker dialog
 - Returns DateTime with current date and selected time
 - Customizable time format (default: `h:mm a`)
@@ -286,6 +294,7 @@ FormFields<TimeOfDay>(
 ```
 
 **Features:**
+
 - Shows time picker dialog
 - Returns TimeOfDay object directly
 - More lightweight than DateTime for time-only values
@@ -306,6 +315,7 @@ FormFields<DateTime>(
 ```
 
 **Features:**
+
 - Shows date picker followed by time picker
 - Customizable format (default: `MMM d, yyyy h:mm a`)
 - Returns complete DateTime
@@ -324,6 +334,7 @@ FormFields<DateTimeRange>(
 ```
 
 **Features:**
+
 - Shows date range picker
 - Returns DateTimeRange with start and end
 - Great for booking, rental periods
@@ -344,6 +355,7 @@ FormFields<String>(
 ```
 
 **Features:**
+
 - Configurable line count
 - Text area style input
 - Supports newlines
@@ -505,14 +517,14 @@ Set language/region for date/time pickers:
 FormFields<DateTime>(
   label: 'Date',
   formType: FormType.date,
-  pickerLocale: 'id_ID',  // Indonesian
+  locale: 'id_ID',  // Indonesian
   onChanged: (value) {},
 )
 
 FormFields<DateTime>(
   label: 'Date',
   formType: FormType.date,
-  pickerLocale: 'en_US',  // English (US)
+  locale: 'en_US',  // English (US)
   onChanged: (value) {},
 )
 ```
@@ -586,6 +598,7 @@ FormFields<DateTime>(
 ```
 
 **Default Behavior:**
+
 - `firstDate`: If not specified, defaults to 100 years ago
 - `lastDate`: If not specified, defaults to today
 - `initialDate`: Automatically adjusted to be within the valid range
@@ -776,6 +789,7 @@ if (_meetingTime != null) {
 ```
 
 **Benefits:**
+
 - Lightweight - only stores hour and minute
 - Native Flutter type for time-only values
 - Easy integration with Material time pickers
@@ -807,6 +821,7 @@ if (_appointmentTime != null) {
 ```
 
 **Benefits:**
+
 - Includes full date context (uses current date)
 - Direct compatibility with APIs expecting DateTime
 - Built-in formatting via DateFormat
@@ -924,12 +939,12 @@ Column(
 )
 ```
 
-
 ## Selection Widgets: Dropdown, Multi-Select, Radio, Checkbox
 
 All selection widgets support both simple and custom class types, as well as nullable and non-nullable usage for full null safety.
 
 ### Dropdown (Single-Select)
+
 ```dart
 // Non-nullable
 FormFieldsDropdown<String>(
@@ -950,6 +965,7 @@ FormFieldsDropdown<String?>(
 ```
 
 ### Multi-Select Dropdown
+
 ```dart
 // Non-nullable
 FormFieldsDropdownMulti<String>(
@@ -971,6 +987,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 ### Radio Button
+
 ```dart
 // Non-nullable
 FormFieldsRadioButton<String>(
@@ -991,6 +1008,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 ### Checkbox
+
 ```dart
 // Non-nullable
 FormFieldsCheckbox<String>(
@@ -1107,11 +1125,11 @@ FormFieldsRadioButton<Country>(
 6. **API Integration**: Direct mapping to API models
 
 **Best Practices:**
+
 - Always implement `==` and `hashCode` for your model
 - Use `final` fields for immutability
 - Provide a meaningful `toString()` for debugging
 - Use `itemLabelBuilder` for display customization
-
 
 #### Benefits of Custom Classes
 
@@ -1183,7 +1201,6 @@ FormFields<DateTime>(label: 'Date', onChanged: (v) {})
 FormFields<int>(label: 'Name', onChanged: (v) {})  // String name as int
 ```
 
-
 ## Nullable and Non-Nullable Property Usage
 
 All FormFields widgets and properties support both nullable and non-nullable types. This gives you full flexibility and null safety for every use case.
@@ -1191,6 +1208,7 @@ All FormFields widgets and properties support both nullable and non-nullable typ
 ### How to Use Nullable and Non-Nullable Properties
 
 #### 1. Text Field (String and String?)
+
 ```dart
 // Non-nullable (required field)
 FormFields<String>(
@@ -1209,6 +1227,7 @@ FormFields<String?>(
 ```
 
 #### 2. Dropdown (T and T?)
+
 ```dart
 // Non-nullable (must select)
 FormFieldsDropdown<String>(
@@ -1229,6 +1248,7 @@ FormFieldsDropdown<String?>(
 ```
 
 #### 3. Radio Button (T and T?)
+
 ```dart
 // Non-nullable
 FormFieldsRadioButton<String>(
@@ -1249,6 +1269,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 #### 4. Checkbox (List<T> and List<T?>)
+
 ```dart
 // Non-nullable list
 FormFieldsCheckbox<String>(
@@ -1268,6 +1289,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 #### 5. Numeric Fields (int, int?, double, double?)
+
 ```dart
 // Non-nullable int
 FormFields<int>(
@@ -1299,6 +1321,7 @@ FormFields<double?>(
 ```
 
 #### 6. Date/Time Fields (DateTime, DateTime?, TimeOfDay, TimeOfDay?)
+
 ```dart
 // Non-nullable DateTime
 FormFields<DateTime>(
@@ -1330,6 +1353,7 @@ FormFields<TimeOfDay?>(
 ```
 
 #### 7. Custom Validation with Nullables
+
 ```dart
 FormFields<String?>(
   label: 'Referral Code (optional)',
@@ -1382,12 +1406,12 @@ FormFields<int>(
 
 ### Problem: Date picker in wrong language
 
-**Solution:** Set correct `pickerLocale`.
+**Solution:** Set app locale correctly, or pass `locale` on the field.
 
 ```dart
 FormFields<DateTime>(
   label: 'Date',
-  pickerLocale: 'en_US',  // English
+  locale: 'en_US',  // English
   onChanged: (value) {},
 )
 ```

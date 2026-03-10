@@ -29,7 +29,6 @@ FormFields<T>({
   bool verificationHidden = false,
   String? customFormat,
   bool stripSeparators = true,
-  String? pickerLocale,
   DateTime? firstDate,
   DateTime? lastDate,
 })
@@ -46,31 +45,30 @@ FormFields<T>({
 
 #### Optional Properties
 
-| Property             | Type                          | Default              | Description                                                                                                   |
-| -------------------- | ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `formType`           | `FormType`                    | `FormType.string`    | Type of form field                                                                                            |
-| `labelPosition`      | `LabelPosition`               | `LabelPosition.none` | Position of label                                                                                             |
-| `isRequired`         | `bool`                        | `false`              | Enable validation                                                                                             |
-| `validator`          | `FormFieldValidator<String>?` | `null`               | Custom validator                                                                                              |
-| `currrentValue`      | `T?`                          | `null`               | Initial value                                                                                                 |
-| `focusNode`          | `FocusNode?`                  | `null`               | Focus control                                                                                                 |
-| `nextFocusNode`      | `FocusNode?`                  | `null`               | Next field focus                                                                                              |
-| `prefix`             | `Widget?`                     | `null`               | Widget before input                                                                                           |
-| `prefixIcon`         | `Widget?`                     | `null`               | Icon before input                                                                                             |
-| `suffix`             | `Widget?`                     | `null`               | Widget after input                                                                                            |
-| `suffixIcon`         | `Widget?`                     | `null`               | Icon after input                                                                                              |
-| `inputDecoration`    | `InputDecoration?`            | `null`               | Custom decoration                                                                                             |
-| `radius`             | `double`                      | `10`                 | Border radius                                                                                                 |
-| `borderType`         | `BorderType`                  | `outlineInputBorder` | Border style                                                                                                  |
-| `multiLine`          | `int`                         | `0`                  | Lines for text area                                                                                           |
-| `verificationLength` | `int`                         | `6`                  | Number of digits for verification input                                                                       |
-| `verificationHidden` | `bool`                        | `false`              | Hide verification digits with visibility toggle                                                               |
-| `locale`             | `String?`                     | `null`               | Custom locale ('id', 'en' or 'id_ID', 'en_US'). Unsupported locales fall back to English. No delegate needed! |
-| `customFormat`       | `String?`                     | `null`               | Custom date format                                                                                            |
-| `stripSeparators`    | `bool`                        | `true`               | Format numbers                                                                                                |
-| `pickerLocale`       | `String?`                     | `null`               | Picker locale (defaults to selected app locale)                                                               |
-| `firstDate`          | `DateTime?`                   | `null`               | First selectable date (default: 100 years ago)                                                                |
-| `lastDate`           | `DateTime?`                   | `null`               | Last selectable date (default: today)                                                                         |
+| Property             | Type                          | Default              | Description                                                                                                                                             |
+| -------------------- | ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `formType`           | `FormType`                    | `FormType.string`    | Type of form field                                                                                                                                      |
+| `labelPosition`      | `LabelPosition`               | `LabelPosition.none` | Position of label                                                                                                                                       |
+| `isRequired`         | `bool`                        | `false`              | Enable validation                                                                                                                                       |
+| `validator`          | `FormFieldValidator<String>?` | `null`               | Custom validator                                                                                                                                        |
+| `currrentValue`      | `T?`                          | `null`               | Initial value                                                                                                                                           |
+| `focusNode`          | `FocusNode?`                  | `null`               | Focus control                                                                                                                                           |
+| `nextFocusNode`      | `FocusNode?`                  | `null`               | Next field focus                                                                                                                                        |
+| `prefix`             | `Widget?`                     | `null`               | Widget before input                                                                                                                                     |
+| `prefixIcon`         | `Widget?`                     | `null`               | Icon before input                                                                                                                                       |
+| `suffix`             | `Widget?`                     | `null`               | Widget after input                                                                                                                                      |
+| `suffixIcon`         | `Widget?`                     | `null`               | Icon after input                                                                                                                                        |
+| `inputDecoration`    | `InputDecoration?`            | `null`               | Custom decoration                                                                                                                                       |
+| `radius`             | `double`                      | `10`                 | Border radius                                                                                                                                           |
+| `borderType`         | `BorderType`                  | `outlineInputBorder` | Border style                                                                                                                                            |
+| `multiLine`          | `int`                         | `0`                  | Lines for text area                                                                                                                                     |
+| `verificationLength` | `int`                         | `6`                  | Number of digits for verification input                                                                                                                 |
+| `verificationHidden` | `bool`                        | `false`              | Hide verification digits with visibility toggle                                                                                                         |
+| `locale`             | `String?`                     | `null`               | Custom locale ('id', 'en' or 'id_ID', 'en_US') for validation text and date/time pickers. Unsupported locales fall back to English. No delegate needed! |
+| `customFormat`       | `String?`                     | `null`               | Custom date format                                                                                                                                      |
+| `stripSeparators`    | `bool`                        | `true`               | Format numbers                                                                                                                                          |
+| `firstDate`          | `DateTime?`                   | `null`               | First selectable date (default: 100 years ago)                                                                                                          |
+| `lastDate`           | `DateTime?`                   | `null`               | Last selectable date (default: today)                                                                                                                   |
 
 ## Enums
 

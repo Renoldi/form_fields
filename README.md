@@ -25,33 +25,32 @@
 
 ### Properties
 
-| Property                   | Type                        | Description                                            |
-| -------------------------- | --------------------------- | ------------------------------------------------------ |
-| label                      | String                      | The label to display above or beside the field.        |
-| formType                   | FormType                    | The type of input (string, email, phone, etc.).        |
-| isRequired                 | bool                        | Whether the field is required.                         |
-| currrentValue              | T / T?                      | The current value of the field.                        |
-| onChanged                  | ValueChanged<T?>            | Callback when the value changes.                       |
-| validator                  | FormFieldValidator<String>? | Custom validation logic.                               |
-| labelPosition              | LabelPosition               | Position of the label (top, left, etc.).               |
-| borderType                 | BorderType                  | Border style (outline, underline, none).               |
-| radius                     | double                      | Border radius.                                         |
-| prefixIcon                 | Widget?                     | Icon before the input.                                 |
-| suffixIcon                 | Widget?                     | Icon after the input.                                  |
-| inputDecoration            | InputDecoration?            | Custom input decoration.                               |
-| multiLine                  | int                         | Number of visible lines for text input.                |
-| verificationLength         | int                         | Number of digits for verification input (default: 6).  |
-| verificationHidden         | bool                        | Hide verification digits with visibility toggle.       |
-| locale                     | String?                     | Custom locale string ('id', 'en' or 'id_ID', 'en_US'). |
-| stripSeparators            | bool                        | Format numbers with separators.                        |
-| pickerLocale               | String?                     | Locale for date/time pickers (defaults to app locale). |
-| customFormat               | String?                     | Custom date/time format.                               |
-| firstDate                  | DateTime?                   | Earliest selectable date.                              |
-| lastDate                   | DateTime?                   | Latest selectable date.                                |
-| autovalidateMode           | AutovalidateMode            | When to show validation errors.                        |
-| minLengthPassword          | int                         | Minimum length for password field.                     |
-| customPasswordValidator    | FormFieldValidator<String>? | Custom password validator.                             |
-| minLengthPasswordErrorText | String?                     | Error text for minimum password length.                |
+| Property                   | Type                        | Description                                                                                      |
+| -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| label                      | String                      | The label to display above or beside the field.                                                  |
+| formType                   | FormType                    | The type of input (string, email, phone, etc.).                                                  |
+| isRequired                 | bool                        | Whether the field is required.                                                                   |
+| currrentValue              | T / T?                      | The current value of the field.                                                                  |
+| onChanged                  | ValueChanged<T?>            | Callback when the value changes.                                                                 |
+| validator                  | FormFieldValidator<String>? | Custom validation logic.                                                                         |
+| labelPosition              | LabelPosition               | Position of the label (top, left, etc.).                                                         |
+| borderType                 | BorderType                  | Border style (outline, underline, none).                                                         |
+| radius                     | double                      | Border radius.                                                                                   |
+| prefixIcon                 | Widget?                     | Icon before the input.                                                                           |
+| suffixIcon                 | Widget?                     | Icon after the input.                                                                            |
+| inputDecoration            | InputDecoration?            | Custom input decoration.                                                                         |
+| multiLine                  | int                         | Number of visible lines for text input.                                                          |
+| verificationLength         | int                         | Number of digits for verification input (default: 6).                                            |
+| verificationHidden         | bool                        | Hide verification digits with visibility toggle.                                                 |
+| locale                     | String?                     | Custom locale string ('id', 'en' or 'id_ID', 'en_US') for validation text and date/time pickers. |
+| stripSeparators            | bool                        | Format numbers with separators.                                                                  |
+| customFormat               | String?                     | Custom date/time format.                                                                         |
+| firstDate                  | DateTime?                   | Earliest selectable date.                                                                        |
+| lastDate                   | DateTime?                   | Latest selectable date.                                                                          |
+| autovalidateMode           | AutovalidateMode            | When to show validation errors.                                                                  |
+| minLengthPassword          | int                         | Minimum length for password field.                                                               |
+| customPasswordValidator    | FormFieldValidator<String>? | Custom password validator.                                                                       |
+| minLengthPasswordErrorText | String?                     | Error text for minimum password length.                                                          |
 
 ### How to Use Each Property (Detailed)
 
@@ -160,13 +159,13 @@ FormFields<String>(
 FormFields<int>(stripSeparators: true, onChanged: (v) {})
 ```
 
-- **pickerLocale**
+- **locale**
 
 ```dart
-FormFields<DateTime>(pickerLocale: 'en_US', onChanged: (v) {})
+FormFields<DateTime>(locale: 'en_US', onChanged: (v) {})
 ```
 
-When not provided, picker dialogs follow the selected app locale.
+When not provided, validation text and picker dialogs follow the selected app locale.
 
 - **customFormat**
 
@@ -3512,17 +3511,17 @@ FormFields<DateTime>(
   // Picker will automatically use the app's locale
 )
 
-// Optional: Override picker locale for a specific field
+// Optional: Override language for a specific field
 FormFields<DateTime>(
   label: 'Birth Date',
   formType: FormType.date,
-  pickerLocale: 'en_US',  // Force English locale for this picker only
+  locale: 'en_US',  // Force English locale for this field's picker and messages
   currrentValue: _birthDate,
   onChanged: (value) => setState(() => _birthDate = value),
 )
 ```
 
-**Default Behavior**: When `pickerLocale` is **not specified**, the picker automatically uses the current app locale (e.g., if app is set to Indonesian, picker will show in Indonesian).
+**Default Behavior**: When `locale` is **not specified**, the picker automatically uses the current app locale (e.g., if app is set to Indonesian, picker will show in Indonesian).
 
 ---
 

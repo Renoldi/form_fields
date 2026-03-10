@@ -97,7 +97,8 @@ class FormFields<T> extends StatefulWidget {
   // -------------------------------------------------------------------------
   // LOCALIZATION
   // -------------------------------------------------------------------------
-  /// Custom locale for field messages and validation (overrides app locale)
+  /// Custom locale for field messages, validation, and date/time pickers
+  /// (overrides app locale)
   /// Supports both simple codes ('id', 'en') and full locale codes ('id_ID', 'en_US')
   final String? locale;
 
@@ -157,9 +158,6 @@ class FormFields<T> extends StatefulWidget {
   // -------------------------------------------------------------------------
   /// Custom date/time format
   final String? customFormat;
-
-  /// Locale for date/time pickers (defaults to app selected locale)
-  final String? pickerLocale;
 
   /// First selectable date for date pickers
   final DateTime? firstDate;
@@ -226,7 +224,6 @@ class FormFields<T> extends StatefulWidget {
     this.stripSeparators = true,
     // Date/Time Configuration
     this.customFormat,
-    this.pickerLocale,
     this.firstDate,
     this.lastDate,
     this.useDatePickerForRange = false,
@@ -438,25 +435,38 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // LOCALE HELPER
   // ============================================================================
 
-  Locale? _parseLocale(BuildContext context) {
-    final rawLocale = widget.pickerLocale?.trim();
-
+  Locale? _parseLocaleCode(String? localeCode) {
+    final rawLocale = localeCode?.trim();
     if (rawLocale == null || rawLocale.isEmpty) {
-      return Localizations.maybeLocaleOf(context);
+      return null;
     }
 
-    final normalized = rawLocale.replaceAll('-', '_');
+    // Support simple language codes used by this package API.
+    final simpleCodeMap = {
+      'id': 'id_ID',
+      'en': 'en_US',
+    };
+
+    final mapped = simpleCodeMap[rawLocale.toLowerCase()] ?? rawLocale;
+    final normalized = mapped.replaceAll('-', '_');
     final parts = normalized.split('_');
 
     if (parts.isEmpty || parts.first.isEmpty) {
-      return Localizations.maybeLocaleOf(context);
+      return null;
     }
+
+    final languageCode = parts[0].toLowerCase();
 
     if (parts.length >= 2 && parts[1].isNotEmpty) {
-      return Locale(parts[0], parts[1]);
+      return Locale(languageCode, parts[1].toUpperCase());
     }
 
-    return Locale(parts[0]);
+    return Locale(languageCode);
+  }
+
+  Locale? _parseLocale(BuildContext context) {
+    return _parseLocaleCode(widget.locale) ??
+        Localizations.maybeLocaleOf(context);
   }
 
   // ============================================================================
@@ -476,36 +486,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   /// Gets localization - from custom locale if provided, otherwise from context
   FormFieldsLocalizations _getLocalizations(BuildContext context) {
-    if (widget.locale != null && widget.locale!.isNotEmpty) {
-      String localeCode = widget.locale!;
-
-      // Support simple language codes (e.g., 'id', 'en')
-      // Map known codes to full locale format
-      final simpleCodeMap = {
-        'id': 'id_ID',
-        'ID': 'id_ID',
-        'en': 'en_US',
-        'EN': 'en_US',
-      };
-
-      // Check if it's a known simple code
-      if (simpleCodeMap.containsKey(localeCode)) {
-        localeCode = simpleCodeMap[localeCode]!;
-      }
-
-      // Parse the locale code (e.g., 'id_ID' or 'en_US')
-      final parts = localeCode.split('_');
-      if (parts.length == 2) {
-        final locale = Locale(parts[0], parts[1]);
-        return FormFieldsLocalizations.load(locale);
-      } else if (parts.length == 1 && parts[0].length >= 2) {
-        // Unknown simple language code (e.g., 'es', 'fr')
-        // Create locale and let load() fall back to English if unsupported
-        final lang = parts[0].toLowerCase();
-        final country = parts[0].toUpperCase();
-        final locale = Locale(lang, country);
-        return FormFieldsLocalizations.load(locale);
-      }
+    final customLocale = _parseLocaleCode(widget.locale);
+    if (customLocale != null) {
+      return FormFieldsLocalizations.load(customLocale);
     }
     return FormFieldsLocalizations.of(context);
   }

@@ -306,13 +306,13 @@ FormFields<DateTime>(
 FormFields<DateTime>(
   label: 'Birth Date',
   formType: FormType.date,
-  pickerLocale: 'en_US',  // Force English picker
+  locale: 'en_US',  // Force English for this field's picker and messages
   currrentValue: _birthDate,
   onChanged: (value) => setState(() => _birthDate = value),
 )
 ````
 
-**Default Behavior**: When `pickerLocale` is **not specified**, the picker automatically uses the app's current locale.
+**Default Behavior**: When `locale` is **not specified**, the picker automatically uses the app's current locale.
 
 ---
 
