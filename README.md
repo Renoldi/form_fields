@@ -1,152 +1,219 @@
 # 🏁 Navigation
 
-- [FormFields](#1-formfields) — The core, highly customizable text and input field widget supporting all types and label positions.
-  - [Properties](#properties) — All configurable options for FormFields.
-  - [How to Use Each Property](#how-to-use-each-property-detailed) — Code examples for every property.
-- [FormFieldsCheckbox](#2-formfieldscheckbox) — Checkbox group widget for multi-selection with custom item builders.
-  - [Properties](#properties-1)
-  - [Properties Example](#properties-example)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsDropdownMulti](#3-formfieldsdropdownmulti) — Multi-select dropdown with chips, filtering, and selection limits.
-  - [Properties](#properties-2)
-  - [Properties Example](#properties-example-1)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsDropdown](#4-formfieldsdropdown) — Single-select dropdown with search, custom labels, and decoration.
-  - [Properties](#properties-3)
-  - [Properties Example](#properties-example-2)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsRadioButton](#5-formfieldsradiobutton) — Radio button group with sectioning, custom widgets, and advanced styling.
-  - [Properties](#properties-4)
-  - [Properties Example](#properties-example-3)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
-- [FormFieldsSelect](#6-formfieldsselect) — Unified selection widget for dropdown, multi-select, radio, and checkbox.
-  - [Properties](#properties-5)
-  - [Properties Example](#properties-example-4)
-  - [How to Use Each Property](#how-to-use-each-property-detailed)
+- [Properties](#properties) — All configurable options for FormFields.
+- [How to Use Each Property](#how-to-use-each-property-detailed) — Code examples for every property.
+- [Properties](#properties-1)
+- [Properties Example](#properties-example)
+- [How to Use Each Property](#how-to-use-each-property-detailed)
+- [Properties](#properties-2)
+- [Properties Example](#properties-example-1)
+- [How to Use Each Property](#how-to-use-each-property-detailed)
+- [Properties](#properties-3)
+- [Properties Example](#properties-example-2)
+- [How to Use Each Property](#how-to-use-each-property-detailed)
+- [Properties](#properties-4)
+- [Properties Example](#properties-example-3)
+- [How to Use Each Property](#how-to-use-each-property-detailed)
+- [Properties](#properties-5)
+- [Properties Example](#properties-example-4)
+- [How to Use Each Property](#how-to-use-each-property-detailed)
 - [Utilities & Advanced Usage](#utilities--advanced-usage) — Enums, validators, controller, and null-safety patterns.
-
----
+- [Localization & Language Control](#localization--language-control) — How to manually set and switch languages at runtime.
+- [FormType Usage Examples](#formtype-usage-examples) — Quick examples for all FormType values.
 
 ## 1. FormFields
 
 ### Properties
-| Property                | Type                        | Description                                      |
-|-------------------------|-----------------------------|--------------------------------------------------|
-| label                   | String                      | The label to display above or beside the field.   |
-| formType                | FormType                    | The type of input (string, email, phone, etc.).   |
-| isRequired              | bool                        | Whether the field is required.                    |
-| currrentValue           | T / T?                      | The current value of the field.                   |
-| onChanged               | ValueChanged<T?>            | Callback when the value changes.                  |
-| validator               | FormFieldValidator<String>?  | Custom validation logic.                          |
-| labelPosition           | LabelPosition               | Position of the label (top, left, etc.).          |
-| borderType              | BorderType                  | Border style (outline, underline, none).          |
-| radius                  | double                      | Border radius.                                    |
-| prefixIcon              | Widget?                     | Icon before the input.                            |
-| suffixIcon              | Widget?                     | Icon after the input.                             |
-| inputDecoration         | InputDecoration?            | Custom input decoration.                          |
-| multiLine               | int                         | Number of visible lines for text input.           |
-| stripSeparators         | bool                        | Format numbers with separators.                   |
-| pickerLocale            | String?                     | Locale for date/time pickers.                     |
-| customFormat            | String?                     | Custom date/time format.                          |
-| firstDate               | DateTime?                   | Earliest selectable date.                         |
-| lastDate                | DateTime?                   | Latest selectable date.                           |
-| autovalidateMode        | AutovalidateMode            | When to show validation errors.                   |
-| minLengthPassword       | int                         | Minimum length for password field.                |
-| customPasswordValidator | FormFieldValidator<String>? | Custom password validator.                        |
-| minLengthPasswordErrorText | String?                  | Error text for minimum password length.           |
+
+| Property                   | Type                        | Description                                            |
+| -------------------------- | --------------------------- | ------------------------------------------------------ |
+| label                      | String                      | The label to display above or beside the field.        |
+| formType                   | FormType                    | The type of input (string, email, phone, etc.).        |
+| isRequired                 | bool                        | Whether the field is required.                         |
+| currrentValue              | T / T?                      | The current value of the field.                        |
+| onChanged                  | ValueChanged<T?>            | Callback when the value changes.                       |
+| validator                  | FormFieldValidator<String>? | Custom validation logic.                               |
+| labelPosition              | LabelPosition               | Position of the label (top, left, etc.).               |
+| borderType                 | BorderType                  | Border style (outline, underline, none).               |
+| radius                     | double                      | Border radius.                                         |
+| prefixIcon                 | Widget?                     | Icon before the input.                                 |
+| suffixIcon                 | Widget?                     | Icon after the input.                                  |
+| inputDecoration            | InputDecoration?            | Custom input decoration.                               |
+| multiLine                  | int                         | Number of visible lines for text input.                |
+| verificationLength         | int                         | Number of digits for verification input (default: 6).  |
+| verificationHidden         | bool                        | Hide verification digits with visibility toggle.       |
+| locale                     | String?                     | Custom locale string ('id', 'en' or 'id_ID', 'en_US'). |
+| stripSeparators            | bool                        | Format numbers with separators.                        |
+| pickerLocale               | String?                     | Locale for date/time pickers (defaults to app locale). |
+| customFormat               | String?                     | Custom date/time format.                               |
+| firstDate                  | DateTime?                   | Earliest selectable date.                              |
+| lastDate                   | DateTime?                   | Latest selectable date.                                |
+| autovalidateMode           | AutovalidateMode            | When to show validation errors.                        |
+| minLengthPassword          | int                         | Minimum length for password field.                     |
+| customPasswordValidator    | FormFieldValidator<String>? | Custom password validator.                             |
+| minLengthPasswordErrorText | String?                     | Error text for minimum password length.                |
 
 ### How to Use Each Property (Detailed)
+
 - **label**
+
 ```dart
 FormFields<String>(label: 'Username', onChanged: (v) {})
 ```
+
 - **formType**
+
 ```dart
 FormFields<String>(formType: FormType.email, onChanged: (v) {})
 ```
+
 - **isRequired**
+
 ```dart
 FormFields<String>(isRequired: true, onChanged: (v) {})
 ```
+
 - **currrentValue**
+
 ```dart
 FormFields<String>(currrentValue: 'init', onChanged: (v) {})
 ```
+
 - **onChanged**
+
 ```dart
 FormFields<String>(onChanged: (value) { print(value); })
 ```
+
 - **validator**
+
 ```dart
 FormFields<String>(validator: (v) => v == null ? 'Required' : null, onChanged: (v) {})
 ```
+
 - **labelPosition**
+
 ```dart
 FormFields<String>(labelPosition: LabelPosition.left, onChanged: (v) {})
 ```
+
 - **borderType**
+
 ```dart
 FormFields<String>(borderType: BorderType.underlineInputBorder, onChanged: (v) {})
 ```
+
 - **radius**
+
 ```dart
 FormFields<String>(radius: 16, onChanged: (v) {})
 ```
+
 - **prefixIcon**
+
 ```dart
 FormFields<String>(prefixIcon: Icon(Icons.person), onChanged: (v) {})
 ```
+
 - **suffixIcon**
+
 ```dart
 FormFields<String>(suffixIcon: Icon(Icons.clear), onChanged: (v) {})
 ```
+
 - **inputDecoration**
+
 ```dart
 FormFields<String>(inputDecoration: InputDecoration(hintText: 'Hint'), onChanged: (v) {})
 ```
+
 - **multiLine**
+
 ```dart
 FormFields<String>(multiLine: 3, onChanged: (v) {})
 ```
+
+- **verificationLength**
+
+```dart
+FormFields<String>(
+  formType: FormType.verification,
+  verificationLength: 6,
+  onChanged: (v) {},
+)
+```
+
+- **verificationHidden**
+
+```dart
+FormFields<String>(
+  formType: FormType.verification,
+  verificationLength: 6,
+  verificationHidden: true,
+  onChanged: (v) {},
+)
+```
+
 - **stripSeparators**
+
 ```dart
 FormFields<int>(stripSeparators: true, onChanged: (v) {})
 ```
+
 - **pickerLocale**
+
 ```dart
 FormFields<DateTime>(pickerLocale: 'en_US', onChanged: (v) {})
 ```
+
+When not provided, picker dialogs follow the selected app locale.
+
 - **customFormat**
+
 ```dart
 FormFields<DateTime>(customFormat: 'dd/MM/yyyy', onChanged: (v) {})
 ```
+
 - **firstDate**
+
 ```dart
 FormFields<DateTime>(firstDate: DateTime(2020, 1, 1), onChanged: (v) {})
 ```
+
 - **lastDate**
+
 ```dart
 FormFields<DateTime>(lastDate: DateTime(2030, 1, 1), onChanged: (v) {})
 ```
+
 - **autovalidateMode**
+
 ```dart
 FormFields<String>(autovalidateMode: AutovalidateMode.onUserInteraction, onChanged: (v) {})
 ```
+
 - **minLengthPassword**
+
 ```dart
 FormFields<String>(formType: FormType.password, minLengthPassword: 8, onChanged: (v) {})
 ```
+
 - **customPasswordValidator**
+
 ```dart
 FormFields<String>(formType: FormType.password, customPasswordValidator: (v) => v == '123' ? 'Weak' : null, onChanged: (v) {})
 ```
+
 - **minLengthPasswordErrorText**
+
 ```dart
 FormFields<String>(formType: FormType.password, minLengthPasswordErrorText: 'Too short', onChanged: (v) {})
 ```
 
 ### Custom Class
+
 You can use custom classes for advanced scenarios:
+
 ```dart
 class Country {
   final String code;
@@ -173,33 +240,35 @@ FormFields<Country>(
 ## 2. FormFieldsCheckbox
 
 ### Properties
-| Property           | Type                                 | Description                                 |
-|--------------------|--------------------------------------|---------------------------------------------|
-| label              | String                               | The label for the checkbox group.           |
-| items              | List<T>                              | List of selectable items.                   |
-| onChanged          | ValueChanged<List<T>>                | Callback when selection changes.            |
-| initialValue       | List<T>?                             | Initial selected values.                    |
-| isRequired         | bool                                 | Whether at least one item is required.      |
-| direction          | Axis                                 | Layout direction (vertical/horizontal).     |
-| radius             | double                               | Border radius for the group.                |
-| borderColor        | Color                                | Border color.                               |
-| errorBorderColor   | Color                                | Border color when error.                    |
-| activeColor        | Color                                | Color for selected checkboxes.              |
-| itemPadding        | EdgeInsets                           | Padding for each item.                      |
-| itemMarginTop      | double                               | Top margin for each item.                   |
-| itemMarginBottom   | double                               | Bottom margin for each item.                |
-| itemMarginHorizontal| double                              | Horizontal margin for each item.            |
-| indicatorVerticalAlignment| IndicatorVerticalAlignment      | Vertical alignment of indicator and content.|
-| horizontalSideBySide| bool                                | Force compact horizontal side-by-side items.|
-| textRightPadding   | double                               | Padding to the right of item text/content.  |
-| itemBorderColor    | Color?                               | Border color for each item.                 |
-| itemBorderWidth    | double                               | Border width for each item.                 |
-| itemBorderRadius   | double                               | Border radius for each item.                |
-| itemLabelBuilder   | String Function(T item)?             | Custom label builder for items.             |
-| itemBuilder        | Widget Function(T, bool)?            | Custom widget builder for items.            |
-| validator          | FormFieldValidator<List<T>>?         | Custom validation logic.                    |
+
+| Property                   | Type                         | Description                                  |
+| -------------------------- | ---------------------------- | -------------------------------------------- |
+| label                      | String                       | The label for the checkbox group.            |
+| items                      | List<T>                      | List of selectable items.                    |
+| onChanged                  | ValueChanged<List<T>>        | Callback when selection changes.             |
+| initialValue               | List<T>?                     | Initial selected values.                     |
+| isRequired                 | bool                         | Whether at least one item is required.       |
+| direction                  | Axis                         | Layout direction (vertical/horizontal).      |
+| radius                     | double                       | Border radius for the group.                 |
+| borderColor                | Color                        | Border color.                                |
+| errorBorderColor           | Color                        | Border color when error.                     |
+| activeColor                | Color                        | Color for selected checkboxes.               |
+| itemPadding                | EdgeInsets                   | Padding for each item.                       |
+| itemMarginTop              | double                       | Top margin for each item.                    |
+| itemMarginBottom           | double                       | Bottom margin for each item.                 |
+| itemMarginHorizontal       | double                       | Horizontal margin for each item.             |
+| indicatorVerticalAlignment | IndicatorVerticalAlignment   | Vertical alignment of indicator and content. |
+| horizontalSideBySide       | bool                         | Force compact horizontal side-by-side items. |
+| textRightPadding           | double                       | Padding to the right of item text/content.   |
+| itemBorderColor            | Color?                       | Border color for each item.                  |
+| itemBorderWidth            | double                       | Border width for each item.                  |
+| itemBorderRadius           | double                       | Border radius for each item.                 |
+| itemLabelBuilder           | String Function(T item)?     | Custom label builder for items.              |
+| itemBuilder                | Widget Function(T, bool)?    | Custom widget builder for items.             |
+| validator                  | FormFieldValidator<List<T>>? | Custom validation logic.                     |
 
 ### Properties Example
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Weekdays',
@@ -216,7 +285,9 @@ FormFieldsCheckbox<String>(
 ```
 
 ### How to Use Each Property (Detailed)
+
 - **label** — The label displayed above or beside the checkbox group.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Select Your Preferences',
@@ -226,6 +297,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **items** — The list of items to display as checkboxes.
+
 ```dart
 // Non-nullable type
 FormFieldsCheckbox<String>(
@@ -243,6 +315,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 - **onChanged** — Callback when the selection changes, returns the list of selected values.
+
 ```dart
 // Non-nullable type
 FormFieldsCheckbox<String>(
@@ -264,6 +337,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 - **initialValue** — Initial selected values.
+
 ```dart
 // With initial values
 FormFieldsCheckbox<String>(
@@ -283,6 +357,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+
 ```dart
 // With custom label builder
 FormFieldsCheckbox<User>(
@@ -310,6 +385,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 - **itemBuilder** — Custom widget builder for individual items.
+
 ```dart
 // With custom item builder
 FormFieldsCheckbox<String>(
@@ -351,6 +427,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 - **isRequired** — Whether at least one checkbox must be selected.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Required Selection',
@@ -361,6 +438,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **direction** — Layout direction: vertical or horizontal.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -371,6 +449,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **horizontalSideBySide** — Force compact horizontal side-by-side layout with wrapping.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -381,6 +460,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **indicatorVerticalAlignment** — Vertical alignment of the checkbox indicator relative to the text (top, center, bottom).
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -391,6 +471,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **textRightPadding** — Padding to the right of the text for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -401,6 +482,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **radius** — Border radius for the group container.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -411,6 +493,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **borderColor** — Border color for the group container.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -421,6 +504,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **errorBorderColor** — Border color when validation fails.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -432,6 +516,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **activeColor** — Color of the checkbox when selected.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -442,6 +527,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemPadding** — Padding for each checkbox item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -452,6 +538,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemBorderColor** — Border color for each individual item.
+
 ```dart
 // With custom border color
 FormFieldsCheckbox<String>(
@@ -471,6 +558,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemBorderWidth** — Border width for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -481,6 +569,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemBorderRadius** — Border radius for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -491,6 +580,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **selectedItemBackgroundColor** — Background color for selected items.
+
 ```dart
 // With custom background color
 FormFieldsCheckbox<String>(
@@ -510,6 +600,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **selectedItemTextColor** — Text color for selected items.
+
 ```dart
 // With custom text color
 FormFieldsCheckbox<String>(
@@ -529,6 +620,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **hoverBackgroundColor** — Background color when hovering over items.
+
 ```dart
 // With hover effect
 FormFieldsCheckbox<String>(
@@ -548,6 +640,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemShadow** — Whether to show shadow for items.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -560,6 +653,7 @@ FormFieldsCheckbox<String>(
 - **labelPosition** — Position of the label relative to the checkbox group (top, bottom, left, right, inBorder, none).
 
 All supported label positions:
+
 - `LabelPosition.top` — Label positioned above the checkboxes
 - `LabelPosition.bottom` — Label positioned below the checkboxes
 - `LabelPosition.left` — Label positioned to the left of the checkboxes
@@ -618,6 +712,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **containerPadding** — Padding for the entire checkbox group container.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -628,6 +723,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **containerGap** — Gap between items in the container.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -638,6 +734,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemMarginTop** — Top margin for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -648,6 +745,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemMarginBottom** — Bottom margin for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -658,6 +756,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **itemMarginHorizontal** — Horizontal margin for each item.
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Options',
@@ -668,6 +767,7 @@ FormFieldsCheckbox<String>(
 ```
 
 - **validator** — Custom validation logic.
+
 ```dart
 // With validation
 FormFieldsCheckbox<String>(
@@ -705,6 +805,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 ### Custom Class
+
 ```dart
 class Hobby {
   final String id;
@@ -731,32 +832,34 @@ FormFieldsCheckbox<Hobby>(
 ## 3. FormFieldsDropdownMulti
 
 ### Properties
-| Property           | Type                                 | Description                                 |
-|--------------------|--------------------------------------|---------------------------------------------|
-| label              | String                               | The label for the dropdown.                 |
-| items              | List<T>                              | List of selectable items.                   |
-| onChanged          | ValueChanged<List<T>>                | Callback when selection changes.            |
-| initialValues      | List<T>?                             | Initial selected values.                    |
-| itemLabelBuilder   | String Function(T item)?             | Custom label builder for items.             |
-| validator          | String? Function(List<T>?)?          | Custom validation logic.                    |
-| isRequired         | bool                                 | Whether at least one item is required.      |
-| minSelections      | int?                                 | Minimum number of selections.               |
-| maxSelections      | int?                                 | Maximum number of selections.               |
-| labelPosition      | LabelPosition                        | Label position.                             |
-| borderType         | BorderType                           | Border style.                               |
-| radius             | double                               | Border radius.                              |
-| borderColor        | Color                                | Border color.                               |
-| focusedBorderColor | Color                                | Border color when focused.                  |
-| errorBorderColor   | Color                                | Border color when error.                    |
-| hintText           | String?                              | Hint text.                                  |
-| showItemCount      | bool                                 | Show count of selected items.               |
-| chipBackgroundColor| Color?                               | Chip background color.                      |
-| chipTextColor      | Color?                               | Chip text color.                            |
-| chipDeleteIconColor| Color?                               | Chip delete icon color.                     |
-| enableFilter       | bool                                 | Enable search/filter.                       |
-| filterHintText     | String?                              | Filter hint text.                           |
+
+| Property            | Type                        | Description                            |
+| ------------------- | --------------------------- | -------------------------------------- |
+| label               | String                      | The label for the dropdown.            |
+| items               | List<T>                     | List of selectable items.              |
+| onChanged           | ValueChanged<List<T>>       | Callback when selection changes.       |
+| initialValues       | List<T>?                    | Initial selected values.               |
+| itemLabelBuilder    | String Function(T item)?    | Custom label builder for items.        |
+| validator           | String? Function(List<T>?)? | Custom validation logic.               |
+| isRequired          | bool                        | Whether at least one item is required. |
+| minSelections       | int?                        | Minimum number of selections.          |
+| maxSelections       | int?                        | Maximum number of selections.          |
+| labelPosition       | LabelPosition               | Label position.                        |
+| borderType          | BorderType                  | Border style.                          |
+| radius              | double                      | Border radius.                         |
+| borderColor         | Color                       | Border color.                          |
+| focusedBorderColor  | Color                       | Border color when focused.             |
+| errorBorderColor    | Color                       | Border color when error.               |
+| hintText            | String?                     | Hint text.                             |
+| showItemCount       | bool                        | Show count of selected items.          |
+| chipBackgroundColor | Color?                      | Chip background color.                 |
+| chipTextColor       | Color?                      | Chip text color.                       |
+| chipDeleteIconColor | Color?                      | Chip delete icon color.                |
+| enableFilter        | bool                        | Enable search/filter.                  |
+| filterHintText      | String?                     | Filter hint text.                      |
 
 ### Properties Example
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -775,7 +878,9 @@ FormFieldsDropdownMulti<String>(
 ```
 
 ### How to Use Each Property (Detailed)
+
 - **label** — The label displayed for the dropdown multi-select widget.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Select Languages',
@@ -785,6 +890,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **items** — The list of items available for selection.
+
 ```dart
 // Non-nullable type
 FormFieldsDropdownMulti<String>(
@@ -802,6 +908,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 - **onChanged** — Callback when the selection changes, returns the list of selected values.
+
 ```dart
 // Non-nullable type
 FormFieldsDropdownMulti<String>(
@@ -823,6 +930,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 - **initialValues** — Initial selected values.
+
 ```dart
 // With initial values
 FormFieldsDropdownMulti<String>(
@@ -842,6 +950,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+
 ```dart
 // With custom label builder
 FormFieldsDropdownMulti<Language>(
@@ -869,6 +978,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 - **validator** — Custom validation logic.
+
 ```dart
 // With validation
 FormFieldsDropdownMulti<String>(
@@ -906,6 +1016,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 - **isRequired** — Whether at least one item must be selected.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -916,6 +1027,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **minSelections** — Minimum number of selections required.
+
 ```dart
 // With minimum selections
 FormFieldsDropdownMulti<String>(
@@ -935,6 +1047,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **maxSelections** — Maximum number of selections allowed.
+
 ```dart
 // With maximum selections
 FormFieldsDropdownMulti<String>(
@@ -956,6 +1069,7 @@ FormFieldsDropdownMulti<String>(
 - **labelPosition** — Position of the label relative to the dropdown (top, bottom, left, right, inBorder, none).
 
 All supported label positions:
+
 - `LabelPosition.top` — Label positioned above the dropdown
 - `LabelPosition.bottom` — Label positioned below the dropdown
 - `LabelPosition.left` — Label positioned to the left of the dropdown
@@ -1014,6 +1128,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **borderType** — Border style for the dropdown.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1024,6 +1139,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **radius** — Border radius for the dropdown field.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1034,6 +1150,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **borderColor** — Border color for the dropdown.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1044,6 +1161,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **focusedBorderColor** — Border color when the dropdown is focused.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1054,6 +1172,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **errorBorderColor** — Border color when validation fails.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1065,6 +1184,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **hintText** — Hint text displayed when no items are selected.
+
 ```dart
 // With hint text
 FormFieldsDropdownMulti<String>(
@@ -1084,6 +1204,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **showItemCount** — Show the count of selected items.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1094,6 +1215,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **chipBackgroundColor** — Background color for selected item chips.
+
 ```dart
 // With custom chip color
 FormFieldsDropdownMulti<String>(
@@ -1113,6 +1235,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **chipTextColor** — Text color for selected item chips.
+
 ```dart
 // With custom text color
 FormFieldsDropdownMulti<String>(
@@ -1132,6 +1255,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **chipDeleteIconColor** — Delete icon color for selected item chips.
+
 ```dart
 // With custom delete icon color
 FormFieldsDropdownMulti<String>(
@@ -1151,6 +1275,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **enableFilter** — Enable search/filter functionality.
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -1161,6 +1286,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 - **filterHintText** — Hint text for the filter/search field.
+
 ```dart
 // With filter hint text
 FormFieldsDropdownMulti<String>(
@@ -1182,6 +1308,7 @@ FormFieldsDropdownMulti<String>(
 ```
 
 ### Custom Class
+
 ```dart
 class Language {
   final String code;
@@ -1208,30 +1335,32 @@ FormFieldsDropdownMulti<Language>(
 ## 4. FormFieldsDropdown
 
 ### Properties
-| Property           | Type                                 | Description                                 |
-|--------------------|--------------------------------------|---------------------------------------------|
-| items              | List<T>                              | List of selectable items.                   |
-| label              | String                               | The label for the dropdown.                 |
-| onChanged          | ValueChanged<T?>?                    | Callback when selection changes.            |
-| initialValue       | T?                                   | Initial selected value.                     |
-| validator          | String? Function(T?)?                | Custom validation logic.                    |
-| isRequired         | bool                                 | Whether selection is required.              |
-| itemLabelBuilder   | String Function(T item)?             | Custom label builder for items.             |
-| labelPosition      | LabelPosition                        | Label position.                             |
-| borderType         | BorderType                           | Border style.                               |
-| radius             | double                               | Border radius.                              |
-| borderColor        | Color                                | Border color.                               |
-| focusedBorderColor | Color                                | Border color when focused.                  |
-| errorBorderColor   | Color                                | Border color when error.                    |
-| decoration         | InputDecoration?                     | Custom input decoration.                    |
-| prefixIcon         | Widget?                              | Icon before the dropdown.                   |
-| suffixIcon         | Widget?                              | Icon after the dropdown.                    |
-| hintText           | String?                              | Hint text.                                  |
-| enabled            | bool                                 | Whether the dropdown is enabled.            |
-| enableFilter       | bool                                 | Enable search/filter.                       |
-| filterHintText     | String?                              | Filter hint text.                           |
+
+| Property           | Type                     | Description                      |
+| ------------------ | ------------------------ | -------------------------------- |
+| items              | List<T>                  | List of selectable items.        |
+| label              | String                   | The label for the dropdown.      |
+| onChanged          | ValueChanged<T?>?        | Callback when selection changes. |
+| initialValue       | T?                       | Initial selected value.          |
+| validator          | String? Function(T?)?    | Custom validation logic.         |
+| isRequired         | bool                     | Whether selection is required.   |
+| itemLabelBuilder   | String Function(T item)? | Custom label builder for items.  |
+| labelPosition      | LabelPosition            | Label position.                  |
+| borderType         | BorderType               | Border style.                    |
+| radius             | double                   | Border radius.                   |
+| borderColor        | Color                    | Border color.                    |
+| focusedBorderColor | Color                    | Border color when focused.       |
+| errorBorderColor   | Color                    | Border color when error.         |
+| decoration         | InputDecoration?         | Custom input decoration.         |
+| prefixIcon         | Widget?                  | Icon before the dropdown.        |
+| suffixIcon         | Widget?                  | Icon after the dropdown.         |
+| hintText           | String?                  | Hint text.                       |
+| enabled            | bool                     | Whether the dropdown is enabled. |
+| enableFilter       | bool                     | Enable search/filter.            |
+| filterHintText     | String?                  | Filter hint text.                |
 
 ### Properties Example
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1247,7 +1376,9 @@ FormFieldsDropdown<String>(
 ```
 
 ### How to Use Each Property (Detailed)
+
 - **items** — The list of items available for selection.
+
 ```dart
 // Non-nullable type
 FormFieldsDropdown<String>(
@@ -1265,6 +1396,7 @@ FormFieldsDropdown<String?>(
 ```
 
 - **label** — The label displayed for the dropdown widget.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Select Your Country',
@@ -1274,6 +1406,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **onChanged** — Callback when the selection changes, returns the selected value.
+
 ```dart
 // With callback
 FormFieldsDropdown<String>(
@@ -1302,6 +1435,7 @@ FormFieldsDropdown<String?>(
 ```
 
 - **initialValue** — Initial selected value.
+
 ```dart
 // With initial value
 FormFieldsDropdown<String>(
@@ -1321,6 +1455,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **validator** — Custom validation logic.
+
 ```dart
 // With validation
 FormFieldsDropdown<String>(
@@ -1358,6 +1493,7 @@ FormFieldsDropdown<String?>(
 ```
 
 - **isRequired** — Whether selection is required.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1368,6 +1504,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+
 ```dart
 // With custom label builder
 FormFieldsDropdown<Country>(
@@ -1397,6 +1534,7 @@ FormFieldsDropdown<String?>(
 - **labelPosition** — Position of the label relative to the dropdown (top, bottom, left, right, inBorder, none).
 
 All supported label positions:
+
 - `LabelPosition.top` — Label positioned above the dropdown
 - `LabelPosition.bottom` — Label positioned below the dropdown
 - `LabelPosition.left` — Label positioned to the left of the dropdown
@@ -1455,6 +1593,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **borderType** — Border style for the dropdown.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1465,6 +1604,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **radius** — Border radius for the dropdown field.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1475,6 +1615,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **borderColor** — Border color for the dropdown.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1485,6 +1626,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **focusedBorderColor** — Border color when the dropdown is focused.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1495,6 +1637,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **errorBorderColor** — Border color when validation fails.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1506,6 +1649,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **decoration** — Custom input decoration.
+
 ```dart
 // With custom decoration
 FormFieldsDropdown<String>(
@@ -1529,6 +1673,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **prefixIcon** — Icon displayed before the dropdown field.
+
 ```dart
 // With prefix icon
 FormFieldsDropdown<String>(
@@ -1548,6 +1693,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **suffixIcon** — Icon displayed after the dropdown field.
+
 ```dart
 // With suffix icon
 FormFieldsDropdown<String>(
@@ -1567,6 +1713,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **hintText** — Hint text displayed when no item is selected.
+
 ```dart
 // With hint text
 FormFieldsDropdown<String>(
@@ -1586,6 +1733,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **enabled** — Whether the dropdown is enabled or disabled.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1596,6 +1744,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **enableFilter** — Enable search/filter functionality.
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -1606,6 +1755,7 @@ FormFieldsDropdown<String>(
 ```
 
 - **filterHintText** — Hint text for the filter/search field.
+
 ```dart
 // With filter hint text
 FormFieldsDropdown<String>(
@@ -1627,6 +1777,7 @@ FormFieldsDropdown<String>(
 ```
 
 ### Custom Class
+
 ```dart
 class Country {
   final String code;
@@ -1653,42 +1804,44 @@ FormFieldsDropdown<Country>(
 ## 5. FormFieldsRadioButton
 
 ### Properties
-| Property           | Type                                 | Description                                 |
-|--------------------|--------------------------------------|---------------------------------------------|
-| label              | String                               | The label for the radio group.              |
-| items              | List<T>?                             | List of selectable items.                   |
-| sections           | Map<String, List<T>>?                | Sectioned items.                            |
-| onChanged          | ValueChanged<T?>                     | Callback when selection changes.            |
-| itemLabelBuilder   | String Function(T item)?             | Custom label builder for items.             |
-| itemBuilder        | Widget Function(T, bool)?            | Custom widget builder for items.            |
-| initialValue       | T?                                   | Initial selected value.                     |
-| isRequired         | bool                                 | Whether selection is required.              |
-| direction          | Axis                                 | Layout direction (vertical/horizontal).     |
-| radius             | double                               | Border radius for the group.                |
-| borderColor        | Color                                | Border color.                               |
-| errorBorderColor   | Color                                | Border color when error.                    |
-| activeColor        | Color                                | Color for selected radio.                   |
-| itemPadding        | EdgeInsets                           | Padding for each item.                      |
-| sectionSpacing     | double                               | Spacing between sections.                   |
-| itemBorderColor    | Color?                               | Border color for each item.                 |
-| itemBorderWidth    | double                               | Border width for each item.                 |
-| itemBorderRadius   | double                               | Border radius for each item.                |
-| textRightPadding   | double                               | Padding to the right of text.               |
-| itemTextMarginRight| double                               | Margin to the right of item text.           |
-| selectedItemBackgroundColor| Color?                       | Background color for selected item.         |
-| selectedItemTextColor| Color?                             | Text color for selected item.               |
-| hoverBackgroundColor| Color?                              | Background color on hover.                  |
-| itemShadow         | bool                                 | Show shadow for items.                      |
-| labelPosition      | LabelPosition                        | Label position.                             |
-| containerPadding   | double                               | Padding for the group container.            |
-| containerGap       | double                               | Gap between items.                          |
-| itemMarginTop      | double                               | Top margin for each item.                   |
-| itemMarginBottom   | double                               | Bottom margin for each item.                |
-| indicatorVerticalAlignment| IndicatorVerticalAlignment      | Vertical alignment of indicator and content.|
-| horizontalSideBySide| bool                                | Force compact horizontal side-by-side items.|
-| validator          | FormFieldValidator<T>?               | Custom validation logic.                    |
+
+| Property                    | Type                       | Description                                  |
+| --------------------------- | -------------------------- | -------------------------------------------- |
+| label                       | String                     | The label for the radio group.               |
+| items                       | List<T>?                   | List of selectable items.                    |
+| sections                    | Map<String, List<T>>?      | Sectioned items.                             |
+| onChanged                   | ValueChanged<T?>           | Callback when selection changes.             |
+| itemLabelBuilder            | String Function(T item)?   | Custom label builder for items.              |
+| itemBuilder                 | Widget Function(T, bool)?  | Custom widget builder for items.             |
+| initialValue                | T?                         | Initial selected value.                      |
+| isRequired                  | bool                       | Whether selection is required.               |
+| direction                   | Axis                       | Layout direction (vertical/horizontal).      |
+| radius                      | double                     | Border radius for the group.                 |
+| borderColor                 | Color                      | Border color.                                |
+| errorBorderColor            | Color                      | Border color when error.                     |
+| activeColor                 | Color                      | Color for selected radio.                    |
+| itemPadding                 | EdgeInsets                 | Padding for each item.                       |
+| sectionSpacing              | double                     | Spacing between sections.                    |
+| itemBorderColor             | Color?                     | Border color for each item.                  |
+| itemBorderWidth             | double                     | Border width for each item.                  |
+| itemBorderRadius            | double                     | Border radius for each item.                 |
+| textRightPadding            | double                     | Padding to the right of text.                |
+| itemTextMarginRight         | double                     | Margin to the right of item text.            |
+| selectedItemBackgroundColor | Color?                     | Background color for selected item.          |
+| selectedItemTextColor       | Color?                     | Text color for selected item.                |
+| hoverBackgroundColor        | Color?                     | Background color on hover.                   |
+| itemShadow                  | bool                       | Show shadow for items.                       |
+| labelPosition               | LabelPosition              | Label position.                              |
+| containerPadding            | double                     | Padding for the group container.             |
+| containerGap                | double                     | Gap between items.                           |
+| itemMarginTop               | double                     | Top margin for each item.                    |
+| itemMarginBottom            | double                     | Bottom margin for each item.                 |
+| indicatorVerticalAlignment  | IndicatorVerticalAlignment | Vertical alignment of indicator and content. |
+| horizontalSideBySide        | bool                       | Force compact horizontal side-by-side items. |
+| validator                   | FormFieldValidator<T>?     | Custom validation logic.                     |
 
 ### Properties Example
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Marital Status',
@@ -1704,7 +1857,9 @@ FormFieldsRadioButton<String>(
 ```
 
 ### How to Use Each Property (Detailed)
+
 - **label** — The label displayed for the radio button group.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Marital Status',
@@ -1714,6 +1869,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **items** — The list of items to display as radio buttons.
+
 ```dart
 // With items list
 FormFieldsRadioButton<String>(
@@ -1742,6 +1898,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 - **sections** — Map of sectioned items for grouped radio buttons.
+
 ```dart
 // With sections
 FormFieldsRadioButton<String>(
@@ -1763,6 +1920,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **onChanged** — Callback when the selection changes, returns the selected value.
+
 ```dart
 // Non-nullable type
 FormFieldsRadioButton<String>(
@@ -1784,6 +1942,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+
 ```dart
 // With custom label builder
 FormFieldsRadioButton<Gender>(
@@ -1811,6 +1970,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 - **itemBuilder** — Custom widget builder for individual items.
+
 ```dart
 // With custom item builder
 FormFieldsRadioButton<String>(
@@ -1856,6 +2016,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 - **initialValue** — Initial selected value.
+
 ```dart
 // With initial value
 FormFieldsRadioButton<String>(
@@ -1875,6 +2036,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **isRequired** — Whether a selection is required.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Gender',
@@ -1885,6 +2047,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **direction** — Layout direction: vertical or horizontal.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1895,6 +2058,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **horizontalSideBySide** — Force compact horizontal side-by-side layout with wrapping.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1905,6 +2069,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **indicatorVerticalAlignment** — Vertical alignment of the radio indicator relative to the text (top, center, bottom).
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1915,6 +2080,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **textRightPadding** — Padding to the right of the text for each item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1925,6 +2091,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **radius** — Border radius for the group container.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1935,6 +2102,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **borderColor** — Border color for the group container.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1945,6 +2113,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **errorBorderColor** — Border color when validation fails.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1956,6 +2125,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **activeColor** — Color of the radio button when selected.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1966,6 +2136,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemPadding** — Padding for each radio button item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1976,6 +2147,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **sectionSpacing** — Spacing between sections (when using sections).
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -1989,6 +2161,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemBorderColor** — Border color for each individual item.
+
 ```dart
 // With custom border color
 FormFieldsRadioButton<String>(
@@ -2008,6 +2181,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemBorderWidth** — Border width for each item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2018,6 +2192,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemBorderRadius** — Border radius for each item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2028,6 +2203,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemTextMarginRight** — Margin to the right of item text.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2038,6 +2214,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **selectedItemBackgroundColor** — Background color for selected item.
+
 ```dart
 // With custom background color
 FormFieldsRadioButton<String>(
@@ -2057,6 +2234,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **selectedItemTextColor** — Text color for selected item.
+
 ```dart
 // With custom text color
 FormFieldsRadioButton<String>(
@@ -2076,6 +2254,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **hoverBackgroundColor** — Background color when hovering over items.
+
 ```dart
 // With hover effect
 FormFieldsRadioButton<String>(
@@ -2095,6 +2274,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemShadow** — Whether to show shadow for items.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2107,6 +2287,7 @@ FormFieldsRadioButton<String>(
 - **labelPosition** — Position of the label relative to the radio button group (top, bottom, left, right, inBorder, none).
 
 All supported label positions:
+
 - `LabelPosition.top` — Label positioned above the radio buttons
 - `LabelPosition.bottom` — Label positioned below the radio buttons
 - `LabelPosition.left` — Label positioned to the left of the radio buttons
@@ -2165,6 +2346,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **containerPadding** — Padding for the entire radio group container.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2175,6 +2357,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **containerGap** — Gap between items in the container.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2185,6 +2368,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemMarginTop** — Top margin for each item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2195,6 +2379,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **itemMarginBottom** — Bottom margin for each item.
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Options',
@@ -2205,6 +2390,7 @@ FormFieldsRadioButton<String>(
 ```
 
 - **validator** — Custom validation logic.
+
 ```dart
 // With validation
 FormFieldsRadioButton<String>(
@@ -2242,6 +2428,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 ### Custom Class
+
 ```dart
 class Gender {
   final String code;
@@ -2268,35 +2455,37 @@ FormFieldsRadioButton<Gender>(
 ## 6. FormFieldsSelect
 
 ### Properties
-| Property           | Type                                 | Description                                 |
-|--------------------|--------------------------------------|---------------------------------------------|
-| formType           | FormType                             | The type of selection widget.               |
-| label              | String                               | The label for the select widget.            |
-| items              | List<T>                              | List of selectable items.                   |
-| initialValue       | T?                                   | Initial value (single select).              |
-| initialValues      | List<T>?                             | Initial values (multi select).              |
-| onChanged          | ValueChanged<T?>?                    | Callback for single value change.           |
-| onMultiChanged     | ValueChanged<List<T>>?               | Callback for multi value change.            |
-| itemLabelBuilder   | String Function(T item)?             | Custom label builder for items.             |
-| validator          | String? Function(T?)?                | Validator for single value.                 |
-| multiValidator     | String? Function(List<T>?)?          | Validator for multi value.                  |
-| isRequired         | bool                                 | Whether selection is required.              |
-| labelPosition      | LabelPosition                        | Label position.                             |
-| borderType         | BorderType                           | Border style.                               |
-| radius             | double                               | Border radius.                              |
-| borderColor        | Color                                | Border color.                               |
-| focusedBorderColor | Color                                | Border color when focused.                  |
-| errorBorderColor   | Color                                | Border color when error.                    |
-| itemBorderColor    | Color?                               | Border color for each item.                 |
-| itemBorderWidth    | double                               | Border width for each item.                 |
-| itemBorderRadius   | double                               | Border radius for each item.                |
-| itemMarginTop      | double                               | Top margin for each item.                   |
-| itemMarginBottom   | double                               | Bottom margin for each item.                |
-| itemMarginHorizontal| double                              | Horizontal margin for each item.            |
-| enableFilter       | bool                                 | Enable search/filter.                       |
-| filterHintText     | String                               | Filter hint text.                           |
+
+| Property             | Type                        | Description                       |
+| -------------------- | --------------------------- | --------------------------------- |
+| formType             | FormType                    | The type of selection widget.     |
+| label                | String                      | The label for the select widget.  |
+| items                | List<T>                     | List of selectable items.         |
+| initialValue         | T?                          | Initial value (single select).    |
+| initialValues        | List<T>?                    | Initial values (multi select).    |
+| onChanged            | ValueChanged<T?>?           | Callback for single value change. |
+| onMultiChanged       | ValueChanged<List<T>>?      | Callback for multi value change.  |
+| itemLabelBuilder     | String Function(T item)?    | Custom label builder for items.   |
+| validator            | String? Function(T?)?       | Validator for single value.       |
+| multiValidator       | String? Function(List<T>?)? | Validator for multi value.        |
+| isRequired           | bool                        | Whether selection is required.    |
+| labelPosition        | LabelPosition               | Label position.                   |
+| borderType           | BorderType                  | Border style.                     |
+| radius               | double                      | Border radius.                    |
+| borderColor          | Color                       | Border color.                     |
+| focusedBorderColor   | Color                       | Border color when focused.        |
+| errorBorderColor     | Color                       | Border color when error.          |
+| itemBorderColor      | Color?                      | Border color for each item.       |
+| itemBorderWidth      | double                      | Border width for each item.       |
+| itemBorderRadius     | double                      | Border radius for each item.      |
+| itemMarginTop        | double                      | Top margin for each item.         |
+| itemMarginBottom     | double                      | Bottom margin for each item.      |
+| itemMarginHorizontal | double                      | Horizontal margin for each item.  |
+| enableFilter         | bool                        | Enable search/filter.             |
+| filterHintText       | String                      | Filter hint text.                 |
 
 ### Properties Example
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdownMulti,
@@ -2314,7 +2503,9 @@ FormFieldsSelect<String>(
 ```
 
 ### How to Use Each Property (Detailed)
+
 - **formType** — The type of selection widget to display (dropdown, dropdownMulti, radioButton, checkbox).
+
 ```dart
 // Single select dropdown
 FormFieldsSelect<String>(
@@ -2350,6 +2541,7 @@ FormFieldsSelect<String>(
 ```
 
 - **label** — The label displayed for the select widget.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2360,6 +2552,7 @@ FormFieldsSelect<String>(
 ```
 
 - **items** — The list of items available for selection.
+
 ```dart
 // Non-nullable type
 FormFieldsSelect<String>(
@@ -2379,6 +2572,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **initialValue** — Initial value for single select (dropdown, radioButton).
+
 ```dart
 // With initial value
 FormFieldsSelect<String>(
@@ -2400,6 +2594,7 @@ FormFieldsSelect<String>(
 ```
 
 - **initialValues** — Initial values for multi-select (dropdownMulti, checkbox).
+
 ```dart
 // With initial values
 FormFieldsSelect<String>(
@@ -2421,6 +2616,7 @@ FormFieldsSelect<String>(
 ```
 
 - **onChanged** — Callback for single value changes (dropdown, radioButton).
+
 ```dart
 // With callback
 FormFieldsSelect<String>(
@@ -2455,6 +2651,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **onMultiChanged** — Callback for multi-value changes (dropdownMulti, checkbox).
+
 ```dart
 // With callback
 FormFieldsSelect<String>(
@@ -2489,6 +2686,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **itemLabelBuilder** — Custom label builder for items (useful with custom classes).
+
 ```dart
 // With custom label builder
 FormFieldsSelect<Country>(
@@ -2519,6 +2717,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **validator** — Validator for single value selections.
+
 ```dart
 // With validation
 FormFieldsSelect<String>(
@@ -2559,6 +2758,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **multiValidator** — Validator for multi-value selections.
+
 ```dart
 // With validation
 FormFieldsSelect<String>(
@@ -2599,6 +2799,7 @@ FormFieldsSelect<String?>(
 ```
 
 - **isRequired** — Whether selection is required.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2612,6 +2813,7 @@ FormFieldsSelect<String>(
 - **labelPosition** — Position of the label relative to the select widget (top, bottom, left, right, inBorder, none).
 
 All supported label positions:
+
 - `LabelPosition.top` — Label positioned above the widget
 - `LabelPosition.bottom` — Label positioned below the widget
 - `LabelPosition.left` — Label positioned to the left of the widget
@@ -2676,6 +2878,7 @@ FormFieldsSelect<String>(
 ```
 
 - **borderType** — Border style for the widget.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2687,6 +2890,7 @@ FormFieldsSelect<String>(
 ```
 
 - **radius** — Border radius.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2698,6 +2902,7 @@ FormFieldsSelect<String>(
 ```
 
 - **borderColor** — Border color.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2709,6 +2914,7 @@ FormFieldsSelect<String>(
 ```
 
 - **focusedBorderColor** — Border color when focused.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2720,6 +2926,7 @@ FormFieldsSelect<String>(
 ```
 
 - **errorBorderColor** — Border color when validation fails.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2732,6 +2939,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemBorderColor** — Border color for each item (applicable to radioButton and checkbox).
+
 ```dart
 // With custom border color
 FormFieldsSelect<String>(
@@ -2753,6 +2961,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemBorderWidth** — Border width for each item.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
@@ -2764,6 +2973,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemBorderRadius** — Border radius for each item.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
@@ -2775,6 +2985,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemMarginTop** — Top margin for each item.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
@@ -2786,6 +2997,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemMarginBottom** — Bottom margin for each item.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
@@ -2797,6 +3009,7 @@ FormFieldsSelect<String>(
 ```
 
 - **itemMarginHorizontal** — Horizontal margin for each item.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.radioButton,
@@ -2808,6 +3021,7 @@ FormFieldsSelect<String>(
 ```
 
 - **enableFilter** — Enable search/filter functionality.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2819,6 +3033,7 @@ FormFieldsSelect<String>(
 ```
 
 - **filterHintText** — Hint text for the filter/search field.
+
 ```dart
 FormFieldsSelect<String>(
   formType: FormType.dropdown,
@@ -2831,6 +3046,7 @@ FormFieldsSelect<String>(
 ```
 
 ### Custom Class
+
 ```dart
 class Country {
   final String code;
@@ -2860,24 +3076,28 @@ FormFieldsSelect<Country>(
 ### Enums
 
 #### FormType
-| Value           | Description                                 |
-|-----------------|---------------------------------------------|
-| string          | Standard text input                         |
-| phone           | Phone number input                          |
-| password        | Password input (obscured)                   |
-| email           | Email address input                         |
-| date            | Date picker                                 |
-| time            | Time picker                                 |
-| dateTime        | Date and time picker                        |
-| dateTimeRange   | Date range picker                           |
-| timeOfDay       | TimeOfDay picker                            |
-| dropdown        | Dropdown selection                          |
-| dropdownMulti   | Multi-select dropdown                       |
-| radioButton     | Radio button group                          |
-| checkbox        | Checkbox group                              |
+
+| Value         | Description                          |
+| ------------- | ------------------------------------ |
+| string        | Standard text input                  |
+| phone         | Phone number input                   |
+| password      | Password input (obscured)            |
+| verification  | Verification/OTP input (digits only) |
+| email         | Email address input                  |
+| date          | Date picker                          |
+| time          | Time picker                          |
+| dateTime      | Date and time picker                 |
+| dateTimeRange | Date range picker                    |
+| timeOfDay     | TimeOfDay picker                     |
+| dropdown      | Dropdown selection                   |
+| dropdownMulti | Multi-select dropdown                |
+| radioButton   | Radio button group                   |
+| checkbox      | Checkbox group                       |
 
 #### Custom Class Example
+
 You can extend or wrap the `FormType` enum for advanced scenarios, such as localization or custom types:
+
 ```dart
 enum CustomFormType {
   string,
@@ -2912,27 +3132,30 @@ FormFields<String>(
 ```
 
 #### LabelPosition
-| Value         | Description                |
-|---------------|---------------------------|
-| top           | Label above input         |
-| bottom        | Label below input         |
-| left          | Label to the left         |
-| right         | Label to the right        |
-| inBorder      | Floating label            |
-| none          | No label                  |
+
+| Value    | Description        |
+| -------- | ------------------ |
+| top      | Label above input  |
+| bottom   | Label below input  |
+| left     | Label to the left  |
+| right    | Label to the right |
+| inBorder | Floating label     |
+| none     | No label           |
 
 #### BorderType
-| Value                | Description                |
-|----------------------|---------------------------|
-| outlineInputBorder   | Outlined border           |
-| underlineInputBorder | Underline border          |
-| none                 | No border                 |
+
+| Value                | Description      |
+| -------------------- | ---------------- |
+| outlineInputBorder   | Outlined border  |
+| underlineInputBorder | Underline border |
+| none                 | No border        |
 
 ---
 
 ### Validators
 
 #### Built-in Validators
+
 ```dart
 // Required field
 FormFieldValidators.required('Username')
@@ -2972,6 +3195,7 @@ FormFieldValidators.compose([
 ```
 
 #### Custom Validator Example
+
 ```dart
 FormFields<String>(
   label: 'Username',
@@ -2997,6 +3221,7 @@ FormFields<String>(
 ### Controller
 
 #### FormFieldsController
+
 ```dart
 final controller = FormFieldsController();
 
@@ -3020,6 +3245,7 @@ print(controller.getController);
 All widgets and properties support both nullable and non-nullable types for full null safety.
 
 #### Example: Nullable and Non-Nullable
+
 ```dart
 // Non-nullable (required field)
 FormFields<String>(
@@ -3039,9 +3265,322 @@ FormFields<String?>(
 
 ---
 
+## Localization & Language Control
+
+The FormFields package includes full localization support with **English (en_US)** as the default and **Indonesian (id_ID)** built-in. All validation messages, hints, buttons, and UI text automatically adapt to your app's selected language.
+
+> 📘 **For complete localization documentation**, see [LOCALIZATION.md](LOCALIZATION.md) for adding custom languages, detailed examples, and advanced features.
+
+---
+
+### Quick Setup
+
+#### 1. Enable Localization (Optional for Global Support)
+
+**Note:** If you're using the per-field `locale` property (Option 4 below), you **don't need** to add the delegate. The field will load its locale directly.
+
+Add the localization delegate to your `MaterialApp` only if you want app-wide localization:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_fields/form_fields.dart';
+
+MaterialApp(
+  localizationsDelegates: const [
+    FormFieldsLocalizationsDelegate(),  // Add this for app-wide localization
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: FormFieldsLocalizations.supportedLocales,
+  home: const HomePage(),
+)
+```
+
+---
+
+### Manually Setting Language
+
+There are three approaches to manually control the app language:
+
+#### **Option 1: Direct MaterialApp Configuration** (Simplest)
+
+Set the `locale` property directly in `MaterialApp`:
+
+```dart
+MaterialApp(
+  locale: const Locale('id', 'ID'),  // Set to Indonesian
+  // locale: const Locale('en', 'US'),  // Set to English
+  localizationsDelegates: const [
+    FormFieldsLocalizationsDelegate(),
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ],
+  supportedLocales: FormFieldsLocalizations.supportedLocales,
+  home: const HomePage(),
+)
+```
+
+✅ **Use when**: Language is set once and doesn't change during runtime.
+
+---
+
+#### **Option 2: Runtime Language Switching with StatefulWidget**
+
+Use a `StatefulWidget` for your `MyApp` to enable language switching without restart:
+
+```dart
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+
+  static _MyAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>()!;
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('en', 'US');  // Default language
+
+  void setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: const [
+        FormFieldsLocalizationsDelegate(),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: FormFieldsLocalizations.supportedLocales,
+      home: const HomePage(),
+    );
+  }
+}
+
+// Switch language from anywhere in your app
+MyApp.of(context).setLocale(const Locale('id', 'ID'));  // Switch to Indonesian
+MyApp.of(context).setLocale(const Locale('en', 'US'));  // Switch to English
+```
+
+✅ **Use when**: Users can switch language from app settings or a language selector.
+
+---
+
+#### **Option 3: State Management with Provider** (Recommended for larger apps)
+
+Use Provider or another state management solution for persistent language settings:
+
+```dart
+// 1. Create an AppStateNotifier
+class AppStateNotifier extends ChangeNotifier {
+  Locale _locale = const Locale('en', 'US');
+
+  Locale get locale => _locale;
+
+  void setLocale(Locale locale) {
+    _locale = locale;
+    notifyListeners();
+    // Optional: Save to SharedPreferences for persistence
+  }
+}
+
+// 2. Wrap your app with ChangeNotifierProvider
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AppStateNotifier(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+// 3. Use the locale in MaterialApp
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.watch<AppStateNotifier>();
+
+    return MaterialApp(
+      locale: appState.locale,
+      localizationsDelegates: const [
+        FormFieldsLocalizationsDelegate(),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: FormFieldsLocalizations.supportedLocales,
+      home: const HomePage(),
+    );
+  }
+}
+
+// 4. Switch language from anywhere
+context.read<AppStateNotifier>().setLocale(const Locale('id', 'ID'));
+```
+
+✅ **Use when**: You need persistent language settings, complex state management, or language switching across multiple screens.
+
+---
+
+#### **Option 4: Per-Field Language Override** (No Delegate Required!)
+
+Set a specific language for individual fields using the `locale` property. **This works without `FormFieldsLocalizationsDelegate()`** - the field loads its locale directly:
+
+```dart
+// ✨ Simple example - No delegate needed in MaterialApp!
+MaterialApp(
+  home: Scaffold(
+    body: FormFields<String>(
+      label: 'Email',
+      formType: FormType.email,
+      isRequired: true,
+      locale: 'id',  // Simple: just 'id' for Indonesian!
+      currrentValue: '',
+      onChanged: (value) => print(value),
+    ),
+  ),
+)
+
+// Advanced: Multiple languages in one form
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  isRequired: true,
+  locale: 'id',  // Indonesian for this field
+  currrentValue: _email,
+  onChanged: (value) => setState(() => _email = value),
+)
+
+FormFields<String>(
+  label: 'Phone',
+  formType: FormType.phone,
+  locale: 'en',  // English for this field
+  currrentValue: _phone,
+  onChanged: (value) => setState(() => _phone = value),
+)
+
+// No locale specified - uses app's default (English fallback)
+FormFields<String>(
+  label: 'Name',
+  formType: FormType.string,
+  currrentValue: _name,
+  onChanged: (value) => setState(() => _name = value),
+)
+```
+
+✅ **Use when**:
+
+- Building multilingual forms where different fields need different languages
+- Creating language-specific examples or demos
+- Testing localization without changing the entire app locale
+- Supporting users who need mixed-language forms
+
+---
+
+### Supported Languages
+
+| Language            | Locale Code          | Usage                                  |
+| ------------------- | -------------------- | -------------------------------------- |
+| 🇺🇸 **English (US)** | `Locale('en', 'US')` | Default, included                      |
+| 🇮🇩 **Indonesian**   | `Locale('id', 'ID')` | Included                               |
+| 🌍 **Custom**       | `Locale('xx', 'XX')` | See [LOCALIZATION.md](LOCALIZATION.md) |
+
+> **Want to add a new language to the plugin?**
+> See the detailed [Contributing Guide](LOCALIZATION.md#contributing) in LOCALIZATION.md for step-by-step instructions on adding Spanish, French, or any language directly to the package.
+
+---
+
+### Date/Time Picker Locale Behavior
+
+Date and time pickers automatically follow your app's selected language:
+
+```dart
+FormFields<DateTime>(
+  label: 'Birth Date',
+  formType: FormType.date,
+  currrentValue: _birthDate,
+  onChanged: (value) => setState(() => _birthDate = value),
+  // Picker will automatically use the app's locale
+)
+
+// Optional: Override picker locale for a specific field
+FormFields<DateTime>(
+  label: 'Birth Date',
+  formType: FormType.date,
+  pickerLocale: 'en_US',  // Force English locale for this picker only
+  currrentValue: _birthDate,
+  onChanged: (value) => setState(() => _birthDate = value),
+)
+```
+
+**Default Behavior**: When `pickerLocale` is **not specified**, the picker automatically uses the current app locale (e.g., if app is set to Indonesian, picker will show in Indonesian).
+
+---
+
+### Example: Language Selector Button
+
+```dart
+ElevatedButton(
+  onPressed: () {
+    // Using Option 2 (StatefulWidget)
+    MyApp.of(context).setLocale(const Locale('id', 'ID'));
+
+    // OR using Option 3 (Provider)
+    // context.read<AppStateNotifier>().setLocale(const Locale('id', 'ID'));
+  },
+  child: const Text('Switch to Indonesian'),
+)
+```
+
+---
+
+### Localized Validation Messages
+
+All validation messages automatically use the selected language:
+
+```dart
+final l10n = FormFieldsLocalizations.of(context);
+
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  isRequired: true,
+  validator: FormFieldValidators.email('Email', l10n),
+  currrentValue: _email,
+  onChanged: (value) => setState(() => _email = value),
+)
+// English: "Enter a valid email address"
+// Indonesian: "Masukkan alamat email yang valid"
+```
+
+---
+
+### Adding More Languages
+
+To add Spanish, French, or any language:
+
+1. Create a language file in your project (e.g., `es_es_localizations.dart`)
+2. Define all translation strings
+3. Create a custom delegate
+4. Add to `localizationsDelegates` in `MaterialApp`
+
+📘 **See [LOCALIZATION.md](LOCALIZATION.md)** for complete step-by-step instructions with code examples.
+
+---
+
 ## FormType Usage Examples
 
 - **FormType.string**
+
 ```dart
 FormFields<String>(
   label: 'Username',
@@ -3049,7 +3588,9 @@ FormFields<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.phone**
+
 ```dart
 FormFields<String>(
   label: 'Phone',
@@ -3057,7 +3598,9 @@ FormFields<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.password**
+
 ```dart
 FormFields<String>(
   label: 'Password',
@@ -3065,7 +3608,21 @@ FormFields<String>(
   onChanged: (v) {},
 )
 ```
+
+- **FormType.verification**
+
+```dart
+FormFields<String>(
+  label: 'Verification Code',
+  formType: FormType.verification,
+  verificationLength: 6,
+  verificationHidden: true,
+  onChanged: (v) {},
+)
+```
+
 - **FormType.email**
+
 ```dart
 FormFields<String>(
   label: 'Email',
@@ -3073,7 +3630,9 @@ FormFields<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.date**
+
 ```dart
 FormFields<DateTime>(
   label: 'Birth Date',
@@ -3081,7 +3640,9 @@ FormFields<DateTime>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.time**
+
 ```dart
 FormFields<DateTime>(
   label: 'Meeting Time',
@@ -3089,7 +3650,9 @@ FormFields<DateTime>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.dateTime**
+
 ```dart
 FormFields<DateTime>(
   label: 'Event DateTime',
@@ -3097,7 +3660,9 @@ FormFields<DateTime>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.dateTimeRange**
+
 ```dart
 FormFields<DateTimeRange>(
   label: 'Trip Duration',
@@ -3105,7 +3670,9 @@ FormFields<DateTimeRange>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.timeOfDay**
+
 ```dart
 FormFields<TimeOfDay>(
   label: 'Alarm',
@@ -3113,7 +3680,9 @@ FormFields<TimeOfDay>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.dropdown**
+
 ```dart
 FormFieldsDropdown<String>(
   label: 'Country',
@@ -3121,7 +3690,9 @@ FormFieldsDropdown<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.dropdownMulti**
+
 ```dart
 FormFieldsDropdownMulti<String>(
   label: 'Languages',
@@ -3129,7 +3700,9 @@ FormFieldsDropdownMulti<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.radioButton**
+
 ```dart
 FormFieldsRadioButton<String>(
   label: 'Gender',
@@ -3137,7 +3710,9 @@ FormFieldsRadioButton<String>(
   onChanged: (v) {},
 )
 ```
+
 - **FormType.checkbox**
+
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Hobbies',

@@ -48,6 +48,7 @@ const Map<String, String> idIDStrings = {
   // Password
   'passwordRequired': 'Kata sandi wajib diisi',
   'passwordMinLength': 'Kata sandi harus terdiri dari minimal {value} karakter',
+  'verificationLength': 'Masukkan kode verifikasi {value} digit',
 
   // Optional/Labels
   'optional': '(opsional)',

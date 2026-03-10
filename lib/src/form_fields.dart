@@ -76,6 +76,31 @@ class FormFields<T> extends StatefulWidget {
   /// Number of lines for multiline input
   final int multiLine;
 
+  /// Number of digits for verification input (default: 6)
+  final int verificationLength;
+
+  /// Render verification input as OTP-style segmented boxes (default: true)
+  final bool verificationAsOtp;
+
+  /// Hide verification digits like password with visibility toggle (default: false)
+  final bool verificationHidden;
+
+  /// Width of each OTP input box (default: 46)
+  final double otpBoxWidth;
+
+  /// Horizontal/vertical spacing between OTP boxes (default: 10)
+  final double otpBoxSpacing;
+
+  /// Custom text style for OTP digits
+  final TextStyle? otpTextStyle;
+
+  // -------------------------------------------------------------------------
+  // LOCALIZATION
+  // -------------------------------------------------------------------------
+  /// Custom locale for field messages and validation (overrides app locale)
+  /// Supports both simple codes ('id', 'en') and full locale codes ('id_ID', 'en_US')
+  final String? locale;
+
   // -------------------------------------------------------------------------
   // APPEARANCE & STYLING
   // -------------------------------------------------------------------------
@@ -124,15 +149,6 @@ class FormFields<T> extends StatefulWidget {
   // -------------------------------------------------------------------------
   // TEXT & FORMATTING
   // -------------------------------------------------------------------------
-  /// Custom text prefix for input hints (default: 'Enter ')
-  final String enterText;
-
-  /// Custom error text for invalid integer
-  final String invalidIntegerText;
-
-  /// Custom error text for invalid number
-  final String invalidNumberText;
-
   /// Whether to strip separators in numbers
   final bool stripSeparators;
 
@@ -142,7 +158,7 @@ class FormFields<T> extends StatefulWidget {
   /// Custom date/time format
   final String? customFormat;
 
-  /// Locale for date/time pickers
+  /// Locale for date/time pickers (defaults to app selected locale)
   final String? pickerLocale;
 
   /// First selectable date for date pickers
@@ -183,6 +199,14 @@ class FormFields<T> extends StatefulWidget {
     this.formType = FormType.string,
     this.labelPosition = LabelPosition.none,
     this.multiLine = 0,
+    this.verificationLength = 6,
+    this.verificationAsOtp = true,
+    this.verificationHidden = false,
+    this.otpBoxWidth = 46,
+    this.otpBoxSpacing = 10,
+    this.otpTextStyle,
+    // Localization
+    this.locale,
     // Appearance & Styling
     this.radius = 10,
     this.borderType = BorderType.outlineInputBorder,
@@ -199,20 +223,19 @@ class FormFields<T> extends StatefulWidget {
     this.focusNode,
     this.nextFocusNode,
     // Text & Formatting
-    this.enterText = 'Enter ',
-    this.invalidIntegerText = 'Enter valid integer for',
-    this.invalidNumberText = 'Enter valid number for',
     this.stripSeparators = true,
     // Date/Time Configuration
     this.customFormat,
-    this.pickerLocale = 'id_ID',
+    this.pickerLocale,
     this.firstDate,
     this.lastDate,
     this.useDatePickerForRange = false,
     this.phoneCountryCodes = phone_codes.phoneCountryCodes,
     this.initialCountryCode,
     this.formatPhone = false,
-  });
+  })  : assert(verificationLength > 0),
+        assert(otpBoxWidth > 0),
+        assert(otpBoxSpacing >= 0);
 
   @override
   State<FormFields<T>> createState() => _FormFieldsState<T>();
@@ -224,6 +247,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   FocusNode? _internalFocusNode;
   String _selectedCountryCode = '';
   late FormFieldsNotifier _notifier;
+  List<TextEditingController> _verificationControllers = [];
+  List<FocusNode> _verificationFocusNodes = [];
 
   FocusNode get _effectiveFocusNode {
     if (widget.focusNode != null) {
@@ -246,6 +271,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
     _initializeValue();
     _initializeModel();
+    _initializeVerificationInputs();
   }
 
   @override
@@ -263,8 +289,24 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final formatChanged = oldWidget.customFormat != widget.customFormat;
     final stripSeparatorsChanged =
         oldWidget.stripSeparators != widget.stripSeparators;
+    final verificationLengthChanged =
+        oldWidget.verificationLength != widget.verificationLength;
+    final verificationAsOtpChanged =
+        oldWidget.verificationAsOtp != widget.verificationAsOtp;
+    final formTypeChanged = oldWidget.formType != widget.formType;
 
-    if (valueChanged || formatChanged || stripSeparatorsChanged) {
+    if (formTypeChanged ||
+        verificationLengthChanged ||
+        verificationAsOtpChanged) {
+      _initializeVerificationInputs();
+    }
+
+    if (valueChanged ||
+        formatChanged ||
+        stripSeparatorsChanged ||
+        verificationLengthChanged ||
+        verificationAsOtpChanged ||
+        formTypeChanged) {
       // Use post-frame callback to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -272,7 +314,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // Skip updates during active typing for non-separator numeric fields
         // to prevent cursor jumping, but only for value changes
         // (format/separator changes should still update)
-        if (valueChanged && !formatChanged && !stripSeparatorsChanged) {
+        if (valueChanged &&
+            !formatChanged &&
+            !stripSeparatorsChanged &&
+            !verificationLengthChanged) {
           final hasFocus = _effectiveFocusNode.hasFocus;
           final isNonSeparatorNumeric =
               (_isIntType() || _isDoubleType()) && !widget.stripSeparators;
@@ -306,6 +351,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           newControllerText = widget.currrentValue.toString();
         } else {
           newControllerText = widget.currrentValue.toString();
+          if (_isVerificationType() &&
+              newControllerText.length > widget.verificationLength) {
+            newControllerText =
+                newControllerText.substring(0, widget.verificationLength);
+          }
+        }
+
+        if (_isVerificationType()) {
+          newControllerText =
+              newControllerText.replaceAll(RegExp(r'[^0-9]'), '');
+          if (newControllerText.length > widget.verificationLength) {
+            newControllerText =
+                newControllerText.substring(0, widget.verificationLength);
+          }
         }
 
         // Only update controller if the text actually changed
@@ -313,12 +372,17 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         if (model.controller.text != newControllerText) {
           model.setController = newControllerText;
         }
+
+        if (_isVerificationType() && widget.verificationAsOtp) {
+          _syncVerificationControllersFromCode(newControllerText);
+        }
       });
     }
   }
 
   @override
   void dispose() {
+    _disposeVerificationInputs();
     model.dispose();
     debounce.cancel();
     _internalFocusNode?.dispose();
@@ -349,7 +413,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     } else if (_isIntType() || _isDoubleType()) {
       model.setControllerSilent(widget.currrentValue.toString());
     } else {
-      model.setControllerSilent(widget.currrentValue.toString());
+      var controllerText = widget.currrentValue.toString();
+      if (_isVerificationType()) {
+        controllerText = controllerText.replaceAll(RegExp(r'[^0-9]'), '');
+      }
+      if (_isVerificationType() &&
+          controllerText.length > widget.verificationLength) {
+        controllerText = controllerText.substring(0, widget.verificationLength);
+      }
+      model.setControllerSilent(controllerText);
+    }
+
+    if (_isVerificationType() && widget.verificationAsOtp) {
+      _syncVerificationControllersFromCode(model.controller.text);
     }
   }
 
@@ -362,13 +438,25 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // LOCALE HELPER
   // ============================================================================
 
-  Locale? _parseLocale() {
-    if (widget.pickerLocale == null) return null;
-    final parts = widget.pickerLocale!.split('_');
-    if (parts.length == 2) {
+  Locale? _parseLocale(BuildContext context) {
+    final rawLocale = widget.pickerLocale?.trim();
+
+    if (rawLocale == null || rawLocale.isEmpty) {
+      return Localizations.maybeLocaleOf(context);
+    }
+
+    final normalized = rawLocale.replaceAll('-', '_');
+    final parts = normalized.split('_');
+
+    if (parts.isEmpty || parts.first.isEmpty) {
+      return Localizations.maybeLocaleOf(context);
+    }
+
+    if (parts.length >= 2 && parts[1].isNotEmpty) {
       return Locale(parts[0], parts[1]);
     }
-    return Locale(widget.pickerLocale!);
+
+    return Locale(parts[0]);
   }
 
   // ============================================================================
@@ -381,9 +469,213 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   bool _isStringType() => '' is T;
   bool _isDateTimeType() => DateTime(0) is T;
   bool _isPhoneType() => widget.formType == FormType.phone;
+  bool _isVerificationType() => widget.formType == FormType.verification;
   bool _isTimeOfDayType() => const TimeOfDay(hour: 0, minute: 0) is T;
   bool _isDateTimeRangeType() =>
       DateTimeRange(start: DateTime(0), end: DateTime(0)) is T;
+
+  /// Gets localization - from custom locale if provided, otherwise from context
+  FormFieldsLocalizations _getLocalizations(BuildContext context) {
+    if (widget.locale != null && widget.locale!.isNotEmpty) {
+      String localeCode = widget.locale!;
+
+      // Support simple language codes (e.g., 'id', 'en')
+      // Map known codes to full locale format
+      final simpleCodeMap = {
+        'id': 'id_ID',
+        'ID': 'id_ID',
+        'en': 'en_US',
+        'EN': 'en_US',
+      };
+
+      // Check if it's a known simple code
+      if (simpleCodeMap.containsKey(localeCode)) {
+        localeCode = simpleCodeMap[localeCode]!;
+      }
+
+      // Parse the locale code (e.g., 'id_ID' or 'en_US')
+      final parts = localeCode.split('_');
+      if (parts.length == 2) {
+        final locale = Locale(parts[0], parts[1]);
+        return FormFieldsLocalizations.load(locale);
+      } else if (parts.length == 1 && parts[0].length >= 2) {
+        // Unknown simple language code (e.g., 'es', 'fr')
+        // Create locale and let load() fall back to English if unsupported
+        final lang = parts[0].toLowerCase();
+        final country = parts[0].toUpperCase();
+        final locale = Locale(lang, country);
+        return FormFieldsLocalizations.load(locale);
+      }
+    }
+    return FormFieldsLocalizations.of(context);
+  }
+
+  // ============================================================================
+  // VERIFICATION (OTP) INPUT HANDLING
+  // ============================================================================
+
+  void _initializeVerificationInputs() {
+    _disposeVerificationInputs();
+
+    if (!_isVerificationType() || !widget.verificationAsOtp) {
+      return;
+    }
+
+    _verificationControllers = List.generate(
+      widget.verificationLength,
+      (_) => TextEditingController(),
+    );
+
+    _verificationFocusNodes = List.generate(
+      widget.verificationLength,
+      (_) => FocusNode(),
+    );
+
+    for (int i = 0; i < _verificationFocusNodes.length; i++) {
+      final index = i;
+      _verificationFocusNodes[index].addListener(() {
+        if (_verificationFocusNodes[index].hasFocus) {
+          _selectVerificationDigit(index);
+        }
+      });
+    }
+
+    _syncVerificationControllersFromCode(model.controller.text);
+  }
+
+  void _disposeVerificationInputs() {
+    for (final controller in _verificationControllers) {
+      controller.dispose();
+    }
+    for (final focusNode in _verificationFocusNodes) {
+      focusNode.dispose();
+    }
+    _verificationControllers = [];
+    _verificationFocusNodes = [];
+  }
+
+  void _syncVerificationControllersFromCode(String code) {
+    if (_verificationControllers.isEmpty) return;
+
+    final digits = code.replaceAll(RegExp(r'[^0-9]'), '');
+    final normalized = digits.length > widget.verificationLength
+        ? digits.substring(0, widget.verificationLength)
+        : digits;
+
+    for (int i = 0; i < _verificationControllers.length; i++) {
+      final char = i < normalized.length ? normalized[i] : '';
+      if (_verificationControllers[i].text != char) {
+        _verificationControllers[i].text = char;
+        _verificationControllers[i].selection =
+            TextSelection.collapsed(offset: char.length);
+      }
+    }
+  }
+
+  String _collectVerificationCode() {
+    if (_verificationControllers.isEmpty) return model.controller.text;
+    return _verificationControllers.map((e) => e.text).join();
+  }
+
+  void _selectVerificationDigit(int index) {
+    if (index < 0 || index >= _verificationControllers.length) {
+      return;
+    }
+
+    final controller = _verificationControllers[index];
+    controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
+  }
+
+  void _focusVerificationDigit(int index, {bool selectAll = true}) {
+    if (index < 0 || index >= _verificationFocusNodes.length) {
+      return;
+    }
+
+    _verificationFocusNodes[index].requestFocus();
+
+    if (!selectAll) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _selectVerificationDigit(index);
+    });
+  }
+
+  void _emitVerificationValue(FormFieldState<String> state) {
+    final code = _collectVerificationCode();
+
+    if (model.controller.text != code) {
+      model.setController = code;
+    }
+
+    state.didChange(code);
+    widget.onChanged(code as T);
+
+    if (code.length == widget.verificationLength) {
+      widget.nextFocusNode?.requestFocus();
+    }
+  }
+
+  void _handleVerificationDigitChanged(
+    int index,
+    String rawValue,
+    FormFieldState<String> state,
+  ) {
+    final digits = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digits.isEmpty) {
+      if (_verificationControllers[index].text.isNotEmpty) {
+        _verificationControllers[index].clear();
+      }
+
+      if (index > 0) {
+        _focusVerificationDigit(index - 1);
+      }
+
+      _emitVerificationValue(state);
+      return;
+    }
+
+    if (digits.length > 1) {
+      int cursor = index;
+      for (int i = 0;
+          i < digits.length && cursor < widget.verificationLength;
+          i++) {
+        final char = digits[i];
+        _verificationControllers[cursor].text = char;
+        _verificationControllers[cursor].selection =
+            const TextSelection.collapsed(offset: 1);
+        cursor++;
+      }
+
+      if (cursor < widget.verificationLength) {
+        _focusVerificationDigit(cursor);
+      } else {
+        _verificationFocusNodes.last.unfocus();
+      }
+
+      _emitVerificationValue(state);
+      return;
+    }
+
+    if (_verificationControllers[index].text != digits) {
+      _verificationControllers[index].text = digits;
+    }
+
+    _verificationControllers[index].selection = TextSelection.collapsed(
+        offset: _verificationControllers[index].text.length);
+
+    if (index < widget.verificationLength - 1) {
+      _focusVerificationDigit(index + 1);
+    } else {
+      _verificationFocusNodes[index].unfocus();
+    }
+
+    _emitVerificationValue(state);
+  }
 
   // ============================================================================
   // PHONE INPUT HANDLING
@@ -593,6 +885,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       ];
     }
 
+    if (_isVerificationType()) {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(widget.verificationLength),
+      ];
+    }
+
     // For numeric types, always restrict to numeric input
     if (!_isIntType() && !_isDoubleType()) {
       return [];
@@ -722,6 +1021,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final now = DateTime.now();
     final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
     final last = widget.lastDate ?? now;
+    final locale = _parseLocale(ctx);
 
     final date = await showDatePicker(
       context: ctx,
@@ -729,7 +1029,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
       firstDate: first,
       lastDate: last,
-      locale: _parseLocale(),
+      locale: locale,
     );
 
     if (date != null && mounted) {
@@ -744,14 +1044,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    final locale = _parseLocale(ctx);
+
     final time = await showTimePicker(
       context: ctx,
       initialTime: TimeOfDay.now(),
-      builder: _parseLocale() == null
+      builder: locale == null
           ? null
           : (context, child) => Localizations.override(
                 context: context,
-                locale: _parseLocale()!,
+                locale: locale,
                 child: child!,
               ),
     );
@@ -776,14 +1078,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     BuildContext ctx,
     FormFieldsController vm,
   ) async {
+    final locale = _parseLocale(ctx);
+
     final time = await showTimePicker(
       context: ctx,
       initialTime: TimeOfDay.now(),
-      builder: _parseLocale() == null
+      builder: locale == null
           ? null
           : (context, child) => Localizations.override(
                 context: context,
-                locale: _parseLocale()!,
+                locale: locale,
                 child: child!,
               ),
     );
@@ -801,6 +1105,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final now = DateTime.now();
     final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
     final last = widget.lastDate ?? now;
+    final locale = _parseLocale(ctx);
 
     final date = await showDatePicker(
       context: ctx,
@@ -808,7 +1113,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
       firstDate: first,
       lastDate: last,
-      locale: _parseLocale(),
+      locale: locale,
     );
 
     if (date != null) {
@@ -817,11 +1122,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         // ignore: use_build_context_synchronously
         context: ctx,
         initialTime: TimeOfDay.now(),
-        builder: _parseLocale() == null
+        builder: locale == null
             ? null
             : (context, child) => Localizations.override(
                   context: context,
-                  locale: _parseLocale()!,
+                  locale: locale,
                   child: child!,
                 ),
       );
@@ -850,6 +1155,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final now = DateTime.now();
     final first = widget.firstDate ?? now.subtract(vm.d100YEARS);
     final last = widget.lastDate ?? now;
+    final locale = _parseLocale(ctx);
 
     // Calculate smart initial date range
     DateTime initialStart;
@@ -886,7 +1192,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         initialDate: initialStart,
         firstDate: first,
         lastDate: last,
-        locale: _parseLocale(),
+        locale: locale,
       );
 
       if (startDate == null) {
@@ -904,7 +1210,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         initialDate: normalizedInitialEnd,
         firstDate: startDate,
         lastDate: last,
-        locale: _parseLocale(),
+        locale: locale,
       );
 
       if (endDate != null && mounted) {
@@ -922,7 +1228,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       firstDate: first,
       lastDate: last,
       initialDateRange: DateTimeRange(start: initialStart, end: initialEnd),
-      locale: _parseLocale(),
+      locale: locale,
     );
 
     if (dateRange != null && mounted) {
@@ -1015,101 +1321,112 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // VALIDATION & UI BUILDING
   // ============================================================================
 
-  String? _validateRequired(String? value, String label, bool isRequired,
-      FormFieldsController vm, BuildContext context) {
-    // print('VALIDATOR: label="$label", value="$value", isRequired=$isRequired');
+  /// Validates field value based on requirements and type-specific rules
+  String? _validateRequired(
+    String? value,
+    String label,
+    bool isRequired,
+    FormFieldsController vm,
+    BuildContext context,
+  ) {
+    final l = _getLocalizations(context);
 
-    // === CUSTOM VALIDATOR (Run first if provided) ===
+    // 1. Custom validator takes precedence
     if (widget.validator != null) {
       final customError = widget.validator!(value);
-      if (customError != null) {
-        return customError;
-      }
+      if (customError != null) return customError;
     }
 
-    // === REQUIRED FIELD CHECK ===
-    if (isRequired) {
-      if (value == null || value.isEmpty) {
-        // print('  → RETURNING ERROR!');
-        return context.l.getWithLabel('required', label);
-      }
+    // 2. Check required field constraint
+    if (isRequired && (value == null || value.isEmpty)) {
+      return l.getWithLabel('required', label);
     }
 
-    // === SKIP IF NOT REQUIRED AND EMPTY ===
+    // 3. Skip validation for optional empty fields
     if (!isRequired && (value == null || value.isEmpty)) {
       return null;
     }
 
-    // === TYPE-SPECIFIC VALIDATION ===
+    // 4. Type-specific validation
     switch (vm.formType) {
       case FormType.phone:
-        // For phone validation, validate the full number with country code
-        final localDigits = _extractLocalPhoneDigits(value ?? '');
+        final localDigits = _extractLocalPhoneDigits(value!);
         final fullPhone = '$_selectedCountryCode$localDigits';
-        return FormFieldValidators.phone(vm.label, context.l)(fullPhone);
+        return FormFieldValidators.phone(vm.label, l)(fullPhone);
+
       case FormType.email:
-        return FormFieldValidators.email(vm.label, context.l)(value);
+        return FormFieldValidators.email(vm.label, l)(value);
+
       case FormType.password:
-        // Use custom validator if provided
         if (widget.customPasswordValidator != null) {
           return widget.customPasswordValidator!(value);
         }
-        // Check minimum length
         if (value!.length < widget.minLengthPassword) {
-          final errorText = widget.minLengthPasswordErrorText ??
-              context.l
-                  .getWithValue('passwordMinLength', widget.minLengthPassword);
-          return errorText;
+          return widget.minLengthPasswordErrorText ??
+              l.getWithValue(
+                'passwordMinLength',
+                widget.minLengthPassword,
+              );
         }
         break;
+
+      case FormType.verification:
+        if (value!.length != widget.verificationLength) {
+          return l.getWithValue(
+            'verificationLength',
+            widget.verificationLength,
+          );
+        }
+        break;
+
       default:
         break;
     }
 
+    // 5. Numeric type validation
     if (_isIntType()) {
       final cleaned =
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
-      final parsed = int.tryParse(cleaned);
-      if (parsed == null) {
-        return context.l.getWithLabel('enterValidInteger', vm.label);
+      if (int.tryParse(cleaned) == null) {
+        return l.getWithLabel('enterValidInteger', vm.label);
       }
     } else if (_isDoubleType()) {
       final cleaned =
           widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
-      final parsed = double.tryParse(cleaned);
-      if (parsed == null) {
-        return context.l.getWithLabel('enterValidNumber', vm.label);
+      if (double.tryParse(cleaned) == null) {
+        return l.getWithLabel('enterValidNumber', vm.label);
       }
     }
 
     return null;
   }
 
+  /// Builds the label widget for the form field
   Widget _buildLabel(FormFieldsController vm) {
+    // Don't show label for none or inBorder positions
     if (widget.labelPosition == LabelPosition.none ||
         widget.labelPosition == LabelPosition.inBorder) {
       return const SizedBox.shrink();
     }
 
-    final labelText = vm.label;
-    final requiredIndicator = widget.isRequired ? ' *' : '';
+    final defaultLabelStyle = const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+    );
+
+    final labelStyle = (widget.labelTextStyle ?? defaultLabelStyle)
+        .copyWith(color: Colors.black87);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
         text: TextSpan(
           children: [
-            TextSpan(
-              text: labelText,
-              style: (widget.labelTextStyle ??
-                      const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w500))
-                  .copyWith(color: Colors.black87),
-            ),
+            TextSpan(text: vm.label, style: labelStyle),
             if (widget.isRequired)
-              TextSpan(
-                text: requiredIndicator,
-                style: const TextStyle(
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.red,
@@ -1121,10 +1438,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     );
   }
 
+  /// Positions the text field with its label based on labelPosition setting
   Widget _buildFieldWithLabel(Widget textField, FormFieldsController vm) {
     if (widget.labelPosition == LabelPosition.none) return textField;
 
     final label = _buildLabel(vm);
+    const labelWidth = 120.0;
+    const spacing = 12.0;
 
     switch (widget.labelPosition) {
       case LabelPosition.top:
@@ -1141,8 +1461,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(width: 120, child: label),
-            const SizedBox(width: 12),
+            SizedBox(width: labelWidth, child: label),
+            const SizedBox(width: spacing),
             Expanded(child: textField),
           ],
         );
@@ -1151,14 +1471,203 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(child: textField),
-            const SizedBox(width: 12),
-            SizedBox(width: 120, child: label),
+            const SizedBox(width: spacing),
+            SizedBox(width: labelWidth, child: label),
           ],
         );
       case LabelPosition.inBorder:
       case LabelPosition.none:
         return textField;
     }
+  }
+
+  /// Creates a consistent border style for OTP input boxes
+  InputBorder _buildOtpBorder(Color color, {double width = 1}) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(widget.radius),
+      borderSide: BorderSide(color: color, width: width),
+    );
+  }
+
+  /// Builds the input decoration for OTP boxes with proper error states
+  InputDecoration _buildOtpInputDecoration({required bool hasError}) {
+    final base = widget.inputDecoration;
+
+    // Define border styles based on state
+    final normalBorder = base?.enabledBorder ??
+        base?.border ??
+        _buildOtpBorder(widget.borderColor);
+    final focusedBorder =
+        base?.focusedBorder ?? _buildOtpBorder(widget.borderColor, width: 1.4);
+    final errorBorder =
+        base?.errorBorder ?? _buildOtpBorder(widget.errorBorderColor);
+    final focusedErrorBorder = base?.focusedErrorBorder ??
+        _buildOtpBorder(widget.errorBorderColor, width: 1.4);
+
+    return (base ?? const InputDecoration()).copyWith(
+      // Clear text-field adornments - OTP boxes should be minimal
+      counterText: '',
+      hintText: null,
+      labelText: null,
+      helperText: null,
+      prefix: null,
+      prefixIcon: null,
+      suffix: null,
+      suffixIcon: null,
+      // Visual styling
+      filled: base?.filled ?? true,
+      fillColor: base?.fillColor ?? const Color(0xFFF1F1F1),
+      contentPadding:
+          base?.contentPadding ?? const EdgeInsets.symmetric(vertical: 14),
+      // Border states
+      border: hasError ? errorBorder : (base?.border ?? normalBorder),
+      enabledBorder: hasError ? errorBorder : normalBorder,
+      focusedBorder: hasError ? focusedErrorBorder : focusedBorder,
+      disabledBorder:
+          hasError ? errorBorder : (base?.disabledBorder ?? normalBorder),
+    );
+  }
+
+  /// Builds an animated visibility toggle button for password/verification fields
+  Widget _buildVisibilityToggleButton(
+    FormFieldsController vm, {
+    bool compact = false,
+  }) {
+    final isHidden = vm.obscure;
+    final baseFillColor =
+        widget.inputDecoration?.fillColor ?? const Color(0xFFF3F4F6);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: Color.lerp(
+              baseFillColor,
+              Colors.white,
+              isHidden ? 0.15 : 0.05,
+            ) ??
+            baseFillColor,
+        borderRadius: BorderRadius.circular(compact ? 999 : 12),
+        border: Border.all(
+          color: Color.lerp(
+                widget.borderColor,
+                Colors.white,
+                isHidden ? 0.2 : 0.45,
+              ) ??
+              widget.borderColor,
+        ),
+      ),
+      child: IconButton(
+        visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
+        splashRadius: compact ? 18 : 20,
+        iconSize: compact ? 18 : 20,
+        icon: Icon(
+          isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+          color: Color.lerp(
+                const Color(0xFF475569),
+                widget.borderColor,
+                0.55,
+              ) ??
+              const Color(0xFF475569),
+        ),
+        onPressed: () => vm.obscure = !vm.obscure,
+      ),
+    );
+  }
+
+  /// Builds a single OTP digit input box
+  Widget _buildOtpDigitBox({
+    required int index,
+    required InputDecoration decoration,
+    required FormFieldState<String> state,
+    required FormFieldsController vm,
+  }) {
+    final isLastDigit = index == widget.verificationLength - 1;
+
+    return SizedBox(
+      width: widget.otpBoxWidth,
+      child: TextField(
+        controller: _verificationControllers[index],
+        focusNode: _verificationFocusNodes[index],
+        keyboardType: TextInputType.number,
+        obscureText: widget.verificationHidden && vm.obscure,
+        obscuringCharacter: '•',
+        textInputAction:
+            isLastDigit ? TextInputAction.done : TextInputAction.next,
+        textAlign: TextAlign.center,
+        style: widget.otpTextStyle ??
+            const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        onTap: () => _selectVerificationDigit(index),
+        onChanged: (value) =>
+            _handleVerificationDigitChanged(index, value, state),
+        decoration: decoration,
+      ),
+    );
+  }
+
+  /// Builds the OTP verification field with multiple digit boxes
+  Widget _buildVerificationOtpField(
+    FormFieldsController vm,
+    BuildContext context,
+  ) {
+    return FormField<String>(
+      initialValue: model.controller.text,
+      autovalidateMode: widget.autovalidateMode,
+      validator: (value) => _validateRequired(
+        value,
+        widget.label,
+        widget.isRequired,
+        vm,
+        context,
+      ),
+      builder: (state) {
+        final hasError = state.hasError;
+        final boxDecoration = _buildOtpInputDecoration(hasError: hasError);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: widget.otpBoxSpacing,
+                runSpacing: widget.otpBoxSpacing,
+                children: [
+                  // Generate OTP digit boxes
+                  for (var i = 0; i < widget.verificationLength; i++)
+                    _buildOtpDigitBox(
+                      index: i,
+                      decoration: boxDecoration,
+                      state: state,
+                      vm: vm,
+                    ),
+                  // Optional visibility toggle for hidden verification
+                  if (widget.verificationHidden)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: _buildVisibilityToggleButton(vm, compact: true),
+                    ),
+                ],
+              ),
+            ),
+            // Error message display
+            if (hasError && state.errorText != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 4),
+                child: Text(
+                  state.errorText!,
+                  style: TextStyle(
+                    color: widget.errorBorderColor,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   // ============================================================================
@@ -1175,18 +1684,34 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             value: model,
             child: Consumer<FormFieldsController>(
               builder: (ctx, vm, child) {
+                if (_isVerificationType() && widget.verificationAsOtp) {
+                  final verificationField =
+                      _buildVerificationOtpField(vm, context);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: _buildFieldWithLabel(verificationField, vm),
+                  );
+                }
+
                 final phonePrefixIcon =
                     _isPhoneType() && widget.prefixIcon == null
                         ? _buildPhoneCountryCodeDropdown()
                         : null;
 
                 final textField = TextFormField(
-                  maxLines:
-                      vm.formType == FormType.password || widget.multiLine <= 1
-                          ? 1
-                          : widget.multiLine,
-                  obscureText:
-                      vm.formType == FormType.password ? vm.obscure : false,
+                  maxLength:
+                      _isVerificationType() ? widget.verificationLength : null,
+                  maxLines: vm.formType == FormType.password ||
+                          _isVerificationType() ||
+                          widget.multiLine <= 1
+                      ? 1
+                      : widget.multiLine,
+                  obscureText: vm.formType == FormType.password ||
+                          (_isVerificationType() && widget.verificationHidden)
+                      ? vm.obscure
+                      : false,
+                  obscuringCharacter: '•',
                   autovalidateMode: widget.autovalidateMode,
                   focusNode: _effectiveFocusNode,
                   onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
@@ -1198,11 +1723,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           ? TextInputType.number
                           : vm.formType == FormType.phone
                               ? TextInputType.phone
-                              : vm.formType == FormType.email
-                                  ? TextInputType.emailAddress
-                                  : widget.multiLine == 0
-                                      ? TextInputType.text
-                                      : TextInputType.multiline,
+                              : _isVerificationType()
+                                  ? TextInputType.number
+                                  : vm.formType == FormType.email
+                                      ? TextInputType.emailAddress
+                                      : widget.multiLine == 0
+                                          ? TextInputType.text
+                                          : TextInputType.multiline,
                   inputFormatters: _getInputFormatters(),
                   onChanged: (v) {
                     if (debounce.isActive) debounce.cancel();
@@ -1307,19 +1834,17 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   autofocus: false,
                   decoration: widget.inputDecoration ??
                       InputDecoration(
-                        suffix: vm.formType == FormType.password
+                        suffix: vm.formType == FormType.password ||
+                                (_isVerificationType() &&
+                                    widget.verificationHidden)
                             ? null
                             : widget.suffix,
-                        suffixIcon: vm.formType == FormType.password
-                            ? IconButton(
-                                icon: Icon(
-                                  vm.obscure
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () {
-                                  vm.obscure = !vm.obscure;
-                                },
+                        suffixIcon: vm.formType == FormType.password ||
+                                (_isVerificationType() &&
+                                    widget.verificationHidden)
+                            ? Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: _buildVisibilityToggleButton(vm),
                               )
                             : (_isDateTimeType() ||
                                     _isTimeOfDayType() ||
@@ -1340,10 +1865,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         prefix: widget.prefix,
                         prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
                         hintText:
-                            '${widget.enterText == 'Enter ' ? context.l.enterPrefix : widget.enterText}${vm.label}',
+                            '${_getLocalizations(context).enterPrefix}${vm.label}',
                         labelText: widget.labelPosition ==
                                 LabelPosition.inBorder
-                            ? '${widget.enterText == 'Enter ' ? context.l.enterPrefix : widget.enterText}${vm.label}${widget.isRequired ? ' *' : ''}'
+                            ? '${_getLocalizations(context).enterPrefix}${vm.label}${widget.isRequired ? ' *' : ''}'
                             : null,
                         focusedErrorBorder: widget.borderType == BorderType.none
                             ? InputBorder.none

@@ -13,6 +13,12 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   String phoneWithCountryCode = '';
   String phoneFormatted = '';
   String password = '';
+  String verificationCode = '';
+  String verificationCodeNoOtp = '';
+  String verificationCodeHiddenOtp = '';
+  String verificationCodeHiddenSingle = '';
+  String verificationCodeStyled = '';
+  String otp4Code = '';
 
   int int1 = 0;
   int? int2;
@@ -67,6 +73,36 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
 
   void updatePassword(String value) {
     password = value;
+    notifyListeners();
+  }
+
+  void updateVerificationCode(String value) {
+    verificationCode = value;
+    notifyListeners();
+  }
+
+  void updateVerificationCodeNoOtp(String value) {
+    verificationCodeNoOtp = value;
+    notifyListeners();
+  }
+
+  void updateVerificationCodeHiddenOtp(String value) {
+    verificationCodeHiddenOtp = value;
+    notifyListeners();
+  }
+
+  void updateVerificationCodeHiddenSingle(String value) {
+    verificationCodeHiddenSingle = value;
+    notifyListeners();
+  }
+
+  void updateVerificationCodeStyled(String value) {
+    verificationCodeStyled = value;
+    notifyListeners();
+  }
+
+  void updateOtp4Code(String value) {
+    otp4Code = value;
     notifyListeners();
   }
 

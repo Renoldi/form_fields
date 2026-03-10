@@ -6,6 +6,7 @@ enum FormType {
   string,
   phone,
   password,
+  verification,
   email,
   date,
   time,

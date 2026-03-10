@@ -25,12 +25,11 @@ FormFields<T>({
   double radius = 10,
   BorderType borderType = BorderType.outlineInputBorder,
   int multiLine = 0,
+  int verificationLength = 6,
+  bool verificationHidden = false,
   String? customFormat,
   bool stripSeparators = true,
-  String? pickerLocale = 'id_ID',
-  String enterText = 'Enter ',
-  String invalidIntegerText = 'Enter valid integer for',
-  String invalidNumberText = 'Enter valid number for',
+  String? pickerLocale,
   DateTime? firstDate,
   DateTime? lastDate,
 })
@@ -40,38 +39,38 @@ FormFields<T>({
 
 #### Required Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
+| Property    | Type              | Description                       |
+| ----------- | ----------------- | --------------------------------- |
 | `onChanged` | `ValueChanged<T>` | Callback when field value changes |
-| `label` | `String` | Label text for the field |
+| `label`     | `String`          | Label text for the field          |
 
 #### Optional Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `formType` | `FormType` | `FormType.string` | Type of form field |
-| `labelPosition` | `LabelPosition` | `LabelPosition.none` | Position of label |
-| `isRequired` | `bool` | `false` | Enable validation |
-| `validator` | `FormFieldValidator<String>?` | `null` | Custom validator |
-| `currrentValue` | `T?` | `null` | Initial value |
-| `focusNode` | `FocusNode?` | `null` | Focus control |
-| `nextFocusNode` | `FocusNode?` | `null` | Next field focus |
-| `prefix` | `Widget?` | `null` | Widget before input |
-| `prefixIcon` | `Widget?` | `null` | Icon before input |
-| `suffix` | `Widget?` | `null` | Widget after input |
-| `suffixIcon` | `Widget?` | `null` | Icon after input |
-| `inputDecoration` | `InputDecoration?` | `null` | Custom decoration |
-| `radius` | `double` | `10` | Border radius |
-| `borderType` | `BorderType` | `outlineInputBorder` | Border style |
-| `multiLine` | `int` | `0` | Lines for text area |
-| `customFormat` | `String?` | `null` | Custom date format |
-| `stripSeparators` | `bool` | `true` | Format numbers |
-| `pickerLocale` | `String?` | `'id_ID'` | Picker locale |
-| `enterText` | `String` | `'Enter '` | Custom input hint prefix |
-| `invalidIntegerText` | `String` | `'Enter valid integer for'` | Error for invalid integer |
-| `invalidNumberText` | `String` | `'Enter valid number for'` | Error for invalid number |
-| `firstDate` | `DateTime?` | `null` | First selectable date (default: 100 years ago) |
-| `lastDate` | `DateTime?` | `null` | Last selectable date (default: today) |
+| Property             | Type                          | Default              | Description                                                                                                   |
+| -------------------- | ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `formType`           | `FormType`                    | `FormType.string`    | Type of form field                                                                                            |
+| `labelPosition`      | `LabelPosition`               | `LabelPosition.none` | Position of label                                                                                             |
+| `isRequired`         | `bool`                        | `false`              | Enable validation                                                                                             |
+| `validator`          | `FormFieldValidator<String>?` | `null`               | Custom validator                                                                                              |
+| `currrentValue`      | `T?`                          | `null`               | Initial value                                                                                                 |
+| `focusNode`          | `FocusNode?`                  | `null`               | Focus control                                                                                                 |
+| `nextFocusNode`      | `FocusNode?`                  | `null`               | Next field focus                                                                                              |
+| `prefix`             | `Widget?`                     | `null`               | Widget before input                                                                                           |
+| `prefixIcon`         | `Widget?`                     | `null`               | Icon before input                                                                                             |
+| `suffix`             | `Widget?`                     | `null`               | Widget after input                                                                                            |
+| `suffixIcon`         | `Widget?`                     | `null`               | Icon after input                                                                                              |
+| `inputDecoration`    | `InputDecoration?`            | `null`               | Custom decoration                                                                                             |
+| `radius`             | `double`                      | `10`                 | Border radius                                                                                                 |
+| `borderType`         | `BorderType`                  | `outlineInputBorder` | Border style                                                                                                  |
+| `multiLine`          | `int`                         | `0`                  | Lines for text area                                                                                           |
+| `verificationLength` | `int`                         | `6`                  | Number of digits for verification input                                                                       |
+| `verificationHidden` | `bool`                        | `false`              | Hide verification digits with visibility toggle                                                               |
+| `locale`             | `String?`                     | `null`               | Custom locale ('id', 'en' or 'id_ID', 'en_US'). Unsupported locales fall back to English. No delegate needed! |
+| `customFormat`       | `String?`                     | `null`               | Custom date format                                                                                            |
+| `stripSeparators`    | `bool`                        | `true`               | Format numbers                                                                                                |
+| `pickerLocale`       | `String?`                     | `null`               | Picker locale (defaults to selected app locale)                                                               |
+| `firstDate`          | `DateTime?`                   | `null`               | First selectable date (default: 100 years ago)                                                                |
+| `lastDate`           | `DateTime?`                   | `null`               | Last selectable date (default: today)                                                                         |
 
 ## Enums
 
@@ -80,13 +79,32 @@ FormFields<T>({
 ```dart
 enum FormType {
   string,      // Basic text input
-  email,       // Email with validation
   phone,       // Phone with validation
   password,    // Password with toggle
+  verification, // Verification/OTP input (digits only)
+  email,       // Email with validation
   date,        // Date picker (returns DateTime)
   time,        // Time picker (supports DateTime or TimeOfDay)
   dateTime,    // DateTime picker (returns DateTime)
+  dateTimeRange, // Date range picker (returns DateTimeRange)
+  timeOfDay,   // Time picker (returns TimeOfDay)
+  dropdown,    // Single-select dropdown
+  dropdownMulti, // Multi-select dropdown
+  radioButton, // Radio button group
+  checkbox,    // Checkbox group
 }
+```
+
+Verification example:
+
+```dart
+FormFields<String>(
+  label: 'Verification Code',
+  formType: FormType.verification,
+  verificationLength: 6,
+  verificationHidden: true,
+  onChanged: (value) {},
+)
 ```
 
 ### LabelPosition
@@ -117,6 +135,7 @@ enum BorderType {
 ### Static Methods
 
 #### required(label, {customMessage})
+
 Validates that field is not empty.
 
 ```dart
@@ -124,6 +143,7 @@ FormFieldValidators.required('Email')
 ```
 
 #### email(label, {customMessage})
+
 Validates email format.
 
 ```dart
@@ -131,6 +151,7 @@ FormFieldValidators.email('Email')
 ```
 
 #### phone(label, {customMessage})
+
 Validates phone format (Indonesian: 0 + 11 digits).
 
 ```dart
@@ -138,6 +159,7 @@ FormFieldValidators.phone('Phone')
 ```
 
 #### password(label, {customMessage})
+
 Validates password (minimum 6 characters).
 
 ```dart
@@ -145,6 +167,7 @@ FormFieldValidators.password('Password')
 ```
 
 #### number(label, {customMessage})
+
 Validates numeric input.
 
 ```dart
@@ -152,6 +175,7 @@ FormFieldValidators.number('Amount')
 ```
 
 #### minLength(label, minLength, {customMessage})
+
 Validates minimum string length.
 
 ```dart
@@ -159,6 +183,7 @@ FormFieldValidators.minLength('Username', 3)
 ```
 
 #### maxLength(label, maxLength, {customMessage})
+
 Validates maximum string length.
 
 ```dart
@@ -166,6 +191,7 @@ FormFieldValidators.maxLength('Code', 8)
 ```
 
 #### range(label, min, max, {customMessage})
+
 Validates number is within range.
 
 ```dart
@@ -173,6 +199,7 @@ FormFieldValidators.range('Age', 18, 100)
 ```
 
 #### pattern(label, pattern, {customMessage})
+
 Validates against regex pattern.
 
 ```dart
@@ -180,6 +207,7 @@ FormFieldValidators.pattern('Username', r'^[a-zA-Z0-9_]+$')
 ```
 
 #### match(label, matchValue, {customMessage})
+
 Validates field matches another value.
 
 ```dart
@@ -187,6 +215,7 @@ FormFieldValidators.match('Password Confirm', passwordValue)
 ```
 
 #### compose(validators)
+
 Combines multiple validators.
 
 ```dart
@@ -281,7 +310,7 @@ FormFields<TimeOfDay>(
     if (value != null) {
       // Convert to DateTime for API submission
       DateTime meetingDateTime = value.toDateTime()!;
-      
+
       // Or with specific date
       DateTime eventDate = DateTime(2026, 3, 15);
       DateTime fullDateTime = value.toDateTimeWithDate(eventDate)!;
@@ -342,6 +371,7 @@ FormFields supports the following generic types:
 ### TimeOfDay vs DateTime for Time Pickers
 
 #### Using TimeOfDay
+
 ```dart
 FormFields<TimeOfDay>(
   label: 'Meeting Time',
@@ -356,11 +386,13 @@ FormFields<TimeOfDay>(
 ```
 
 **Use TimeOfDay when:**
+
 - You only need time (hour and minute)
 - You want a lightweight time representation
 - You don't need date context
 
 #### Using DateTime for Time
+
 ```dart
 FormFields<DateTime>(
   label: 'Appointment Time',
@@ -374,6 +406,7 @@ FormFields<DateTime>(
 ```
 
 **Use DateTime when:**
+
 - You need full date-time context
 - You're working with APIs that expect DateTime
 - You need date arithmetic capabilities
@@ -498,43 +531,43 @@ FormFieldsRadioButton<T>({
 
 #### Required Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `label` | `String` | Label text for the radio group |
+| Property    | Type               | Description                     |
+| ----------- | ------------------ | ------------------------------- |
+| `label`     | `String`           | Label text for the radio group  |
 | `onChanged` | `ValueChanged<T?>` | Callback when selection changes |
 
 #### Optional Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `items` | `List<T>?` | `null` | Simple list of options (OR use `sections`) |
-| `sections` | `Map<String, List<T>>?` | `null` | Grouped options by section name |
-| `initialValue` | `T?` | `null` | Initial selected value |
-| `isRequired` | `bool` | `false` | Enable validation |
-| `direction` | `Axis` | `Axis.vertical` | Layout direction (only for simple `items`) |
-| `borderColor` | `Color` | `Color(0xFFC7C7C7)` | Border color |
-| `errorBorderColor` | `Color` | `Colors.red` | Border color when error |
-| `activeColor` | `Color` | `Colors.blue` | Active radio button color |
-| `radius` | `double` | `10` | Border radius |
-| `itemPadding` | `EdgeInsets` | `symmetric(vertical: 8)` | Padding per item |
-| `sectionSpacing` | `double` | `12` | Spacing between sections |
-| `itemBorderColor` | `Color?` | `null` | Border color for each item (if null, no border) |
-| `itemBorderWidth` | `double` | `1.0` | Width of item borders |
-| `itemBorderRadius` | `double` | `8` | Border radius for corner rounding |
-| `textRightPadding` | `double` | `0` | Right padding of text within item |
-| `itemTextMarginRight` | `double` | `0` | Right margin for text (spacing after text) |
-| `selectedItemBackgroundColor` | `Color?` | `null` | Background color for selected item |
-| `selectedItemTextColor` | `Color?` | `null` | Text color for selected item |
-| `hoverBackgroundColor` | `Color?` | `null` | Background color on hover |
-| `itemShadow` | `bool` | `false` | Show shadow effect on selected item |
-| `labelPosition` | `LabelPosition` | `top` | Label position (top, bottom, left, right, inBorder, none) |
-| `containerPadding` | `double` | `12` | Padding inside the radio container |
-| `containerGap` | `double` | `8` | Gap between label and container |
-| `itemMarginTop` | `double` | `4` | Top margin for each item |
-| `itemMarginBottom` | `double` | `4` | Bottom margin for each item |
-| `itemLabelBuilder` | `String Function(T)?` | `null` | Custom text for each item |
-| `itemBuilder` | `Widget Function(T, bool)?` | `null` | Custom widget for each item |
-| `validator` | `FormFieldValidator<T>?` | `null` | Custom validation |
+| Property                      | Type                        | Default                  | Description                                               |
+| ----------------------------- | --------------------------- | ------------------------ | --------------------------------------------------------- |
+| `items`                       | `List<T>?`                  | `null`                   | Simple list of options (OR use `sections`)                |
+| `sections`                    | `Map<String, List<T>>?`     | `null`                   | Grouped options by section name                           |
+| `initialValue`                | `T?`                        | `null`                   | Initial selected value                                    |
+| `isRequired`                  | `bool`                      | `false`                  | Enable validation                                         |
+| `direction`                   | `Axis`                      | `Axis.vertical`          | Layout direction (only for simple `items`)                |
+| `borderColor`                 | `Color`                     | `Color(0xFFC7C7C7)`      | Border color                                              |
+| `errorBorderColor`            | `Color`                     | `Colors.red`             | Border color when error                                   |
+| `activeColor`                 | `Color`                     | `Colors.blue`            | Active radio button color                                 |
+| `radius`                      | `double`                    | `10`                     | Border radius                                             |
+| `itemPadding`                 | `EdgeInsets`                | `symmetric(vertical: 8)` | Padding per item                                          |
+| `sectionSpacing`              | `double`                    | `12`                     | Spacing between sections                                  |
+| `itemBorderColor`             | `Color?`                    | `null`                   | Border color for each item (if null, no border)           |
+| `itemBorderWidth`             | `double`                    | `1.0`                    | Width of item borders                                     |
+| `itemBorderRadius`            | `double`                    | `8`                      | Border radius for corner rounding                         |
+| `textRightPadding`            | `double`                    | `0`                      | Right padding of text within item                         |
+| `itemTextMarginRight`         | `double`                    | `0`                      | Right margin for text (spacing after text)                |
+| `selectedItemBackgroundColor` | `Color?`                    | `null`                   | Background color for selected item                        |
+| `selectedItemTextColor`       | `Color?`                    | `null`                   | Text color for selected item                              |
+| `hoverBackgroundColor`        | `Color?`                    | `null`                   | Background color on hover                                 |
+| `itemShadow`                  | `bool`                      | `false`                  | Show shadow effect on selected item                       |
+| `labelPosition`               | `LabelPosition`             | `top`                    | Label position (top, bottom, left, right, inBorder, none) |
+| `containerPadding`            | `double`                    | `12`                     | Padding inside the radio container                        |
+| `containerGap`                | `double`                    | `8`                      | Gap between label and container                           |
+| `itemMarginTop`               | `double`                    | `4`                      | Top margin for each item                                  |
+| `itemMarginBottom`            | `double`                    | `4`                      | Bottom margin for each item                               |
+| `itemLabelBuilder`            | `String Function(T)?`       | `null`                   | Custom text for each item                                 |
+| `itemBuilder`                 | `Widget Function(T, bool)?` | `null`                   | Custom widget for each item                               |
+| `validator`                   | `FormFieldValidator<T>?`    | `null`                   | Custom validation                                         |
 
 ### Usage Examples
 
@@ -588,6 +621,7 @@ FormFieldsRadioButton<String>(
 ```
 
 **Output Format:**
+
 ```
 Cloud Services
 [ Starter ] [ Professional ] [ Enterprise ]
@@ -622,6 +656,7 @@ FormFieldsRadioButton<String>(
 ```
 
 **Features:**
+
 - ✅ Beautiful background highlight when item is selected
 - ✅ Text color changes to emphasize selection
 - ✅ Smooth hover effects with color change
@@ -652,6 +687,7 @@ FormFieldsRadioButton<String>(
 ```
 
 **Output Format:**
+
 ```
 Theme
 [Light] [Dark] [Auto]
@@ -659,6 +695,7 @@ Theme
 Notifications
 [All] [Important] [None]
 ```
+
 (With teal borders around each item and right-padded text)
 
 #### Custom Item Labels
@@ -732,12 +769,12 @@ FormFieldsRadioButton<String>(
 
 ### Comparison: Items vs Sections
 
-| Feature | `items` | `sections` |
-|---------|---------|-----------|
-| Layout | Single group, linear | Multiple groups, organized |
-| Use Case | 2-5 options | 6+ options or logical grouping |
-| Direction | `vertical` or `horizontal` | Always horizontal per section |
-| Example | Gender, Marital Status | Plans with features, settings groups |
+| Feature   | `items`                    | `sections`                           |
+| --------- | -------------------------- | ------------------------------------ |
+| Layout    | Single group, linear       | Multiple groups, organized           |
+| Use Case  | 2-5 options                | 6+ options or logical grouping       |
+| Direction | `vertical` or `horizontal` | Always horizontal per section        |
+| Example   | Gender, Marital Status     | Plans with features, settings groups |
 
 ### Notes
 
@@ -782,33 +819,33 @@ FormFieldsCheckbox<T>({
 
 #### Required Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `label` | `String` | Label text for the checkbox group |
-| `items` | `List<T>` | List of options |
-| `onChanged` | `ValueChanged<List<T>>` | Callback when selection changes |
+| Property    | Type                    | Description                       |
+| ----------- | ----------------------- | --------------------------------- |
+| `label`     | `String`                | Label text for the checkbox group |
+| `items`     | `List<T>`               | List of options                   |
+| `onChanged` | `ValueChanged<List<T>>` | Callback when selection changes   |
 
 #### Optional Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `initialValue` | `List<T>?` | `null` | Initial selected values |
-| `isRequired` | `bool` | `false` | Enable validation |
-| `direction` | `Axis` | `Axis.vertical` | Layout direction |
-| `radius` | `double` | `10` | Border radius |
-| `borderColor` | `Color` | `Color(0xFFC7C7C7)` | Border color |
-| `errorBorderColor` | `Color` | `Colors.red` | Border color when error |
-| `activeColor` | `Color` | `Colors.blue` | Active checkbox color |
-| `itemPadding` | `EdgeInsets` | `symmetric(vertical: 6)` | Padding per item |
-| `itemMarginTop` | `double` | `4` | Top margin for each item |
-| `itemMarginBottom` | `double` | `4` | Bottom margin for each item |
-| `itemMarginHorizontal` | `double` | `0` | Left/right margin for each item |
-| `itemBorderColor` | `Color?` | `null` | Border color for each item (if null, no border) |
-| `itemBorderWidth` | `double` | `1.0` | Width of item borders |
-| `itemBorderRadius` | `double` | `8` | Border radius for each item |
-| `itemLabelBuilder` | `String Function(T)?` | `null` | Custom text for each item |
-| `itemBuilder` | `Widget Function(T, bool)?` | `null` | Custom widget for each item |
-| `validator` | `FormFieldValidator<List<T>>?` | `null` | Custom validation |
+| Property               | Type                           | Default                  | Description                                     |
+| ---------------------- | ------------------------------ | ------------------------ | ----------------------------------------------- |
+| `initialValue`         | `List<T>?`                     | `null`                   | Initial selected values                         |
+| `isRequired`           | `bool`                         | `false`                  | Enable validation                               |
+| `direction`            | `Axis`                         | `Axis.vertical`          | Layout direction                                |
+| `radius`               | `double`                       | `10`                     | Border radius                                   |
+| `borderColor`          | `Color`                        | `Color(0xFFC7C7C7)`      | Border color                                    |
+| `errorBorderColor`     | `Color`                        | `Colors.red`             | Border color when error                         |
+| `activeColor`          | `Color`                        | `Colors.blue`            | Active checkbox color                           |
+| `itemPadding`          | `EdgeInsets`                   | `symmetric(vertical: 6)` | Padding per item                                |
+| `itemMarginTop`        | `double`                       | `4`                      | Top margin for each item                        |
+| `itemMarginBottom`     | `double`                       | `4`                      | Bottom margin for each item                     |
+| `itemMarginHorizontal` | `double`                       | `0`                      | Left/right margin for each item                 |
+| `itemBorderColor`      | `Color?`                       | `null`                   | Border color for each item (if null, no border) |
+| `itemBorderWidth`      | `double`                       | `1.0`                    | Width of item borders                           |
+| `itemBorderRadius`     | `double`                       | `8`                      | Border radius for each item                     |
+| `itemLabelBuilder`     | `String Function(T)?`          | `null`                   | Custom text for each item                       |
+| `itemBuilder`          | `Widget Function(T, bool)?`    | `null`                   | Custom widget for each item                     |
+| `validator`            | `FormFieldValidator<List<T>>?` | `null`                   | Custom validation                               |
 
 ### Usage Example
 

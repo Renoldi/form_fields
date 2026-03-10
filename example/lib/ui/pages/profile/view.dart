@@ -75,7 +75,6 @@ class View extends PresenterState {
                       currrentValue: viewModel.user.firstName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
-                      enterText: '',
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
                         viewModel.user =
@@ -94,7 +93,6 @@ class View extends PresenterState {
                       currrentValue: viewModel.user.lastName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
-                      enterText: '',
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
                         viewModel.user =
@@ -113,7 +111,6 @@ class View extends PresenterState {
                       currrentValue: viewModel.user.email ?? '',
                       formType: FormType.email,
                       labelPosition: LabelPosition.inBorder,
-                      enterText: '',
                       prefixIcon: const Icon(Icons.email_outlined),
                       onChanged: (value) {
                         viewModel.user = viewModel.user.copyWith(email: value);
@@ -135,7 +132,6 @@ class View extends PresenterState {
                         currrentValue: viewModel.user.username ?? '',
                         formType: FormType.string,
                         labelPosition: LabelPosition.inBorder,
-                        enterText: '',
                         prefixIcon: const Icon(Icons.account_circle_outlined),
                         inputDecoration: InputDecoration(
                           helperText: context.tr('usernameCannotBeChanged'),

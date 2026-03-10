@@ -72,7 +72,6 @@ class View extends PresenterState {
                     borderType: BorderType.outlineInputBorder,
                     borderColor: Colors.green,
                     errorBorderColor: Colors.red,
-                    enterText: context.tr('enterPrefix'),
                     labelTextStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -192,6 +191,181 @@ class View extends PresenterState {
                   buildResultDisplay(
                       context, context.tr('ffPassword'), viewModel.password),
 
+                  // Verification code with verificationAsOtp: true
+                  buildFieldTitle('Verification Code (verificationAsOtp: true)',
+                      Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'Verification Code',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationAsOtp: true,
+                    borderColor: Colors.blueGrey,
+                    prefixIcon: const Icon(Icons.verified_user_outlined),
+                    onChanged: viewModel.updateVerificationCode,
+                    currrentValue: viewModel.verificationCode,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'Verification Code',
+                    viewModel.verificationCode,
+                  ),
+
+                  // Verification code with verificationAsOtp: false
+                  buildFieldTitle(
+                      'Verification Code (verificationAsOtp: false)',
+                      Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'Verification Code (Single Field)',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationAsOtp: false,
+                    verificationLength: 6,
+                    borderColor: Colors.blueGrey,
+                    prefixIcon: const Icon(Icons.pin_outlined),
+                    onChanged: viewModel.updateVerificationCodeNoOtp,
+                    currrentValue: viewModel.verificationCodeNoOtp,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'Verification Code (Single Field)',
+                    viewModel.verificationCodeNoOtp,
+                  ),
+
+                  // Verification code hidden with OTP boxes
+                  buildFieldTitle(
+                      'Verification Code (Hidden OTP)', Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'Verification Code (Hidden OTP)',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationAsOtp: true,
+                    verificationLength: 6,
+                    verificationHidden: true,
+                    borderColor: Colors.blueGrey,
+                    prefixIcon: const Icon(Icons.shield_outlined),
+                    onChanged: viewModel.updateVerificationCodeHiddenOtp,
+                    currrentValue: viewModel.verificationCodeHiddenOtp,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'Verification Code (Hidden OTP)',
+                    viewModel.verificationCodeHiddenOtp,
+                  ),
+
+                  // Verification code hidden in single text field
+                  buildFieldTitle('Verification Code (Hidden Single Field)',
+                      Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'Verification Code (Hidden Single)',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationAsOtp: false,
+                    verificationLength: 6,
+                    verificationHidden: true,
+                    borderColor: Colors.blueGrey,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    onChanged: viewModel.updateVerificationCodeHiddenSingle,
+                    currrentValue: viewModel.verificationCodeHiddenSingle,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'Verification Code (Hidden Single)',
+                    viewModel.verificationCodeHiddenSingle,
+                  ),
+
+                  // Verification code with custom OTP style + inputDecoration
+                  buildFieldTitle('Verification Code (Custom OTP Style)',
+                      Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'Custom OTP',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationLength: 6,
+                    verificationAsOtp: true,
+                    otpBoxWidth: 44,
+                    otpBoxSpacing: 12,
+                    otpTextStyle: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                    inputDecoration: InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFF3F4F6),
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide:
+                            BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide:
+                            BorderSide(color: Color(0xFF84CC16), width: 1.6),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide: BorderSide(color: Colors.red, width: 1.2),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        borderSide: BorderSide(color: Colors.red, width: 1.6),
+                      ),
+                    ),
+                    onChanged: viewModel.updateVerificationCodeStyled,
+                    currrentValue: viewModel.verificationCodeStyled,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'Custom OTP',
+                    viewModel.verificationCodeStyled,
+                  ),
+
+                  // Dedicated OTP example (4 digits)
+                  buildFieldTitle(
+                      'OTP Example (4 Digits)', Colors.blue.shade600),
+                  FormFields<String>(
+                    label: 'OTP Code',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationLength: 4,
+                    verificationAsOtp: true,
+                    otpBoxWidth: 52,
+                    otpBoxSpacing: 14,
+                    otpTextStyle: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    inputDecoration: InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFEEF2FF),
+                      contentPadding: EdgeInsets.symmetric(vertical: 14),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderSide:
+                            BorderSide(color: Color(0xFFCBD5E1), width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderSide:
+                            BorderSide(color: Color(0xFF2563EB), width: 1.8),
+                      ),
+                    ),
+                    onChanged: viewModel.updateOtp4Code,
+                    currrentValue: viewModel.otp4Code,
+                  ),
+                  buildResultDisplay(
+                    context,
+                    'OTP 4 Digits',
+                    viewModel.otp4Code,
+                  ),
+
                   // ========== INTEGER TYPE ==========
                   buildSectionTitle(context.tr('ffIntTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),
@@ -220,7 +394,6 @@ class View extends PresenterState {
                     stripSeparators: true,
                     isRequired: false,
                     borderColor: Colors.teal,
-                    invalidIntegerText: context.tr('enterValidInteger'),
                     prefixIcon: const Icon(Icons.inventory, color: Colors.teal),
                     labelTextStyle: const TextStyle(
                       fontSize: 14,
@@ -268,7 +441,6 @@ class View extends PresenterState {
                     isRequired: false,
                     borderColor: Colors.orange,
                     radius: 10,
-                    invalidNumberText: context.tr('enterValidNumber'),
                     suffix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text('%',

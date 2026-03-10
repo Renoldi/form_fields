@@ -28,7 +28,6 @@ class View extends PresenterState {
                   currrentValue: viewModel.currentPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
-                  enterText: '',
                   onChanged: (value) {
                     viewModel.currentPassword = value;
                   },
@@ -39,7 +38,6 @@ class View extends PresenterState {
                   currrentValue: viewModel.newPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
-                  enterText: '',
                   onChanged: (value) {
                     viewModel.newPassword = value;
                   },
@@ -50,7 +48,6 @@ class View extends PresenterState {
                   currrentValue: viewModel.confirmPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
-                  enterText: '',
                   onChanged: (value) {
                     viewModel.confirmPassword = value;
                   },

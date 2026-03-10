@@ -12,6 +12,7 @@ dependencies:
 ```
 
 Run:
+
 ```bash
 flutter pub get
 ```
@@ -37,6 +38,7 @@ FormFields<String>(
 ## 4. Common Examples
 
 ### Text Input
+
 ```dart
 FormFields<String>(
   label: 'Full Name',
@@ -45,6 +47,7 @@ FormFields<String>(
 ```
 
 ### Password Input
+
 ```dart
 FormFields<String>(
   label: 'Password',
@@ -54,6 +57,7 @@ FormFields<String>(
 ```
 
 ### Phone Input
+
 ```dart
 FormFields<String>(
   label: 'Phone',
@@ -63,6 +67,7 @@ FormFields<String>(
 ```
 
 ### Number Input
+
 ```dart
 FormFields<int>(
   label: 'Quantity',
@@ -72,6 +77,7 @@ FormFields<int>(
 ```
 
 ### Date Picker
+
 ```dart
 FormFields<DateTime>(
   label: 'Birth Date',
@@ -81,6 +87,7 @@ FormFields<DateTime>(
 ```
 
 ### Time Picker
+
 ```dart
 // Using TimeOfDay (time-only)
 FormFields<TimeOfDay>(
@@ -120,7 +127,40 @@ FormFields<String>(
 )
 ```
 
-## 7. Form Submission
+## 7. Use Different Languages (No Setup Required!)
+
+Individual fields can use different languages without adding any delegates to MaterialApp:
+
+```dart
+// Indonesian field - No FormFieldsLocalizationsDelegate needed!
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  isRequired: true,
+  locale: 'id',  // Simple: just 'id' for Indonesian!
+  onChanged: (value) {},
+)
+
+// English field
+FormFields<String>(
+  label: 'Phone',
+  formType: FormType.phone,
+  locale: 'en',  // Simple: just 'en' for English!
+  onChanged: (value) {},
+)
+
+// Or use full locale codes if preferred
+FormFields<String>(
+  label: 'Name',
+  locale: 'id_ID',  // Full code also works
+  onChanged: (value) {},
+)
+
+// Supported: 'id' or 'id_ID' (Indonesian), 'en' or 'en_US' (English)
+// Unsupported locales (e.g., 'es', 'fr') will gracefully fall back to English
+```
+
+## 8. Form Submission
 
 ```dart
 final _formKey = GlobalKey<FormState>();
@@ -148,12 +188,12 @@ Form(
 )
 ```
 
-
-## 8. Selection Widgets (Dropdown, Multi-Select, Radio, Checkbox)
+## 9. Selection Widgets (Dropdown, Multi-Select, Radio, Checkbox)
 
 All selection widgets support both simple and custom class types, as well as nullable and non-nullable usage.
 
 ### Dropdown (Single-Select)
+
 ```dart
 // Non-nullable
 FormFieldsDropdown<String>(
@@ -174,6 +214,7 @@ FormFieldsDropdown<String?>(
 ```
 
 ### Multi-Select Dropdown
+
 ```dart
 // Non-nullable
 FormFieldsDropdownMulti<String>(
@@ -195,6 +236,7 @@ FormFieldsDropdownMulti<String?>(
 ```
 
 ### Radio Button
+
 ```dart
 // Non-nullable
 FormFieldsRadioButton<String>(
@@ -215,6 +257,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 ### Checkbox
+
 ```dart
 // Non-nullable
 FormFieldsCheckbox<String>(
@@ -289,7 +332,7 @@ FormFieldsCheckbox<Country>(
 )
 ```
 
-## 9. Using Custom Classes
+## 10. Using Custom Classes
 
 All selection widgets support generic types with custom classes:
 
@@ -298,14 +341,14 @@ All selection widgets support generic types with custom classes:
 class Country {
   final String code;
   final String name;
-  
+
   Country(this.code, this.name);
-  
+
   @override
   bool operator ==(Object other) =>
     identical(this, other) ||
     other is Country && code == other.code;
-  
+
   @override
   int get hashCode => code.hashCode;
 }
@@ -368,6 +411,7 @@ All FormFields widgets and properties support both nullable and non-nullable typ
 ### How to Use Nullable and Non-Nullable Properties
 
 #### 1. Text Field (String and String?)
+
 ```dart
 // Non-nullable (required field)
 FormFields<String>(
@@ -386,6 +430,7 @@ FormFields<String?>(
 ```
 
 #### 2. Dropdown (T and T?)
+
 ```dart
 // Non-nullable (must select)
 FormFieldsDropdown<String>(
@@ -406,6 +451,7 @@ FormFieldsDropdown<String?>(
 ```
 
 #### 3. Radio Button (T and T?)
+
 ```dart
 // Non-nullable
 FormFieldsRadioButton<String>(
@@ -426,6 +472,7 @@ FormFieldsRadioButton<String?>(
 ```
 
 #### 4. Checkbox (List<T> and List<T?>)
+
 ```dart
 // Non-nullable list
 FormFieldsCheckbox<String>(
@@ -445,6 +492,7 @@ FormFieldsCheckbox<String?>(
 ```
 
 #### 5. Numeric Fields (int, int?, double, double?)
+
 ```dart
 // Non-nullable int
 FormFields<int>(
@@ -476,6 +524,7 @@ FormFields<double?>(
 ```
 
 #### 6. Date/Time Fields (DateTime, DateTime?, TimeOfDay, TimeOfDay?)
+
 ```dart
 // Non-nullable DateTime
 FormFields<DateTime>(
@@ -507,6 +556,7 @@ FormFields<TimeOfDay?>(
 ```
 
 #### 7. Custom Validation with Nullables
+
 ```dart
 FormFields<String?>(
   label: 'Referral Code (optional)',
@@ -523,8 +573,47 @@ FormFields<String?>(
 ---
 
 > **Tip:**
+>
 > - Use nullable types (`T?`) for optional fields or when you want to allow clearing the value.
 > - Use non-nullable types (`T`) for required fields or when a value must always be present.
 > - All FormFields widgets and properties are null-safe and work seamlessly with both approaches.
 
 ---
+
+## Next Steps 🚀
+
+Now that you've learned the basics, explore more:
+
+### 📚 Documentation
+
+- **[README.md](README.md)** — Complete package documentation with all features
+- **[API.md](API.md)** — Full API reference with all properties and methods
+- **[LOCALIZATION.md](LOCALIZATION.md)** — Multi-language support guide
+- **[USAGE.md](USAGE.md)** — Advanced usage patterns and examples
+
+### 🌍 Contributing Translations
+
+**Help make FormFields accessible to more developers worldwide!**
+
+The package currently supports English and Indonesian. We need translations for:
+
+- 🇪🇸 Spanish
+- 🇫🇷 French
+- 🇩🇪 German
+- 🇨🇳 Chinese
+- 🇯🇵 Japanese
+- 🇵🇹 Portuguese
+- And many more!
+
+**See the complete guide:**
+[LOCALIZATION.md - Contributing Section](LOCALIZATION.md#contributing)
+
+### 💬 Get Help
+
+- Report issues: [GitHub Issues](https://github.com/enerren/form_fields/issues)
+- Read examples: [example/lib](example/lib)
+- Review tests: [test/](test/)
+
+---
+
+**Happy coding! 🎉**

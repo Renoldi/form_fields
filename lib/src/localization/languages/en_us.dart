@@ -48,6 +48,7 @@ const Map<String, String> enUSStrings = {
   // Password
   'passwordRequired': 'Password is required',
   'passwordMinLength': 'Password must be at least {value} characters',
+  'verificationLength': 'Please enter a {value}-digit verification code',
 
   // Optional/Labels
   'optional': '(optional)',

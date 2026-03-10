@@ -18,6 +18,36 @@ Thank you for your interest in contributing to FormFields! This document provide
 6. Push: `git push origin feature/your-feature-name`
 7. Open a Pull Request
 
+## Contributing Translations 🌍
+
+**Adding a new language is one of the most valuable contributions!**
+
+We welcome translations for all languages. The package currently supports:
+
+- 🇺🇸 English (US) - Default
+- 🇮🇩 Indonesian
+
+**📖 Complete Step-by-Step Guide:**
+See [LOCALIZATION.md - Contributing Section](LOCALIZATION.md#contributing) for detailed instructions including:
+
+- Creating language files
+- Registering new languages
+- Adding simple code mappings
+- Testing translations
+- Submission checklist
+
+**Quick Overview:**
+
+1. Copy `lib/src/localization/languages/en_us.dart`
+2. Create `lib/src/localization/languages/{lang}_{country}.dart`
+3. Translate all values (keep keys identical)
+4. Add import and register in `form_fields_localizations.dart`
+5. Add simple code mapping in `form_fields.dart` (optional)
+6. Test thoroughly and submit PR
+
+**Priority Languages:**
+🇪🇸 Spanish · 🇫🇷 French · 🇩🇪 German · 🇨🇳 Chinese · 🇯🇵 Japanese · 🇵🇹 Portuguese · 🇷🇺 Russian · 🇸🇦 Arabic · 🇮🇳 Hindi · 🇰🇷 Korean
+
 ## Development Setup
 
 ```bash
@@ -46,6 +76,7 @@ flutter test
 - Reference issues when relevant: "Fix #12"
 
 Examples:
+
 - `Add date range picker support`
 - `Fix validation message for email fields`
 - `Update documentation examples`
@@ -71,6 +102,7 @@ When reporting issues, include:
 - Code example
 
 Example:
+
 ```
 **Description:** Email validation is not working for emails with plus sign
 
