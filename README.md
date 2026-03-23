@@ -1,5 +1,75 @@
 # 🏁 Navigation
 
+## 🚀 FormFieldsAutocomplete (Async Autocomplete Field)
+
+Easily add autocomplete text fields with async API search, custom result parsing, and full UI customization.
+
+### Features
+
+- Async search from any API endpoint (with token support)
+- Custom query param and token header
+- Custom result parsing and display
+- Works with FormFields, LabelPosition, BorderType
+- Custom option builder for dropdown list
+
+### Example Usage
+
+```dart
+FormFieldsAutocomplete<String>(
+  fieldLabel: 'City',
+  apiUrl: 'https://api.example.com/cities',
+  onItemSelected: (city) => print(city),
+)
+```
+
+### Custom Class Example
+
+```dart
+class Country {
+  final String code;
+  final String name;
+  Country(this.code, this.name);
+  factory Country.fromJson(Map<String, dynamic> json) => Country(json['code'], json['name']);
+  @override
+  String toString() => name;
+}
+
+FormFieldsAutocomplete<Country>(
+  fieldLabel: 'Country',
+  apiUrl: 'https://api.example.com/countries',
+  onItemSelected: (country) => print(country?.name),
+  parseResults: (data) => (data['results'] as List).map((e) => Country.fromJson(e)).toList(),
+  itemSelectedBuilder: (country) => country.name,
+  itemBuilder: (country, selected) => ListTile(
+    title: Text(country.name),
+    subtitle: Text(country.code),
+    selected: selected,
+  ),
+  inputDecoration: InputDecoration(hintText: 'Type to search country...'),
+  labelPlacement: LabelPosition.top,
+  borderStyle: BorderType.outlineInputBorder,
+)
+```
+
+### Properties
+
+| Property            | Type                                    | Description                                       |
+| ------------------- | --------------------------------------- | ------------------------------------------------- |
+| fieldLabel          | String                                  | The label for the autocomplete field.             |
+| apiUrl              | String                                  | The API endpoint to fetch options.                |
+| apiToken            | String?                                 | Optional API token for authentication.            |
+| searchKey           | String                                  | Query parameter for search (default: 'q').        |
+| tokenHeaderName     | String                                  | Header name for token (default: 'Authorization'). |
+| onItemSelected      | void Function(T?)                       | Callback when an item is selected.                |
+| parseResults        | List<T> Function(dynamic data)?         | Custom function to parse API results.             |
+| itemSelectedBuilder | String Function(T)?                     | Returns string label for selected option.         |
+| itemBuilder         | Widget Function(T item, bool selected)? | Custom widget for dropdown options.               |
+| inputDecoration     | InputDecoration?                        | Custom input decoration.                          |
+| labelPlacement      | LabelPosition                           | Label position (top, left, etc.).                 |
+| borderStyle         | BorderType                              | Border style (outline, underline, none).          |
+| trailingIcon        | Widget?                                 | Custom trailing icon.                             |
+| hideTrailingIcon    | bool                                    | Hide the trailing icon (default: false).          |
+
 - [Properties](#properties) — All configurable options for FormFields.
 - [How to Use Each Property](#how-to-use-each-property-detailed) — Code examples for every property.
 - [Properties](#properties-1)
@@ -204,37 +274,12 @@ FormFields<String>(formType: FormType.password, customPasswordValidator: (v) => 
 ```
 
 - **minLengthPasswordErrorText**
-
-```dart
-FormFields<String>(formType: FormType.password, minLengthPasswordErrorText: 'Too short', onChanged: (v) {})
-```
-
-### Custom Class
-
-You can use custom classes for advanced scenarios:
-
-```dart
-class Country {
-  final String code;
-  final String name;
-  Country(this.code, this.name);
-  @override
-  bool operator ==(Object other) =>
-    identical(this, other) ||
-    other is Country && code == other.code;
-  @override
-  int get hashCode => code.hashCode;
-}
+  }
 
 FormFields<Country>(
-  label: 'Country',
-  formType: FormType.string,
-  currrentValue: selectedCountry,
-  onChanged: (value) => setState(() => selectedCountry = value),
-)
-```
-
----
+label: 'Country',
+formType: FormType.string,
+currrentValue: selectedCountry,
 
 ## 2. FormFieldsCheckbox
 
@@ -287,13 +332,13 @@ FormFieldsCheckbox<String>(
 
 - **label** — The label displayed above or beside the checkbox group.
 
-```dart
 FormFieldsCheckbox<String>(
-  label: 'Select Your Preferences',
-  items: ['Option1', 'Option2'],
-  onChanged: (values) {},
+label: 'Select Your Preferences',
+items: ['Option1', 'Option2'],
+onChanged: (values) {},
 )
-```
+
+````
 
 - **items** — The list of items to display as checkboxes.
 
@@ -311,7 +356,7 @@ FormFieldsCheckbox<String?>(
   items: ['Monday', 'Tuesday', null, 'Thursday', 'Friday'],
   onChanged: (values) {},
 )
-```
+````
 
 - **onChanged** — Callback when the selection changes, returns the list of selected values.
 
