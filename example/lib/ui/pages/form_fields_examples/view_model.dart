@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields_example/data/models/product.dart';
 
 class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteCustomQueryParamResult = '';
@@ -11,48 +12,48 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteUnderlineBorderResult = '';
   String autocompleteNoBorderResult = '';
 
-  void updateAutocompleteCustomQueryParamResult(String value) {
-    autocompleteCustomQueryParamResult = value;
+  void updateAutocompleteCustomQueryParamResult(String? value) {
+    autocompleteCustomQueryParamResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteTokenResult(String value) {
-    autocompleteTokenResult = value;
+  void updateAutocompleteTokenResult(String? value) {
+    autocompleteTokenResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteCustomResultProcessorResult(String value) {
-    autocompleteCustomResultProcessorResult = value;
+  void updateAutocompleteCustomResultProcessorResult(String? value) {
+    autocompleteCustomResultProcessorResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteCustomDecorationResult(String value) {
-    autocompleteCustomDecorationResult = value;
+  void updateAutocompleteCustomDecorationResult(String? value) {
+    autocompleteCustomDecorationResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteSuffixIconResult(String value) {
-    autocompleteSuffixIconResult = value;
+  void updateAutocompleteSuffixIconResult(String? value) {
+    autocompleteSuffixIconResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteRemoveSuffixIconResult(String value) {
-    autocompleteRemoveSuffixIconResult = value;
+  void updateAutocompleteRemoveSuffixIconResult(String? value) {
+    autocompleteRemoveSuffixIconResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteOutlineBorderResult(String value) {
-    autocompleteOutlineBorderResult = value;
+  void updateAutocompleteOutlineBorderResult(String? value) {
+    autocompleteOutlineBorderResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteUnderlineBorderResult(String value) {
-    autocompleteUnderlineBorderResult = value;
+  void updateAutocompleteUnderlineBorderResult(String? value) {
+    autocompleteUnderlineBorderResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteNoBorderResult(String value) {
-    autocompleteNoBorderResult = value;
+  void updateAutocompleteNoBorderResult(String? value) {
+    autocompleteNoBorderResult = value ?? '';
     notifyListeners();
   }
 
@@ -60,18 +61,18 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteLabelLeftResult = '';
   String autocompleteLabelRightResult = '';
 
-  void updateAutocompleteLabelBottomResult(String value) {
-    autocompleteLabelBottomResult = value;
+  void updateAutocompleteLabelBottomResult(String? value) {
+    autocompleteLabelBottomResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteLabelLeftResult(String value) {
-    autocompleteLabelLeftResult = value;
+  void updateAutocompleteLabelLeftResult(String? value) {
+    autocompleteLabelLeftResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteLabelRightResult(String value) {
-    autocompleteLabelRightResult = value;
+  void updateAutocompleteLabelRightResult(String? value) {
+    autocompleteLabelRightResult = value ?? '';
     notifyListeners();
   }
 
@@ -80,23 +81,23 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteUnderlineResult = '';
   String autocompleteNoneResult = '';
 
-  void updateAutocompleteResult(String value) {
-    autocompleteResult = value;
+  void updateAutocompleteResult(String? value) {
+    autocompleteResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteOutlineResult(String value) {
-    autocompleteOutlineResult = value;
+  void updateAutocompleteOutlineResult(String? value) {
+    autocompleteOutlineResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteUnderlineResult(String value) {
-    autocompleteUnderlineResult = value;
+  void updateAutocompleteUnderlineResult(String? value) {
+    autocompleteUnderlineResult = value ?? '';
     notifyListeners();
   }
 
-  void updateAutocompleteNoneResult(String value) {
-    autocompleteNoneResult = value;
+  void updateAutocompleteNoneResult(String? value) {
+    autocompleteNoneResult = value ?? '';
     notifyListeners();
   }
 
@@ -134,6 +135,13 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   DateTimeRange range1 =
       DateTimeRange(start: DateTime.now(), end: DateTime.now());
   DateTimeRange? range2;
+  // For Product autocomplete demo
+  Product? selectedProduct;
+
+  void updateSelectedProduct(Product? value) {
+    selectedProduct = value;
+    notifyListeners();
+  }
 
   void updateString1(String value) {
     string1 = value;
