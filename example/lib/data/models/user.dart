@@ -80,7 +80,7 @@ class User {
       },
     );
 
-    return User.fromJson(response);
+    return User.fromJson(response.data ?? <String, dynamic>{});
   }
 
   /// Get current authenticated user
@@ -100,7 +100,7 @@ class User {
       ),
     );
 
-    return User.fromJson(response);
+    return User.fromJson(response.data ?? <String, dynamic>{});
   }
 
   /// Update current user information
@@ -132,6 +132,6 @@ class User {
       ),
     );
 
-    return User.fromJson(response);
+    return User.fromJson(response.data ?? <String, dynamic>{});
   }
 }
