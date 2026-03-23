@@ -1,6 +1,105 @@
 import 'package:flutter/material.dart';
 
 class FormFieldsExamplesViewModel extends ChangeNotifier {
+  String autocompleteCustomQueryParamResult = '';
+  String autocompleteTokenResult = '';
+  String autocompleteCustomResultProcessorResult = '';
+  String autocompleteCustomDecorationResult = '';
+  String autocompleteSuffixIconResult = '';
+  String autocompleteRemoveSuffixIconResult = '';
+  String autocompleteOutlineBorderResult = '';
+  String autocompleteUnderlineBorderResult = '';
+  String autocompleteNoBorderResult = '';
+
+  void updateAutocompleteCustomQueryParamResult(String value) {
+    autocompleteCustomQueryParamResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteTokenResult(String value) {
+    autocompleteTokenResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteCustomResultProcessorResult(String value) {
+    autocompleteCustomResultProcessorResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteCustomDecorationResult(String value) {
+    autocompleteCustomDecorationResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteSuffixIconResult(String value) {
+    autocompleteSuffixIconResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteRemoveSuffixIconResult(String value) {
+    autocompleteRemoveSuffixIconResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteOutlineBorderResult(String value) {
+    autocompleteOutlineBorderResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteUnderlineBorderResult(String value) {
+    autocompleteUnderlineBorderResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteNoBorderResult(String value) {
+    autocompleteNoBorderResult = value;
+    notifyListeners();
+  }
+
+  String autocompleteLabelBottomResult = '';
+  String autocompleteLabelLeftResult = '';
+  String autocompleteLabelRightResult = '';
+
+  void updateAutocompleteLabelBottomResult(String value) {
+    autocompleteLabelBottomResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteLabelLeftResult(String value) {
+    autocompleteLabelLeftResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteLabelRightResult(String value) {
+    autocompleteLabelRightResult = value;
+    notifyListeners();
+  }
+
+  String autocompleteResult = '';
+  String autocompleteOutlineResult = '';
+  String autocompleteUnderlineResult = '';
+  String autocompleteNoneResult = '';
+
+  void updateAutocompleteResult(String value) {
+    autocompleteResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteOutlineResult(String value) {
+    autocompleteOutlineResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteUnderlineResult(String value) {
+    autocompleteUnderlineResult = value;
+    notifyListeners();
+  }
+
+  void updateAutocompleteNoneResult(String value) {
+    autocompleteNoneResult = value;
+    notifyListeners();
+  }
+
   final formKey = GlobalKey<FormState>();
   final focusNode1 = FocusNode();
   final focusNode2 = FocusNode();

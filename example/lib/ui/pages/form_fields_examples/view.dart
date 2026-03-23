@@ -27,6 +27,159 @@ class View extends PresenterState {
                   // Language indicator showing current locale
                   const LanguageIndicator(),
 
+                  // ========== AUTOCOMPLETE PROPERTY DEMOS ==========
+                  buildSectionTitle('Autocomplete (Custom Query Param)',
+                      Colors.cyan, Colors.cyan.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Custom Query Param',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    resultProcessor: (data) {
+                      if (data is Map && data['products'] is List) {
+                        return (data['products'] as List)
+                            .map((e) => e['title'].toString())
+                            .toList();
+                      }
+                      return [];
+                    },
+                    onSelected:
+                        viewModel.updateAutocompleteCustomQueryParamResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Custom Query Param Result',
+                      viewModel.autocompleteCustomQueryParamResult),
+
+                  buildSectionTitle('Autocomplete (Token Auth)', Colors.red,
+                      Colors.red.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Token Auth',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    token: 'demo-token',
+                    tokenHeader: 'X-Api-Key',
+                    resultProcessor: (data) {
+                      if (data is Map && data['products'] is List) {
+                        return (data['products'] as List)
+                            .map((e) => e['title'].toString())
+                            .toList();
+                      }
+                      return [];
+                    },
+                    onSelected: viewModel.updateAutocompleteTokenResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Token Auth Result',
+                      viewModel.autocompleteTokenResult),
+
+                  buildSectionTitle('Autocomplete (Custom Result Processor)',
+                      Colors.deepOrange, Colors.deepOrange.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Custom Result Processor',
+                    url: 'https://dummyjson.com/products/search',
+                    resultProcessor: (data) {
+                      if (data is Map && data['products'] is List) {
+                        return (data['products'] as List)
+                            .where(
+                                (e) => e['title'].toString().contains('Phone'))
+                            .map((e) => e['title'].toString())
+                            .toList();
+                      }
+                      return [];
+                    },
+                    onSelected:
+                        viewModel.updateAutocompleteCustomResultProcessorResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Custom Result Processor Result',
+                      viewModel.autocompleteCustomResultProcessorResult),
+
+                  buildSectionTitle('Autocomplete (Custom Decoration)',
+                      Colors.pink, Colors.pink.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Custom Decoration',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    decoration: InputDecoration(
+                      hintText: 'Type to search...',
+                      filled: true,
+                      fillColor: Colors.pink.shade50,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onSelected:
+                        viewModel.updateAutocompleteCustomDecorationResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Custom Decoration Result',
+                      viewModel.autocompleteCustomDecorationResult),
+
+                  buildSectionTitle('Autocomplete (Suffix Icon)', Colors.amber,
+                      Colors.amber.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Suffix Icon',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    suffixIcon: Icon(Icons.star, color: Colors.amber),
+                    onSelected: viewModel.updateAutocompleteSuffixIconResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Suffix Icon Result',
+                      viewModel.autocompleteSuffixIconResult),
+
+                  buildSectionTitle('Autocomplete (Remove Suffix Icon)',
+                      Colors.lime, Colors.lime.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Remove Suffix Icon',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    removeSuffixIcon: true,
+                    onSelected:
+                        viewModel.updateAutocompleteRemoveSuffixIconResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Remove Suffix Icon Result',
+                      viewModel.autocompleteRemoveSuffixIconResult),
+
+                  buildSectionTitle('Autocomplete (BorderType Outline)',
+                      Colors.blueGrey, Colors.blueGrey.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Outline Border',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    borderType: BorderType.outlineInputBorder,
+                    onSelected: viewModel.updateAutocompleteOutlineBorderResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Outline BorderType Result',
+                      viewModel.autocompleteOutlineBorderResult),
+
+                  buildSectionTitle('Autocomplete (BorderType Underline)',
+                      Colors.teal, Colors.teal.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'Underline Border',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    borderType: BorderType.underlineInputBorder,
+                    onSelected:
+                        viewModel.updateAutocompleteUnderlineBorderResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'Underline BorderType Result',
+                      viewModel.autocompleteUnderlineBorderResult),
+
+                  buildSectionTitle('Autocomplete (BorderType None)',
+                      Colors.deepPurple, Colors.deepPurple.shade100),
+                  FormFieldsAutocomplete(
+                    label: 'No Border',
+                    url: 'https://dummyjson.com/products/search',
+                    queryParam: 'q',
+                    borderType: BorderType.none,
+                    onSelected: viewModel.updateAutocompleteNoBorderResult,
+                    labelPosition: LabelPosition.top,
+                  ),
+                  buildResultDisplay(context, 'No BorderType Result',
+                      viewModel.autocompleteNoBorderResult),
+
                   // ========== STRING TYPE ==========
                   buildSectionTitle(context.tr('ffStringTypes'),
                       Colors.blue.shade700, Colors.blue.shade400),

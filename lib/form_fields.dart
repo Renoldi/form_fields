@@ -29,6 +29,7 @@ library;
 // Core FormFields API
 // -------------------
 export 'src/form_fields.dart' show FormFields;
+export 'src/form_fields_autocomplete.dart' show FormFieldsAutocomplete;
 
 // -------------------
 // Field Widgets

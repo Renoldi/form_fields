@@ -12,9 +12,11 @@ environment:
   flutter: '>=3.0.0'
 
 dependencies:
+  dio: ^5.9.2
   flutter:
     sdk: flutter
   intl: any
+  logger: ^2.7.0
   provider: any
 
 dev_dependencies:
