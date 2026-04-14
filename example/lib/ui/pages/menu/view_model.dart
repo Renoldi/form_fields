@@ -88,6 +88,20 @@ class ViewModel extends ChangeNotifier {
           color: Colors.red,
           routeName: AppRoute.appButton.name,
         ),
+        MenuItemData(
+          title: 'Loading & Progress',
+          subtitle: 'Indicators & Async States',
+          icon: Icons.hourglass_top,
+          color: Colors.deepPurple,
+          routeName: AppRoute.loadingProgress.name,
+        ),
+        MenuItemData(
+          title: 'App Dialog Service',
+          subtitle: 'Success/Error/Guard Dialogs',
+          icon: Icons.chat_bubble_outline,
+          color: Colors.brown,
+          routeName: AppRoute.appDialogService.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

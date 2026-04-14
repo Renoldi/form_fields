@@ -3,42 +3,76 @@ import 'package:form_fields_example/data/models/user.dart';
 import 'package:form_fields_example/config/error_type.dart';
 
 class ViewModel extends ChangeNotifier {
-  String? errorMessage;
-  ErrorType? errorType;
-  String username = 'emilys';
-  String password = 'emilyspass';
-  bool isLoading = false;
+  String? _errorMessage;
+  ErrorType? _errorType;
+  String _username = 'emilys';
+  String _password = 'emilyspass';
+  bool _isLoading = false;
+  bool _useBlockingLoadingDialog = false;
+
+  String? get errorMessage => _errorMessage;
+  ErrorType? get errorType => _errorType;
+  String get username => _username;
+  String get password => _password;
+  bool get isLoading => _isLoading;
+  bool get useBlockingLoadingDialog => _useBlockingLoadingDialog;
 
   bool get canSubmit =>
-      username.trim().isNotEmpty && password.trim().isNotEmpty;
+      _username.trim().isNotEmpty && _password.trim().isNotEmpty;
 
-  void notify() {
+  void notifyView() {
+    notifyListeners();
+  }
+
+  void updateUsername(String value) {
+    if (_username == value) return;
+    _username = value;
+    if (_errorMessage != null) {
+      _errorMessage = null;
+      _errorType = null;
+    }
+    notifyListeners();
+  }
+
+  void updatePassword(String value) {
+    if (_password == value) return;
+    _password = value;
+    if (_errorMessage != null) {
+      _errorMessage = null;
+      _errorType = null;
+    }
     notifyListeners();
   }
 
   void setError(String message, {ErrorType type = ErrorType.server}) {
-    errorMessage = message;
-    errorType = type;
+    _errorMessage = message;
+    _errorType = type;
     notifyListeners();
   }
 
   void clearError() {
-    if (errorMessage == null) return;
-    errorMessage = null;
-    errorType = null;
+    if (_errorMessage == null) return;
+    _errorMessage = null;
+    _errorType = null;
     notifyListeners();
   }
 
   Future<User> login() {
     return User.login(
-      username: username.trim(),
-      password: password.trim(),
+      username: _username.trim(),
+      password: _password.trim(),
     );
   }
 
   void setLoading(bool value) {
-    if (isLoading == value) return;
-    isLoading = value;
+    if (_isLoading == value) return;
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void setLoadingMode({required bool useBlockingDialog}) {
+    if (_useBlockingLoadingDialog == useBlockingDialog) return;
+    _useBlockingLoadingDialog = useBlockingDialog;
     notifyListeners();
   }
 }

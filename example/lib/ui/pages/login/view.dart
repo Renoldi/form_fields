@@ -12,11 +12,32 @@ class View extends PresenterState {
       builder: (context, viewModel, _) {
         return Scaffold(
           backgroundColor: const Color(0xFFF5F5F5),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: _buildLoginCard(viewModel),
-            ),
+          body: Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: _buildLoginCard(viewModel),
+                ),
+              ),
+              if (viewModel.isLoading &&
+                  !viewModel.useBlockingLoadingDialog) ...[
+                const Positioned.fill(
+                  child: ModalBarrier(
+                    dismissible: false,
+                    color: Color(0x66000000),
+                  ),
+                ),
+                const Positioned.fill(
+                  child: Center(
+                    child: AppLoadingIndicator(
+                      variant: AppLoadingVariant.spinner,
+                      size: 42,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         );
       },
@@ -24,36 +45,39 @@ class View extends PresenterState {
   }
 
   Widget _buildLoginCard(ViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 24),
-          _buildUsernameField(viewModel),
-          const SizedBox(height: 16),
-          _buildPasswordField(viewModel),
-          if (viewModel.errorMessage != null) ...[
-            const SizedBox(height: 12),
-            _buildErrorMessage(viewModel.errorMessage!),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
           ],
-          const SizedBox(height: 20),
-          _buildLoginButton(viewModel),
-          const SizedBox(height: 8),
-          _buildHintText(),
-        ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 24),
+            _buildUsernameField(viewModel),
+            const SizedBox(height: 16),
+            _buildPasswordField(viewModel),
+            if (viewModel.errorMessage != null) ...[
+              const SizedBox(height: 12),
+              _buildErrorMessage(viewModel.errorMessage!),
+            ],
+            const SizedBox(height: 20),
+            _buildLoginButton(viewModel),
+            const SizedBox(height: 8),
+            _buildHintText(),
+          ],
+        ),
       ),
     );
   }
@@ -109,7 +133,7 @@ class View extends PresenterState {
       type: AppButtonType.elevated,
       size: AppButtonSize.medium,
       text: context.tr('login'),
-      isLoading: viewModel.isLoading,
+      isLoading: false,
       onPressed: (!viewModel.canSubmit || viewModel.isLoading)
           ? null
           : () => handleLogin(viewModel),

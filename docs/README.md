@@ -9,6 +9,8 @@ This folder organizes widget documentation into separate files so each component
 - [AppSegmentedButton](components/app_segmented_button.md)
 - [AppSplitButton](components/app_split_button.md)
 - [AppFabMenu](components/app_fab_menu.md)
+- [AppDialogService](components/app_dialog_service.md)
+- [Loading & Progress](components/loading_progress.md)
 - [FormFields](components/form_fields.md)
 - [FormFieldsAutocomplete](components/form_fields_autocomplete.md)
 - [FormFieldsDropdown](components/form_fields_dropdown.md)

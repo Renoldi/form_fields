@@ -36,6 +36,8 @@ Each component now has its own documentation file for better readability and mai
 - [AppSegmentedButton](docs/components/app_segmented_button.md)
 - [AppSplitButton](docs/components/app_split_button.md)
 - [AppFabMenu](docs/components/app_fab_menu.md)
+- [AppDialogService](docs/components/app_dialog_service.md)
+- [Loading & Progress](docs/components/loading_progress.md)
 - [FormFields](docs/components/form_fields.md)
 - [FormFieldsAutocomplete](docs/components/form_fields_autocomplete.md)
 - [FormFieldsDropdown](docs/components/form_fields_dropdown.md)

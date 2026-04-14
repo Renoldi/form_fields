@@ -61,7 +61,10 @@ const Map<String, String> idStrings = {
   'genericTypesWithModels': 'Tipe Generik dengan Model',
   'nullNonNullValidation': 'Validasi Null/Bukan Null',
   'appButton': 'Tombol Aplikasi',
+  'loadingProgress': 'Loading & Progress',
+  'appDialogService': 'Layanan Dialog Aplikasi',
   'nullableVsNonNullable': 'Tipe Nullable vs Non-Nullable',
+  'loadingProgressDesc': 'Indikator & Status Asinkron',
 
   // Language
   'selectLanguage': 'Pilih Bahasa',

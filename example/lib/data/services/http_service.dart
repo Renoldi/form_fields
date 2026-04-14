@@ -40,7 +40,7 @@ class HttpException implements Exception {
 /// Error Handling Pattern:
 /// 1. HttpService throws HttpException with type & message
 /// 2. Presenter catches HttpException
-/// 3. BlockingDialog displays with proper styling
+/// 3. AppFeedbackDialog displays with proper styling
 ///
 /// Example usage:
 /// ```dart
@@ -48,10 +48,10 @@ class HttpException implements Exception {
 ///   final user = await User.login(username, password);
 /// } catch (error) {
 ///   if (error is HttpException) {
-///     await BlockingDialog(context).showError(
+///     await AppFeedbackDialog(context).showError(
 ///       title: 'Login Failed',
 ///       message: error.message,
-///       errorType: error.type,  // Automatic styling!
+///       dialogType: AppDialogType.server,
 ///     );
 ///   }
 /// }

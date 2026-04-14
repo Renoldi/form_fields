@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
+
+class ViewModel extends ChangeNotifier {
+  bool isRunning = false;
+  bool simulateError = false;
+  bool useBlockingLoading = true;
+  AppDialogPosition position = AppDialogPosition.top;
+  AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator;
+  AppLoadingVariant loadingVariant = AppLoadingVariant.spinner;
+  AppProgressType progressType = AppProgressType.circular;
+  String lastResult = '-';
+
+  void setPosition(AppDialogPosition value) {
+    position = value;
+    notifyListeners();
+  }
+
+  void setLoadingVisual(AppDialogLoadingVisual value) {
+    loadingVisual = value;
+    notifyListeners();
+  }
+
+  void setLoadingVariant(AppLoadingVariant value) {
+    loadingVariant = value;
+    notifyListeners();
+  }
+
+  void setProgressType(AppProgressType value) {
+    progressType = value;
+    notifyListeners();
+  }
+
+  void setBlockingLoading(bool value) {
+    useBlockingLoading = value;
+    notifyListeners();
+  }
+
+  void setSimulateError(bool value) {
+    simulateError = value;
+    notifyListeners();
+  }
+
+  void setRunning(bool value) {
+    isRunning = value;
+    notifyListeners();
+  }
+
+  void setLastResult(String value) {
+    lastResult = value;
+    notifyListeners();
+  }
+}

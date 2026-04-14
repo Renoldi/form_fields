@@ -50,12 +50,21 @@ export 'src/buttons/app_segmented_button.dart' show AppSegmentedButton;
 export 'src/buttons/app_split_button.dart'
     show AppSplitButton, AppSplitButtonItem;
 export 'src/buttons/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
+export 'src/feedback/app_loading_indicator.dart' show AppLoadingIndicator;
+export 'src/feedback/app_progress_indicator.dart' show AppProgressIndicator;
+export 'src/feedback/app_dialog_service.dart'
+    show
+        AppDialogService,
+        AppDialogType,
+        AppDialogPosition,
+        AppDialogLoadingVisual;
 
 // -------------------
 // Utilities & Enums
 // -------------------
 export 'src/utilities/enums.dart';
 export 'src/buttons/app_button_enums.dart';
+export 'src/feedback/app_loading_progress_enums.dart';
 export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide View;
+import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
-import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'view_model.dart';
 import 'view.dart';
@@ -48,10 +48,11 @@ abstract class PresenterState extends State<Presenter> {
     final error = await viewModel.loadUser(forceRefresh: true);
     if (error != null) {
       if (!mounted) return;
-      await BlockingDialog(context).showResult(
+      await AppDialogService(context).showResult(
         title: context.tr('loadFailed'),
         message: error,
         isSuccess: false,
+        okLabel: context.tr('ok'),
       );
     }
   }

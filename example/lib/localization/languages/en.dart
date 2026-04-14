@@ -61,7 +61,10 @@ const Map<String, String> enStrings = {
   'genericTypesWithModels': 'Generic Types with Models',
   'nullNonNullValidation': 'Null/Non-Null Validation',
   'appButton': 'App Button',
+  'loadingProgress': 'Loading & Progress',
+  'appDialogService': 'App Dialog Service',
   'nullableVsNonNullable': 'Nullable vs Non-Nullable Types',
+  'loadingProgressDesc': 'Indicators & Async States',
 
   // Language
   'selectLanguage': 'Select Language',

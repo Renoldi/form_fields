@@ -19,6 +19,10 @@ import 'package:form_fields_example/ui/pages/null_non_null_validation_examples/m
     as null_non_null_validation_examples;
 import 'package:form_fields_example/ui/pages/app_button_examples/main.dart'
     as app_button_examples;
+import 'package:form_fields_example/ui/pages/loading_progress_examples/main.dart'
+    as loading_progress_examples;
+import 'package:form_fields_example/ui/pages/app_dialog_service_examples/main.dart'
+    as app_dialog_service_examples;
 import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
 import 'package:form_fields_example/ui/pages/change_password/main.dart'
     as change_password;
@@ -243,6 +247,30 @@ GoRouter createAppRouter(AppStateNotifier appState) {
           ),
         ),
       ),
+      GoRoute(
+        path: AppRoute.loadingProgress.path,
+        name: AppRoute.loadingProgress.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.loadingProgress,
+          child: ChangeNotifierProvider(
+            create: (_) => loading_progress_examples.ViewModel(),
+            child: const loading_progress_examples.Presenter(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.appDialogService.path,
+        name: AppRoute.appDialogService.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.appDialogService,
+          child: ChangeNotifierProvider(
+            create: (_) => app_dialog_service_examples.ViewModel(),
+            child: const app_dialog_service_examples.Presenter(),
+          ),
+        ),
+      ),
     ],
 
     // Error handling
@@ -319,6 +347,10 @@ String _routeTitleKey(AppRoute route) {
       return 'nullNonNullValidation';
     case AppRoute.appButton:
       return 'appButton';
+    case AppRoute.loadingProgress:
+      return 'loadingProgress';
+    case AppRoute.appDialogService:
+      return 'appDialogService';
     case AppRoute.settings:
       return 'settings';
     case AppRoute.profile:

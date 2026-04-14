@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/config/error_position.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'main.dart' as main;
@@ -34,7 +35,7 @@ abstract class PresenterState extends State<Presenter> {
   }
 
   Future<void> handleUpdateProfile(AppStateNotifier appState) async {
-    final dialog = BlockingDialog(context);
+    final dialog = AppDialogService(context);
 
     dialog.showLoading(
       message: context.tr('updatingProfile'),
@@ -49,7 +50,8 @@ abstract class PresenterState extends State<Presenter> {
         isSuccess: true,
         title: context.tr('success'),
         message: context.tr('profileUpdatedSuccessfully'),
-        errorPosition: appState.errorPosition,
+        position: _toDialogPosition(appState.errorPosition),
+        okLabel: context.tr('ok'),
       );
       if (mounted) {
         Navigator.of(context).pop();
@@ -59,8 +61,20 @@ abstract class PresenterState extends State<Presenter> {
         isSuccess: false,
         title: context.tr('updateFailed'),
         message: error,
-        errorPosition: appState.errorPosition,
+        position: _toDialogPosition(appState.errorPosition),
+        okLabel: context.tr('ok'),
       );
+    }
+  }
+
+  AppDialogPosition _toDialogPosition(ErrorPosition position) {
+    switch (position) {
+      case ErrorPosition.top:
+        return AppDialogPosition.top;
+      case ErrorPosition.center:
+        return AppDialogPosition.center;
+      case ErrorPosition.bottom:
+        return AppDialogPosition.bottom;
     }
   }
 }

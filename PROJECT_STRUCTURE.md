@@ -37,6 +37,11 @@ form_fields_package/
 │       ├── providers/                  # State management
 │       │   ├── form_fields_dropdown_notifier.dart
 │       │   └── form_fields_notifier.dart
+│       ├── feedback/                   # Loading & progress indicators
+│       │   ├── app_dialog_service.dart
+│       │   ├── app_loading_indicator.dart
+│       │   ├── app_progress_indicator.dart
+│       │   └── app_loading_progress_enums.dart
 │       └── utilities/                  # Helpers & extensions
 │           ├── controller.dart
 │           ├── enums.dart
@@ -76,13 +81,13 @@ form_fields_package/
 │   │       │   ├── dropdown_multi_examples/
 │   │       │   ├── radio_button_examples/
 │   │       │   ├── checkbox_examples/
+│   │       │   ├── loading_progress_examples/
 │   │       │   ├── custom_class_examples/
 │   │       │   ├── null_non_null_validation_examples/
 │   │       │   └── examples_tabs/
 │   │       └── widgets/          # Reusable components (MVP)
 │   │           ├── language_indicator.dart
 │   │           ├── scaffold_with_drawer.dart
-│   │           ├── blocking_dialogs.dart
 │   │           └── result_display_widget.dart
 │   ├── test/                     # (Removed - use widget tests)
 │   ├── android/                  # Android native code

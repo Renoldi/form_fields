@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'package:form_fields_example/ui/widgets/blocking_dialogs.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 
@@ -16,7 +16,12 @@ class View extends PresenterState {
             canPop: false,
             onPopInvokedWithResult: (didPop, result) async {
               if (didPop) return;
-              await BlockingDialog(context).showExitConfirm();
+              await AppDialogService(context).showExitConfirm(
+                title: context.tr('exitApplication'),
+                message: context.tr('exitWarning'),
+                stayLabel: context.tr('stay'),
+                exitLabel: context.tr('exit'),
+              );
             },
             child: Scaffold(
               backgroundColor: const Color(0xFFF5F5F5),

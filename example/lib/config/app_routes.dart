@@ -15,6 +15,11 @@ enum AppRoute {
   customClass(name: 'custom_class', title: 'Custom Class'),
   validation(name: 'validation', title: 'Validation'),
   appButton(name: 'app_button', title: 'App Button'),
+  loadingProgress(name: 'loading_progress', title: 'Loading Progress'),
+  appDialogService(
+    name: 'app_dialog_service',
+    title: 'App Dialog Service',
+  ),
   settings(name: 'settings', title: 'Settings'),
   profile(name: 'profile', title: 'Profile'),
   changePassword(
