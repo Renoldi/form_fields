@@ -1,6 +1,8 @@
 # AppDialogService
 
 Reusable dialog helper for loading, success, info, and error flows.
+Use it together with `AppGlobalDialogService` when you need to show dialogs
+without passing `BuildContext` through every layer.
 
 ## Core APIs
 
@@ -24,6 +26,12 @@ await dialog.showError(
 );
 ```
 
+## Recommended Architecture
+
+- Use `AppDialogService(context)` for page-level flows.
+- Use `AppGlobalDialogService.instance` for global/app-level flows.
+- Keep technical details in logger, and map user-facing messages via localization keys.
+
 ## Async Guard (Simple Flow)
 
 ```dart
@@ -41,6 +49,32 @@ final user = await AppDialogService(context).guard<User>(
 if (user != null) {
   // Continue success flow
 }
+```
+
+Localization-friendly error mapping:
+
+```dart
+final user = await AppGlobalDialogService.instance.guard<User>(
+  task: viewModel.login,
+  errorTitle: context.tr('loginFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: _toDialogType(error.type),
+      );
+    }
+
+    logger.e('Login failed (unexpected): $error');
+    return (
+      message: context.tr('errorLoginTemporarilyUnavailable'),
+      type: AppDialogType.server,
+    );
+  },
+  okLabel: context.tr('ok'),
+  showBlockingLoading: true,
+  loadingMessage: context.tr('signingIn'),
+);
 ```
 
 ## Dialog Position
@@ -141,6 +175,25 @@ Usage:
 await AppGlobalDialogService.instance.showSuccess(
   title: 'Saved',
   message: 'Your changes have been saved.',
+);
+```
+
+Global guard pattern:
+
+```dart
+final ok = await AppGlobalDialogService.instance.guard<bool>(
+  task: () async {
+    final errorKey = await viewModel.updateProfile(appState);
+    if (errorKey != null) throw StateError(errorKey);
+    return true;
+  },
+  errorTitle: context.tr('updateFailed'),
+  mapError: (error) => (
+    message: context.tr(error.toString().replaceFirst('Bad state: ', '')),
+    type: AppDialogType.server,
+  ),
+  showBlockingLoading: true,
+  loadingMessage: context.tr('updatingProfile'),
 );
 ```
 

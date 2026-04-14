@@ -14,7 +14,7 @@ Export groups from the entry point:
 - Autocomplete: `FormFieldsAutocomplete`
 - Selection fields: `FormFieldsSelect`, `FormFieldsDropdown`, `FormFieldsDropdownMulti`, `FormFieldsRadioButton`, `FormFieldsCheckbox`
 - Button family: `AppButton`, `AppButtonGroup`, `AppSegmentedButton`, `AppSplitButton`, `AppFabMenu`, plus related layout/content and enums
-- Feedback family: `AppDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`
+- Feedback family: `AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`
 - Shared utilities and localization: enums, validators, extensions, controller, and localizations
 
 ## Feedback APIs
@@ -25,6 +25,23 @@ Reusable dialog helper for loading, success/error/info dialogs, and guarded asyn
 
 Main methods:
 
+- `showLoading(...)`
+- `hide()`
+- `showSuccess(...)`
+- `showError(...)`
+- `showInfo(...)`
+- `showResult(...)`
+- `showExitConfirm(...)`
+- `guard<T>(...)`
+
+### AppGlobalDialogService
+
+Global coordinator that delegates to `AppDialogService` using a configured root navigator key.
+
+Main methods:
+
+- `configure(GlobalKey<NavigatorState>)`
+- `reset()`
 - `showLoading(...)`
 - `hide()`
 - `showSuccess(...)`
