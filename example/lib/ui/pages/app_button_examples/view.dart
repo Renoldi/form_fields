@@ -103,6 +103,91 @@ class View extends PresenterState {
                   Text('Last typed payload: $_lastTypedButtonValue'),
                   const SizedBox(height: 16),
                   Text(
+                    'All AppButton Types',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  AppButtonGroup(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      SizedBox(
+                        width: 170,
+                        child: AppButton(
+                          type: AppButtonType.filled,
+                          text: 'Filled',
+                          icon: const Icon(Icons.check_circle_outline),
+                          onPressed: () {},
+                        ),
+                      ),
+                      SizedBox(
+                        width: 170,
+                        child: AppButton(
+                          type: AppButtonType.filledTonal,
+                          text: 'Filled Tonal',
+                          icon: const Icon(Icons.tonality),
+                          onPressed: () {},
+                        ),
+                      ),
+                      SizedBox(
+                        width: 170,
+                        child: AppButton(
+                          type: AppButtonType.elevated,
+                          text: 'Elevated',
+                          icon: const Icon(Icons.trending_up_outlined),
+                          onPressed: () {},
+                        ),
+                      ),
+                      SizedBox(
+                        width: 170,
+                        child: AppButton(
+                          type: AppButtonType.outlined,
+                          text: 'Outlined',
+                          icon: const Icon(Icons.crop_square_outlined),
+                          onPressed: () {},
+                        ),
+                      ),
+                      SizedBox(
+                        width: 170,
+                        child: AppButton(
+                          type: AppButtonType.text,
+                          text: 'Text',
+                          icon: const Icon(Icons.text_fields),
+                          onPressed: () {},
+                        ),
+                      ),
+                      AppButton(
+                        type: AppButtonType.icon,
+                        size: AppButtonSize.medium,
+                        icon: const Icon(Icons.favorite_border),
+                        onPressed: () {},
+                      ),
+                      AppButton(
+                        type: AppButtonType.fab,
+                        size: AppButtonSize.medium,
+                        icon: const Icon(Icons.add),
+                        onPressed: () {},
+                      ),
+                      AppButton(
+                        type: AppButtonType.extendedFab,
+                        text: 'Extended FAB',
+                        icon: const Icon(Icons.add_task_outlined),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 220,
+                    child: AppButton(
+                      type: AppButtonType.filled,
+                      text: 'Disabled',
+                      icon: const Icon(Icons.block_outlined),
+                      onPressed: null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
                     'Button Groups',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),

@@ -4,22 +4,110 @@
 
 This project follows **Model-View-Presenter (MVP)** architecture combined with **Clean Architecture** principles for scalability, testability, and maintainability.
 
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+  A[Public API\nlib/form_fields.dart] --> B[Buttons Domain\nlib/src/buttons]
+  A --> C[Fields Core\nlib/src/fields/core]
+  A --> D[Fields Autocomplete\nlib/src/fields/autocomplete]
+  A --> E[Fields Selection\nlib/src/fields/selection]
+  A --> F[Shared Utilities\nlib/src/utilities]
+  A --> G[Localization\nlib/src/localization]
+
+  C --> H[Providers\nlib/src/providers]
+  D --> F
+  E --> F
+  E --> G
+  C --> G
+
+  I[Example App] --> J[UI Pages MVP]
+  J --> K[ViewModel]
+  K --> A
+```
+
+## FormFields Validation Flow
+
+```mermaid
+flowchart TD
+  A[User Input] --> B[FormFields or Selection Widget]
+  B --> C{isRequired?}
+  C -- Yes --> D[Run required validation]
+  C -- No --> E[Skip required validation]
+  D --> F{custom validator exists?}
+  E --> F
+  F -- Yes --> G[Run custom validator]
+  F -- No --> H[No additional validation]
+  G --> I{error returned?}
+  H --> J[Update value via onChanged]
+  I -- Yes --> K[Show localized error text]
+  I -- No --> J
+  K --> L[Keep invalid state]
+  J --> M[Notifier/ViewModel update]
+```
+
+## AppButton Family Diagram
+
+```mermaid
+flowchart LR
+  A[AppButton] --> B[AppButtonContent]
+  A --> C[AppButtonLayout optional]
+  A --> D[AppButtonType]
+  A --> E[AppButtonSize]
+
+  D --> D1[filled]
+  D --> D2[filledTonal]
+  D --> D3[elevated]
+  D --> D4[outlined]
+  D --> D5[text]
+  D --> D6[icon]
+  D --> D7[fab]
+  D --> D8[extendedFab]
+
+  A --> F[AppButtonGroup]
+  A --> G[AppSegmentedButton]
+  A --> H[AppSplitButton]
+  A --> I[AppFabMenu]
+
+  E --> E1[small]
+  E --> E2[medium]
+  E --> E3[large]
+  E --> E4[custom]
+```
+
 ## Core Principles
 
 ### 1. Separation of Concerns
+
 - **Presentation**: UI rendering and user interactions
 - **Business Logic**: State management, validation, data processing
 - **Data**: API calls, local storage, models
 
 ### 2. Dependency Injection
+
 - Use Provider for global state
 - Pass ViewModels to Views through PresenterState
 - Avoid direct dependencies between layers
 
 ### 3. Single Responsibility
+
 - Each file has one primary responsibility
 - Each class focuses on a specific domain
 - Each method does one thing well
+
+## Package Source Layout
+
+Library source in [lib/src](lib/src) is organized by feature domain:
+
+- [lib/src/buttons](lib/src/buttons): AppButton family components and enums.
+- [lib/src/fields/core](lib/src/fields/core): Main FormFields widget.
+- [lib/src/fields/autocomplete](lib/src/fields/autocomplete): autocomplete field widget.
+- [lib/src/fields/selection](lib/src/fields/selection): dropdown, multi-select, radio, checkbox, and selection wrapper.
+- [lib/src/utilities](lib/src/utilities): shared enums, validators, extensions, and helpers.
+- [lib/src/providers](lib/src/providers): internal notifiers.
+- [lib/src/localization](lib/src/localization): package localization delegate and language maps.
+
+Public API remains centralized via [lib/form_fields.dart](lib/form_fields.dart), so folder refactors do not impact package consumers.
 
 ## MVP Pattern Implementation
 
@@ -38,17 +126,18 @@ feature/
 ### Example: LoginPage
 
 **presenter.dart**
+
 ```dart
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  
+
   @override
   State<LoginPage> createState() => View();
 }
 
 abstract class PresenterState extends State<LoginPage> {
   late final LoginViewModel viewModel;
-  
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +147,7 @@ abstract class PresenterState extends State<LoginPage> {
 ```
 
 **view.dart**
+
 ```dart
 class View extends PresenterState {
   @override
@@ -75,12 +165,13 @@ class View extends PresenterState {
 ```
 
 **view_model.dart**
+
 ```dart
 class LoginViewModel extends ChangeNotifier {
   String email = '';
   String password = '';
   bool isLoading = false;
-  
+
   Future<void> login() async {
     isLoading = true;
     notifyListeners();
@@ -92,6 +183,7 @@ class LoginViewModel extends ChangeNotifier {
 ```
 
 **main.dart**
+
 ```dart
 export 'presenter.dart';
 export 'view.dart';
@@ -101,16 +193,19 @@ export 'view_model.dart';
 ## State Management
 
 ### Global State
+
 - **AppStateNotifier**: User session, authentication, locale
 - Managed via Provider
 - Accessible throughout app via `context.read<AppStateNotifier>()`
 
 ### Local State
+
 - Page-specific data managed in ViewModel
 - Observable via ChangeNotifier
 - Consumed via Consumer widgets
 
 ### Form State
+
 - Built-in Flutter FormField for validation
 - FormState accessed via GlobalKey<FormState>
 - Validation rules in validators.dart
@@ -118,20 +213,23 @@ export 'view_model.dart';
 ## Data Layer Architecture
 
 ### Models
+
 - Located in `lib/data/models/`
 - JSON serializable (json_serializable)
 - Immutable (copyWith pattern)
 
 ### Services
+
 - Located in `lib/data/services/`
 - Singleton pattern for shared resources
 - Dependency injection for testing
 
 ### HTTP Service
+
 ```dart
 class HttpService {
   static HttpService get instance => _instance ??= HttpService._internal();
-  
+
   Future<T> get<T>(String endpoint, {
     required T Function(dynamic) parser,
   }) async {
@@ -143,12 +241,14 @@ class HttpService {
 ## Navigation Architecture
 
 ### GoRouter Setup
+
 - Route definitions in `config/app_routes.dart`
 - Router setup in `config/app_router.dart`
 - Authentication redirect handling
 - Error page handling
 
 ### Route Protection
+
 ```dart
 redirect: (context, state) {
   final isLoggedIn = appState.isLoggedIn;
@@ -162,6 +262,7 @@ redirect: (context, state) {
 ## Localization Architecture
 
 ### File Structure
+
 ```
 localization/
 ├── localizations.dart          # Extension
@@ -171,6 +272,7 @@ localization/
 ```
 
 ### Usage
+
 ```dart
 // Access via extension on BuildContext
 Text(context.tr('loginTitle'))
@@ -182,6 +284,7 @@ context.read<AppStateNotifier>().setLocale(Locale('id', 'ID'));
 ## Dependency Management
 
 ### Provider Hierarchy
+
 ```
 ChangeNotifierProvider<AppStateNotifier>  // Root - global state
 ├── Consumer<AppStateNotifier>             // Any widget
@@ -194,23 +297,27 @@ ChangeNotifierProvider<AppStateNotifier>  // Root - global state
 ## Best Practices
 
 ### 1. ViewModel Design
+
 - ✅ Contains all business logic
 - ✅ Extends ChangeNotifier for reactivity
 - ✅ Pure - no direct widget references
 - ❌ Never directly manipulate UI state
 
 ### 2. View Design
+
 - ✅ Read-only from ViewModel
 - ✅ Call ViewModel methods on user interaction
 - ✅ Use Consumer for granular rebuilds
 - ❌ Never put business logic in Views
 
 ### 3. Presenter Design
+
 - ✅ Only creates ViewModel and State
 - ✅ Minimal scaffolding
 - ❌ Never contains logic
 
 ### 4. Testing Strategy
+
 ```dart
 // Easy to test - pure business logic
 test('login updates isLoading state', () {
@@ -223,6 +330,7 @@ test('login updates isLoading state', () {
 ## Common Patterns
 
 ### Form Handling
+
 ```dart
 final formKey = GlobalKey<FormState>();
 
@@ -241,12 +349,13 @@ if (formKey.currentState!.validate()) {
 ```
 
 ### Async Operations
+
 ```dart
 class ViewModel extends ChangeNotifier {
   Future<void> fetchData() async {
     isLoading = true;
     notifyListeners();
-    
+
     try {
       data = await service.fetch();
     } catch (e) {
@@ -260,6 +369,7 @@ class ViewModel extends ChangeNotifier {
 ```
 
 ### Error Handling
+
 ```dart
 Future<Result<T>> safeCall<T>(Future<T> Function() call) async {
   try {
@@ -273,6 +383,7 @@ Future<Result<T>> safeCall<T>(Future<T> Function() call) async {
 ## Performance Considerations
 
 ### Rebuild Optimization
+
 ```dart
 // Good - only rebuild when vm changes
 Consumer<ViewModel>(builder: (_, vm, __) => ...)
@@ -285,6 +396,7 @@ Selector<ViewModel, String>(
 ```
 
 ### Memory Management
+
 - Dispose resources in ViewModel dispose()
 - Use weak references for listeners where appropriate
 - Cancel pending requests on route exit
@@ -292,6 +404,7 @@ Selector<ViewModel, String>(
 ## Testing Approach
 
 ### Unit Tests
+
 ```dart
 test('ViewModel logic', () {
   final vm = MyViewModel();
@@ -300,6 +413,7 @@ test('ViewModel logic', () {
 ```
 
 ### Widget Tests
+
 ```dart
 testWidgets('View renders correctly', (tester) async {
   await tester.pumpWidget(MaterialApp(
@@ -324,6 +438,7 @@ feature/
 ```
 
 Never:
+
 - Put business logic in View
 - Put UI in ViewModel
 - Mess up file structure

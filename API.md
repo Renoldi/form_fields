@@ -1,5 +1,21 @@
 # API Reference - FormFields Package
 
+## Public Entry Point
+
+Use [lib/form_fields.dart](lib/form_fields.dart) as the only import surface:
+
+```dart
+import 'package:form_fields/form_fields.dart';
+```
+
+Export groups from the entry point:
+
+- Core field: `FormFields`
+- Autocomplete: `FormFieldsAutocomplete`
+- Selection fields: `FormFieldsSelect`, `FormFieldsDropdown`, `FormFieldsDropdownMulti`, `FormFieldsRadioButton`, `FormFieldsCheckbox`
+- Button family: `AppButton`, `AppButtonGroup`, `AppSegmentedButton`, `AppSplitButton`, `AppFabMenu`, plus related layout/content and enums
+- Shared utilities and localization: enums, validators, extensions, controller, and localizations
+
 ## Core Widget: FormFields<T>
 
 The main widget for creating form fields.

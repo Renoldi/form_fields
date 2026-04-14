@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'utilities/dio_service.dart';
+import '../../utilities/dio_service.dart';
 import 'package:dio/dio.dart' show Options;
 import 'package:logger/logger.dart';
-import 'utilities/enums.dart';
+import '../../utilities/enums.dart';
 
 /// FormFieldsAutocomplete supports:
 /// - Custom query param and token header

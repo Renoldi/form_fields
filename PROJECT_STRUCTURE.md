@@ -9,12 +9,26 @@ form_fields_package/
 ├── lib/                          # Main package source code
 │   ├── form_fields.dart         # Package entry point
 │   └── src/                      # Implementation
-│       ├── form_fields.dart           # Base FormFields widget
-│       ├── form_fields_checkbox.dart  # Checkbox implementation
-│       ├── form_fields_dropdown.dart  # Dropdown implementation
-│       ├── form_fields_dropdown_multi.dart  # Multi-select dropdown
-│       ├── form_fields_radio_button.dart    # Radio button implementation
-│       ├── form_fields_select.dart          # Select utility wrapper
+│       ├── buttons/                    # App button family
+│       │   ├── app_button.dart
+│       │   ├── app_button_content.dart
+│       │   ├── app_button_enums.dart
+│       │   ├── app_button_group.dart
+│       │   ├── app_button_layout.dart
+│       │   ├── app_fab_menu.dart
+│       │   ├── app_segmented_button.dart
+│       │   └── app_split_button.dart
+│       ├── fields/                     # Form field domain modules
+│       │   ├── core/
+│       │   │   └── form_fields.dart          # Base FormFields widget
+│       │   ├── autocomplete/
+│       │   │   └── form_fields_autocomplete.dart
+│       │   └── selection/
+│       │       ├── form_fields_checkbox.dart
+│       │       ├── form_fields_dropdown.dart
+│       │       ├── form_fields_dropdown_multi.dart
+│       │       ├── form_fields_radio_button.dart
+│       │       └── form_fields_select.dart
 │       ├── localization/               # Localization support
 │       │   ├── form_fields_localizations.dart
 │       │   └── languages/
@@ -90,7 +104,7 @@ Every screen and reusable component follows the MVP pattern:
 // 1. Presenter: StatefulWidget entry point
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  
+
   @override
   State<LoginPage> createState() => View();
 }
@@ -98,7 +112,7 @@ class LoginPage extends StatefulWidget {
 // 2. PresenterState: Abstract base with lifecycle
 abstract class PresenterState extends State<LoginPage> {
   late final ViewModel viewModel;
-  
+
   @override
   void initState() {
     super.initState();
@@ -129,25 +143,26 @@ class ViewModel {
 ### Localization
 
 - Supported: English (US), Indonesian
-- Files: `lib/localization/languages/{en.dart, id.dart}`
+- Files: `lib/src/localization/languages/{en_us.dart, id_id.dart}`
 - Usage: `context.tr('key')` via BuildContext extension
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `lib/form_fields.dart` | Package public API |
-| `example/lib/main.dart` | Example app MVP root |
-| `example/lib/config/app_router.dart` | Navigation setup |
-| `example/lib/data/models/user.dart` | Data model (JSON serializable) |
-| `example/lib/data/services/http_service.dart` | HTTP client singleton |
-| `example/lib/ui/pages/*/presenter.dart` | Page MVP presenters |
-| `example/lib/ui/pages/*/view.dart` | Page MVP views |
-| `example/lib/ui/pages/*/view_model.dart` | Page MVP logic |
+| File                                          | Purpose                        |
+| --------------------------------------------- | ------------------------------ |
+| `lib/form_fields.dart`                        | Package public API             |
+| `example/lib/main.dart`                       | Example app MVP root           |
+| `example/lib/config/app_router.dart`          | Navigation setup               |
+| `example/lib/data/models/user.dart`           | Data model (JSON serializable) |
+| `example/lib/data/services/http_service.dart` | HTTP client singleton          |
+| `example/lib/ui/pages/*/presenter.dart`       | Page MVP presenters            |
+| `example/lib/ui/pages/*/view.dart`            | Page MVP views                 |
+| `example/lib/ui/pages/*/view_model.dart`      | Page MVP logic                 |
 
 ## Dependencies
 
 ### Runtime
+
 - `flutter` - UI framework
 - `intl` - Internationalization
 - `provider` - State management
@@ -156,6 +171,7 @@ class ViewModel {
 - `json_annotation` - JSON serialization
 
 ### Development
+
 - `flutter_lints` - Code quality
 - `flutter_test` - Testing
 - `build_runner` - Code generation

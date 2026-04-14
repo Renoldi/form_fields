@@ -28,30 +28,34 @@ library;
 // -------------------
 // Core FormFields API
 // -------------------
-export 'src/form_fields.dart' show FormFields;
-export 'src/form_fields_autocomplete.dart' show FormFieldsAutocomplete;
+export 'src/fields/core/form_fields.dart' show FormFields;
+export 'src/fields/autocomplete/form_fields_autocomplete.dart'
+    show FormFieldsAutocomplete;
 
 // -------------------
 // Field Widgets
 // -------------------
-export 'src/form_fields_select.dart' show FormFieldsSelect;
-export 'src/form_fields_dropdown.dart' show FormFieldsDropdown;
-export 'src/form_fields_dropdown_multi.dart' show FormFieldsDropdownMulti;
-export 'src/form_fields_radio_button.dart' show FormFieldsRadioButton;
-export 'src/form_fields_checkbox.dart' show FormFieldsCheckbox;
-export 'src/app_button.dart' show AppButton;
-export 'src/app_button_layout.dart' show AppButtonLayout;
-export 'src/app_button_content.dart' show AppButtonContent;
-export 'src/app_button_group.dart' show AppButtonGroup;
-export 'src/app_segmented_button.dart' show AppSegmentedButton;
-export 'src/app_split_button.dart' show AppSplitButton, AppSplitButtonItem;
-export 'src/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
+export 'src/fields/selection/form_fields_select.dart' show FormFieldsSelect;
+export 'src/fields/selection/form_fields_dropdown.dart' show FormFieldsDropdown;
+export 'src/fields/selection/form_fields_dropdown_multi.dart'
+    show FormFieldsDropdownMulti;
+export 'src/fields/selection/form_fields_radio_button.dart'
+    show FormFieldsRadioButton;
+export 'src/fields/selection/form_fields_checkbox.dart' show FormFieldsCheckbox;
+export 'src/buttons/app_button.dart' show AppButton;
+export 'src/buttons/app_button_layout.dart' show AppButtonLayout;
+export 'src/buttons/app_button_content.dart' show AppButtonContent;
+export 'src/buttons/app_button_group.dart' show AppButtonGroup;
+export 'src/buttons/app_segmented_button.dart' show AppSegmentedButton;
+export 'src/buttons/app_split_button.dart'
+    show AppSplitButton, AppSplitButtonItem;
+export 'src/buttons/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
 
 // -------------------
 // Utilities & Enums
 // -------------------
 export 'src/utilities/enums.dart';
-export 'src/app_button_enums.dart';
+export 'src/buttons/app_button_enums.dart';
 export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';

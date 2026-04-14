@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'localization/form_fields_localizations.dart';
-import 'utilities/enums.dart';
-import 'providers/form_fields_dropdown_notifier.dart';
+import '../../localization/form_fields_localizations.dart';
+import '../../utilities/enums.dart';
+import '../../providers/form_fields_dropdown_notifier.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
@@ -152,7 +152,8 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                         builder: (formFieldState) {
                           return TextField(
                             decoration: InputDecoration(
-                              hintText: widget.filterHintText ?? l10n.searchHint,
+                              hintText:
+                                  widget.filterHintText ?? l10n.searchHint,
                               prefixIcon: const Icon(Icons.search),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),

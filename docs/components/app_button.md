@@ -4,6 +4,11 @@ Reusable Material 3 button component that supports multiple button types, loadin
 
 `AppButton` also supports generic typed payload callbacks via `AppButton<T>`.
 
+## Architecture Links
+
+- [Architecture Diagram](../../ARCHITECTURE.md#architecture-diagram)
+- [AppButton Family Diagram](../../ARCHITECTURE.md#appbutton-family-diagram)
+
 ## Supported Types
 
 - `AppButtonType.filled`
@@ -31,6 +36,40 @@ AppButton(
   text: 'Continue',
   icon: const Icon(Icons.arrow_forward),
   onPressed: () {},
+)
+```
+
+## All Types Showcase
+
+```dart
+AppButtonGroup(
+  children: [
+    AppButton(type: AppButtonType.filled, text: 'Filled', onPressed: () {}),
+    AppButton(
+      type: AppButtonType.filledTonal,
+      text: 'Filled Tonal',
+      onPressed: () {},
+    ),
+    AppButton(type: AppButtonType.elevated, text: 'Elevated', onPressed: () {}),
+    AppButton(type: AppButtonType.outlined, text: 'Outlined', onPressed: () {}),
+    AppButton(type: AppButtonType.text, text: 'Text', onPressed: () {}),
+    AppButton(
+      type: AppButtonType.icon,
+      icon: const Icon(Icons.favorite_border),
+      onPressed: () {},
+    ),
+    AppButton(
+      type: AppButtonType.fab,
+      icon: const Icon(Icons.add),
+      onPressed: () {},
+    ),
+    AppButton(
+      type: AppButtonType.extendedFab,
+      text: 'Extended FAB',
+      icon: const Icon(Icons.add_task_outlined),
+      onPressed: () {},
+    ),
+  ],
 )
 ```
 
@@ -78,6 +117,134 @@ Callback priority:
 - If `isLoading` is true: button is disabled.
 - If `onPressedWithValue` is provided: it will be used.
 - Otherwise `onPressed` is used.
+
+## AppButton<T> Usage Patterns
+
+### 1) Simple enum/string payload
+
+```dart
+AppButton<String>(
+  text: 'Pay with method',
+  value: 'bank_transfer',
+  onPressedWithValue: (method) {
+    if (method != null) {
+      processPayment(method);
+    }
+  },
+)
+```
+
+### 2) Numeric payload
+
+```dart
+AppButton<int>(
+  text: 'Choose quantity',
+  value: 3,
+  onPressedWithValue: (qty) {
+    updateQty(qty ?? 1);
+  },
+)
+```
+
+### 3) Custom model payload
+
+```dart
+class ButtonAction {
+  final String id;
+  final bool requiresConfirmation;
+
+  const ButtonAction({
+    required this.id,
+    required this.requiresConfirmation,
+  });
+}
+
+AppButton<ButtonAction>(
+  text: 'Run action',
+  value: const ButtonAction(id: 'archive', requiresConfirmation: true),
+  onPressedWithValue: (action) {
+    if (action == null) return;
+    runAction(action.id, action.requiresConfirmation);
+  },
+)
+```
+
+### 4) Backward compatible migration
+
+`AppButton<T>` remains compatible with existing `onPressed`. You can migrate incrementally:
+
+- Keep old callbacks with `onPressed`.
+- Move typed actions to `onPressedWithValue` only where needed.
+- Use both APIs in the same screen while refactoring.
+
+## All Button Types with Generic T
+
+Use the same typed payload pattern on every `AppButtonType`:
+
+```dart
+AppButton<String>(
+  type: AppButtonType.filled,
+  text: 'Filled T',
+  value: 'filled',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.filledTonal,
+  text: 'Filled Tonal T',
+  value: 'filledTonal',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.elevated,
+  text: 'Elevated T',
+  value: 'elevated',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.outlined,
+  text: 'Outlined T',
+  value: 'outlined',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.text,
+  text: 'Text T',
+  value: 'text',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.icon,
+  icon: const Icon(Icons.favorite_border),
+  value: 'icon',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.fab,
+  icon: const Icon(Icons.add),
+  value: 'fab',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+
+AppButton<String>(
+  type: AppButtonType.extendedFab,
+  text: 'Extended FAB T',
+  icon: const Icon(Icons.add_task_outlined),
+  value: 'extendedFab',
+  onPressedWithValue: (v) => debugPrint(v),
+)
+```
+
+Notes:
+
+- `T` can be `String`, `int`, `bool`, enum, or custom model.
+- Generic callback works the same across all button types.
+- If both callbacks are set, `onPressedWithValue` has priority over `onPressed`.
 
 ## Loading State
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'utilities/enums.dart';
-import 'localization/form_fields_localizations.dart';
+import '../../utilities/enums.dart';
+import '../../localization/form_fields_localizations.dart';
 
 class FormFieldsCheckbox<T> extends FormField<List<T>> {
   FormFieldsCheckbox({

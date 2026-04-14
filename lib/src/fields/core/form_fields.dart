@@ -23,12 +23,12 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'utilities/controller.dart';
-import 'utilities/enums.dart';
-import 'localization/form_fields_localizations.dart';
-import 'utilities/validators.dart';
-import 'utilities/phone_country_codes.dart' as phone_codes;
-import 'providers/form_fields_notifier.dart';
+import '../../utilities/controller.dart';
+import '../../utilities/enums.dart';
+import '../../localization/form_fields_localizations.dart';
+import '../../utilities/validators.dart';
+import '../../utilities/phone_country_codes.dart' as phone_codes;
+import '../../providers/form_fields_notifier.dart';
 
 class FormFields<T> extends StatefulWidget {
   // -------------------------------------------------------------------------

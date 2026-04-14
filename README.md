@@ -48,6 +48,12 @@ Open the docs index:
 
 - [Documentation Index](docs/README.md)
 
+Architecture shortcuts:
+
+- [Architecture Diagram](ARCHITECTURE.md#architecture-diagram)
+- [FormFields Validation Flow](ARCHITECTURE.md#formfields-validation-flow)
+- [AppButton Family Diagram](ARCHITECTURE.md#appbutton-family-diagram)
+
 Segmented button icon behavior note:
 
 - `ButtonSegment.icon` can be hardcoded per segment. See [AppSegmentedButton docs](docs/components/app_segmented_button.md) for best practices with `selectedIcon`.
@@ -55,6 +61,27 @@ Segmented button icon behavior note:
 AppButton generic callback note:
 
 - `AppButton<T>` supports typed payload callbacks via `value` + `onPressedWithValue`. See [AppButton docs](docs/components/app_button.md).
+- Includes examples for all `AppButtonType` with generic `T` in [AppButton docs](docs/components/app_button.md#all-button-types-with-generic-t).
+
+### AppButton<T> Quick Example
+
+```dart
+class LoginAction {
+  final String source;
+  final bool rememberMe;
+
+  const LoginAction({required this.source, required this.rememberMe});
+}
+
+AppButton<LoginAction>(
+  text: 'Sign in',
+  value: const LoginAction(source: 'email', rememberMe: true),
+  onPressedWithValue: (payload) {
+    if (payload == null) return;
+    login(source: payload.source, rememberMe: payload.rememberMe);
+  },
+)
+```
 
 ## Additional References
 

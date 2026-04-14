@@ -1033,7 +1033,7 @@ class FormFieldsLocalizations {
 
 #### Step 3: Add Simple Code Mapping (Optional but Recommended)
 
-For user convenience, add simple language code mapping in `lib/src/form_fields.dart`:
+For user convenience, add simple language code mapping in `lib/src/fields/core/form_fields.dart`:
 
 Find the `_getLocalizations()` method and update the `simpleCodeMap`:
 

@@ -22,4 +22,9 @@ FormFields<String>(
 - `borderType` and `radius`: Border appearance.
 - `inputDecoration`: Additional InputDecoration control.
 
+## Architecture Links
+
+- [Architecture Diagram](../../ARCHITECTURE.md#architecture-diagram)
+- [FormFields Validation Flow](../../ARCHITECTURE.md#formfields-validation-flow)
+
 For full property details, see [API.md](../../API.md).
