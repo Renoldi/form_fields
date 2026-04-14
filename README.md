@@ -96,6 +96,32 @@ AppButton<LoginAction>(
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 
+## Testing
+
+This package uses a lightweight baseline test to keep feedback fast during development.
+
+Run only the fast feedback tests:
+
+```bash
+flutter test test/feedback/app_dialog_service_fast_test.dart
+```
+
+Run all tests in the package:
+
+```bash
+flutter test
+```
+
+Tips for faster local iteration:
+
+- Prefer unit tests for core logic and mapping behavior.
+- Avoid heavy widget test flows unless UI interaction coverage is required.
+- Use plain-name filtering for focused runs:
+
+```bash
+flutter test --plain-name "fast unit"
+```
+
 ## License
 
 This project is licensed under the [LICENSE](LICENSE).
