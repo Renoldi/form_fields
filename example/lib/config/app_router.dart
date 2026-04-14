@@ -45,8 +45,12 @@ import 'app_routes.dart';
 /// ```dart
 /// final router = createAppRouter(appStateNotifier);
 /// ```
-GoRouter createAppRouter(AppStateNotifier appState) {
+GoRouter createAppRouter(
+  AppStateNotifier appState, {
+  GlobalKey<NavigatorState>? navigatorKey,
+}) {
   return GoRouter(
+    navigatorKey: navigatorKey,
     debugLogDiagnostics: kDebugMode,
     initialLocation:
         appState.isLoggedIn ? AppRoute.menu.path : AppRoute.login.path,

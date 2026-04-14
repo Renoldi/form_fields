@@ -390,8 +390,17 @@ class ViewModel {
   /// Global app state notifier (provider-based state management)
   final AppStateNotifier appState = AppStateNotifier();
 
+  /// Root navigator key used by global dialog coordinator.
+  final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>();
+
   /// Router configuration for app navigation
-  late final routerConfig = createAppRouter(appState);
+  late final routerConfig =
+      createAppRouter(appState, navigatorKey: rootNavigatorKey);
+
+  ViewModel() {
+    AppGlobalDialogService.instance.configure(rootNavigatorKey);
+  }
 
   /// Clean up resources on app dispose
   void dispose() {

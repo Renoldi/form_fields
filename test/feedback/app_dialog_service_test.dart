@@ -62,12 +62,12 @@ void main() {
 
     expect(result, isNull);
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Login Failed'), findsOneWidget);
     expect(find.text('Cannot login'), findsOneWidget);
 
     await tester.tap(find.text('OK'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
   });
 
   testWidgets('guard can show blocking loading dialog', (tester) async {
@@ -104,7 +104,7 @@ void main() {
     expect(find.text('Signing in...'), findsOneWidget);
 
     completer.complete(1);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Signing in...'), findsNothing);
   });
 
@@ -133,7 +133,6 @@ void main() {
       ),
     );
 
-    // Loading animation is continuous, so avoid pumpAndSettle while visible.
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Processing...'), findsOneWidget);
 
@@ -168,7 +167,6 @@ void main() {
       ),
     );
 
-    // Loading animation is continuous, so avoid pumpAndSettle while visible.
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Please wait...'), findsOneWidget);
 
@@ -178,6 +176,49 @@ void main() {
     expect(find.text('Please wait...'), findsOneWidget);
 
     service.hide();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
+  });
+
+  testWidgets('showLoading with confirmCancel can be canceled by back flow', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final service = AppDialogService(ctx);
+
+    unawaited(
+      service.showLoading(
+        message: 'Uploading...',
+        loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
+        cancelTitle: 'Cancel Upload?',
+        cancelLabel: 'Yes Cancel',
+        stayLabel: 'Keep Uploading',
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Uploading...'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Cancel Upload?'), findsOneWidget);
+    expect(find.text('Yes Cancel'), findsOneWidget);
+
+    await tester.tap(find.text('Yes Cancel'));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Uploading...'), findsNothing);
   });
 }

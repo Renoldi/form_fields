@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +23,7 @@ class View extends PresenterState {
             ),
             const SizedBox(height: 8),
             Text(
-              'Focused demo for success/error/guard + loading visual options.',
+              'Focused demo for local and global dialog flows.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -163,6 +165,36 @@ class View extends PresenterState {
               SizedBox(
                 width: 180,
                 child: AppButton(
+                  type: AppButtonType.filledTonal,
+                  text: 'Global Success',
+                  onPressed: () => _showGlobalSuccess(vm),
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AppButton(
+                  type: AppButtonType.elevated,
+                  text: vm.isRunning
+                      ? 'Global Running...'
+                      : 'Global guard() demo',
+                  onPressed: vm.isRunning ? null : () => _runGlobalGuard(vm),
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AppButton(
+                  type: AppButtonType.fab,
+                  text: vm.isRunning
+                      ? 'Global Loading...'
+                      : 'Global loading cancel demo',
+                  onPressed: vm.isRunning
+                      ? null
+                      : () => _runGlobalLoadingConfirmCancelDemo(vm),
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AppButton(
                   type: AppButtonType.outlined,
                   text: 'Tap test ($_tapCounter)',
                   onPressed: () {
@@ -228,6 +260,82 @@ class View extends PresenterState {
 
     vm.setRunning(false);
     vm.setLastResult(result ?? 'null (failed and handled by dialog)');
+  }
+
+  Future<void> _showGlobalSuccess(ViewModel vm) {
+    return AppGlobalDialogService.instance.showSuccess(
+      title: 'Global Success',
+      message: 'This dialog is shown without passing local BuildContext.',
+      position: vm.position,
+    );
+  }
+
+  Future<void> _runGlobalGuard(ViewModel vm) async {
+    vm.setRunning(true);
+
+    final result = await AppGlobalDialogService.instance.guard<String>(
+      task: () async {
+        await Future<void>.delayed(const Duration(seconds: 2));
+        if (vm.simulateError) {
+          throw Exception('Global request timeout while syncing data.');
+        }
+        return 'global sync completed';
+      },
+      errorTitle: 'Global guard demo',
+      mapError: (error) => (
+        message: error.toString().replaceFirst('Exception: ', ''),
+        type: AppDialogType.network,
+      ),
+      position: vm.position,
+      showBlockingLoading: vm.useBlockingLoading,
+      loadingMessage: 'Global syncing...',
+      loadingVisual: vm.loadingVisual,
+      loadingVariant: vm.loadingVariant,
+      progressType: vm.progressType,
+    );
+
+    vm.setRunning(false);
+    vm.setLastResult(result ?? 'null (global failed and handled by dialog)');
+  }
+
+  Future<void> _runGlobalLoadingConfirmCancelDemo(ViewModel vm) async {
+    vm.setRunning(true);
+    var cancelledByUser = false;
+
+    // Auto-complete simulation so demo can finish even without back interaction.
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 4), () {
+        if (cancelledByUser) return;
+        AppGlobalDialogService.instance.hide();
+        vm.setLastResult(
+          'Global loading auto-completed. Press back next run to test cancel flow.',
+        );
+      }),
+    );
+
+    try {
+      await AppGlobalDialogService.instance.showLoading(
+        message: 'Global loading... press device back to test confirm cancel.',
+        loadingVisual: vm.loadingVisual,
+        loadingVariant: vm.loadingVariant,
+        progressType: vm.progressType,
+        loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
+        cancelTitle: 'Cancel Global Loading?',
+        cancelMessage: 'The global operation is still running. Cancel it now?',
+        stayLabel: 'Stay',
+        cancelLabel: 'Cancel',
+        onCancelRequested: () async {
+          cancelledByUser = true;
+          vm.setLastResult('Cancel requested from back button.');
+          return true;
+        },
+        onCancelled: () async {
+          vm.setLastResult('Global loading canceled by user via device back.');
+        },
+      );
+    } finally {
+      vm.setRunning(false);
+    }
   }
 }
 

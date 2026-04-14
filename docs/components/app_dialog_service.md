@@ -116,3 +116,50 @@ await AppDialogService(context).guard<void>(
   stayLabel: 'Keep Uploading',
 );
 ```
+
+## Global Dialog (No Manual Context)
+
+Use `AppGlobalDialogService` when you want to trigger dialogs from places
+that do not naturally receive `BuildContext` (for example, coordinators or app-level handlers).
+
+Startup configuration:
+
+```dart
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+AppGlobalDialogService.instance.configure(rootNavigatorKey);
+
+final router = createAppRouter(
+  appState,
+  navigatorKey: rootNavigatorKey,
+);
+```
+
+Usage:
+
+```dart
+await AppGlobalDialogService.instance.showSuccess(
+  title: 'Saved',
+  message: 'Your changes have been saved.',
+);
+```
+
+Global loading with back-confirm cancel:
+
+```dart
+await AppGlobalDialogService.instance.showLoading(
+  message: 'Global loading... press back to test cancel flow.',
+  loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
+  cancelTitle: 'Cancel Global Loading?',
+  cancelMessage: 'Operation is still running. Cancel it now?',
+  cancelLabel: 'Cancel',
+  stayLabel: 'Stay',
+  onCancelRequested: () async {
+    cancelToken.cancel('User canceled from global loading dialog');
+    return true;
+  },
+  onCancelled: () async {
+    // Optional cleanup
+  },
+);
+```
