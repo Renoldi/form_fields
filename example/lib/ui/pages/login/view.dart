@@ -105,16 +105,18 @@ class View extends PresenterState {
   }
 
   Widget _buildLoginButton(ViewModel viewModel) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: viewModel.canSubmit ? () => handleLogin(viewModel) : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1F2937),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-        child: Text(context.tr('login')),
+    return AppButton(
+      type: AppButtonType.elevated,
+      size: AppButtonSize.medium,
+      text: context.tr('login'),
+      isLoading: viewModel.isLoading,
+      onPressed: (!viewModel.canSubmit || viewModel.isLoading)
+          ? null
+          : () => handleLogin(viewModel),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1F2937),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
       ),
     );
   }

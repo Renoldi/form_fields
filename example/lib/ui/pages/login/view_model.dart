@@ -7,6 +7,7 @@ class ViewModel extends ChangeNotifier {
   ErrorType? errorType;
   String username = 'emilys';
   String password = 'emilyspass';
+  bool isLoading = false;
 
   bool get canSubmit =>
       username.trim().isNotEmpty && password.trim().isNotEmpty;
@@ -33,5 +34,11 @@ class ViewModel extends ChangeNotifier {
       username: username.trim(),
       password: password.trim(),
     );
+  }
+
+  void setLoading(bool value) {
+    if (isLoading == value) return;
+    isLoading = value;
+    notifyListeners();
   }
 }

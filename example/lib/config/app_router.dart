@@ -17,6 +17,8 @@ import 'package:form_fields_example/ui/pages/custom_class_examples/main.dart'
     as custom_class_examples;
 import 'package:form_fields_example/ui/pages/null_non_null_validation_examples/main.dart'
     as null_non_null_validation_examples;
+import 'package:form_fields_example/ui/pages/app_button_examples/main.dart'
+    as app_button_examples;
 import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
 import 'package:form_fields_example/ui/pages/change_password/main.dart'
     as change_password;
@@ -229,6 +231,18 @@ GoRouter createAppRouter(AppStateNotifier appState) {
           ),
         ),
       ),
+      GoRoute(
+        path: AppRoute.appButton.path,
+        name: AppRoute.appButton.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.appButton,
+          child: ChangeNotifierProvider(
+            create: (_) => app_button_examples.ViewModel(),
+            child: const app_button_examples.Presenter(),
+          ),
+        ),
+      ),
     ],
 
     // Error handling
@@ -303,6 +317,8 @@ String _routeTitleKey(AppRoute route) {
       return 'customClass';
     case AppRoute.validation:
       return 'nullNonNullValidation';
+    case AppRoute.appButton:
+      return 'appButton';
     case AppRoute.settings:
       return 'settings';
     case AppRoute.profile:

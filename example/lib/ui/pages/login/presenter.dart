@@ -19,7 +19,10 @@ class Presenter extends StatefulWidget {
 
 abstract class PresenterState extends State<Presenter> {
   Future<void> handleLogin(ViewModel viewModel) async {
+    if (viewModel.isLoading) return;
+
     viewModel.clearError();
+    viewModel.setLoading(true);
     if (!mounted) return;
 
     final appState = context.read<AppStateNotifier>();
@@ -61,6 +64,8 @@ abstract class PresenterState extends State<Presenter> {
           errorPosition: appState.errorPosition,
         );
       }
+    } finally {
+      viewModel.setLoading(false);
     }
   }
 

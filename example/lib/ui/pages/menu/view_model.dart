@@ -81,6 +81,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.indigo,
           routeName: AppRoute.validation.name,
         ),
+        MenuItemData(
+          title: 'App Button',
+          subtitle: 'Material 3 Buttons',
+          icon: Icons.smart_button,
+          color: Colors.red,
+          routeName: AppRoute.appButton.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

@@ -60,6 +60,7 @@ const Map<String, String> enStrings = {
   'customClass': 'Custom Class',
   'genericTypesWithModels': 'Generic Types with Models',
   'nullNonNullValidation': 'Null/Non-Null Validation',
+  'appButton': 'App Button',
   'nullableVsNonNullable': 'Nullable vs Non-Nullable Types',
 
   // Language

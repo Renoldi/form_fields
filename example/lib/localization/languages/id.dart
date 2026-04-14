@@ -60,6 +60,7 @@ const Map<String, String> idStrings = {
   'customClass': 'Kelas Kustom',
   'genericTypesWithModels': 'Tipe Generik dengan Model',
   'nullNonNullValidation': 'Validasi Null/Bukan Null',
+  'appButton': 'Tombol Aplikasi',
   'nullableVsNonNullable': 'Tipe Nullable vs Non-Nullable',
 
   // Language

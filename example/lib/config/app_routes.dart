@@ -14,6 +14,7 @@ enum AppRoute {
   checkbox(name: 'checkbox', title: 'Checkbox'),
   customClass(name: 'custom_class', title: 'Custom Class'),
   validation(name: 'validation', title: 'Validation'),
+  appButton(name: 'app_button', title: 'App Button'),
   settings(name: 'settings', title: 'Settings'),
   profile(name: 'profile', title: 'Profile'),
   changePassword(
