@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 import 'main.dart' as main;
 
 class Presenter extends StatefulWidget {
@@ -31,7 +32,7 @@ abstract class PresenterState extends State<Presenter> {
   void handleSubmit() {
     final result = viewModel.submit();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
+      SnackBar(content: Text(context.tr(result.messageKey))),
     );
   }
 }

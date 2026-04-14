@@ -10,7 +10,7 @@ import 'package:form_fields_example/config/environment.dart';
 /// Custom exception for professional error classification.
 /// Usage: Catch HttpException for UI error display.
 class HttpException implements Exception {
-  final String message;
+  final String messageKey;
   final ErrorType type;
   final DioException? originalError;
 
@@ -19,13 +19,13 @@ class HttpException implements Exception {
   /// - [type]: ErrorType for UI styling (validation/network/authentication/server)
   /// - [originalError]: Original DioException for logging/debugging
   HttpException({
-    required this.message,
+    required this.messageKey,
     required this.type,
     this.originalError,
   });
 
   @override
-  String toString() => 'HttpException: $message (type: $type)';
+  String toString() => 'HttpException: $messageKey (type: $type)';
 }
 
 /// Global HTTP service for making API requests with professional error handling
@@ -185,15 +185,29 @@ class HttpService {
 
     dio.interceptors.add(InterceptorsWrapper(
       onError: (DioException error, ErrorInterceptorHandler handler) {
-        _staticLogger.e('🌐 Global Error Interceptor: ${error.message}');
+        final mapped = _mapDioError(error);
+        final request = error.requestOptions;
+        final statusCode = error.response?.statusCode;
+
+        // Keep full technical details in logs for diagnostics.
+        _staticLogger.e(
+          '[HTTP_ERROR] ${request.method} ${request.uri}',
+        );
+        _staticLogger.e(
+          '[HTTP_ERROR] type=${error.type} status=${statusCode ?? '-'} message=${error.message ?? '-'}',
+        );
+        if (error.response?.data != null) {
+          _staticLogger.e('[HTTP_ERROR] response=${error.response!.data}');
+        }
+
         handler.next(
           DioException(
             requestOptions: error.requestOptions,
             response: error.response,
             type: error.type,
             error: HttpException(
-              message: error.message ?? 'Unknown error',
-              type: ErrorType.server,
+              messageKey: mapped.messageKey,
+              type: mapped.type,
               originalError: error,
             ),
           ),
@@ -209,6 +223,87 @@ class HttpService {
   // =============================================================
   final Dio _dio;
   final Logger _logger;
+
+  static ({String messageKey, ErrorType type}) _mapDioError(
+    DioException error,
+  ) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+        return (
+          messageKey: 'errorNetworkUnavailable',
+          type: ErrorType.network,
+        );
+      case DioExceptionType.badCertificate:
+        return (
+          messageKey: 'errorSecureConnectionFailed',
+          type: ErrorType.network,
+        );
+      case DioExceptionType.cancel:
+        return (
+          messageKey: 'errorRequestCancelled',
+          type: ErrorType.validation,
+        );
+      case DioExceptionType.badResponse:
+        return _mapHttpStatus(error.response?.statusCode);
+      case DioExceptionType.unknown:
+        return (
+          messageKey: 'errorSomethingWentWrong',
+          type: ErrorType.server,
+        );
+    }
+  }
+
+  static ({String messageKey, ErrorType type}) _mapHttpStatus(int? statusCode) {
+    switch (statusCode) {
+      case 400:
+        return (
+          messageKey: 'errorRequestInvalidData',
+          type: ErrorType.validation,
+        );
+      case 401:
+      case 403:
+        return (
+          messageKey: 'errorAuthenticationFailed',
+          type: ErrorType.authentication,
+        );
+      case 404:
+        return (
+          messageKey: 'errorResourceNotFound',
+          type: ErrorType.server,
+        );
+      case 409:
+        return (
+          messageKey: 'errorRequestConflict',
+          type: ErrorType.validation,
+        );
+      case 422:
+        return (
+          messageKey: 'errorInvalidInputValues',
+          type: ErrorType.validation,
+        );
+      case 429:
+        return (
+          messageKey: 'errorTooManyRequests',
+          type: ErrorType.server,
+        );
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        return (
+          messageKey: 'errorServerUnavailable',
+          type: ErrorType.server,
+        );
+      default:
+        return (
+          messageKey: 'errorRequestFailedGeneric',
+          type: ErrorType.server,
+        );
+    }
+  }
 
   // =============================================================
   //  Configuration Methods

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 class ChangePasswordResult {
   final bool isSuccess;
-  final String message;
+  final String messageKey;
 
   const ChangePasswordResult({
     required this.isSuccess,
-    required this.message,
+    required this.messageKey,
   });
 }
 
@@ -23,19 +23,19 @@ class ViewModel extends ChangeNotifier {
     if (current.isEmpty || next.isEmpty || confirm.isEmpty) {
       return const ChangePasswordResult(
         isSuccess: false,
-        message: 'Please fill all password fields.',
+        messageKey: 'errorChangePasswordFillAllFields',
       );
     }
     if (next.length < 6) {
       return const ChangePasswordResult(
         isSuccess: false,
-        message: 'New password must be at least 6 characters.',
+        messageKey: 'errorChangePasswordMinLength',
       );
     }
     if (next != confirm) {
       return const ChangePasswordResult(
         isSuccess: false,
-        message: 'New password and confirmation do not match.',
+        messageKey: 'errorChangePasswordMismatch',
       );
     }
 
@@ -46,7 +46,7 @@ class ViewModel extends ChangeNotifier {
 
     return const ChangePasswordResult(
       isSuccess: true,
-      message: 'Password updated successfully.',
+      messageKey: 'changePasswordUpdatedSuccessfully',
     );
   }
 }

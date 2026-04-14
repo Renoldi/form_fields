@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:form_fields_example/config/app_routes.dart';
+import 'package:form_fields_example/config/error_type.dart';
 import 'package:form_fields_example/data/models/user.dart';
+import 'package:form_fields_example/data/services/http_service.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
+
+final Logger _logger = Logger();
 
 class MenuItemData {
   final String title;
@@ -118,18 +123,20 @@ class ViewModel extends ChangeNotifier {
       final user = await User.getMe(accessToken: accessToken);
       _appState.updateUserData(user);
       return null;
-    } catch (error) {
-      // If token is invalid, trigger logout
-      final errorMsg = error.toString();
-      if (errorMsg.contains('401') ||
-          errorMsg.contains('403') ||
-          errorMsg.contains('Bad Response')) {
+    } catch (error, stackTrace) {
+      _logger.e('Load user failed: $error');
+      _logger.d(stackTrace.toString());
+
+      if (error is HttpException && error.type == ErrorType.authentication) {
         _appState.logout();
-        return 'Session expired. Please login again.';
+        return 'errorSessionExpiredLoginAgain';
       }
-      return errorMsg.contains('DioException')
-          ? 'Unable to load user data'
-          : errorMsg;
+
+      if (error is HttpException) {
+        return error.messageKey;
+      }
+
+      return 'errorUnableToLoadUserData';
     }
   }
 

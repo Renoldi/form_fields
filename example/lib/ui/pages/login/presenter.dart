@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide View;
 import 'package:form_fields/form_fields.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/config/error_position.dart';
@@ -9,6 +10,8 @@ import 'package:form_fields_example/data/models/user.dart';
 import 'package:form_fields_example/data/services/http_service.dart';
 import 'view_model.dart';
 import 'view.dart';
+
+final Logger _logger = Logger();
 
 class Presenter extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -27,12 +30,10 @@ abstract class PresenterState extends State<Presenter> {
     viewModel.setLoading(true);
 
     final appState = context.read<AppStateNotifier>();
-    final dialog = AppDialogService(context);
 
     try {
       final user = await _executeLogin(
         viewModel: viewModel,
-        dialog: dialog,
         position: _toDialogPosition(appState.errorPosition),
       );
 
@@ -51,10 +52,9 @@ abstract class PresenterState extends State<Presenter> {
 
   Future<User?> _executeLogin({
     required ViewModel viewModel,
-    required AppDialogService dialog,
     required AppDialogPosition position,
   }) {
-    return dialog.guard(
+    return AppGlobalDialogService.instance.guard(
       task: viewModel.login,
       errorTitle: context.tr('loginFailed'),
       mapError: (error) => _handleLoginError(error, viewModel),
@@ -87,10 +87,15 @@ abstract class PresenterState extends State<Presenter> {
 
   ({String message, ErrorType type}) _mapLoginError(Object error) {
     if (error is HttpException) {
-      return (message: error.message, type: error.type);
+      return (message: context.tr(error.messageKey), type: error.type);
     }
 
-    return (message: error.toString(), type: ErrorType.server);
+    _logger.e('Login failed (unexpected): $error');
+
+    return (
+      message: context.tr('errorLoginTemporarilyUnavailable'),
+      type: ErrorType.server,
+    );
   }
 
   AppDialogType _toDialogType(ErrorType type) {

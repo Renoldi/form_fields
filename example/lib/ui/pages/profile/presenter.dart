@@ -35,17 +35,21 @@ abstract class PresenterState extends State<Presenter> {
   }
 
   Future<void> handleUpdateProfile(AppStateNotifier appState) async {
-    final dialog = AppDialogService(context);
+    final dialog = AppGlobalDialogService.instance;
 
-    dialog.showLoading(
-      message: context.tr('updatingProfile'),
+    final isUpdated = await dialog.guard<bool>(
+      task: () => _executeProfileUpdate(appState),
+      errorTitle: context.tr('updateFailed'),
+      mapError: _mapProfileUpdateError,
+      position: _toDialogPosition(appState.errorPosition),
+      okLabel: context.tr('ok'),
+      showBlockingLoading: true,
+      loadingMessage: context.tr('updatingProfile'),
     );
 
-    final error = await viewModel.updateProfile(appState);
     if (!mounted) return;
 
-    dialog.hide();
-    if (error == null) {
+    if (isUpdated == true) {
       await dialog.showResult(
         isSuccess: true,
         title: context.tr('success'),
@@ -56,15 +60,24 @@ abstract class PresenterState extends State<Presenter> {
       if (mounted) {
         Navigator.of(context).pop();
       }
-    } else {
-      await dialog.showResult(
-        isSuccess: false,
-        title: context.tr('updateFailed'),
-        message: error,
-        position: _toDialogPosition(appState.errorPosition),
-        okLabel: context.tr('ok'),
-      );
     }
+  }
+
+  Future<bool> _executeProfileUpdate(AppStateNotifier appState) async {
+    final error = await viewModel.updateProfile(appState);
+    if (error != null) {
+      throw StateError(error);
+    }
+    return true;
+  }
+
+  ({String message, AppDialogType type}) _mapProfileUpdateError(Object error) {
+    final messageKey = error.toString().replaceFirst('Bad state: ', '');
+
+    return (
+      message: context.tr(messageKey),
+      type: AppDialogType.server,
+    );
   }
 
   AppDialogPosition _toDialogPosition(ErrorPosition position) {

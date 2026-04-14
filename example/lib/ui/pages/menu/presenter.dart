@@ -50,7 +50,7 @@ abstract class PresenterState extends State<Presenter> {
       if (!mounted) return;
       await AppDialogService(context).showResult(
         title: context.tr('loadFailed'),
-        message: error,
+        message: context.tr(error),
         isSuccess: false,
         okLabel: context.tr('ok'),
       );

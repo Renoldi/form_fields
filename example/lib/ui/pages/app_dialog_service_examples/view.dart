@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 
 import 'presenter.dart';
 import 'view_model.dart';
@@ -18,12 +19,12 @@ class View extends PresenterState {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'AppDialogService',
+              context.tr('appDialogService'),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Focused demo for local and global dialog flows.',
+              context.tr('adsFocusedDemoSubtitle'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -38,48 +39,52 @@ class View extends PresenterState {
 
   Widget _buildOptionsCard(BuildContext context, ViewModel vm) {
     return _Card(
-      title: 'Options',
+      title: context.tr('adsOptionsTitle'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Use blocking loading in guard()'),
+            title: Text(context.tr('adsUseBlockingLoadingInGuard')),
             value: vm.useBlockingLoading,
             onChanged: vm.setBlockingLoading,
           ),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Simulate error on guard()'),
+            title: Text(context.tr('adsSimulateErrorOnGuard')),
             value: vm.simulateError,
             onChanged: vm.setSimulateError,
           ),
           const SizedBox(height: 8),
-          const Text('Dialog position'),
+          Text(context.tr('lpDialogPosition')),
           const SizedBox(height: 8),
           SegmentedButton<AppDialogPosition>(
-            segments: const [
-              ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
+            segments: [
               ButtonSegment(
-                  value: AppDialogPosition.center, label: Text('Center')),
+                  value: AppDialogPosition.top,
+                  label: Text(context.tr('positionTop'))),
               ButtonSegment(
-                  value: AppDialogPosition.bottom, label: Text('Bottom')),
+                  value: AppDialogPosition.center,
+                  label: Text(context.tr('positionCenter'))),
+              ButtonSegment(
+                  value: AppDialogPosition.bottom,
+                  label: Text(context.tr('positionBottom'))),
             ],
             selected: {vm.position},
             onSelectionChanged: (set) => vm.setPosition(set.first),
           ),
           const SizedBox(height: 10),
-          const Text('Loading visual'),
+          Text(context.tr('lpLoadingVisual')),
           const SizedBox(height: 8),
           SegmentedButton<AppDialogLoadingVisual>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: AppDialogLoadingVisual.indicator,
-                label: Text('Indicator'),
+                label: Text(context.tr('lpIndicator')),
               ),
               ButtonSegment(
                 value: AppDialogLoadingVisual.progress,
-                label: Text('Progress'),
+                label: Text(context.tr('lpProgress')),
               ),
             ],
             selected: {vm.loadingVisual},
@@ -88,18 +93,18 @@ class View extends PresenterState {
           if (vm.loadingVisual == AppDialogLoadingVisual.indicator) ...[
             const SizedBox(height: 8),
             SegmentedButton<AppLoadingVariant>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: AppLoadingVariant.spinner,
-                  label: Text('Spinner'),
+                  label: Text(context.tr('lpSpinner')),
                 ),
                 ButtonSegment(
                   value: AppLoadingVariant.pulse,
-                  label: Text('Pulse'),
+                  label: Text(context.tr('lpPulse')),
                 ),
                 ButtonSegment(
                   value: AppLoadingVariant.dots,
-                  label: Text('Dots'),
+                  label: Text(context.tr('lpDots')),
                 ),
               ],
               selected: {vm.loadingVariant},
@@ -109,14 +114,14 @@ class View extends PresenterState {
           if (vm.loadingVisual == AppDialogLoadingVisual.progress) ...[
             const SizedBox(height: 8),
             SegmentedButton<AppProgressType>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: AppProgressType.circular,
-                  label: Text('Circular'),
+                  label: Text(context.tr('lpCircular')),
                 ),
                 ButtonSegment(
                   value: AppProgressType.linear,
-                  label: Text('Linear'),
+                  label: Text(context.tr('lpLinear')),
                 ),
               ],
               selected: {vm.progressType},
@@ -130,7 +135,7 @@ class View extends PresenterState {
 
   Widget _buildActionsCard(BuildContext context, ViewModel vm) {
     return _Card(
-      title: 'Actions',
+      title: context.tr('adsActionsTitle'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,7 +147,7 @@ class View extends PresenterState {
                 width: 180,
                 child: AppButton(
                   type: AppButtonType.filled,
-                  text: 'Show Success',
+                  text: context.tr('lpShowSuccess'),
                   onPressed: () => _showSuccess(context, vm),
                 ),
               ),
@@ -150,7 +155,7 @@ class View extends PresenterState {
                 width: 180,
                 child: AppButton(
                   type: AppButtonType.outlined,
-                  text: 'Show Error',
+                  text: context.tr('lpShowError'),
                   onPressed: () => _showError(context, vm),
                 ),
               ),
@@ -158,7 +163,9 @@ class View extends PresenterState {
                 width: 180,
                 child: AppButton(
                   type: AppButtonType.text,
-                  text: vm.isRunning ? 'Running...' : 'Run guard() demo',
+                  text: vm.isRunning
+                      ? context.tr('adsRunning')
+                      : context.tr('lpRunGuardDemo'),
                   onPressed: vm.isRunning ? null : () => _runGuard(context, vm),
                 ),
               ),
@@ -166,7 +173,7 @@ class View extends PresenterState {
                 width: 180,
                 child: AppButton(
                   type: AppButtonType.filledTonal,
-                  text: 'Global Success',
+                  text: context.tr('adsGlobalSuccess'),
                   onPressed: () => _showGlobalSuccess(vm),
                 ),
               ),
@@ -175,8 +182,8 @@ class View extends PresenterState {
                 child: AppButton(
                   type: AppButtonType.elevated,
                   text: vm.isRunning
-                      ? 'Global Running...'
-                      : 'Global guard() demo',
+                      ? context.tr('adsGlobalRunning')
+                      : context.tr('adsGlobalGuardDemo'),
                   onPressed: vm.isRunning ? null : () => _runGlobalGuard(vm),
                 ),
               ),
@@ -185,8 +192,8 @@ class View extends PresenterState {
                 child: AppButton(
                   type: AppButtonType.fab,
                   text: vm.isRunning
-                      ? 'Global Loading...'
-                      : 'Global loading cancel demo',
+                      ? context.tr('adsGlobalLoading')
+                      : context.tr('adsGlobalLoadingCancelDemo'),
                   onPressed: vm.isRunning
                       ? null
                       : () => _runGlobalLoadingConfirmCancelDemo(vm),
@@ -196,7 +203,7 @@ class View extends PresenterState {
                 width: 180,
                 child: AppButton(
                   type: AppButtonType.outlined,
-                  text: 'Tap test ($_tapCounter)',
+                  text: '${context.tr('lpTapTest')} ($_tapCounter)',
                   onPressed: () {
                     setState(() {
                       _tapCounter += 1;
@@ -208,10 +215,10 @@ class View extends PresenterState {
           ),
           const SizedBox(height: 10),
           Text(vm.isRunning
-              ? 'Guard running: tap test should only be blocked in blocking mode.'
-              : 'Ready.'),
+              ? context.tr('adsGuardRunningHint')
+              : context.tr('adsReady')),
           const SizedBox(height: 6),
-          Text('Last guard result: ${vm.lastResult}'),
+          Text('${context.tr('lpLastGuardResult')}: ${vm.lastResult}'),
         ],
       ),
     );
@@ -219,16 +226,16 @@ class View extends PresenterState {
 
   Future<void> _showSuccess(BuildContext context, ViewModel vm) {
     return AppDialogService(context).showSuccess(
-      title: 'Success',
-      message: 'Operation completed successfully.',
+      title: context.tr('success'),
+      message: context.tr('adsOperationCompletedSuccessfully'),
       position: vm.position,
     );
   }
 
   Future<void> _showError(BuildContext context, ViewModel vm) {
     return AppDialogService(context).showError(
-      title: 'Error',
-      message: 'Unable to complete operation.',
+      title: context.tr('updateFailed'),
+      message: context.tr('adsUnableToCompleteOperation'),
       dialogType: AppDialogType.server,
       position: vm.position,
     );
@@ -241,31 +248,31 @@ class View extends PresenterState {
       task: () async {
         await Future<void>.delayed(const Duration(seconds: 2));
         if (vm.simulateError) {
-          throw Exception('Network timeout while syncing data.');
+          throw Exception('adsNetworkTimeoutSync');
         }
-        return 'sync completed';
+        return context.tr('lpSyncCompleted');
       },
-      errorTitle: 'Guard demo',
+      errorTitle: context.tr('adsGuardDemoTitle'),
       mapError: (error) => (
-        message: error.toString().replaceFirst('Exception: ', ''),
+        message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
       ),
       position: vm.position,
       showBlockingLoading: vm.useBlockingLoading,
-      loadingMessage: 'Syncing...',
+      loadingMessage: context.tr('adsSyncing'),
       loadingVisual: vm.loadingVisual,
       loadingVariant: vm.loadingVariant,
       progressType: vm.progressType,
     );
 
     vm.setRunning(false);
-    vm.setLastResult(result ?? 'null (failed and handled by dialog)');
+    vm.setLastResult(result ?? context.tr('lpGuardFailedHandledByDialog'));
   }
 
   Future<void> _showGlobalSuccess(ViewModel vm) {
     return AppGlobalDialogService.instance.showSuccess(
-      title: 'Global Success',
-      message: 'This dialog is shown without passing local BuildContext.',
+      title: context.tr('adsGlobalSuccess'),
+      message: context.tr('adsGlobalDialogWithoutLocalContext'),
       position: vm.position,
     );
   }
@@ -277,25 +284,27 @@ class View extends PresenterState {
       task: () async {
         await Future<void>.delayed(const Duration(seconds: 2));
         if (vm.simulateError) {
-          throw Exception('Global request timeout while syncing data.');
+          throw Exception('adsGlobalRequestTimeoutSync');
         }
-        return 'global sync completed';
+        return context.tr('adsGlobalSyncCompleted');
       },
-      errorTitle: 'Global guard demo',
+      errorTitle: context.tr('adsGlobalGuardDemoTitle'),
       mapError: (error) => (
-        message: error.toString().replaceFirst('Exception: ', ''),
+        message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
       ),
       position: vm.position,
       showBlockingLoading: vm.useBlockingLoading,
-      loadingMessage: 'Global syncing...',
+      loadingMessage: context.tr('adsGlobalSyncing'),
       loadingVisual: vm.loadingVisual,
       loadingVariant: vm.loadingVariant,
       progressType: vm.progressType,
     );
 
     vm.setRunning(false);
-    vm.setLastResult(result ?? 'null (global failed and handled by dialog)');
+    vm.setLastResult(
+      result ?? context.tr('adsGlobalFailedHandledByDialog'),
+    );
   }
 
   Future<void> _runGlobalLoadingConfirmCancelDemo(ViewModel vm) async {
@@ -308,29 +317,29 @@ class View extends PresenterState {
         if (cancelledByUser) return;
         AppGlobalDialogService.instance.hide();
         vm.setLastResult(
-          'Global loading auto-completed. Press back next run to test cancel flow.',
+          context.tr('adsGlobalLoadingAutoCompletedHint'),
         );
       }),
     );
 
     try {
       await AppGlobalDialogService.instance.showLoading(
-        message: 'Global loading... press device back to test confirm cancel.',
+        message: context.tr('adsGlobalLoadingPressBackHint'),
         loadingVisual: vm.loadingVisual,
         loadingVariant: vm.loadingVariant,
         progressType: vm.progressType,
         loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
-        cancelTitle: 'Cancel Global Loading?',
-        cancelMessage: 'The global operation is still running. Cancel it now?',
-        stayLabel: 'Stay',
-        cancelLabel: 'Cancel',
+        cancelTitle: context.tr('adsCancelGlobalLoadingTitle'),
+        cancelMessage: context.tr('adsCancelGlobalLoadingMessage'),
+        stayLabel: context.tr('stay'),
+        cancelLabel: context.tr('cancel'),
         onCancelRequested: () async {
           cancelledByUser = true;
-          vm.setLastResult('Cancel requested from back button.');
+          vm.setLastResult(context.tr('adsCancelRequestedFromBackButton'));
           return true;
         },
         onCancelled: () async {
-          vm.setLastResult('Global loading canceled by user via device back.');
+          vm.setLastResult(context.tr('adsGlobalLoadingCanceledByUser'));
         },
       );
     } finally {

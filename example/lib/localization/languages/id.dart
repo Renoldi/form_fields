@@ -103,6 +103,7 @@ const Map<String, String> idStrings = {
 
   // Label Positions
   'positionTop': 'Atas',
+  'positionCenter': 'Tengah',
   'positionBottom': 'Bawah',
   'positionLeft': 'Kiri',
   'positionRight': 'Kanan',
@@ -140,6 +141,117 @@ const Map<String, String> idStrings = {
   'invalidCredentials': 'Nama pengguna atau kata sandi tidak valid',
   'loginFailed': 'Gagal Masuk',
   'signingIn': 'Sedang masuk...',
+  'errorNetworkUnavailable':
+      'Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.',
+  'errorSecureConnectionFailed': 'Koneksi aman gagal. Silakan coba lagi nanti.',
+  'errorRequestCancelled': 'Permintaan dibatalkan.',
+  'errorRequestInvalidData':
+      'Data permintaan tidak valid. Periksa input Anda lalu coba lagi.',
+  'errorAuthenticationFailed':
+      'Autentikasi gagal. Periksa kredensial Anda lalu coba lagi.',
+  'errorResourceNotFound': 'Sumber daya yang diminta tidak ditemukan.',
+  'errorRequestConflict':
+      'Permintaan bertentangan dengan data yang ada. Periksa lalu coba lagi.',
+  'errorInvalidInputValues':
+      'Beberapa nilai input tidak valid. Perbaiki lalu coba lagi.',
+  'errorTooManyRequests':
+      'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.',
+  'errorServerUnavailable':
+      'Server sedang tidak tersedia. Silakan coba lagi beberapa saat lagi.',
+  'errorRequestFailedGeneric': 'Permintaan gagal. Silakan coba lagi nanti.',
+  'errorSomethingWentWrong': 'Terjadi kesalahan. Silakan coba lagi.',
+  'errorLoginTemporarilyUnavailable':
+      'Tidak dapat masuk saat ini. Silakan coba lagi.',
+  'errorFixValidationIssues':
+      'Silakan perbaiki kesalahan validasi sebelum melanjutkan.',
+  'errorNoAccessToken':
+      'Sesi Anda tidak ditemukan. Silakan masuk kembali lalu coba lagi.',
+  'errorUpdateProfileTemporarilyUnavailable':
+      'Tidak dapat memperbarui profil saat ini. Silakan coba lagi.',
+  'errorChangePasswordFillAllFields': 'Silakan isi semua kolom kata sandi.',
+  'errorChangePasswordMinLength': 'Kata sandi baru minimal harus 6 karakter.',
+  'errorChangePasswordMismatch': 'Kata sandi baru dan konfirmasi tidak cocok.',
+  'changePasswordUpdatedSuccessfully': 'Kata sandi berhasil diperbarui.',
+  'errorSessionExpiredLoginAgain':
+      'Sesi Anda telah berakhir. Silakan masuk kembali.',
+  'errorUnableToLoadUserData':
+      'Data pengguna belum dapat dimuat saat ini. Silakan coba lagi.',
+  'lpSimulating': 'Menyimulasikan...',
+  'lpSimulateProgress': 'Simulasikan Progress',
+  'lpDialogServiceExamplesTitle': 'Contoh layanan dialog',
+  'lpDialogServiceExamplesSubtitle':
+      'Dialog sukses/error/guard yang dapat digunakan ulang dengan mode loading opsional',
+  'lpUseBlockingLoadingInGuard': 'Gunakan loading dialog blocking di guard()',
+  'lpSimulateGuardError': 'Simulasikan error guard (tampilkan dialog error)',
+  'lpDialogPosition': 'Posisi dialog',
+  'lpLoadingVisual': 'Visual loading',
+  'lpIndicator': 'Indikator',
+  'lpProgress': 'Progress',
+  'lpSpinner': 'Spinner',
+  'lpPulse': 'Pulse',
+  'lpDots': 'Titik',
+  'lpCircular': 'Lingkaran',
+  'lpLinear': 'Linear',
+  'lpShowSuccess': 'Tampilkan Sukses',
+  'lpShowError': 'Tampilkan Error',
+  'lpRunningGuard': 'Menjalankan guard...',
+  'lpRunGuardDemo': 'Jalankan demo guard()',
+  'lpTapTest': 'Tes tap',
+  'lpGuardRunningHint':
+      'Guard sedang berjalan: coba ketuk "Tes tap". Dalam mode non-blocking nilainya harus bertambah.',
+  'lpRunGuardComparisonHint':
+      'Jalankan demo guard untuk membandingkan interaksi blocking vs non-blocking.',
+  'lpLastGuardResult': 'Hasil guard terakhir',
+  'lpOperationCompletedSuccessfully': 'Operasi Anda berhasil diselesaikan.',
+  'lpErrorRequestTimeoutSync':
+      'Waktu permintaan habis saat menyinkronkan data.',
+  'lpSyncCompleted': 'sinkron selesai',
+  'lpGuardErrorDemoTitle': 'Demo error guard',
+  'lpSyncingData': 'Menyinkronkan data...',
+  'lpGuardFailedHandledByDialog': 'null (gagal dan ditangani oleh dialog)',
+  'lpLoadingIndicatorTitle': 'Indikator loading',
+  'lpLoadingIndicatorSubtitle': 'Status loading yang dapat digunakan ulang',
+  'lpProgressIndicatorsTitle': 'Indikator progress',
+  'lpProgressIndicatorsSubtitle':
+      'Menampilkan progres penyelesaian secara real-time',
+  'adsFocusedDemoSubtitle': 'Demo terfokus untuk alur dialog lokal dan global.',
+  'adsOptionsTitle': 'Opsi',
+  'adsUseBlockingLoadingInGuard': 'Gunakan loading blocking di guard()',
+  'adsSimulateErrorOnGuard': 'Simulasikan error pada guard()',
+  'adsActionsTitle': 'Aksi',
+  'adsRunning': 'Sedang berjalan...',
+  'adsGlobalSuccess': 'Sukses Global',
+  'adsGlobalRunning': 'Global Sedang Berjalan...',
+  'adsGlobalGuardDemo': 'Demo guard() global',
+  'adsGlobalLoading': 'Global Loading...',
+  'adsGlobalLoadingCancelDemo': 'Demo batal loading global',
+  'adsGuardRunningHint':
+      'Guard berjalan: tes tap hanya diblokir dalam mode blocking.',
+  'adsReady': 'Siap.',
+  'adsOperationCompletedSuccessfully': 'Operasi berhasil diselesaikan.',
+  'adsUnableToCompleteOperation': 'Operasi tidak dapat diselesaikan.',
+  'adsNetworkTimeoutSync': 'Jaringan timeout saat sinkronisasi data.',
+  'adsGuardDemoTitle': 'Demo guard',
+  'adsSyncing': 'Menyinkronkan...',
+  'adsGlobalDialogWithoutLocalContext':
+      'Dialog ini ditampilkan tanpa mengoper BuildContext lokal.',
+  'adsGlobalRequestTimeoutSync':
+      'Permintaan global timeout saat sinkronisasi data.',
+  'adsGlobalSyncCompleted': 'sinkron global selesai',
+  'adsGlobalGuardDemoTitle': 'Demo guard global',
+  'adsGlobalSyncing': 'Sinkronisasi global...',
+  'adsGlobalFailedHandledByDialog':
+      'null (global gagal dan ditangani oleh dialog)',
+  'adsGlobalLoadingAutoCompletedHint':
+      'Loading global selesai otomatis. Tekan back pada percobaan berikutnya untuk menguji alur batal.',
+  'adsGlobalLoadingPressBackHint':
+      'Loading global... tekan back device untuk menguji konfirmasi batal.',
+  'adsCancelGlobalLoadingTitle': 'Batalkan Loading Global?',
+  'adsCancelGlobalLoadingMessage':
+      'Operasi global masih berjalan. Batalkan sekarang?',
+  'adsCancelRequestedFromBackButton': 'Permintaan batal dari tombol back.',
+  'adsGlobalLoadingCanceledByUser':
+      'Loading global dibatalkan pengguna melalui tombol back.',
   'imageUploadComingSoon': 'Unggahan gambar akan hadir segera',
   'pageNotFound': 'Halaman Tidak Ditemukan',
   'pageNotFound404': '404 - Halaman Tidak Ditemukan',

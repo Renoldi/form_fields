@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart';
 
 import 'presenter.dart';
 import 'view_model.dart';
@@ -24,7 +25,7 @@ class View extends PresenterState {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'Loading & progress',
+              context.tr('loadingProgress'),
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
@@ -59,7 +60,9 @@ class View extends PresenterState {
             const SizedBox(height: 16),
             AppButton(
               type: AppButtonType.filled,
-              text: vm.isSimulating ? 'Simulating...' : 'Simulate Progress',
+              text: vm.isSimulating
+                  ? context.tr('lpSimulating')
+                  : context.tr('lpSimulateProgress'),
               icon: const Icon(Icons.play_arrow_outlined),
               isLoading: vm.isSimulating,
               onPressed: vm.simulateProgress,
@@ -76,9 +79,8 @@ class View extends PresenterState {
     final cs = Theme.of(context).colorScheme;
 
     return _CardShell(
-      title: 'Dialog service examples',
-      subtitle:
-          'Reusable success/error/guard dialogs with optional loading mode',
+      title: context.tr('lpDialogServiceExamplesTitle'),
+      subtitle: context.tr('lpDialogServiceExamplesSubtitle'),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -91,7 +93,7 @@ class View extends PresenterState {
           children: [
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Use blocking loading dialog in guard()'),
+              title: Text(context.tr('lpUseBlockingLoadingInGuard')),
               value: _useBlockingLoading,
               onChanged: (value) {
                 setState(() {
@@ -102,7 +104,7 @@ class View extends PresenterState {
             const SizedBox(height: 8),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Simulate guard error (show error dialog)'),
+              title: Text(context.tr('lpSimulateGuardError')),
               value: _simulateGuardError,
               onChanged: (value) {
                 setState(() {
@@ -111,15 +113,19 @@ class View extends PresenterState {
               },
             ),
             const SizedBox(height: 8),
-            const Text('Dialog position'),
+            Text(context.tr('lpDialogPosition')),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogPosition>(
-              segments: const [
-                ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
+              segments: [
                 ButtonSegment(
-                    value: AppDialogPosition.center, label: Text('Center')),
+                    value: AppDialogPosition.top,
+                    label: Text(context.tr('positionTop'))),
                 ButtonSegment(
-                    value: AppDialogPosition.bottom, label: Text('Bottom')),
+                    value: AppDialogPosition.center,
+                    label: Text(context.tr('positionCenter'))),
+                ButtonSegment(
+                    value: AppDialogPosition.bottom,
+                    label: Text(context.tr('positionBottom'))),
               ],
               selected: {_dialogPosition},
               onSelectionChanged: (value) {
@@ -129,17 +135,17 @@ class View extends PresenterState {
               },
             ),
             const SizedBox(height: 10),
-            const Text('Loading visual'),
+            Text(context.tr('lpLoadingVisual')),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogLoadingVisual>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: AppDialogLoadingVisual.indicator,
-                  label: Text('Indicator'),
+                  label: Text(context.tr('lpIndicator')),
                 ),
                 ButtonSegment(
                   value: AppDialogLoadingVisual.progress,
-                  label: Text('Progress'),
+                  label: Text(context.tr('lpProgress')),
                 ),
               ],
               selected: {_loadingVisual},
@@ -152,18 +158,18 @@ class View extends PresenterState {
             if (_loadingVisual == AppDialogLoadingVisual.indicator) ...[
               const SizedBox(height: 8),
               SegmentedButton<AppLoadingVariant>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: AppLoadingVariant.spinner,
-                    label: Text('Spinner'),
+                    label: Text(context.tr('lpSpinner')),
                   ),
                   ButtonSegment(
                     value: AppLoadingVariant.pulse,
-                    label: Text('Pulse'),
+                    label: Text(context.tr('lpPulse')),
                   ),
                   ButtonSegment(
                     value: AppLoadingVariant.dots,
-                    label: Text('Dots'),
+                    label: Text(context.tr('lpDots')),
                   ),
                 ],
                 selected: {_loadingVariant},
@@ -177,14 +183,14 @@ class View extends PresenterState {
             if (_loadingVisual == AppDialogLoadingVisual.progress) ...[
               const SizedBox(height: 8),
               SegmentedButton<AppProgressType>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: AppProgressType.circular,
-                    label: Text('Circular'),
+                    label: Text(context.tr('lpCircular')),
                   ),
                   ButtonSegment(
                     value: AppProgressType.linear,
-                    label: Text('Linear'),
+                    label: Text(context.tr('lpLinear')),
                   ),
                 ],
                 selected: {_progressType},
@@ -204,7 +210,7 @@ class View extends PresenterState {
                   width: 180,
                   child: AppButton(
                     type: AppButtonType.filled,
-                    text: 'Show Success',
+                    text: context.tr('lpShowSuccess'),
                     onPressed: () => _showSuccess(context),
                   ),
                 ),
@@ -212,7 +218,7 @@ class View extends PresenterState {
                   width: 180,
                   child: AppButton(
                     type: AppButtonType.outlined,
-                    text: 'Show Error',
+                    text: context.tr('lpShowError'),
                     onPressed: () => _showError(context),
                   ),
                 ),
@@ -221,8 +227,8 @@ class View extends PresenterState {
                   child: AppButton(
                     type: AppButtonType.text,
                     text: _isGuardRunning
-                        ? 'Running guard...'
-                        : 'Run guard() demo',
+                        ? context.tr('lpRunningGuard')
+                        : context.tr('lpRunGuardDemo'),
                     onPressed: _isGuardRunning
                         ? null
                         : () => _runGuardFailDemo(context),
@@ -232,7 +238,7 @@ class View extends PresenterState {
                   width: 180,
                   child: AppButton(
                     type: AppButtonType.outlined,
-                    text: 'Tap test ($_tapCounter)',
+                    text: '${context.tr('lpTapTest')} ($_tapCounter)',
                     onPressed: _incrementTapCounter,
                   ),
                 ),
@@ -241,11 +247,11 @@ class View extends PresenterState {
             const SizedBox(height: 10),
             Text(
               _isGuardRunning
-                  ? 'Guard is running: try tapping "Tap test". In non-blocking mode it should increment.'
-                  : 'Run guard demo to compare blocking vs non-blocking interaction.',
+                  ? context.tr('lpGuardRunningHint')
+                  : context.tr('lpRunGuardComparisonHint'),
             ),
             const SizedBox(height: 6),
-            Text('Last guard result: $_lastGuardResult'),
+            Text('${context.tr('lpLastGuardResult')}: $_lastGuardResult'),
           ],
         ),
       ),
@@ -254,16 +260,16 @@ class View extends PresenterState {
 
   Future<void> _showSuccess(BuildContext context) {
     return AppDialogService(context).showSuccess(
-      title: 'Success',
-      message: 'Your operation completed successfully.',
+      title: context.tr('success'),
+      message: context.tr('lpOperationCompletedSuccessfully'),
       position: _dialogPosition,
     );
   }
 
   Future<void> _showError(BuildContext context) {
     return AppDialogService(context).showError(
-      title: 'Error',
-      message: 'Something went wrong. Please retry.',
+      title: context.tr('updateFailed'),
+      message: context.tr('errorSomethingWentWrong'),
       dialogType: AppDialogType.server,
       position: _dialogPosition,
     );
@@ -280,18 +286,18 @@ class View extends PresenterState {
       task: () async {
         await Future<void>.delayed(const Duration(seconds: 3));
         if (_simulateGuardError) {
-          throw Exception('Request timeout while syncing data.');
+          throw Exception('lpErrorRequestTimeoutSync');
         }
-        return 'sync completed';
+        return context.tr('lpSyncCompleted');
       },
-      errorTitle: 'Guard error demo',
+      errorTitle: context.tr('lpGuardErrorDemoTitle'),
       mapError: (error) => (
-        message: error.toString().replaceFirst('Exception: ', ''),
+        message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
       ),
       position: _dialogPosition,
       showBlockingLoading: _useBlockingLoading,
-      loadingMessage: 'Syncing data...',
+      loadingMessage: context.tr('lpSyncingData'),
       loadingVisual: _loadingVisual,
       loadingVariant: _loadingVariant,
       progressType: _progressType,
@@ -300,7 +306,7 @@ class View extends PresenterState {
     if (!mounted) return;
     setState(() {
       _isGuardRunning = false;
-      _lastGuardResult = result ?? 'null (failed and handled by dialog)';
+      _lastGuardResult = result ?? context.tr('lpGuardFailedHandledByDialog');
     });
   }
 
@@ -321,8 +327,8 @@ class _LoadingCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return _CardShell(
-      title: 'Loading indicator',
-      subtitle: 'Reusable loading states for async actions',
+      title: context.tr('lpLoadingIndicatorTitle'),
+      subtitle: context.tr('lpLoadingIndicatorSubtitle'),
       child: Container(
         height: 180,
         decoration: BoxDecoration(
@@ -364,8 +370,8 @@ class _ProgressCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return _CardShell(
-      title: 'Progress indicators',
-      subtitle: 'Shows current completion in real-time',
+      title: context.tr('lpProgressIndicatorsTitle'),
+      subtitle: context.tr('lpProgressIndicatorsSubtitle'),
       child: Container(
         height: 180,
         padding: const EdgeInsets.all(18),

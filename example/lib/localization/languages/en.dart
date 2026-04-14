@@ -103,6 +103,7 @@ const Map<String, String> enStrings = {
 
   // Label Positions
   'positionTop': 'Top',
+  'positionCenter': 'Center',
   'positionBottom': 'Bottom',
   'positionLeft': 'Left',
   'positionRight': 'Right',
@@ -140,6 +141,115 @@ const Map<String, String> enStrings = {
   'invalidCredentials': 'Invalid username or password',
   'loginFailed': 'Login Failed',
   'signingIn': 'Signing in...',
+  'errorNetworkUnavailable':
+      'Unable to connect to the server. Please check your internet connection and try again.',
+  'errorSecureConnectionFailed':
+      'Secure connection failed. Please try again later.',
+  'errorRequestCancelled': 'The request was cancelled.',
+  'errorRequestInvalidData':
+      'The request data is invalid. Please review your input and try again.',
+  'errorAuthenticationFailed':
+      'Authentication failed. Please verify your credentials and try again.',
+  'errorResourceNotFound': 'The requested resource was not found.',
+  'errorRequestConflict':
+      'The request conflicts with existing data. Please review and retry.',
+  'errorInvalidInputValues':
+      'Some input values are invalid. Please correct them and try again.',
+  'errorTooManyRequests':
+      'Too many requests. Please wait a moment and try again.',
+  'errorServerUnavailable':
+      'The server is currently unavailable. Please try again in a few moments.',
+  'errorRequestFailedGeneric': 'Request failed. Please try again later.',
+  'errorSomethingWentWrong': 'Something went wrong. Please try again.',
+  'errorLoginTemporarilyUnavailable':
+      'Unable to sign in right now. Please try again.',
+  'errorFixValidationIssues':
+      'Please fix the validation errors before continuing.',
+  'errorNoAccessToken':
+      'Your session is missing. Please sign in again and retry.',
+  'errorUpdateProfileTemporarilyUnavailable':
+      'Unable to update profile right now. Please try again.',
+  'errorChangePasswordFillAllFields': 'Please fill all password fields.',
+  'errorChangePasswordMinLength': 'New password must be at least 6 characters.',
+  'errorChangePasswordMismatch': 'New password and confirmation do not match.',
+  'changePasswordUpdatedSuccessfully': 'Password updated successfully.',
+  'errorSessionExpiredLoginAgain':
+      'Your session has expired. Please sign in again.',
+  'errorUnableToLoadUserData':
+      'Unable to load user data at the moment. Please try again.',
+  'lpSimulating': 'Simulating...',
+  'lpSimulateProgress': 'Simulate Progress',
+  'lpDialogServiceExamplesTitle': 'Dialog service examples',
+  'lpDialogServiceExamplesSubtitle':
+      'Reusable success/error/guard dialogs with optional loading mode',
+  'lpUseBlockingLoadingInGuard': 'Use blocking loading dialog in guard()',
+  'lpSimulateGuardError': 'Simulate guard error (show error dialog)',
+  'lpDialogPosition': 'Dialog position',
+  'lpLoadingVisual': 'Loading visual',
+  'lpIndicator': 'Indicator',
+  'lpProgress': 'Progress',
+  'lpSpinner': 'Spinner',
+  'lpPulse': 'Pulse',
+  'lpDots': 'Dots',
+  'lpCircular': 'Circular',
+  'lpLinear': 'Linear',
+  'lpShowSuccess': 'Show Success',
+  'lpShowError': 'Show Error',
+  'lpRunningGuard': 'Running guard...',
+  'lpRunGuardDemo': 'Run guard() demo',
+  'lpTapTest': 'Tap test',
+  'lpGuardRunningHint':
+      'Guard is running: try tapping "Tap test". In non-blocking mode it should increment.',
+  'lpRunGuardComparisonHint':
+      'Run guard demo to compare blocking vs non-blocking interaction.',
+  'lpLastGuardResult': 'Last guard result',
+  'lpOperationCompletedSuccessfully': 'Your operation completed successfully.',
+  'lpErrorRequestTimeoutSync': 'Request timeout while syncing data.',
+  'lpSyncCompleted': 'sync completed',
+  'lpGuardErrorDemoTitle': 'Guard error demo',
+  'lpSyncingData': 'Syncing data...',
+  'lpGuardFailedHandledByDialog': 'null (failed and handled by dialog)',
+  'lpLoadingIndicatorTitle': 'Loading indicator',
+  'lpLoadingIndicatorSubtitle': 'Reusable loading states for async actions',
+  'lpProgressIndicatorsTitle': 'Progress indicators',
+  'lpProgressIndicatorsSubtitle': 'Shows current completion in real-time',
+  'adsFocusedDemoSubtitle': 'Focused demo for local and global dialog flows.',
+  'adsOptionsTitle': 'Options',
+  'adsUseBlockingLoadingInGuard': 'Use blocking loading in guard()',
+  'adsSimulateErrorOnGuard': 'Simulate error on guard()',
+  'adsActionsTitle': 'Actions',
+  'adsRunning': 'Running...',
+  'adsGlobalSuccess': 'Global Success',
+  'adsGlobalRunning': 'Global Running...',
+  'adsGlobalGuardDemo': 'Global guard() demo',
+  'adsGlobalLoading': 'Global Loading...',
+  'adsGlobalLoadingCancelDemo': 'Global loading cancel demo',
+  'adsGuardRunningHint':
+      'Guard running: tap test should only be blocked in blocking mode.',
+  'adsReady': 'Ready.',
+  'adsOperationCompletedSuccessfully': 'Operation completed successfully.',
+  'adsUnableToCompleteOperation': 'Unable to complete operation.',
+  'adsNetworkTimeoutSync': 'Network timeout while syncing data.',
+  'adsGuardDemoTitle': 'Guard demo',
+  'adsSyncing': 'Syncing...',
+  'adsGlobalDialogWithoutLocalContext':
+      'This dialog is shown without passing local BuildContext.',
+  'adsGlobalRequestTimeoutSync': 'Global request timeout while syncing data.',
+  'adsGlobalSyncCompleted': 'global sync completed',
+  'adsGlobalGuardDemoTitle': 'Global guard demo',
+  'adsGlobalSyncing': 'Global syncing...',
+  'adsGlobalFailedHandledByDialog':
+      'null (global failed and handled by dialog)',
+  'adsGlobalLoadingAutoCompletedHint':
+      'Global loading auto-completed. Press back next run to test cancel flow.',
+  'adsGlobalLoadingPressBackHint':
+      'Global loading... press device back to test confirm cancel.',
+  'adsCancelGlobalLoadingTitle': 'Cancel Global Loading?',
+  'adsCancelGlobalLoadingMessage':
+      'The global operation is still running. Cancel it now?',
+  'adsCancelRequestedFromBackButton': 'Cancel requested from back button.',
+  'adsGlobalLoadingCanceledByUser':
+      'Global loading canceled by user via device back.',
   'imageUploadComingSoon': 'Image upload coming soon',
   'pageNotFound': 'Page Not Found',
   'pageNotFound404': '404 - Page Not Found',

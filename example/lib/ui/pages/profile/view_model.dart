@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:form_fields_example/data/models/user.dart';
+import 'package:form_fields_example/data/services/http_service.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
+
+final Logger _logger = Logger();
 
 class ViewModel extends ChangeNotifier {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -17,12 +21,12 @@ class ViewModel extends ChangeNotifier {
 
   Future<String?> updateProfile(AppStateNotifier appState) async {
     if (!formKey.currentState!.validate()) {
-      return 'Please fix the validation errors.';
+      return 'errorFixValidationIssues';
     }
 
     final accessToken = appState.accessToken;
     if (accessToken.isEmpty) {
-      return 'No access token found';
+      return 'errorNoAccessToken';
     }
 
     _isLoading = true;
@@ -42,8 +46,15 @@ class ViewModel extends ChangeNotifier {
       appState.updateUserData(freshUser);
       user = freshUser;
       return null;
-    } catch (error) {
-      return 'Failed to update profile: ${error.toString()}';
+    } catch (error, stackTrace) {
+      _logger.e('Profile update failed: $error');
+      _logger.d(stackTrace.toString());
+
+      if (error is HttpException) {
+        return error.messageKey;
+      }
+
+      return 'errorUpdateProfileTemporarilyUnavailable';
     } finally {
       _isLoading = false;
       notifyListeners();
