@@ -107,4 +107,77 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Signing in...'), findsNothing);
   });
+
+  testWidgets('showLoading with allow back closes loading dialog', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final service = AppDialogService(ctx);
+
+    unawaited(
+      service.showLoading(
+        message: 'Processing...',
+        loadingBackBehavior: AppDialogLoadingBackBehavior.allow,
+      ),
+    );
+
+    // Loading animation is continuous, so avoid pumpAndSettle while visible.
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Processing...'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Processing...'), findsNothing);
+  });
+
+  testWidgets('showLoading with block back keeps loading dialog visible', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final service = AppDialogService(ctx);
+
+    unawaited(
+      service.showLoading(
+        message: 'Please wait...',
+        loadingBackBehavior: AppDialogLoadingBackBehavior.block,
+      ),
+    );
+
+    // Loading animation is continuous, so avoid pumpAndSettle while visible.
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Please wait...'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Please wait...'), findsOneWidget);
+
+    service.hide();
+    await tester.pumpAndSettle();
+  });
 }

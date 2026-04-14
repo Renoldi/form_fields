@@ -5,29 +5,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_loading_indicator.dart';
+import 'app_dialog_service_types.dart';
 import 'app_loading_progress_enums.dart';
 import 'app_progress_indicator.dart';
-
-enum AppDialogType {
-  validation,
-  network,
-  authentication,
-  server,
-}
-
-enum AppDialogPosition {
-  top,
-  center,
-  bottom,
-}
-
-enum AppDialogLoadingVisual {
-  indicator,
-  progress,
-}
-
-typedef AppDialogErrorMapper = ({String message, AppDialogType type}) Function(
-    Object error);
 
 class AppDialogService {
   final BuildContext context;
@@ -56,6 +36,15 @@ class AppDialogService {
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
+    AppDialogLoadingBackBehavior loadingBackBehavior =
+        AppDialogLoadingBackBehavior.block,
+    AppDialogCancelRequested? onCancelRequested,
+    AppDialogCancelled? onCancelled,
+    String cancelTitle = 'Cancel Process?',
+    String cancelMessage =
+        'The operation is still in progress. Do you want to cancel it?',
+    String stayLabel = 'Stay',
+    String cancelLabel = 'Cancel',
   }) async {
     var loadingShown = false;
 
@@ -68,6 +57,13 @@ class AppDialogService {
             loadingVisual: loadingVisual,
             loadingVariant: loadingVariant,
             progressType: progressType,
+            loadingBackBehavior: loadingBackBehavior,
+            onCancelRequested: onCancelRequested,
+            onCancelled: onCancelled,
+            cancelTitle: cancelTitle,
+            cancelMessage: cancelMessage,
+            stayLabel: stayLabel,
+            cancelLabel: cancelLabel,
           ),
         );
         // Give Flutter one frame to paint the blocking dialog
@@ -101,6 +97,15 @@ class AppDialogService {
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
+    AppDialogLoadingBackBehavior loadingBackBehavior =
+        AppDialogLoadingBackBehavior.block,
+    AppDialogCancelRequested? onCancelRequested,
+    AppDialogCancelled? onCancelled,
+    String cancelTitle = 'Cancel Process?',
+    String cancelMessage =
+        'The operation is still in progress. Do you want to cancel it?',
+    String stayLabel = 'Stay',
+    String cancelLabel = 'Cancel',
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -111,6 +116,15 @@ class AppDialogService {
     return _showProtectedDialog(
       insetPadding: EdgeInsets.zero,
       backgroundColor: Colors.transparent,
+      onBackPressed: () => _handleLoadingBackPressed(
+        loadingBackBehavior: loadingBackBehavior,
+        onCancelRequested: onCancelRequested,
+        onCancelled: onCancelled,
+        cancelTitle: cancelTitle,
+        cancelMessage: cancelMessage,
+        stayLabel: stayLabel,
+        cancelLabel: cancelLabel,
+      ),
       child: Container(
         color: Colors.black54,
         child: Center(
@@ -322,6 +336,7 @@ class AppDialogService {
     Alignment? alignment,
     EdgeInsets? insetPadding,
     Color? backgroundColor,
+    Future<void> Function()? onBackPressed,
     required Widget child,
   }) {
     return showDialog<void>(
@@ -332,6 +347,10 @@ class AppDialogService {
           canPop: false,
           onPopInvokedWithResult: (didPop, result) async {
             if (didPop) return;
+            if (onBackPressed != null) {
+              await onBackPressed();
+              return;
+            }
             await showExitConfirm();
           },
           child: Dialog(
@@ -357,6 +376,88 @@ class AppDialogService {
       padding: const EdgeInsets.all(24),
       child: child,
     );
+  }
+
+  Future<void> _handleLoadingBackPressed({
+    required AppDialogLoadingBackBehavior loadingBackBehavior,
+    required AppDialogCancelRequested? onCancelRequested,
+    required AppDialogCancelled? onCancelled,
+    required String cancelTitle,
+    required String cancelMessage,
+    required String stayLabel,
+    required String cancelLabel,
+  }) async {
+    switch (loadingBackBehavior) {
+      case AppDialogLoadingBackBehavior.block:
+        return;
+      case AppDialogLoadingBackBehavior.allow:
+        final approved = await _resolveCancellation(onCancelRequested);
+        if (!approved) return;
+        _dismissLoadingIfVisible();
+        await _runCancelled(onCancelled);
+        return;
+      case AppDialogLoadingBackBehavior.confirmCancel:
+        final shouldCancel = await _showCancelLoadingConfirm(
+          title: cancelTitle,
+          message: cancelMessage,
+          stayLabel: stayLabel,
+          cancelLabel: cancelLabel,
+        );
+        if (!shouldCancel) return;
+
+        final approved = await _resolveCancellation(onCancelRequested);
+        if (!approved) return;
+
+        _dismissLoadingIfVisible();
+        await _runCancelled(onCancelled);
+        return;
+    }
+  }
+
+  Future<bool> _resolveCancellation(
+    AppDialogCancelRequested? onCancelRequested,
+  ) async {
+    if (onCancelRequested == null) return true;
+    return await onCancelRequested();
+  }
+
+  Future<void> _runCancelled(AppDialogCancelled? onCancelled) async {
+    if (onCancelled == null) return;
+    await onCancelled();
+  }
+
+  Future<bool> _showCancelLoadingConfirm({
+    required String title,
+    required String message,
+    required String stayLabel,
+    required String cancelLabel,
+  }) async {
+    if (!context.mounted) return false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(stayLabel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(cancelLabel),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   void _dismissLoadingIfVisible() {

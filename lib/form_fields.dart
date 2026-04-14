@@ -52,12 +52,16 @@ export 'src/buttons/app_split_button.dart'
 export 'src/buttons/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
 export 'src/feedback/app_loading_indicator.dart' show AppLoadingIndicator;
 export 'src/feedback/app_progress_indicator.dart' show AppProgressIndicator;
-export 'src/feedback/app_dialog_service.dart'
+export 'src/feedback/app_dialog_service.dart' show AppDialogService;
+export 'src/feedback/app_dialog_service_types.dart'
     show
-        AppDialogService,
         AppDialogType,
         AppDialogPosition,
-        AppDialogLoadingVisual;
+        AppDialogLoadingVisual,
+        AppDialogLoadingBackBehavior,
+        AppDialogErrorMapper,
+        AppDialogCancelRequested,
+        AppDialogCancelled;
 
 // -------------------
 // Utilities & Enums

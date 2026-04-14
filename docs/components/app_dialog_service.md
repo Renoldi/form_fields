@@ -81,3 +81,38 @@ await AppDialogService(context).guard<void>(
   loadingMessage: 'Syncing...',
 );
 ```
+
+## Back Behavior During Loading
+
+Use `loadingBackBehavior` to control what happens when user presses device back while loading is visible:
+
+- `AppDialogLoadingBackBehavior.block`: ignore back press (default).
+- `AppDialogLoadingBackBehavior.allow`: close loading immediately.
+- `AppDialogLoadingBackBehavior.confirmCancel`: ask confirmation first.
+
+Example with confirm + cancellation hook:
+
+```dart
+await AppDialogService(context).guard<void>(
+  task: () async => uploadFile(),
+  errorTitle: 'Upload Failed',
+  mapError: (error) => (
+    message: error.toString(),
+    type: AppDialogType.network,
+  ),
+  showBlockingLoading: true,
+  loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
+  onCancelRequested: () async {
+    // Return true if cancel is approved and request cancellation is triggered.
+    cancelToken.cancel('User canceled upload');
+    return true;
+  },
+  onCancelled: () async {
+    // Optional cleanup after dialog is closed.
+  },
+  cancelTitle: 'Cancel Upload?',
+  cancelMessage: 'The upload is still running. Cancel it?',
+  cancelLabel: 'Cancel Upload',
+  stayLabel: 'Keep Uploading',
+);
+```
