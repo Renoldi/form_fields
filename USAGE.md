@@ -10,8 +10,9 @@
 6. [Validation](#validation)
 7. [State Management](#state-management)
 8. [Advanced Usage](#advanced-usage)
-9. [Best Practices](#best-practices)
-10. [Troubleshooting](#troubleshooting)
+9. [Feedback & Dialog Components](#feedback--dialog-components)
+10. [Best Practices](#best-practices)
+11. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
@@ -40,6 +41,7 @@ dependencies:
 
 ```bash
 flutter pub get
+
 ```
 
 or
@@ -1147,6 +1149,48 @@ FormFieldsRadioButton<Country>(
 3. **Keep models immutable**: Use `final` fields
 4. **Provide meaningful `toString()`**: Helpful for debugging
 5. **Use `itemLabelBuilder`**: Customize display without changing model
+
+## Feedback & Dialog Components
+
+Use reusable feedback components for loading, progress, and dialog-driven async flows.
+
+### AppDialogService with guard
+
+```dart
+final user = await AppDialogService(context).guard<User>(
+  task: () => userRepository.login(username, password),
+  errorTitle: 'Login Failed',
+  mapError: (error) => (
+    message: error.toString(),
+    type: AppDialogType.authentication,
+  ),
+  showBlockingLoading: true,
+  loadingMessage: 'Signing in...',
+  loadingVisual: AppDialogLoadingVisual.indicator,
+  loadingVariant: AppLoadingVariant.spinner,
+);
+```
+
+### AppLoadingIndicator
+
+```dart
+const AppLoadingIndicator(
+  variant: AppLoadingVariant.pulse,
+  size: 48,
+)
+```
+
+### AppProgressIndicator
+
+```dart
+const AppProgressIndicator(
+  type: AppProgressType.linear,
+  value: 0.6,
+  showValueLabel: true,
+)
+```
+
+For complete API details, see [docs/components/app_dialog_service.md](docs/components/app_dialog_service.md) and [docs/components/loading_progress.md](docs/components/loading_progress.md).
 
 ## Best Practices
 

@@ -12,6 +12,7 @@ flowchart TD
   A --> C[Fields Core\nlib/src/fields/core]
   A --> D[Fields Autocomplete\nlib/src/fields/autocomplete]
   A --> E[Fields Selection\nlib/src/fields/selection]
+  A --> N[Feedback Domain\nlib/src/feedback]
   A --> F[Shared Utilities\nlib/src/utilities]
   A --> G[Localization\nlib/src/localization]
 
@@ -103,6 +104,7 @@ Library source in [lib/src](lib/src) is organized by feature domain:
 - [lib/src/fields/core](lib/src/fields/core): Main FormFields widget.
 - [lib/src/fields/autocomplete](lib/src/fields/autocomplete): autocomplete field widget.
 - [lib/src/fields/selection](lib/src/fields/selection): dropdown, multi-select, radio, checkbox, and selection wrapper.
+- [lib/src/feedback](lib/src/feedback): app dialog service, loading indicators, and progress indicators.
 - [lib/src/utilities](lib/src/utilities): shared enums, validators, extensions, and helpers.
 - [lib/src/providers](lib/src/providers): internal notifiers.
 - [lib/src/localization](lib/src/localization): package localization delegate and language maps.

@@ -7,6 +7,7 @@ A comprehensive example application demonstrating all features and best practice
 This example showcases:
 
 ### ✨ Field Types
+
 - **Text Fields**: Email, phone, and general text input with validation
 - **Password Fields**: Secure input with visibility toggle
 - **Numeric Fields**: Integer and decimal with thousand separators
@@ -14,6 +15,7 @@ This example showcases:
 - **Custom Fields**: Dropdown, checkbox, radio buttons, and more
 
 ### 📅 Date & Time Components
+
 - **Date Picker**: Birth date selection
 - **Time Picker (DateTime)**: Full datetime with time selection
 - **Time Picker (TimeOfDay)**: Hour and minute only selection
@@ -21,13 +23,17 @@ This example showcases:
 - **DateRange Picker**: Start and end date selection
 
 ### 🎨 Customization Features
+
 - Multiple label positions (top, bottom, left, right, inline, none)
 - Border styles (outline, underline, none)
 - Custom locale support for date/time pickers
 - Comprehensive validation (required, email, phone, custom)
 - Nullable and non-nullable field variants
+- Reusable button family (`AppButton`, grouped/split/segmented/fab variants)
+- Reusable feedback flows (`AppDialogService`, loading and progress indicators)
 
 ### 🏗️ Architecture Demonstrations
+
 - **State Management**: Provider pattern with ChangeNotifier
 - **Build Configuration**: Multi-environment setup (Debug, Beta, Production)
 - **Localization**: Multi-language support (EN/ID)
@@ -36,6 +42,7 @@ This example showcases:
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Flutter SDK 3.0.0 or higher
 - Dart SDK 3.0.0 or higher
 
@@ -68,6 +75,7 @@ dart run tool/configure_build.dart --help
 ```
 
 **Documentation:**
+
 - [HOW_TO_USE.md](HOW_TO_USE.md) - Complete build configuration guide
 - [tool/README.md](tool/README.md) - Configuration tool documentation
 
@@ -87,7 +95,10 @@ Detailed documentation is available in the [`docs/`](docs/) folder:
 3. **Live Conversions**: Watch TimeOfDay ↔ DateTime conversions
 4. **Custom Styling**: Experiment with different label positions and borders
 5. **Localization**: Switch between English and Indonesian
-6. **Responsive Design**: Test on different screen sizes
+6. **Button Components**: Explore button variants in App Button examples
+7. **Dialog Guard Flows**: Compare blocking vs non-blocking loading behavior
+8. **Loading/Progress Visuals**: Switch indicator/progress modes and styles
+9. **Responsive Design**: Test on different screen sizes
 
 ## 📦 Project Structure
 
@@ -110,11 +121,13 @@ example/
 ## 🛠️ Build System Features
 
 ### Multi-Environment Support
+
 - **Debug**: Development with detailed logging
 - **Beta**: Testing environment
 - **Production**: Release-ready configuration
 
 ### Cross-Platform Building
+
 - Android (APK/AAB)
 - iOS (IPA)
 - macOS (App)
@@ -123,6 +136,7 @@ example/
 - Linux
 
 ### Automatic Error Fixing
+
 - Gradle issues (Android)
 - CocoaPods issues (iOS/macOS)
 - CMake issues (Linux)
@@ -132,12 +146,14 @@ example/
 ## 📱 Platform-Specific Configuration
 
 ### Android
+
 - Namespace management per environment
 - SDK version control
 - Permission handling
 - ProGuard/R8 rules
 
 ### iOS/macOS
+
 - Info.plist configuration
 - Podfile permission_handler setup
 - Usage description management
@@ -153,22 +169,3 @@ example/
 ## 📄 License
 
 This example application is part of the FormFields package and follows the same license.
-3. **Submit the form** to see all conversions in the submitted data section
-4. **Test nullable fields** to see how optional fields behave
-5. **Try different locales** with the custom locale time picker
-
-## Learning Points
-
-- When to use `FormFields<DateTime>` vs `FormFields<TimeOfDay>` for time pickers
-- How to convert between TimeOfDay and DateTime
-- How to handle nullable vs non-nullable form fields
-- How to validate different field types
-- How to customize form field appearance
-
-## Documentation
-
-For more information, see:
-- [README.md](../README.md) - Package overview
-- [USAGE.md](../USAGE.md) - Detailed usage guide
-- [API.md](../API.md) - Complete API reference
-- [QUICKSTART.md](../QUICKSTART.md) - Quick start guide

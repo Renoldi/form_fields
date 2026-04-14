@@ -14,7 +14,45 @@ Export groups from the entry point:
 - Autocomplete: `FormFieldsAutocomplete`
 - Selection fields: `FormFieldsSelect`, `FormFieldsDropdown`, `FormFieldsDropdownMulti`, `FormFieldsRadioButton`, `FormFieldsCheckbox`
 - Button family: `AppButton`, `AppButtonGroup`, `AppSegmentedButton`, `AppSplitButton`, `AppFabMenu`, plus related layout/content and enums
+- Feedback family: `AppDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`
 - Shared utilities and localization: enums, validators, extensions, controller, and localizations
+
+## Feedback APIs
+
+### AppDialogService
+
+Reusable dialog helper for loading, success/error/info dialogs, and guarded async flows.
+
+Main methods:
+
+- `showLoading(...)`
+- `hide()`
+- `showSuccess(...)`
+- `showError(...)`
+- `showInfo(...)`
+- `showResult(...)`
+- `showExitConfirm(...)`
+- `guard<T>(...)`
+
+Loading options for `showLoading` and `guard`:
+
+- `AppDialogLoadingVisual.indicator` with `AppLoadingVariant.spinner|pulse|dots`
+- `AppDialogLoadingVisual.progress` with `AppProgressType.circular|linear`
+
+### AppLoadingIndicator
+
+Animated loading widget with variants:
+
+- `AppLoadingVariant.spinner`
+- `AppLoadingVariant.pulse`
+- `AppLoadingVariant.dots`
+
+### AppProgressIndicator
+
+Progress widget for determinate and indeterminate states:
+
+- `AppProgressType.linear`
+- `AppProgressType.circular`
 
 ## Core Widget: FormFields<T>
 

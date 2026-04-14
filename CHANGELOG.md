@@ -2,6 +2,15 @@
 
 All notable changes to the FormFields package will be documented in this file.
 
+## [Unreleased]
+
+### Documentation
+
+- Synced API docs with feedback exports (`AppDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`).
+- Added usage guide section for feedback/dialog patterns and loading visual options.
+- Updated architecture and project-structure docs for `lib/src/feedback` and new example pages.
+- Refreshed example app README to include button and dialog/loading demonstration coverage.
+
 ## [1.0.0] - 2026-02-24
 
 ### Added

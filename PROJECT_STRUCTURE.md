@@ -37,7 +37,7 @@ form_fields_package/
 │       ├── providers/                  # State management
 │       │   ├── form_fields_dropdown_notifier.dart
 │       │   └── form_fields_notifier.dart
-│       ├── feedback/                   # Loading & progress indicators
+│       ├── feedback/                   # Dialogs, loading, and progress
 │       │   ├── app_dialog_service.dart
 │       │   ├── app_loading_indicator.dart
 │       │   ├── app_progress_indicator.dart
@@ -81,7 +81,9 @@ form_fields_package/
 │   │       │   ├── dropdown_multi_examples/
 │   │       │   ├── radio_button_examples/
 │   │       │   ├── checkbox_examples/
+│   │       │   ├── app_button_examples/
 │   │       │   ├── loading_progress_examples/
+│   │       │   ├── app_dialog_service_examples/
 │   │       │   ├── custom_class_examples/
 │   │       │   ├── null_non_null_validation_examples/
 │   │       │   └── examples_tabs/

@@ -55,3 +55,29 @@ if (user != null) {
 - `AppDialogType.network`
 - `AppDialogType.authentication`
 - `AppDialogType.server`
+
+## Loading Visual Options
+
+`showLoading` and `guard` support two visual modes:
+
+- `loadingVisual: AppDialogLoadingVisual.indicator`
+  - `loadingVariant: AppLoadingVariant.spinner|pulse|dots`
+- `loadingVisual: AppDialogLoadingVisual.progress`
+  - `progressType: AppProgressType.circular|linear`
+
+Example:
+
+```dart
+await AppDialogService(context).guard<void>(
+  task: () async => syncData(),
+  errorTitle: 'Sync Failed',
+  mapError: (error) => (
+    message: error.toString(),
+    type: AppDialogType.network,
+  ),
+  showBlockingLoading: true,
+  loadingVisual: AppDialogLoadingVisual.progress,
+  progressType: AppProgressType.linear,
+  loadingMessage: 'Syncing...',
+);
+```
