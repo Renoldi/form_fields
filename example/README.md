@@ -30,7 +30,7 @@ This example showcases:
 - Comprehensive validation (required, email, phone, custom)
 - Nullable and non-nullable field variants
 - Reusable button family (`AppButton`, grouped/split/segmented/fab variants)
-- Reusable feedback flows (`AppDialogService`, loading and progress indicators)
+- Reusable feedback flows (`AppDialogService`, `AppGlobalDialogService`, loading and progress indicators)
 
 ### 🏗️ Architecture Demonstrations
 

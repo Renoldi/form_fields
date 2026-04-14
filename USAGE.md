@@ -1154,20 +1154,58 @@ FormFieldsRadioButton<Country>(
 
 Use reusable feedback components for loading, progress, and dialog-driven async flows.
 
-### AppDialogService with guard
+### AppDialogService with guard (page-level)
 
 ```dart
 final user = await AppDialogService(context).guard<User>(
-  task: () => userRepository.login(username, password),
-  errorTitle: 'Login Failed',
-  mapError: (error) => (
-    message: error.toString(),
-    type: AppDialogType.authentication,
-  ),
+  task: viewModel.login,
+  errorTitle: context.tr('loginFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: AppDialogType.authentication,
+      );
+    }
+
+    logger.e('Unexpected login error: $error');
+    return (
+      message: context.tr('errorLoginTemporarilyUnavailable'),
+      type: AppDialogType.server,
+    );
+  },
+  okLabel: context.tr('ok'),
   showBlockingLoading: true,
-  loadingMessage: 'Signing in...',
+  loadingMessage: context.tr('signingIn'),
   loadingVisual: AppDialogLoadingVisual.indicator,
   loadingVariant: AppLoadingVariant.spinner,
+);
+```
+
+### AppGlobalDialogService (global-first, no local BuildContext)
+
+```dart
+AppGlobalDialogService.instance.configure(rootNavigatorKey);
+
+final user = await AppGlobalDialogService.instance.guard<User>(
+  task: viewModel.login,
+  errorTitle: context.tr('loginFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: AppDialogType.authentication,
+      );
+    }
+
+    logger.e('Unexpected login error: $error');
+    return (
+      message: context.tr('errorLoginTemporarilyUnavailable'),
+      type: AppDialogType.server,
+    );
+  },
+  showBlockingLoading: true,
+  loadingMessage: context.tr('signingIn'),
 );
 ```
 

@@ -7,32 +7,69 @@ Reusable indicators for loading and progress states.
 Reusable dialog helper for success, error, info, and guarded async tasks.
 
 ```dart
-final dialog = AppDialogService(context);
-
-await dialog.showSuccess(
-  title: 'Success',
-  message: 'Data saved successfully.',
+await AppGlobalDialogService.instance.showSuccess(
+  title: context.tr('success'),
+  message: context.tr('profileUpdatedSuccessfully'),
+  okLabel: context.tr('ok'),
   position: AppDialogPosition.top,
 );
 ```
 
+Use `AppGlobalDialogService.instance` for app-level flows where passing local
+`BuildContext` is not practical.
+
 Guard async operation with optional blocking loading dialog:
 
 ```dart
-final result = await dialog.guard<String>(
+final result = await AppGlobalDialogService.instance.guard<String>(
   task: () async {
     await Future<void>.delayed(const Duration(milliseconds: 800));
-    throw Exception('Request failed');
+    throw Exception('errorRequestFailedGeneric');
   },
-  errorTitle: 'Sync failed',
-  mapError: (error) => (
-    message: error.toString(),
-    type: AppDialogType.network,
-  ),
+  errorTitle: context.tr('updateFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: AppDialogType.network,
+      );
+    }
+
+    logger.e('Unexpected sync error: $error');
+    return (
+      message: context.tr(error.toString().replaceFirst('Exception: ', '')),
+      type: AppDialogType.server,
+    );
+  },
   showBlockingLoading: true,
-  loadingMessage: 'Syncing...',
+  loadingMessage: context.tr('loading'),
   loadingVisual: AppDialogLoadingVisual.progress,
   progressType: AppProgressType.circular,
+);
+```
+
+Localization-friendly guard mapping pattern:
+
+```dart
+final result = await AppGlobalDialogService.instance.guard<String>(
+  task: () async => syncData(),
+  errorTitle: context.tr('updateFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: AppDialogType.network,
+      );
+    }
+
+    logger.e('Unexpected sync error: $error');
+    return (
+      message: context.tr('errorRequestFailedGeneric'),
+      type: AppDialogType.server,
+    );
+  },
+  showBlockingLoading: true,
+  loadingMessage: context.tr('loading'),
 );
 ```
 

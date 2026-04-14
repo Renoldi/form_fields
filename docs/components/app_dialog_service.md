@@ -17,12 +17,11 @@ without passing `BuildContext` through every layer.
 ## Quick Usage
 
 ```dart
-final dialog = AppDialogService(context);
-
-await dialog.showError(
-  title: 'Login Failed',
-  message: 'Invalid credentials',
+await AppGlobalDialogService.instance.showError(
+  title: context.tr('loginFailed'),
+  message: context.tr('invalidCredentials'),
   dialogType: AppDialogType.authentication,
+  okLabel: context.tr('ok'),
 );
 ```
 
@@ -33,25 +32,6 @@ await dialog.showError(
 - Keep technical details in logger, and map user-facing messages via localization keys.
 
 ## Async Guard (Simple Flow)
-
-```dart
-final user = await AppDialogService(context).guard<User>(
-  task: () => userRepository.login(username, password),
-  errorTitle: 'Login Failed',
-  mapError: (error) => (
-    message: error.toString(),
-    type: AppDialogType.server,
-  ),
-  showBlockingLoading: true,
-  loadingMessage: 'Signing in...',
-);
-
-if (user != null) {
-  // Continue success flow
-}
-```
-
-Localization-friendly error mapping:
 
 ```dart
 final user = await AppGlobalDialogService.instance.guard<User>(
@@ -75,6 +55,10 @@ final user = await AppGlobalDialogService.instance.guard<User>(
   showBlockingLoading: true,
   loadingMessage: context.tr('signingIn'),
 );
+
+if (user != null) {
+  // Continue success flow
+}
 ```
 
 ## Dialog Position
@@ -102,17 +86,27 @@ final user = await AppGlobalDialogService.instance.guard<User>(
 Example:
 
 ```dart
-await AppDialogService(context).guard<void>(
+await AppGlobalDialogService.instance.guard<void>(
   task: () async => syncData(),
-  errorTitle: 'Sync Failed',
-  mapError: (error) => (
-    message: error.toString(),
-    type: AppDialogType.network,
-  ),
+  errorTitle: context.tr('updateFailed'),
+  mapError: (error) {
+    if (error is HttpException) {
+      return (
+        message: context.tr(error.messageKey),
+        type: AppDialogType.network,
+      );
+    }
+
+    logger.e('Sync failed (unexpected): $error');
+    return (
+      message: context.tr('errorRequestFailedGeneric'),
+      type: AppDialogType.server,
+    );
+  },
   showBlockingLoading: true,
   loadingVisual: AppDialogLoadingVisual.progress,
   progressType: AppProgressType.linear,
-  loadingMessage: 'Syncing...',
+  loadingMessage: context.tr('loading'),
 );
 ```
 
@@ -129,9 +123,9 @@ Example with confirm + cancellation hook:
 ```dart
 await AppDialogService(context).guard<void>(
   task: () async => uploadFile(),
-  errorTitle: 'Upload Failed',
+  errorTitle: context.tr('updateFailed'),
   mapError: (error) => (
-    message: error.toString(),
+    message: context.tr('errorRequestFailedGeneric'),
     type: AppDialogType.network,
   ),
   showBlockingLoading: true,
@@ -144,10 +138,10 @@ await AppDialogService(context).guard<void>(
   onCancelled: () async {
     // Optional cleanup after dialog is closed.
   },
-  cancelTitle: 'Cancel Upload?',
-  cancelMessage: 'The upload is still running. Cancel it?',
-  cancelLabel: 'Cancel Upload',
-  stayLabel: 'Keep Uploading',
+  cancelTitle: context.tr('updateFailed'),
+  cancelMessage: context.tr('loading'),
+  cancelLabel: context.tr('cancel'),
+  stayLabel: context.tr('stay'),
 );
 ```
 
@@ -173,8 +167,9 @@ Usage:
 
 ```dart
 await AppGlobalDialogService.instance.showSuccess(
-  title: 'Saved',
-  message: 'Your changes have been saved.',
+  title: context.tr('success'),
+  message: context.tr('profileUpdatedSuccessfully'),
+  okLabel: context.tr('ok'),
 );
 ```
 
@@ -201,12 +196,12 @@ Global loading with back-confirm cancel:
 
 ```dart
 await AppGlobalDialogService.instance.showLoading(
-  message: 'Global loading... press back to test cancel flow.',
+  message: context.tr('loading'),
   loadingBackBehavior: AppDialogLoadingBackBehavior.confirmCancel,
-  cancelTitle: 'Cancel Global Loading?',
-  cancelMessage: 'Operation is still running. Cancel it now?',
-  cancelLabel: 'Cancel',
-  stayLabel: 'Stay',
+  cancelTitle: context.tr('updateFailed'),
+  cancelMessage: context.tr('loading'),
+  cancelLabel: context.tr('cancel'),
+  stayLabel: context.tr('stay'),
   onCancelRequested: () async {
     cancelToken.cancel('User canceled from global loading dialog');
     return true;
