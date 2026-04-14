@@ -6,13 +6,15 @@ import 'app_button_content.dart';
 import 'app_button_enums.dart';
 import 'app_button_layout.dart';
 
-class AppButton extends StatelessWidget {
+class AppButton<T> extends StatelessWidget {
   final AppButtonType type;
   final AppButtonSize size;
   final String? text;
   final Widget? child;
   final Widget? icon;
   final VoidCallback? onPressed;
+  final T? value;
+  final ValueChanged<T?>? onPressedWithValue;
   final bool isLoading;
   final ButtonStyle? style;
 
@@ -32,7 +34,9 @@ class AppButton extends StatelessWidget {
 
   const AppButton({
     super.key,
-    required this.onPressed,
+    this.onPressed,
+    this.value,
+    this.onPressedWithValue,
     this.type = AppButtonType.filled,
     this.size = AppButtonSize.medium,
     this.text,
@@ -85,7 +89,7 @@ class AppButton extends StatelessWidget {
       child: child,
     );
 
-    final effectiveOnPressed = isLoading ? null : onPressed;
+    final effectiveOnPressed = _effectiveOnPressed;
 
     if (isIcon) {
       return IconButton(
@@ -178,6 +182,14 @@ class AppButton extends StatelessWidget {
         return SizedBox(width: constraints.maxWidth, child: button);
       },
     );
+  }
+
+  VoidCallback? get _effectiveOnPressed {
+    if (isLoading) return null;
+    if (onPressedWithValue != null) {
+      return () => onPressedWithValue!(value);
+    }
+    return onPressed;
   }
 
   ButtonStyle _buttonStyle() {

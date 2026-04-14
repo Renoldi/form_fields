@@ -2,6 +2,8 @@
 
 Reusable Material 3 button component that supports multiple button types, loading state, custom style overrides, and safe-area/keyboard-aware layout.
 
+`AppButton` also supports generic typed payload callbacks via `AppButton<T>`.
+
 ## Supported Types
 
 - `AppButtonType.filled`
@@ -31,6 +33,51 @@ AppButton(
   onPressed: () {},
 )
 ```
+
+## Generic Typed Callback (T)
+
+```dart
+AppButton<String>(
+  text: 'Select Plan',
+  value: 'pro',
+  onPressedWithValue: (value) {
+    debugPrint('Selected: $value');
+  },
+)
+```
+
+You can use any type for `T`, for example:
+
+- `AppButton<int>` with `value: 99`
+- `AppButton<bool>` with `value: true`
+- `AppButton<MyPayload>` with a custom class
+
+Custom class example:
+
+```dart
+class ActionPayload {
+  final String code;
+  final int priority;
+
+  const ActionPayload({required this.code, required this.priority});
+}
+
+AppButton<ActionPayload>(
+  text: 'Payload custom class',
+  value: const ActionPayload(code: 'checkout', priority: 1),
+  onPressedWithValue: (payload) {
+    if (payload != null) {
+      debugPrint('${payload.code} / ${payload.priority}');
+    }
+  },
+)
+```
+
+Callback priority:
+
+- If `isLoading` is true: button is disabled.
+- If `onPressedWithValue` is provided: it will be used.
+- Otherwise `onPressed` is used.
 
 ## Loading State
 
@@ -93,6 +140,8 @@ AppButton(
 - `child`: Custom content widget.
 - `icon`: Optional leading icon.
 - `onPressed`: Tap callback (null disables button).
+- `value`: Optional typed payload passed to `onPressedWithValue`.
+- `onPressedWithValue`: Typed callback for generic payload (`AppButton<T>`).
 - `isLoading`: Disables button and shows progress indicator.
 - `style`: Optional external `ButtonStyle` override.
 - `customHeight`: Height for `AppButtonSize.custom`.

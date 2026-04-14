@@ -10,6 +10,7 @@ class View extends PresenterState {
   Set<String> _selectedVolume = {'4oz'};
   Set<String> _selectedSegment = {'songs'};
   String _lastSplitAction = '-';
+  String _lastTypedButtonValue = '-';
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +86,21 @@ class View extends PresenterState {
                     icon: const Icon(Icons.straighten),
                     onPressed: () {},
                   ),
+                  const SizedBox(height: 8),
+                  AppButton<String>(
+                    type: AppButtonType.outlined,
+                    size: AppButtonSize.medium,
+                    text: 'Typed Callback (T)',
+                    icon: const Icon(Icons.data_object),
+                    value: 'checkout',
+                    onPressedWithValue: (value) {
+                      setState(() {
+                        _lastTypedButtonValue = value ?? '-';
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Last typed payload: $_lastTypedButtonValue'),
                   const SizedBox(height: 16),
                   Text(
                     'Button Groups',
@@ -102,6 +118,7 @@ class View extends PresenterState {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AppSegmentedButton<String>(
+                          size: AppButtonSize.small,
                           segments: const [
                             ButtonSegment<String>(
                               value: '4oz',
@@ -342,6 +359,7 @@ class View extends PresenterState {
                   ),
                   const SizedBox(height: 8),
                   AppSegmentedButton<String>(
+                    size: AppButtonSize.medium,
                     segments: const [
                       ButtonSegment<String>(
                         value: 'songs',
@@ -371,6 +389,7 @@ class View extends PresenterState {
                   ),
                   const SizedBox(height: 8),
                   AppSplitButton<String>(
+                    size: AppButtonSize.large,
                     text: 'Add to cart',
                     icon: const Icon(Icons.shopping_cart_outlined),
                     onPressed: () {
@@ -409,6 +428,7 @@ class View extends PresenterState {
                   Align(
                     alignment: Alignment.centerRight,
                     child: AppFabMenu(
+                      size: AppButtonSize.small,
                       items: [
                         AppFabMenuItem(
                           label: 'First',

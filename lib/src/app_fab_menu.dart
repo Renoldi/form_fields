@@ -2,6 +2,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'app_button_enums.dart';
+
 class AppFabMenuItem {
   final String label;
   final Widget icon;
@@ -18,11 +20,13 @@ class AppFabMenuItem {
 class AppFabMenu extends StatefulWidget {
   final List<AppFabMenuItem> items;
   final Widget? mainIcon;
+  final AppButtonSize size;
 
   const AppFabMenu({
     super.key,
     required this.items,
     this.mainIcon,
+    this.size = AppButtonSize.medium,
   });
 
   @override
@@ -65,28 +69,78 @@ class _AppFabMenuState extends State<AppFabMenu> {
                           child: Text(item.label),
                         ),
                         const SizedBox(width: 8),
-                        FloatingActionButton.small(
-                          onPressed: () {
-                            item.onPressed();
-                            _toggle();
-                          },
-                          child: item.icon,
-                        ),
+                        _buildMenuFab(item),
                       ],
                     ),
                   )
                 : const SizedBox.shrink(),
           ),
         ],
-        FloatingActionButton(
+        _buildMainFab(),
+      ],
+    );
+  }
+
+  Widget _buildMenuFab(AppFabMenuItem item) {
+    switch (widget.size) {
+      case AppButtonSize.small:
+        return FloatingActionButton.small(
+          onPressed: () {
+            item.onPressed();
+            _toggle();
+          },
+          child: item.icon,
+        );
+      case AppButtonSize.large:
+        return FloatingActionButton.large(
+          onPressed: () {
+            item.onPressed();
+            _toggle();
+          },
+          child: item.icon,
+        );
+      case AppButtonSize.medium:
+      case AppButtonSize.custom:
+        return FloatingActionButton(
+          onPressed: () {
+            item.onPressed();
+            _toggle();
+          },
+          child: item.icon,
+        );
+    }
+  }
+
+  Widget _buildMainFab() {
+    switch (widget.size) {
+      case AppButtonSize.small:
+        return FloatingActionButton.small(
           onPressed: _toggle,
           child: AnimatedRotation(
             duration: const Duration(milliseconds: 180),
             turns: _isOpen ? 0.125 : 0,
             child: widget.mainIcon ?? const Icon(Icons.add),
           ),
-        ),
-      ],
-    );
+        );
+      case AppButtonSize.large:
+        return FloatingActionButton.large(
+          onPressed: _toggle,
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 180),
+            turns: _isOpen ? 0.125 : 0,
+            child: widget.mainIcon ?? const Icon(Icons.add),
+          ),
+        );
+      case AppButtonSize.medium:
+      case AppButtonSize.custom:
+        return FloatingActionButton(
+          onPressed: _toggle,
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 180),
+            turns: _isOpen ? 0.125 : 0,
+            child: widget.mainIcon ?? const Icon(Icons.add),
+          ),
+        );
+    }
   }
 }

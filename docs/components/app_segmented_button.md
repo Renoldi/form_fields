@@ -6,6 +6,7 @@ Wrapper around Material 3 `SegmentedButton`.
 
 ```dart
 AppSegmentedButton<String>(
+  size: AppButtonSize.medium,
   segments: const [
     ButtonSegment(value: 'songs', label: Text('Songs')),
     ButtonSegment(value: 'albums', label: Text('Albums')),
@@ -14,6 +15,15 @@ AppSegmentedButton<String>(
   onSelectionChanged: (value) {},
 )
 ```
+
+## Size Presets
+
+Supports `AppButtonSize` for consistent sizing:
+
+- `AppButtonSize.small`
+- `AppButtonSize.medium`
+- `AppButtonSize.large`
+- `AppButtonSize.custom` (uses medium fallback)
 
 ## ButtonSegment Icon Note
 

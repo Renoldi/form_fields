@@ -52,6 +52,10 @@ Segmented button icon behavior note:
 
 - `ButtonSegment.icon` can be hardcoded per segment. See [AppSegmentedButton docs](docs/components/app_segmented_button.md) for best practices with `selectedIcon`.
 
+AppButton generic callback note:
+
+- `AppButton<T>` supports typed payload callbacks via `value` + `onPressedWithValue`. See [AppButton docs](docs/components/app_button.md).
+
 ## Additional References
 
 - [API Reference](API.md)
