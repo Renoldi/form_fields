@@ -5,10 +5,13 @@ Reusable Material 3 button component that supports multiple button types, loadin
 ## Supported Types
 
 - `AppButtonType.filled`
+- `AppButtonType.filledTonal`
 - `AppButtonType.elevated`
 - `AppButtonType.outlined`
 - `AppButtonType.text`
 - `AppButtonType.icon`
+- `AppButtonType.fab`
+- `AppButtonType.extendedFab`
 
 ## Size Presets
 

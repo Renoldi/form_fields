@@ -73,6 +73,8 @@ class AppButton extends StatelessWidget {
 
   Widget _buildButton(BuildContext context) {
     final isIcon = type == AppButtonType.icon;
+    final isFab = type == AppButtonType.fab;
+    final isExtendedFab = type == AppButtonType.extendedFab;
     final childWidget = AppButtonContent(
       type: type,
       size: size,
@@ -93,8 +95,53 @@ class AppButton extends StatelessWidget {
       );
     }
 
+    if (isFab) {
+      final fabChild = isLoading
+          ? SizedBox(
+              width: _iconSizeBySize,
+              height: _iconSizeBySize,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: IconTheme.of(context).color,
+              ),
+            )
+          : (icon ?? const Icon(Icons.add));
+
+      switch (size) {
+        case AppButtonSize.small:
+          return FloatingActionButton.small(
+            onPressed: effectiveOnPressed,
+            child: fabChild,
+          );
+        case AppButtonSize.large:
+          return FloatingActionButton.large(
+            onPressed: effectiveOnPressed,
+            child: fabChild,
+          );
+        case AppButtonSize.medium:
+        case AppButtonSize.custom:
+          return FloatingActionButton(
+            onPressed: effectiveOnPressed,
+            child: fabChild,
+          );
+      }
+    }
+
+    if (isExtendedFab) {
+      return FloatingActionButton.extended(
+        onPressed: effectiveOnPressed,
+        icon: icon,
+        label: child ?? Text(text ?? 'Action'),
+      );
+    }
+
     final button = switch (type) {
       AppButtonType.filled => FilledButton(
+          onPressed: effectiveOnPressed,
+          style: _buttonStyle().merge(style),
+          child: childWidget,
+        ),
+      AppButtonType.filledTonal => FilledButton.tonal(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(style),
           child: childWidget,
@@ -115,6 +162,8 @@ class AppButton extends StatelessWidget {
           child: childWidget,
         ),
       AppButtonType.icon => const SizedBox.shrink(),
+      AppButtonType.fab => const SizedBox.shrink(),
+      AppButtonType.extendedFab => const SizedBox.shrink(),
     };
 
     return LayoutBuilder(

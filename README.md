@@ -32,6 +32,10 @@ FormFields<String>(
 Each component now has its own documentation file for better readability and maintenance:
 
 - [AppButton](docs/components/app_button.md)
+- [AppButtonGroup](docs/components/app_button_group.md)
+- [AppSegmentedButton](docs/components/app_segmented_button.md)
+- [AppSplitButton](docs/components/app_split_button.md)
+- [AppFabMenu](docs/components/app_fab_menu.md)
 - [FormFields](docs/components/form_fields.md)
 - [FormFieldsAutocomplete](docs/components/form_fields_autocomplete.md)
 - [FormFieldsDropdown](docs/components/form_fields_dropdown.md)
@@ -43,6 +47,10 @@ Each component now has its own documentation file for better readability and mai
 Open the docs index:
 
 - [Documentation Index](docs/README.md)
+
+Segmented button icon behavior note:
+
+- `ButtonSegment.icon` can be hardcoded per segment. See [AppSegmentedButton docs](docs/components/app_segmented_button.md) for best practices with `selectedIcon`.
 
 ## Additional References
 

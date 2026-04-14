@@ -7,6 +7,9 @@ import 'view_model.dart';
 
 class View extends PresenterState {
   String _keyboardTestValue = '';
+  Set<String> _selectedVolume = {'4oz'};
+  Set<String> _selectedSegment = {'songs'};
+  String _lastSplitAction = '-';
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +67,14 @@ class View extends PresenterState {
                   ),
                   const SizedBox(height: 12),
                   AppButton(
+                    type: AppButtonType.filledTonal,
+                    size: AppButtonSize.medium,
+                    text: 'Filled Tonal',
+                    icon: const Icon(Icons.palette_outlined),
+                    onPressed: () {},
+                  ),
+                  const SizedBox(height: 12),
+                  AppButton(
                     type: AppButtonType.filled,
                     size: AppButtonSize.custom,
                     customHeight: 52,
@@ -73,6 +84,112 @@ class View extends PresenterState {
                     text: 'Custom Size',
                     icon: const Icon(Icons.straighten),
                     onPressed: () {},
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Button Groups',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        AppSegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment<String>(
+                              value: '4oz',
+                              label: Text('4 oz'),
+                            ),
+                            ButtonSegment<String>(
+                              value: '8oz',
+                              label: Text('8 oz'),
+                            ),
+                            ButtonSegment<String>(
+                              value: '12oz',
+                              label: Text('12 oz'),
+                            ),
+                          ],
+                          selected: _selectedVolume,
+                          onSelectionChanged: (value) {
+                            setState(() {
+                              _selectedVolume = value;
+                            });
+                          },
+                          selectedIcon: const Icon(Icons.check, size: 14),
+                          style: ButtonStyle(
+                            visualDensity: VisualDensity.compact,
+                            padding: const WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            AppButton(
+                              type: AppButtonType.icon,
+                              size: AppButtonSize.custom,
+                              customHeight: 48,
+                              customIconSize: 22,
+                              icon:
+                                  const Icon(Icons.accessibility_new_outlined),
+                              style: ButtonStyle(
+                                shape: const WidgetStatePropertyAll(
+                                    CircleBorder()),
+                                side: WidgetStatePropertyAll(
+                                  BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () {},
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: AppButton(
+                                type: AppButtonType.filled,
+                                size: AppButtonSize.custom,
+                                customHeight: 48,
+                                text: 'Get started',
+                                style: FilledButton.styleFrom(
+                                  shape: const StadiumBorder(),
+                                ),
+                                onPressed: () {},
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            AppButton(
+                              type: AppButtonType.icon,
+                              size: AppButtonSize.custom,
+                              customHeight: 48,
+                              customIconSize: 22,
+                              icon: const Icon(Icons.public_outlined),
+                              style: ButtonStyle(
+                                shape: const WidgetStatePropertyAll(
+                                    CircleBorder()),
+                                side: WidgetStatePropertyAll(
+                                  BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () {},
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -98,6 +215,46 @@ class View extends PresenterState {
                         onPressed: () {},
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Floating Action Buttons',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      AppButton(
+                        type: AppButtonType.fab,
+                        size: AppButtonSize.small,
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () {},
+                      ),
+                      const SizedBox(width: 12),
+                      AppButton(
+                        type: AppButtonType.fab,
+                        size: AppButtonSize.medium,
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {},
+                      ),
+                      const SizedBox(width: 12),
+                      AppButton(
+                        type: AppButtonType.fab,
+                        size: AppButtonSize.large,
+                        icon: const Icon(Icons.edit_note),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppButton(
+                      type: AppButtonType.extendedFab,
+                      text: 'New task',
+                      icon: const Icon(Icons.add),
+                      onPressed: () {},
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -177,6 +334,99 @@ class View extends PresenterState {
                       ),
                     ),
                     onPressed: () {},
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Segmented Buttons',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  AppSegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment<String>(
+                        value: 'songs',
+                        icon: Icon(Icons.check, size: 16),
+                        label: Text('Songs'),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'albums',
+                        label: Text('Albums'),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'podcasts',
+                        label: Text('Podcasts'),
+                      ),
+                    ],
+                    selected: _selectedSegment,
+                    onSelectionChanged: (value) {
+                      setState(() {
+                        _selectedSegment = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Split Button',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  AppSplitButton<String>(
+                    text: 'Add to cart',
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    onPressed: () {
+                      setState(() {
+                        _lastSplitAction = 'default';
+                      });
+                    },
+                    items: const [
+                      AppSplitButtonItem(
+                        value: 'save',
+                        label: 'Save for later',
+                      ),
+                      AppSplitButtonItem(
+                        value: 'wishlist',
+                        label: 'Add to wishlist',
+                      ),
+                      AppSplitButtonItem(
+                        value: 'gift',
+                        label: 'Buy as gift',
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setState(() {
+                        _lastSplitAction = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Last split action: $_lastSplitAction'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'FAB Menu',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: AppFabMenu(
+                      items: [
+                        AppFabMenuItem(
+                          label: 'First',
+                          icon: const Icon(Icons.looks_one_outlined),
+                          onPressed: () {},
+                        ),
+                        AppFabMenuItem(
+                          label: 'Second',
+                          icon: const Icon(Icons.looks_two_outlined),
+                          onPressed: () {},
+                        ),
+                        AppFabMenuItem(
+                          label: 'Third',
+                          icon: const Icon(Icons.looks_3_outlined),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 120),
                 ],
