@@ -1722,8 +1722,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         final unformatted =
                             _getPhoneWithoutFormatting(formatted);
                         widget.onChanged(unformatted as T);
-                      } else if (_isDateTimeType()) {
-                        // Do not cast String to DateTime, just skip
+                      } else if (_isDateTimeType() || _isTimeOfDayType()) {
+                        // Do not cast String to DateTime or TimeOfDay, just skip
                         // Only update controller, not value
                       } else if (_isDateTimeRangeType()) {
                         // Do not cast String to DateTimeRange, just skip
@@ -1803,8 +1803,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         vm,
                         context,
                       );
-                    } else if (_isDateTimeType() || _isDateTimeRangeType()) {
-                      // Don't cast String to DateTime/DateTimeRange
+                    } else if (_isDateTimeType() ||
+                        _isDateTimeRangeType() ||
+                        _isTimeOfDayType()) {
+                      // Don't cast String to DateTime/DateTimeRange/TimeOfDay
                       return _validateRequired(
                         null,
                         widget.label,
