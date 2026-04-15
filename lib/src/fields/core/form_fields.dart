@@ -1689,58 +1689,46 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   inputFormatters: _getInputFormatters(),
                   onChanged: (v) {
                     if (debounce.isActive) debounce.cancel();
-
-                    // For non-separator numeric fields, respond immediately for smoother UX
                     final useDebounce = widget.stripSeparators ||
                         !(_isIntType() || _isDoubleType());
                     final delay = useDebounce
                         ? const Duration(milliseconds: 500)
                         : const Duration(milliseconds: 50);
-
                     debounce = Timer(delay, () {
-                      // Trim whitespace from input
                       final trimmed = v.trim();
-
-                      // Handle numeric types - stripSeparators only affects formatting, not parsing
                       if (_isIntType()) {
                         final cleaned = widget.stripSeparators
                             ? _stripSeparatorsForParse(trimmed)
                             : trimmed;
                         if (cleaned.isEmpty || cleaned == '-') {
-                          if (_isNullable()) {
-                            widget.onChanged(null as T);
-                          }
+                          if (_isNullable()) widget.onChanged(null as T);
                           return;
                         }
                         final parsed = int.tryParse(cleaned);
-                        if (parsed != null) {
-                          widget.onChanged(parsed as T);
-                        }
+                        if (parsed != null) widget.onChanged(parsed as T);
                       } else if (_isDoubleType()) {
                         final cleaned = widget.stripSeparators
                             ? _stripSeparatorsForParse(trimmed)
                             : trimmed;
                         if (cleaned.isEmpty || cleaned == '-') {
-                          if (_isNullable()) {
-                            widget.onChanged(null as T);
-                          }
+                          if (_isNullable()) widget.onChanged(null as T);
                           return;
                         }
-                        if (cleaned.endsWith('.')) {
-                          // Don't wait, emit null or keep previous value
-                          return;
-                        }
+                        if (cleaned.endsWith('.')) return;
                         final parsed = double.tryParse(cleaned);
-                        if (parsed != null) {
-                          widget.onChanged(parsed as T);
-                        }
+                        if (parsed != null) widget.onChanged(parsed as T);
                       } else if (_isPhoneType()) {
                         final formatted = _formatPhoneWithCode(trimmed);
                         final unformatted =
                             _getPhoneWithoutFormatting(formatted);
                         widget.onChanged(unformatted as T);
+                      } else if (_isDateTimeType()) {
+                        // Do not cast String to DateTime, just skip
+                        // Only update controller, not value
+                      } else if (_isDateTimeRangeType()) {
+                        // Do not cast String to DateTimeRange, just skip
+                        // Only update controller, not value
                       } else {
-                        // Non-numeric types
                         widget.onChanged(trimmed as T);
                       }
                     });
@@ -1810,6 +1798,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : value);
                       return _validateRequired(
                         parsed as T?,
+                        widget.label,
+                        widget.isRequired,
+                        vm,
+                        context,
+                      );
+                    } else if (_isDateTimeType() || _isDateTimeRangeType()) {
+                      // Don't cast String to DateTime/DateTimeRange
+                      return _validateRequired(
+                        null,
                         widget.label,
                         widget.isRequired,
                         vm,
