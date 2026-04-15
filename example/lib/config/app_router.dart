@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:form_fields_example/ui/pages/login/main.dart' as login;
+import 'package:form_fields_example/ui/pages/icons_gallery/main.dart'
+    as icons_gallery;
 import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
 import 'package:form_fields_example/ui/pages/form_fields_examples/main.dart'
     as form_fields_examples;
@@ -275,6 +277,11 @@ GoRouter createAppRouter(
           ),
         ),
       ),
+      GoRoute(
+        path: AppRoute.iconsGallery.path,
+        name: AppRoute.iconsGallery.name,
+        builder: (context, state) => icons_gallery.IconsGalleryPresenter(),
+      ),
     ],
 
     // Error handling
@@ -365,5 +372,7 @@ String _routeTitleKey(AppRoute route) {
       return 'language';
     case AppRoute.appInfo:
       return 'appInfo';
+    case AppRoute.iconsGallery:
+      return 'iconsGallery';
   }
 }

@@ -107,6 +107,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.brown,
           routeName: AppRoute.appDialogService.name,
         ),
+        MenuItemData(
+          title: 'Icons Gallery',
+          subtitle: 'Browse & Search Icons',
+          icon: Icons.widgets,
+          color: Colors.cyan,
+          routeName: AppRoute.iconsGallery.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

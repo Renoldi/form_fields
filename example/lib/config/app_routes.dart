@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 enum AppRoute {
   login(name: 'login', title: 'Login'),
+  iconsGallery(name: 'icons_gallery', title: 'Icons Gallery'),
   menu(name: 'menu', title: 'Menu'),
   formFields(name: 'form_fields', title: 'FormFields'),
   dropdown(name: 'dropdown', title: 'Dropdown'),
