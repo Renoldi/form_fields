@@ -2,7 +2,9 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_loading_indicator.dart';
 import 'app_dialog_service_types.dart';
@@ -320,16 +322,37 @@ class AppDialogService {
               child: Text(stayLabel),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext, rootNavigator: true).pop();
-                Navigator.of(dialogContext, rootNavigator: true).maybePop();
-              },
+              onPressed: () async => _exitApplication(dialogContext),
               child: Text(exitLabel),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _exitApplication(BuildContext dialogContext) async {
+    Navigator.of(dialogContext, rootNavigator: true).pop();
+
+    if (!context.mounted) return;
+
+    if (kIsWeb) {
+      await Navigator.of(context, rootNavigator: true).maybePop();
+      return;
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+        await SystemNavigator.pop();
+        return;
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+        await Navigator.of(context, rootNavigator: true).maybePop();
+        return;
+    }
   }
 
   Future<void> _showProtectedDialog({

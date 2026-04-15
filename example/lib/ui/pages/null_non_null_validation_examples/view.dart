@@ -390,17 +390,13 @@ class View extends PresenterState {
                     isRequired: true,
                     borderColor: Colors.indigo,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null) {
                         return context.tr('valAgeRequired');
                       }
-                      final age = int.tryParse(value);
-                      if (age == null) {
-                        return context.tr('valAgeInvalid');
-                      }
-                      if (age < 18) {
+                      if (value < 18) {
                         return context.tr('valAgeMin');
                       }
-                      if (age > 65) {
+                      if (value > 65) {
                         return context.tr('valAgeMax');
                       }
                       return null;

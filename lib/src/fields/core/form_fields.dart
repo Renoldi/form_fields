@@ -44,7 +44,7 @@ class FormFields<T> extends StatefulWidget {
   // VALIDATION
   // -------------------------------------------------------------------------
   /// Custom validator function
-  final FormFieldValidator<String>? validator;
+  final FormFieldValidator<T>? validator;
 
   /// Whether field is required
   final bool isRequired;
@@ -56,7 +56,7 @@ class FormFields<T> extends StatefulWidget {
   final int minLengthPassword;
 
   /// Custom password validator function
-  final FormFieldValidator<String>? customPasswordValidator;
+  final FormFieldValidator<T>? customPasswordValidator;
 
   /// Error text for minimum password length
   final String? minLengthPasswordErrorText;
@@ -1310,7 +1310,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   /// Validates field value based on requirements and type-specific rules
   String? _validateRequired(
-    String? value,
+    T? value,
     String label,
     bool isRequired,
     FormFieldsController vm,
@@ -1325,30 +1325,34 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     // 2. Check required field constraint
-    if (isRequired && (value == null || value.isEmpty)) {
+    if (isRequired && (value == null || (value is String && value.isEmpty))) {
       return l.getWithLabel('required', label);
     }
 
     // 3. Skip validation for optional empty fields
-    if (!isRequired && (value == null || value.isEmpty)) {
+    if (!isRequired && (value == null || (value is String && value.isEmpty))) {
       return null;
     }
 
     // 4. Type-specific validation
     switch (vm.formType) {
       case FormType.phone:
-        final localDigits = _extractLocalPhoneDigits(value!);
-        final fullPhone = '$_selectedCountryCode$localDigits';
-        return FormFieldValidators.phone(vm.label, l)(fullPhone);
-
+        if (value is String) {
+          final localDigits = _extractLocalPhoneDigits(value);
+          final fullPhone = '$_selectedCountryCode$localDigits';
+          return FormFieldValidators.phone(vm.label, l)(fullPhone);
+        }
+        break;
       case FormType.email:
-        return FormFieldValidators.email(vm.label, l)(value);
-
+        if (value is String) {
+          return FormFieldValidators.email(vm.label, l)(value);
+        }
+        break;
       case FormType.password:
         if (widget.customPasswordValidator != null) {
           return widget.customPasswordValidator!(value);
         }
-        if (value!.length < widget.minLengthPassword) {
+        if (value is String && value.length < widget.minLengthPassword) {
           return widget.minLengthPasswordErrorText ??
               l.getWithValue(
                 'passwordMinLength',
@@ -1356,32 +1360,34 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
               );
         }
         break;
-
       case FormType.verification:
-        if (value!.length != widget.verificationLength) {
+        if (value is String && value.length != widget.verificationLength) {
           return l.getWithValue(
             'verificationLength',
             widget.verificationLength,
           );
         }
         break;
-
       default:
         break;
     }
 
     // 5. Numeric type validation
     if (_isIntType()) {
-      final cleaned =
-          widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
-      if (int.tryParse(cleaned) == null) {
-        return l.getWithLabel('enterValidInteger', vm.label);
+      if (value is String) {
+        final cleaned =
+            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
+        if (int.tryParse(cleaned) == null) {
+          return l.getWithLabel('enterValidInteger', vm.label);
+        }
       }
     } else if (_isDoubleType()) {
-      final cleaned =
-          widget.stripSeparators ? _stripSeparatorsForParse(value!) : value!;
-      if (double.tryParse(cleaned) == null) {
-        return l.getWithLabel('enterValidNumber', vm.label);
+      if (value is String) {
+        final cleaned =
+            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
+        if (double.tryParse(cleaned) == null) {
+          return l.getWithLabel('enterValidNumber', vm.label);
+        }
       }
     }
 
@@ -1555,7 +1561,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       initialValue: model.controller.text,
       autovalidateMode: widget.autovalidateMode,
       validator: (value) => _validateRequired(
-        value,
+        value as T?,
         widget.label,
         widget.isRequired,
         vm,
@@ -1768,13 +1774,57 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       }
                     }
                   },
-                  validator: (value) => _validateRequired(
-                    value,
-                    widget.label,
-                    widget.isRequired,
-                    vm,
-                    context,
-                  ),
+                  validator: (value) {
+                    if (_isIntType()) {
+                      if (value == null || value.isEmpty) {
+                        return _validateRequired(
+                          null,
+                          widget.label,
+                          widget.isRequired,
+                          vm,
+                          context,
+                        );
+                      }
+                      final parsed = int.tryParse(widget.stripSeparators
+                          ? _stripSeparatorsForParse(value)
+                          : value);
+                      return _validateRequired(
+                        parsed as T?,
+                        widget.label,
+                        widget.isRequired,
+                        vm,
+                        context,
+                      );
+                    } else if (_isDoubleType()) {
+                      if (value == null || value.isEmpty) {
+                        return _validateRequired(
+                          null,
+                          widget.label,
+                          widget.isRequired,
+                          vm,
+                          context,
+                        );
+                      }
+                      final parsed = double.tryParse(widget.stripSeparators
+                          ? _stripSeparatorsForParse(value)
+                          : value);
+                      return _validateRequired(
+                        parsed as T?,
+                        widget.label,
+                        widget.isRequired,
+                        vm,
+                        context,
+                      );
+                    } else {
+                      return _validateRequired(
+                        value as T?,
+                        widget.label,
+                        widget.isRequired,
+                        vm,
+                        context,
+                      );
+                    }
+                  },
                   controller: vm.controller,
                   onTap: () async {
                     if (!mounted) return;
