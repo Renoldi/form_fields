@@ -82,7 +82,7 @@ FormFields<T>({
   required ValueChanged<T> onChanged,
   required String label,
   FormFieldValidator<String>? validator,
-  T? currrentValue,
+  T? currentValue,
   FocusNode? nextFocusNode,
   FocusNode? focusNode,
   Widget? prefix,
@@ -122,7 +122,7 @@ FormFields<T>({
 | `labelPosition`      | `LabelPosition`               | `LabelPosition.none` | Position of label                                                                                                                                       |
 | `isRequired`         | `bool`                        | `false`              | Enable validation                                                                                                                                       |
 | `validator`          | `FormFieldValidator<String>?` | `null`               | Custom validator                                                                                                                                        |
-| `currrentValue`      | `T?`                          | `null`               | Initial value                                                                                                                                           |
+| `currentValue`       | `T?`                          | `null`               | Initial value                                                                                                                                           |
 | `focusNode`          | `FocusNode?`                  | `null`               | Focus control                                                                                                                                           |
 | `nextFocusNode`      | `FocusNode?`                  | `null`               | Next field focus                                                                                                                                        |
 | `prefix`             | `Widget?`                     | `null`               | Widget before input                                                                                                                                     |

@@ -25,7 +25,7 @@ class View extends PresenterState {
               children: [
                 FormFields<String>(
                   label: context.tr('currentPassword'),
-                  currrentValue: viewModel.currentPassword,
+                  currentValue: viewModel.currentPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   onChanged: (value) {
@@ -35,7 +35,7 @@ class View extends PresenterState {
                 const SizedBox(height: 12),
                 FormFields<String>(
                   label: context.tr('password'),
-                  currrentValue: viewModel.newPassword,
+                  currentValue: viewModel.newPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   onChanged: (value) {
@@ -45,7 +45,7 @@ class View extends PresenterState {
                 const SizedBox(height: 12),
                 FormFields<String>(
                   label: context.tr('confirmNewPassword'),
-                  currrentValue: viewModel.confirmPassword,
+                  currentValue: viewModel.confirmPassword,
                   formType: FormType.password,
                   labelPosition: LabelPosition.inBorder,
                   onChanged: (value) {

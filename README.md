@@ -22,7 +22,7 @@ Basic example:
 ```dart
 FormFields<String>(
   label: 'Username',
-  currrentValue: '',
+  currentValue: '',
   onChanged: (value) {},
 )
 ```

@@ -41,7 +41,7 @@ FormFields<String>(
   formType: FormType.email,
   isRequired: true,
   onChanged: (value) => setState(() => _email = value),
-  currrentValue: _email,
+  currentValue: _email,
   // Error automatically shows in English: "Email is required"
 )
 ```
@@ -91,7 +91,7 @@ FormFields<String>(
   isRequired: true,
   validator: FormFieldValidators.email(_email, l10n),
   onChanged: (value) => setState(() => _email = value),
-  currrentValue: _email,
+  currentValue: _email,
 )
 // Shows: "Enter a valid email address" (en) or "Masukkan alamat email yang valid" (id)
 ```
@@ -297,7 +297,7 @@ Date and time pickers automatically follow your app's selected language:
 FormFields<DateTime>(
   label: 'Birth Date',
   formType: FormType.date,
-  currrentValue: _birthDate,
+  currentValue: _birthDate,
   onChanged: (value) => setState(() => _birthDate = value),
   // If app locale is Indonesian, picker shows in Indonesian
 )
@@ -307,7 +307,7 @@ FormFields<DateTime>(
   label: 'Birth Date',
   formType: FormType.date,
   locale: 'en_US',  // Force English for this field's picker and messages
-  currrentValue: _birthDate,
+  currentValue: _birthDate,
   onChanged: (value) => setState(() => _birthDate = value),
 )
 ````
@@ -497,7 +497,7 @@ class _HomePageState extends State<HomePage> {
           formType: FormType.email,
           isRequired: true,
           onChanged: (value) => setState(() => _email = value),
-          currrentValue: _email,
+          currentValue: _email,
           // Will show Spanish validation messages from custom locale
         ),
       ),
@@ -814,7 +814,7 @@ class _HomePageState extends State<HomePage> {
               isRequired: true,
               validator: FormFieldValidators.email(_email, l10n),
               onChanged: (value) => setState(() => _email = value),
-              currrentValue: _email,
+              currentValue: _email,
             ),
             const SizedBox(height: 16),
             FormFields<String>(
@@ -824,7 +824,7 @@ class _HomePageState extends State<HomePage> {
               minLengthPassword: 8,
               validator: FormFieldValidators.minLength('Password', 8, l10n: l10n),
               onChanged: (value) => setState(() => _password = value),
-              currrentValue: _password,
+              currentValue: _password,
             ),
             const SizedBox(height: 24),
             ElevatedButton(

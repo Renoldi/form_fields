@@ -417,14 +417,14 @@ All FormFields widgets and properties support both nullable and non-nullable typ
 FormFields<String>(
   label: 'First Name',
   isRequired: true,
-  currrentValue: _firstName, // String, must not be null
+  currentValue: _firstName, // String, must not be null
   onChanged: (value) => setState(() => _firstName = value ?? ''),
 )
 
 // Nullable (optional field)
 FormFields<String?>(
   label: 'Middle Name (optional)',
-  currrentValue: _middleName, // String? (can be null)
+  currentValue: _middleName, // String? (can be null)
   onChanged: (value) => setState(() => _middleName = value),
 )
 ```
@@ -497,28 +497,28 @@ FormFieldsCheckbox<String?>(
 // Non-nullable int
 FormFields<int>(
   label: 'Age',
-  currrentValue: _age, // int
+  currentValue: _age, // int
   onChanged: (value) => setState(() => _age = value ?? 0),
 )
 
 // Nullable int
 FormFields<int?>(
   label: 'Age (optional)',
-  currrentValue: _age, // int?
+  currentValue: _age, // int?
   onChanged: (value) => setState(() => _age = value),
 )
 
 // Non-nullable double
 FormFields<double>(
   label: 'Price',
-  currrentValue: _price, // double
+  currentValue: _price, // double
   onChanged: (value) => setState(() => _price = value ?? 0.0),
 )
 
 // Nullable double
 FormFields<double?>(
   label: 'Price (optional)',
-  currrentValue: _price, // double?
+  currentValue: _price, // double?
   onChanged: (value) => setState(() => _price = value),
 )
 ```
@@ -529,28 +529,28 @@ FormFields<double?>(
 // Non-nullable DateTime
 FormFields<DateTime>(
   label: 'Birth Date',
-  currrentValue: _birthDate, // DateTime
+  currentValue: _birthDate, // DateTime
   onChanged: (value) => setState(() => _birthDate = value!),
 )
 
 // Nullable DateTime
 FormFields<DateTime?>(
   label: 'Anniversary (optional)',
-  currrentValue: _anniversary, // DateTime?
+  currentValue: _anniversary, // DateTime?
   onChanged: (value) => setState(() => _anniversary = value),
 )
 
 // Non-nullable TimeOfDay
 FormFields<TimeOfDay>(
   label: 'Meeting Time',
-  currrentValue: _meetingTime, // TimeOfDay
+  currentValue: _meetingTime, // TimeOfDay
   onChanged: (value) => setState(() => _meetingTime = value!),
 )
 
 // Nullable TimeOfDay
 FormFields<TimeOfDay?>(
   label: 'Optional Meeting Time',
-  currrentValue: _optionalMeetingTime, // TimeOfDay?
+  currentValue: _optionalMeetingTime, // TimeOfDay?
   onChanged: (value) => setState(() => _optionalMeetingTime = value),
 )
 ```

@@ -103,7 +103,7 @@ class View extends PresenterState {
   Widget _buildUsernameField(ViewModel viewModel) {
     return FormFields<String>(
       label: context.tr('username'),
-      currrentValue: viewModel.username,
+      currentValue: viewModel.username,
       formType: FormType.string,
       prefixIcon: const Icon(Icons.person),
       onChanged: (value) => handleUsernameChanged(value, viewModel),
@@ -113,7 +113,7 @@ class View extends PresenterState {
   Widget _buildPasswordField(ViewModel viewModel) {
     return FormFields<String>(
       label: context.tr('password'),
-      currrentValue: viewModel.password,
+      currentValue: viewModel.password,
       formType: FormType.password,
       minLengthPassword: 4,
       prefixIcon: const Icon(Icons.lock_outline),

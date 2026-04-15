@@ -8,7 +8,7 @@ Main flexible form widget that supports multiple input types (`FormType`) with v
 FormFields<String>(
   label: 'Email',
   formType: FormType.email,
-  currrentValue: value,
+  currentValue: value,
   onChanged: (v) => value = v,
 )
 ```

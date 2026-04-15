@@ -38,7 +38,7 @@ class FormFields<T> extends StatefulWidget {
   final ValueChanged<T> onChanged;
 
   /// Current value
-  final T currrentValue;
+  final T currentValue;
 
   // -------------------------------------------------------------------------
   // VALIDATION
@@ -185,7 +185,7 @@ class FormFields<T> extends StatefulWidget {
     super.key,
     required this.onChanged,
     required this.label,
-    required this.currrentValue,
+    required this.currentValue,
     // Validation
     this.validator,
     this.isRequired = false,
@@ -263,7 +263,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     _notifier = FormFieldsNotifier();
     if (_isPhoneType()) {
       _initializePhoneCountryCode(
-        widget.currrentValue?.toString(),
+        widget.currentValue?.toString(),
       );
     }
     _initializeValue();
@@ -282,7 +282,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void didUpdateWidget(covariant FormFields<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final valueChanged = oldWidget.currrentValue != widget.currrentValue;
+    final valueChanged = oldWidget.currentValue != widget.currentValue;
     final formatChanged = oldWidget.customFormat != widget.customFormat;
     final stripSeparatorsChanged =
         oldWidget.stripSeparators != widget.stripSeparators;
@@ -324,30 +324,30 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         }
 
         String newControllerText;
-        if (widget.currrentValue == null) {
+        if (widget.currentValue == null) {
           newControllerText = "";
         } else if (_isDateTimeType()) {
-          newControllerText = _formatDateTime(widget.currrentValue as DateTime);
+          newControllerText = _formatDateTime(widget.currentValue as DateTime);
         } else if (_isTimeOfDayType()) {
           newControllerText =
-              _formatTimeOfDay(widget.currrentValue as TimeOfDay);
+              _formatTimeOfDay(widget.currentValue as TimeOfDay);
         } else if (_isDateTimeRangeType()) {
           newControllerText = _formatDateRange(
-            widget.currrentValue as DateTimeRange,
+            widget.currentValue as DateTimeRange,
           );
         } else if (_isPhoneType()) {
-          _initializePhoneCountryCode(widget.currrentValue.toString());
+          _initializePhoneCountryCode(widget.currentValue.toString());
           final localFormatted = widget.formatPhone
-              ? _formatPhoneLocalOnly(widget.currrentValue.toString())
-              : _extractLocalPhoneDigits(widget.currrentValue.toString());
+              ? _formatPhoneLocalOnly(widget.currentValue.toString())
+              : _extractLocalPhoneDigits(widget.currentValue.toString());
           newControllerText = localFormatted;
         } else if ((_isIntType() || _isDoubleType()) &&
             widget.stripSeparators) {
-          newControllerText = _formatNumber(widget.currrentValue as num);
+          newControllerText = _formatNumber(widget.currentValue as num);
         } else if (_isIntType() || _isDoubleType()) {
-          newControllerText = widget.currrentValue.toString();
+          newControllerText = widget.currentValue.toString();
         } else {
-          newControllerText = widget.currrentValue.toString();
+          newControllerText = widget.currentValue.toString();
           if (_isVerificationType() &&
               newControllerText.length > widget.verificationLength) {
             newControllerText =
@@ -387,30 +387,30 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   void _initializeValue() {
-    if (widget.currrentValue == null) return;
+    if (widget.currentValue == null) return;
 
     if (_isDateTimeType()) {
       model.setControllerSilent(
-          _formatDateTime(widget.currrentValue as DateTime));
+          _formatDateTime(widget.currentValue as DateTime));
     } else if (_isTimeOfDayType()) {
       model.setControllerSilent(
-          _formatTimeOfDay(widget.currrentValue as TimeOfDay));
+          _formatTimeOfDay(widget.currentValue as TimeOfDay));
     } else if (_isDateTimeRangeType()) {
       model.setControllerSilent(_formatDateRange(
-        widget.currrentValue as DateTimeRange,
+        widget.currentValue as DateTimeRange,
       ));
     } else if (_isPhoneType()) {
-      _initializePhoneCountryCode(widget.currrentValue.toString());
+      _initializePhoneCountryCode(widget.currentValue.toString());
       final localFormatted = widget.formatPhone
-          ? _formatPhoneLocalOnly(widget.currrentValue.toString())
-          : _extractLocalPhoneDigits(widget.currrentValue.toString());
+          ? _formatPhoneLocalOnly(widget.currentValue.toString())
+          : _extractLocalPhoneDigits(widget.currentValue.toString());
       model.setControllerSilent(localFormatted);
     } else if ((_isIntType() || _isDoubleType()) && widget.stripSeparators) {
-      model.setControllerSilent(_formatNumber(widget.currrentValue as num));
+      model.setControllerSilent(_formatNumber(widget.currentValue as num));
     } else if (_isIntType() || _isDoubleType()) {
-      model.setControllerSilent(widget.currrentValue.toString());
+      model.setControllerSilent(widget.currentValue.toString());
     } else {
-      var controllerText = widget.currrentValue.toString();
+      var controllerText = widget.currentValue.toString();
       if (_isVerificationType()) {
         controllerText = controllerText.replaceAll(RegExp(r'[^0-9]'), '');
       }
@@ -1144,9 +1144,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     DateTime initialStart;
     DateTime initialEnd;
 
-    if (widget.currrentValue != null) {
+    if (widget.currentValue != null) {
       // Use current value if available
-      final currentRange = widget.currrentValue as DateTimeRange;
+      final currentRange = widget.currentValue as DateTimeRange;
       initialStart = currentRange.start;
       initialEnd = currentRange.end;
     } else {
@@ -1806,9 +1806,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     } else if (_isDateTimeType() ||
                         _isDateTimeRangeType() ||
                         _isTimeOfDayType()) {
-                      // Don't cast String to DateTime/DateTimeRange/TimeOfDay
+                      // Use widget.currentValue for validation, not value from controller
                       return _validateRequired(
-                        null,
+                        widget.currentValue,
                         widget.label,
                         widget.isRequired,
                         vm,

@@ -24,7 +24,7 @@ class View extends PresenterState {
                 children: [
                   FormFields<String>(
                     label: 'Keyboard test field',
-                    currrentValue: _keyboardTestValue,
+                    currentValue: _keyboardTestValue,
                     onChanged: (value) {
                       setState(() {
                         _keyboardTestValue = value;

@@ -72,7 +72,7 @@ class View extends PresenterState {
                     const SizedBox(height: 32),
                     FormFields<String>(
                       label: context.tr('firstName'),
-                      currrentValue: viewModel.user.firstName ?? '',
+                      currentValue: viewModel.user.firstName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       prefixIcon: const Icon(Icons.person_outline),
@@ -90,7 +90,7 @@ class View extends PresenterState {
                     const SizedBox(height: 16),
                     FormFields<String>(
                       label: context.tr('lastName'),
-                      currrentValue: viewModel.user.lastName ?? '',
+                      currentValue: viewModel.user.lastName ?? '',
                       formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       prefixIcon: const Icon(Icons.person_outline),
@@ -108,7 +108,7 @@ class View extends PresenterState {
                     const SizedBox(height: 16),
                     FormFields<String>(
                       label: context.tr('email'),
-                      currrentValue: viewModel.user.email ?? '',
+                      currentValue: viewModel.user.email ?? '',
                       formType: FormType.email,
                       labelPosition: LabelPosition.inBorder,
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -129,7 +129,7 @@ class View extends PresenterState {
                     IgnorePointer(
                       child: FormFields<String>(
                         label: context.tr('username'),
-                        currrentValue: viewModel.user.username ?? '',
+                        currentValue: viewModel.user.username ?? '',
                         formType: FormType.string,
                         labelPosition: LabelPosition.inBorder,
                         prefixIcon: const Icon(Icons.account_circle_outlined),
