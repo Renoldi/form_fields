@@ -1,5 +1,12 @@
-/// Enums for FormFields package
 library;
+
+/// Jenis border untuk OTP
+enum OtpBorderType {
+  box,
+  underline,
+}
+
+/// Enums for FormFields package
 
 /// Supported form field types
 enum FormType {

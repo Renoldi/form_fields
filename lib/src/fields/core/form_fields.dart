@@ -1,3 +1,21 @@
+
+
+
+
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../utilities/controller.dart';
+import '../../utilities/enums.dart';
+import '../../localization/form_fields_localizations.dart';
+import '../../utilities/validators.dart';
+import '../../utilities/phone_country_codes.dart' as phone_codes;
+import '../../providers/form_fields_notifier.dart';
+
+
 /// ---------------------------------------------------------------------------
 /// FormFields Widget
 /// ---------------------------------------------------------------------------
@@ -14,24 +32,10 @@
 ///     onChanged: (value) { /* ... */ },
 ///   )
 /// ---------------------------------------------------------------------------
-library;
-
-import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/gestures.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-
-import '../../utilities/controller.dart';
-import '../../utilities/enums.dart';
-import '../../localization/form_fields_localizations.dart';
-import '../../utilities/validators.dart';
-import '../../utilities/phone_country_codes.dart' as phone_codes;
-import '../../providers/form_fields_notifier.dart';
-
 class FormFields<T> extends StatefulWidget {
+  /// Tipe border untuk OTP (box/underline)
+  final OtpBorderType otpBorderType;
+
   /// Default builder for OTP countdown text (multi-language)
   static String _defaultOtpCountdownTextBuilder(
       BuildContext context, int seconds) {
@@ -307,6 +311,7 @@ class FormFields<T> extends StatefulWidget {
     this.phoneCountryCodes = phone_codes.phoneCountryCodes,
     this.initialCountryCode,
     this.formatPhone = false,
+    this.otpBorderType = OtpBorderType.box,
   })  : assert(verificationLength > 0),
         assert(otpBoxWidth > 0),
         assert(otpBoxSpacing >= 0);
@@ -1582,10 +1587,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   /// Creates a consistent border style for OTP input boxes
   InputBorder _buildOtpBorder(Color color, {double width = 1}) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(widget.radius),
-      borderSide: BorderSide(color: color, width: width),
-    );
+    if (widget.otpBorderType == OtpBorderType.underline) {
+      return UnderlineInputBorder(
+        borderSide: BorderSide(color: color, width: width),
+      );
+    } else {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(widget.radius),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
   }
 
   /// Builds the input decoration for OTP boxes with proper error states
@@ -1768,8 +1779,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             otpBoxes,
-            countdown,
             if (errorText != null) errorText,
+            countdown,
           ],
         );
 
