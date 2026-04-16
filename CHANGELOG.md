@@ -4,12 +4,20 @@ All notable changes to the FormFields package will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- OTP/verification field with countdown timer, resend UI, and flexible label positioning
+- `OtpBorderType` (box/underline) for OTP digit boxes
+- Multi-language/localization for all OTP/verification UI and validation
+- Professional UX: validation above countdown, always visible timer, InputDecoration for OTP boxes
+
 ### Documentation
 
-- Synced API docs with feedback exports (`AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`).
-- Added usage guide section for feedback/dialog patterns and loading visual options.
-- Updated architecture and project-structure docs for `lib/src/feedback`, including `app_dialog_service_types.dart` and `app_global_dialog_service.dart`.
-- Refreshed example app README to include button and dialog/loading demonstration coverage.
+- Updated all markdown docs for OTP/verification field, resend UI, OtpBorderType, and localization
+- Synced API docs with feedback exports (`AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`)
+- Added usage guide section for feedback/dialog patterns and loading visual options
+- Updated architecture and project-structure docs for `lib/src/feedback`, including `app_dialog_service_types.dart` and `app_global_dialog_service.dart`
+- Refreshed example app README to include button and dialog/loading demonstration coverage
 
 ## [1.0.0] - 2026-02-24
 

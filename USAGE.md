@@ -6,17 +6,18 @@
 2. [Installation](#installation)
 3. [Basic Concepts](#basic-concepts)
 4. [Field Types Guide](#field-types-guide)
-5. [Customization Options](#customization-options)
-6. [Validation](#validation)
-7. [State Management](#state-management)
-8. [Advanced Usage](#advanced-usage)
-9. [Feedback & Dialog Components](#feedback--dialog-components)
-10. [Best Practices](#best-practices)
-11. [Troubleshooting](#troubleshooting)
+5. [OTP & Verification Fields](#otp--verification-fields)
+6. [Customization Options](#customization-options)
+7. [Validation](#validation)
+8. [State Management](#state-management)
+9. [Advanced Usage](#advanced-usage)
+10. [Feedback & Dialog Components](#feedback--dialog-components)
+11. [Best Practices](#best-practices)
+12. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
-FormFields is a powerful and flexible Flutter form field widget package that simplifies form creation and validation. It provides out-of-the-box support for various input types including text, email, phone, password, and date/time pickers.
+FormFields is a powerful and flexible Flutter form field widget package that simplifies form creation and validation. It provides out-of-the-box support for various input types including text, email, phone, password, date/time pickers, and advanced OTP/verification fields.
 
 ### Key Benefits
 
@@ -25,6 +26,8 @@ FormFields is a powerful and flexible Flutter form field widget package that sim
 - **Rich Validation**: Built-in validators with custom message support
 - **Beautiful UI**: Material Design inspired layouts with full customization
 - **Developer Friendly**: Clear API and comprehensive documentation
+- **OTP/Verification UX**: Professional OTP field with countdown, resend, and flexible styling
+- **Multi-Language**: All UI and validation text is fully localized
 
 ## Installation
 
@@ -41,13 +44,6 @@ dependencies:
 
 ```bash
 flutter pub get
-
-```
-
-or
-
-```bash
-flutter packages get
 ```
 
 ### Step 3: Import Package
@@ -57,6 +53,56 @@ import 'package:form_fields/form_fields.dart';
 ```
 
 ## Basic Concepts
+
+### Example: Basic OTP Field
+
+```dart
+FormFields<String>(
+  label: 'OTP Code',
+  formType: FormType.verification,
+  verificationAsOtp: true,
+  verificationLength: 6,
+  isOtpCountdown: true,
+  otpCountdownDuration: Duration(seconds: 60),
+  onOtpCountdownReload: () => print('Resend OTP!'),
+  otpBorderType: OtpBorderType.box, // or OtpBorderType.underline
+  labelPosition: LabelPosition.top,
+  onChanged: (val) => print(val),
+)
+```
+
+---
+
+## OTP & Verification Fields
+
+### Features
+
+- **Countdown Timer**: Shows time remaining in "00:00:00" format.
+- **Automatic Resend UI**: Built-in resend button and callback (`onOtpCountdownReload`).
+- **Flexible OTP Box Style**: Use `otpBorderType` for box/underline, customize width, spacing, and InputDecoration.
+- **Alphanumeric/Hidden Support**: Restrict input or hide OTP as needed.
+- **Validation Above Countdown**: Error messages always appear above the timer.
+- **Multi-Language**: All text is localized (see [LOCALIZATION.md](LOCALIZATION.md)).
+
+### Key Parameters
+
+| Parameter              | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `verificationAsOtp`    | Show as OTP digit boxes                          |
+| `verificationLength`   | Number of OTP digits                             |
+| `isOtpCountdown`       | Enable countdown timer                           |
+| `otpCountdownDuration` | Duration for countdown                           |
+| `onOtpCountdownReload` | Callback for resend button                       |
+| `otpBorderType`        | `OtpBorderType.box` or `OtpBorderType.underline` |
+| `inputDecoration`      | Custom InputDecoration for OTP boxes             |
+| `otpBoxWidth`          | Width of each OTP box                            |
+| `otpBoxSpacing`        | Spacing between OTP boxes                        |
+| `otpTextStyle`         | Text style for OTP digits                        |
+| `labelPosition`        | Flexible label placement                         |
+
+---
+
+## Field Types Guide
 
 ### 1. Generic Type System
 

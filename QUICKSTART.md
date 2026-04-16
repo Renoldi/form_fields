@@ -35,7 +35,23 @@ FormFields<String>(
 )
 ```
 
-## 4. Common Examples
+## 4. OTP Field Example
+
+```dart
+FormFields<String>(
+  label: 'OTP Code',
+  formType: FormType.verification,
+  verificationAsOtp: true,
+  verificationLength: 6,
+  isOtpCountdown: true,
+  otpCountdownDuration: Duration(seconds: 60),
+  onOtpCountdownReload: () => print('Resend OTP!'),
+  otpBorderType: OtpBorderType.box, // or OtpBorderType.underline
+  onChanged: (val) => print(val),
+)
+```
+
+## 5. Common Examples
 
 ### Text Input
 

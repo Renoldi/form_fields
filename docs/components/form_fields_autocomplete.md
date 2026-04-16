@@ -1,6 +1,6 @@
 # FormFieldsAutocomplete
 
-Async autocomplete widget with API querying, custom parsing, and custom option rendering.
+Async autocomplete widget with API querying, custom parsing, custom option rendering, and full localization support.
 
 ## Basic Usage
 
@@ -18,5 +18,6 @@ FormFieldsAutocomplete<String>(
 - `parseResults`
 - `itemSelectedBuilder`, `itemBuilder`
 - `inputDecoration`, `labelPlacement`, `borderStyle`
+- **Localization:** All UI and error text is localized (see [LOCALIZATION.md](../../LOCALIZATION.md)).
 
 For complete parameters, see [API.md](../../API.md).

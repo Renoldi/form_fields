@@ -17,6 +17,29 @@ Export groups from the entry point:
 - Feedback family: `AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`
 - Shared utilities and localization: enums, validators, extensions, controller, and localizations
 
+## OTP & Verification Field API
+
+### Key Parameters
+
+| Parameter              | Type              | Description                              |
+| ---------------------- | ----------------- | ---------------------------------------- |
+| `verificationAsOtp`    | `bool`            | Show as OTP digit boxes                  |
+| `verificationLength`   | `int`             | Number of OTP digits                     |
+| `isOtpCountdown`       | `bool`            | Enable countdown timer                   |
+| `otpCountdownDuration` | `Duration`        | Duration for countdown                   |
+| `onOtpCountdownReload` | `VoidCallback`    | Callback for resend button               |
+| `otpBorderType`        | `OtpBorderType`   | `box` or `underline` for OTP digit boxes |
+| `inputDecoration`      | `InputDecoration` | Custom InputDecoration for OTP boxes     |
+| `otpBoxWidth`          | `double`          | Width of each OTP box                    |
+| `otpBoxSpacing`        | `double`          | Spacing between OTP boxes                |
+| `otpTextStyle`         | `TextStyle`       | Text style for OTP digits                |
+| `labelPosition`        | `LabelPosition`   | Flexible label placement                 |
+| `verificationHidden`   | `bool`            | Hide/obscure OTP input                   |
+
+All validation and UI text is fully localized. See [LOCALIZATION.md](LOCALIZATION.md).
+
+---
+
 ## Feedback APIs
 
 ### AppDialogService

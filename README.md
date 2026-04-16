@@ -1,6 +1,6 @@
 # Form Fields Flutter Package
 
-A reusable Flutter package for building form UIs with consistent behavior, validation, localization, and Material 3-friendly components.
+A reusable Flutter package for building form UIs with consistent behavior, validation, localization, Material 3-friendly components, and advanced OTP/verification field support.
 
 ## Quick Start
 
@@ -26,6 +26,22 @@ FormFields<String>(
   onChanged: (value) {},
 )
 ```
+
+## OTP & Verification Field Highlights
+
+- **OTP Field with Countdown & Resend:**
+  - Built-in countdown timer with "resend" UI and callback.
+  - Professional UX: validation above countdown, always visible timer ("00:00:00" format).
+  - Flexible OTP digit count, alphanumeric support, and hidden/obscured mode.
+  - Automatic resend button and callback (`onOtpCountdownReload`).
+- **Customizable OTP Box Style:**
+  - `otpBorderType`: Choose between `OtpBorderType.box` or `OtpBorderType.underline` for OTP digit boxes.
+  - Full control over box width, spacing, text style, and InputDecoration.
+- **Flexible Label Positioning:**
+  - Place labels above, below, left, right, inline, or hidden using `labelPosition`.
+- **Multi-Language & Localization:**
+  - All validation and UI text is fully localized (English, Indonesian, and easy extension).
+  - See [LOCALIZATION.md](LOCALIZATION.md) for details.
 
 ## Component Documentation (Separated)
 
@@ -56,7 +72,9 @@ Architecture shortcuts:
 - [FormFields Validation Flow](ARCHITECTURE.md#formfields-validation-flow)
 - [AppButton Family Diagram](ARCHITECTURE.md#appbutton-family-diagram)
 
-Segmented button icon behavior note:
+---
+
+**Segmented button icon behavior note:**
 
 - `ButtonSegment.icon` can be hardcoded per segment. See [AppSegmentedButton docs](docs/components/app_segmented_button.md) for best practices with `selectedIcon`.
 

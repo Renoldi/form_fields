@@ -33,6 +33,56 @@ The Form Fields package provides comprehensive multi-language support for all va
 
 The package works out of the box with US English. No configuration needed:
 
+````dart
+import 'package:form_fields/form_fields.dart';
+
+# Form Fields Localization Guide
+
+The Form Fields package provides comprehensive multi-language support for all validation messages, error text, and UI elements—including all OTP/verification field UI and countdown/resend strings. **US English is the default language**, with built-in support for Indonesian and easy addition of new languages.
+
+---
+
+## 📑 Navigation
+
+- [Supported Languages](#supported-languages) — Current language support
+- [Quick Start](#quick-start) — Get localization working in 3 steps
+- [Common Usage](#common-usage) — Common localization patterns
+- [Adding Custom Languages](#adding-custom-languages) — Add Spanish, French, or any language to your project
+- [Manually Setting Language](#manually-setting-language) — Three approaches to control app language: direct config, runtime switching, and state management
+- [Advanced Features](#advanced-features) — Complete examples, testing, and advanced usage
+- [Troubleshooting](#troubleshooting) — Common issues and solutions
+- [Contributing](#contributing) — Help translate to your language
+
+---
+
+## Supported Languages
+
+| Language         | Code               | Status       | Count       |
+| ---------------- | ------------------ | ------------ | ----------- |
+| 🇺🇸 English (US)  | `en_US`            | ✅ Default   | 50+ strings |
+| 🇮🇩 Indonesian    | `id_ID`            | ✅ Included  | 50+ strings |
+| 🌍 Your Language | `{lang}_{COUNTRY}` | ➕ Add yours | -           |
+
+---
+
+## OTP/Verification Field Localization
+
+All OTP/verification field UI—including countdown timer, resend button, and validation—is fully localized. Add or override strings for:
+
+- "Resend OTP"
+- "Resend in 00:00:00"
+- "OTP is required"
+- "Invalid OTP"
+- ...and all other field types
+
+---
+
+## Quick Start
+
+### 1. Basic Usage (Using Default Language)
+
+The package works out of the box with US English. No configuration needed:
+
 ```dart
 import 'package:form_fields/form_fields.dart';
 
@@ -44,57 +94,19 @@ FormFields<String>(
   currentValue: _email,
   // Error automatically shows in English: "Email is required"
 )
-```
+````
 
 ### 2. Enable Multi-Language Support
 
 Add the localization delegate to your `MaterialApp`:
 
-```dart
+````dart
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:form_fields/form_fields.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'My App',
-      locale: const Locale('id', 'ID'),  // Switch to Indonesian
-      localizationsDelegates: const [
-        FormFieldsLocalizationsDelegate(),  // Add this
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: FormFieldsLocalizations.supportedLocales,
-      home: const HomePage(),
-    );
-  }
-}
-```
-
-### 3. Use Localized Validators
-
-Built-in validators now support full localization:
-
-```dart
-import 'package:form_fields/form_fields.dart';
-
-final l10n = FormFieldsLocalizations.of(context);
-
-FormFields<String>(
-  label: 'Email Address',
-  formType: FormType.email,
-  isRequired: true,
-  validator: FormFieldValidators.email(_email, l10n),
-  onChanged: (value) => setState(() => _email = value),
-  currentValue: _email,
-)
-// Shows: "Enter a valid email address" (en) or "Masukkan alamat email yang valid" (id)
-```
 
 ---
 
@@ -128,7 +140,7 @@ FormFieldValidators.range(label, 18, 65, l10n: l10n);
 
 // Pattern validator
 FormFieldValidators.pattern(label, '^[a-z]+\$', l10n: l10n);
-```
+````
 
 ### Accessing Localized Strings
 
