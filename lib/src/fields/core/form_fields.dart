@@ -31,6 +31,36 @@ import '../../utilities/phone_country_codes.dart' as phone_codes;
 import '../../providers/form_fields_notifier.dart';
 
 class FormFields<T> extends StatefulWidget {
+  /// Default builder for OTP countdown text (multi-language)
+  static String _defaultOtpCountdownTextBuilder(
+      BuildContext context, int seconds) {
+    if (seconds >= 60) {
+      final m = seconds ~/ 60;
+      final s = seconds % 60;
+      final sStr = s.toString().padLeft(2, '0');
+      return '$m:$sStr';
+    } else {
+      return '$seconds seconds';
+    }
+  }
+
+  /// Text for the resend OTP button
+
+  /// Builder for countdown text. Receives context and remaining seconds.
+  final String Function(BuildContext context, int seconds)?
+      otpCountdownTextBuilder;
+
+  /// Custom input formatters for OTP input (default: digits only)
+  final List<TextInputFormatter>? otpInputFormatters;
+
+  /// Countdown duration for OTP (default: 60 detik)
+  final Duration otpCountdownDuration;
+
+  /// Callback ketika countdown selesai
+  final VoidCallback? onOtpCountdownComplete;
+
+  /// Callback ketika tombol reload OTP ditekan
+  final VoidCallback? onOtpCountdownReload;
   // -------------------------------------------------------------------------
   // CORE PROPERTIES
   // -------------------------------------------------------------------------
@@ -178,6 +208,9 @@ class FormFields<T> extends StatefulWidget {
   /// Note: Result value is always returned without dashes (e.g., +628123456789)
   final bool formatPhone;
 
+  /// Show OTP countdown timer (default: false)
+  final bool isOtpCountdown;
+
   /// -----------------------------------------------------------------------
   /// Constructor
   /// -----------------------------------------------------------------------
@@ -203,6 +236,12 @@ class FormFields<T> extends StatefulWidget {
     this.otpBoxWidth = 46,
     this.otpBoxSpacing = 10,
     this.otpTextStyle,
+    this.otpInputFormatters,
+    this.otpCountdownDuration = const Duration(seconds: 60),
+    this.onOtpCountdownComplete,
+    this.onOtpCountdownReload,
+    this.otpCountdownTextBuilder,
+    this.isOtpCountdown = false,
     // Localization
     this.locale,
     // Appearance & Styling
@@ -239,6 +278,42 @@ class FormFields<T> extends StatefulWidget {
 }
 
 class _FormFieldsState<T> extends State<FormFields<T>> {
+  // OTP Countdown State
+  Timer? _otpCountdownTimer;
+  int _otpCountdownRemaining = 0;
+  bool _otpCountdownFinished = false;
+
+  void _startOtpCountdown() {
+    _otpCountdownTimer?.cancel();
+    setState(() {
+      _otpCountdownRemaining = widget.otpCountdownDuration.inSeconds;
+      _otpCountdownFinished = false;
+    });
+    _otpCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_otpCountdownRemaining <= 1) {
+        timer.cancel();
+        setState(() {
+          _otpCountdownRemaining = 0;
+          _otpCountdownFinished = true;
+        });
+        if (widget.onOtpCountdownComplete != null) {
+          widget.onOtpCountdownComplete!();
+        }
+      } else {
+        setState(() {
+          _otpCountdownRemaining--;
+        });
+      }
+    });
+  }
+
+  void _reloadOtpCountdown() {
+    _startOtpCountdown();
+    if (widget.onOtpCountdownReload != null) {
+      widget.onOtpCountdownReload!();
+    }
+  }
+
   late FormFieldsController model;
   late Timer debounce;
   FocusNode? _internalFocusNode;
@@ -269,6 +344,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     _initializeValue();
     _initializeModel();
     _initializeVerificationInputs();
+    // Mulai countdown OTP jika verificationAsOtp aktif dan isOtpCountdown true
+    if (_isVerificationType() &&
+        widget.verificationAsOtp &&
+        widget.isOtpCountdown) {
+      _startOtpCountdown();
+    }
   }
 
   @override
@@ -355,9 +436,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           }
         }
 
-        if (_isVerificationType()) {
-          newControllerText =
-              newControllerText.replaceAll(RegExp(r'[^0-9]'), '');
+        if (_isVerificationType() && widget.verificationAsOtp) {
           if (newControllerText.length > widget.verificationLength) {
             newControllerText =
                 newControllerText.substring(0, widget.verificationLength);
@@ -411,12 +490,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       model.setControllerSilent(widget.currentValue.toString());
     } else {
       var controllerText = widget.currentValue.toString();
-      if (_isVerificationType()) {
-        controllerText = controllerText.replaceAll(RegExp(r'[^0-9]'), '');
-      }
-      if (_isVerificationType() &&
-          controllerText.length > widget.verificationLength) {
-        controllerText = controllerText.substring(0, widget.verificationLength);
+      if (_isVerificationType() && widget.verificationAsOtp) {
+        if (controllerText.length > widget.verificationLength) {
+          controllerText =
+              controllerText.substring(0, widget.verificationLength);
+        }
       }
       model.setControllerSilent(controllerText);
     }
@@ -540,10 +618,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void _syncVerificationControllersFromCode(String code) {
     if (_verificationControllers.isEmpty) return;
 
-    final digits = code.replaceAll(RegExp(r'[^0-9]'), '');
-    final normalized = digits.length > widget.verificationLength
-        ? digits.substring(0, widget.verificationLength)
-        : digits;
+    final normalized = code.length > widget.verificationLength
+        ? code.substring(0, widget.verificationLength)
+        : code;
 
     for (int i = 0; i < _verificationControllers.length; i++) {
       final char = i < normalized.length ? normalized[i] : '';
@@ -607,7 +684,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     String rawValue,
     FormFieldState<String> state,
   ) {
-    final digits = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+    final digits = rawValue;
 
     if (digits.isEmpty) {
       if (_verificationControllers[index].text.isNotEmpty) {
@@ -1543,7 +1620,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         textAlign: TextAlign.center,
         style: widget.otpTextStyle ??
             const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        inputFormatters: widget.otpInputFormatters ??
+            [FilteringTextInputFormatter.digitsOnly],
         onTap: () => _selectVerificationDigit(index),
         onChanged: (value) =>
             _handleVerificationDigitChanged(index, value, state),
@@ -1571,46 +1649,63 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         final hasError = state.hasError;
         final boxDecoration = _buildOtpInputDecoration(hasError: hasError);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: widget.otpBoxSpacing,
-                runSpacing: widget.otpBoxSpacing,
-                children: [
-                  // Generate OTP digit boxes
-                  for (var i = 0; i < widget.verificationLength; i++)
-                    _buildOtpDigitBox(
-                      index: i,
-                      decoration: boxDecoration,
-                      state: state,
-                      vm: vm,
+        final otpBoxes = Center(
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: widget.otpBoxSpacing,
+            runSpacing: widget.otpBoxSpacing,
+            children: [
+              for (var i = 0; i < widget.verificationLength; i++)
+                _buildOtpDigitBox(
+                  index: i,
+                  decoration: boxDecoration,
+                  state: state,
+                  vm: vm,
+                ),
+              if (widget.verificationHidden)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    splashRadius: 18,
+                    iconSize: 18,
+                    icon: Icon(
+                      vm.obscure
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
                     ),
-                  // Optional visibility toggle for hidden verification
-                  if (widget.verificationHidden)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: IconButton(
-                        visualDensity: VisualDensity.compact,
-                        splashRadius: 18,
-                        iconSize: 18,
-                        icon: Icon(
-                          vm.obscure
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
+                    onPressed: () => _handleVisibilityToggleTap(vm),
+                  ),
+                ),
+            ],
+          ),
+        );
+
+        final countdown = widget.isOtpCountdown
+            ? Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Center(
+                  child: _otpCountdownFinished
+                      ? ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label:
+                              Text(_getLocalizations(context).get('resendOtp')),
+                          onPressed: _reloadOtpCountdown,
+                        )
+                      : Text(
+                          (widget.otpCountdownTextBuilder ??
+                                  FormFields._defaultOtpCountdownTextBuilder)(
+                              context, _otpCountdownRemaining),
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
-                        onPressed: () => _handleVisibilityToggleTap(vm),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // Error message display
-            if (hasError && state.errorText != null)
-              Padding(
+                ),
+              )
+            : const SizedBox.shrink();
+
+        final errorText = hasError && state.errorText != null
+            ? Padding(
                 padding: const EdgeInsets.only(top: 8, left: 4),
                 child: Text(
                   state.errorText!,
@@ -1619,9 +1714,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     fontSize: 12,
                   ),
                 ),
-              ),
+              )
+            : null;
+
+        // Gabungkan semua bagian utama OTP
+        final otpContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            otpBoxes,
+            countdown,
+            if (errorText != null) errorText,
           ],
         );
+
+        // Gunakan _buildFieldWithLabel agar label mengikuti labelPosition
+        return _buildFieldWithLabel(otpContent, vm);
       },
     );
   }
@@ -1643,10 +1750,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 if (_isVerificationType() && widget.verificationAsOtp) {
                   final verificationField =
                       _buildVerificationOtpField(vm, context);
-
                   return Container(
                     margin: const EdgeInsets.only(bottom: 20),
-                    child: _buildFieldWithLabel(verificationField, vm),
+                    child: verificationField,
                   );
                 }
 

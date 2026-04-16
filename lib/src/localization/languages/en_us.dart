@@ -2,6 +2,9 @@
 library;
 
 const Map<String, String> enUSStrings = {
+  // OTP Countdown
+  'resendOtp': 'Resend',
+  'otpResendCountdown': 'Resend in {value} seconds',
   // Common UI
   'cancel': 'Cancel',
   'save': 'Save',
