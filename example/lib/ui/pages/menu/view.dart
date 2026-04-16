@@ -113,27 +113,44 @@ class View extends PresenterState {
                             ),
                           ),
                         ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 32,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.9,
-                        ),
-                        itemCount: viewModel.menuItems.length,
-                        itemBuilder: (context, index) {
-                          final item = viewModel.menuItems[index];
-                          return _MenuItem(
-                            title: item.title,
-                            subtitle: item.subtitle,
-                            icon: item.icon,
-                            color: item.color,
-                            onTap: () => handleMenuItemTap(item.routeName),
-                          );
-                        },
+                      ResponsiveMenuGrid(
+                        widgets: viewModel.menuItems
+                            .map((item) => Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Material(
+                                      color: item.color.withValues(alpha: 0.1),
+                                      shape: const CircleBorder(),
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: () =>
+                                            handleMenuItemTap(item.routeName),
+                                        child: SizedBox(
+                                          width: 96 * 0.6,
+                                          height: 96 * 0.6,
+                                          child: Icon(
+                                            item.icon,
+                                            size: 96 * 0.36,
+                                            color: item.color,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      item.title,
+                                      textAlign: TextAlign.center,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ))
+                            .toList(),
+                        horizontalMargin: 8,
+                        verticalSpacing: 32,
+                        alignLeft: true,
                       ),
                     ],
                   ),
@@ -146,99 +163,3 @@ class View extends PresenterState {
     );
   }
 }
-
-class _MenuItem extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MenuItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_MenuItem> createState() => _MenuItemView();
-}
-
-abstract class _MenuItemPresenterState extends State<_MenuItem> {
-  late final _MenuItemViewModel viewModel;
-
-  @override
-  void initState() {
-    super.initState();
-    viewModel = _MenuItemViewModel();
-  }
-}
-
-class _MenuItemView extends _MenuItemPresenterState {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: widget.color.withValues(alpha: 0.1),
-              border: Border.all(
-                color: widget.color,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.color.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              widget.icon,
-              size: 36,
-              color: widget.color,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Flexible(
-            child: Text(
-              widget.subtitle,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-                height: 1.2,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuItemViewModel {}

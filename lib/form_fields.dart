@@ -41,6 +41,7 @@ export 'src/fields/selection/form_fields_dropdown_multi.dart'
     show FormFieldsDropdownMulti;
 // Utilities
 export 'src/utilities/app_modal_bottom_sheet.dart' show showAppModalBottomSheet;
+export 'src/utilities/responsive_menu_grid.dart' show ResponsiveMenuGrid;
 export 'src/fields/selection/form_fields_radio_button.dart'
     show FormFieldsRadioButton;
 export 'src/fields/selection/form_fields_checkbox.dart' show FormFieldsCheckbox;
