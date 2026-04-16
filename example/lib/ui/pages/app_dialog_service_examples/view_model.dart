@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
+  AppDialogPosition loadingPosition = AppDialogPosition.top;
+  void setLoadingPosition(AppDialogPosition value) {
+    loadingPosition = value;
+    notifyListeners();
+  }
+
   bool isRunning = false;
   bool simulateError = false;
   bool useBlockingLoading = true;

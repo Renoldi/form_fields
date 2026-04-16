@@ -28,16 +28,11 @@ class AppDialogService {
         alignment: _alignment(position),
         insetPadding: _inset(position),
         backgroundColor: Colors.transparent,
-        child: Container(
-          color: Colors.black54,
-          child: Center(
-            child: _defaultDialogCard(
-              child: _buildLoadingVisual(
-                loadingVisual: loadingVisual,
-                loadingVariant: loadingVariant,
-                progressType: progressType,
-              ),
-            ),
+        child: _defaultDialogCard(
+          child: _buildLoadingVisual(
+            loadingVisual: loadingVisual,
+            loadingVariant: loadingVariant,
+            progressType: progressType,
           ),
         ),
       ).whenComplete(() {
@@ -66,16 +61,11 @@ class AppDialogService {
       alignment: _alignment(position),
       insetPadding: _inset(position),
       backgroundColor: Colors.transparent,
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: _defaultDialogCard(
-            child: _buildLoadingVisual(
-              loadingVisual: loadingVisual,
-              loadingVariant: loadingVariant,
-              progressType: progressType,
-            ),
-          ),
+      child: _defaultDialogCard(
+        child: _buildLoadingVisual(
+          loadingVisual: loadingVisual,
+          loadingVariant: loadingVariant,
+          progressType: progressType,
         ),
       ),
     ).whenComplete(() {
@@ -103,7 +93,8 @@ class AppDialogService {
     required Future<T> Function() task,
     required String errorTitle,
     required AppDialogErrorMapper mapError,
-    AppDialogPosition position = AppDialogPosition.top,
+    AppDialogPosition loadingPosition = AppDialogPosition.top,
+    AppDialogPosition resultPosition = AppDialogPosition.top,
     String okLabel = 'OK',
     bool showBlockingLoading = false,
     String loadingMessage = 'Loading...',
@@ -138,6 +129,7 @@ class AppDialogService {
             cancelMessage: cancelMessage,
             stayLabel: stayLabel,
             cancelLabel: cancelLabel,
+            position: loadingPosition,
           ),
         );
         // Give Flutter one frame to paint the blocking dialog
@@ -155,7 +147,7 @@ class AppDialogService {
         title: errorTitle,
         message: mapped.message,
         dialogType: mapped.type,
-        position: position,
+        position: resultPosition,
         okLabel: okLabel,
       );
       return null;
@@ -201,26 +193,25 @@ class AppDialogService {
         stayLabel: stayLabel,
         cancelLabel: cancelLabel,
       ),
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: _defaultDialogCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildLoadingVisual(
-                  loadingVisual: loadingVisual,
-                  loadingVariant: loadingVariant,
-                  progressType: progressType,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  message,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
+      child: _defaultDialogCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLoadingVisual(
+              loadingVisual: loadingVisual,
+              loadingVariant: loadingVariant,
+              progressType: progressType,
             ),
-          ),
+            if (message.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(
+                  message,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
         ),
       ),
     ).whenComplete(() {

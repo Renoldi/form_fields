@@ -1597,8 +1597,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   /// Builds the input decoration for OTP boxes with proper error states
-  InputDecoration _buildOtpInputDecoration(
-      {required bool hasError, int? activeIndex}) {
+  InputDecoration _buildOtpInputDecoration({required bool hasError}) {
     final base = widget.inputDecoration;
 
     // Default style: no background
@@ -1677,8 +1676,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       } else {
         border = OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.radius),
-          borderSide:
-              BorderSide(color: widget.borderColor.withOpacity(0.3), width: 1),
+          borderSide: BorderSide(
+              color: widget.borderColor.withValues(alpha: 0.3), width: 1),
         );
       }
     }

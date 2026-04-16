@@ -74,6 +74,24 @@ class View extends PresenterState {
             onSelectionChanged: (set) => vm.setPosition(set.first),
           ),
           const SizedBox(height: 10),
+          Text('Loading Position'),
+          const SizedBox(height: 8),
+          SegmentedButton<AppDialogPosition>(
+            segments: [
+              ButtonSegment(
+                  value: AppDialogPosition.top,
+                  label: Text(context.tr('positionTop'))),
+              ButtonSegment(
+                  value: AppDialogPosition.center,
+                  label: Text(context.tr('positionCenter'))),
+              ButtonSegment(
+                  value: AppDialogPosition.bottom,
+                  label: Text(context.tr('positionBottom'))),
+            ],
+            selected: {vm.loadingPosition},
+            onSelectionChanged: (set) => vm.setLoadingPosition(set.first),
+          ),
+          const SizedBox(height: 10),
           Text(context.tr('lpLoadingVisual')),
           const SizedBox(height: 8),
           SegmentedButton<AppDialogLoadingVisual>(
@@ -217,7 +235,7 @@ class View extends PresenterState {
                       loadingVisual: vm.loadingVisual,
                       loadingVariant: vm.loadingVariant,
                       progressType: vm.progressType,
-                      position: vm.position,
+                      position: vm.loadingPosition,
                       onComplete: () {
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,7 +258,7 @@ class View extends PresenterState {
                       loadingVisual: vm.loadingVisual,
                       loadingVariant: vm.loadingVariant,
                       progressType: vm.progressType,
-                      position: vm.position,
+                      position: vm.loadingPosition,
                     );
                     Future.delayed(const Duration(seconds: 2), () {
                       AppDialogService(context)
@@ -317,7 +335,8 @@ class View extends PresenterState {
         message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
       ),
-      position: vm.position,
+      loadingPosition: vm.loadingPosition,
+      resultPosition: AppDialogPosition.bottom, // Hasil di bawah
       showBlockingLoading: vm.useBlockingLoading,
       loadingMessage: context.tr('adsSyncing'),
       loadingVisual: vm.loadingVisual,
@@ -354,7 +373,8 @@ class View extends PresenterState {
         message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
       ),
-      position: vm.position,
+      loadingPosition: vm.loadingPosition,
+      resultPosition: AppDialogPosition.bottom, // Hasil di bawah
       showBlockingLoading: vm.useBlockingLoading,
       loadingMessage: context.tr('adsGlobalSyncing'),
       loadingVisual: vm.loadingVisual,
