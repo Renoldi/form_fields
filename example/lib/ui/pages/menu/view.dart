@@ -130,7 +130,7 @@ class View extends PresenterState {
                                           height: 80,
                                           child: Icon(
                                             item.icon,
-                                            size: 70,
+                                            size: 50,
                                             color: item.color,
                                           ),
                                         ),

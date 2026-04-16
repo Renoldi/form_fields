@@ -1656,7 +1656,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         : null;
 
                 final textField = TextFormField(
-                  textAlignVertical: TextAlignVertical.center,
+                  textAlignVertical: (widget.multiLine > 1)
+                      ? TextAlignVertical.center
+                      : TextAlignVertical.top,
                   textAlign: TextAlign.start,
                   maxLength:
                       _isVerificationType() ? widget.verificationLength : null,
@@ -1835,6 +1837,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   autofocus: false,
                   decoration: widget.inputDecoration ??
                       InputDecoration(
+                        contentPadding: (widget.multiLine > 1)
+                            ? const EdgeInsets.symmetric(
+                                vertical: 22, horizontal: 16)
+                            : const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 16),
                         suffix: vm.formType == FormType.password ||
                                 (_isVerificationType() &&
                                     widget.verificationHidden)
