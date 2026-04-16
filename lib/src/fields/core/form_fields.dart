@@ -35,14 +35,13 @@ class FormFields<T> extends StatefulWidget {
   /// Default builder for OTP countdown text (multi-language)
   static String _defaultOtpCountdownTextBuilder(
       BuildContext context, int seconds) {
-    if (seconds >= 60) {
-      final m = seconds ~/ 60;
-      final s = seconds % 60;
-      final sStr = s.toString().padLeft(2, '0');
-      return '$m:$sStr';
-    } else {
-      return '$seconds seconds';
-    }
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    final hStr = h.toString().padLeft(2, '0');
+    final mStr = m.toString().padLeft(2, '0');
+    final sStr = s.toString().padLeft(2, '0');
+    return '$hStr:$mStr:$sStr';
   }
 
   /// Default resend OTP text widget (multi-language, styled, clickable)
