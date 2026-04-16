@@ -126,11 +126,11 @@ class View extends PresenterState {
                                         onTap: () =>
                                             handleMenuItemTap(item.routeName),
                                         child: SizedBox(
-                                          width: 96 * 0.6,
-                                          height: 96 * 0.6,
+                                          width: 80,
+                                          height: 80,
                                           child: Icon(
                                             item.icon,
-                                            size: 96 * 0.36,
+                                            size: 70,
                                             color: item.color,
                                           ),
                                         ),
@@ -148,6 +148,7 @@ class View extends PresenterState {
                                   ],
                                 ))
                             .toList(),
+                        itemSize: 100,
                         horizontalMargin: 8,
                         verticalSpacing: 32,
                         alignLeft: true,

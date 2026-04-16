@@ -1656,6 +1656,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         : null;
 
                 final textField = TextFormField(
+                  textAlignVertical: TextAlignVertical.center,
+                  textAlign: TextAlign.start,
                   maxLength:
                       _isVerificationType() ? widget.verificationLength : null,
                   maxLines: vm.formType == FormType.password ||
