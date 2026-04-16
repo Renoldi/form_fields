@@ -1,7 +1,3 @@
-
-
-
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,7 +10,6 @@ import '../../localization/form_fields_localizations.dart';
 import '../../utilities/validators.dart';
 import '../../utilities/phone_country_codes.dart' as phone_codes;
 import '../../providers/form_fields_notifier.dart';
-
 
 /// ---------------------------------------------------------------------------
 /// FormFields Widget
@@ -1586,36 +1581,52 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   /// Creates a consistent border style for OTP input boxes
-  InputBorder _buildOtpBorder(Color color, {double width = 1}) {
+  InputBorder _buildOtpBorder(Color color,
+      {double width = 1, bool isActive = false}) {
     if (widget.otpBorderType == OtpBorderType.underline) {
       return UnderlineInputBorder(
         borderSide: BorderSide(color: color, width: width),
       );
     } else {
+      // If active (focused/has input/error), show outline, else show thin border
       return OutlineInputBorder(
         borderRadius: BorderRadius.circular(widget.radius),
-        borderSide: BorderSide(color: color, width: width),
+        borderSide: BorderSide(color: color, width: isActive ? width : 0.8),
       );
     }
   }
 
   /// Builds the input decoration for OTP boxes with proper error states
-  InputDecoration _buildOtpInputDecoration({required bool hasError}) {
+  InputDecoration _buildOtpInputDecoration(
+      {required bool hasError, int? activeIndex}) {
     final base = widget.inputDecoration;
 
-    // Define border styles based on state
-    final normalBorder = base?.enabledBorder ??
-        base?.border ??
-        _buildOtpBorder(widget.borderColor);
-    final focusedBorder =
-        base?.focusedBorder ?? _buildOtpBorder(widget.borderColor, width: 1.4);
-    final errorBorder =
-        base?.errorBorder ?? _buildOtpBorder(widget.errorBorderColor);
-    final focusedErrorBorder = base?.focusedErrorBorder ??
-        _buildOtpBorder(widget.errorBorderColor, width: 1.4);
+    // Default style: no background
+    final defaultDecoration = const InputDecoration(
+      filled: false,
+      fillColor: Colors.transparent,
+      contentPadding: EdgeInsets.symmetric(vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFF84CC16), width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Colors.red, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Colors.red, width: 1.6),
+      ),
+    );
 
-    return (base ?? const InputDecoration()).copyWith(
-      // Clear text-field adornments - OTP boxes should be minimal
+    // For each OTP digit, we want to show underline if focused/has input/error, else border
+    // But since InputDecoration is per box, we handle in _buildOtpDigitBox
+    return (base ?? defaultDecoration).copyWith(
       counterText: '',
       hintText: null,
       labelText: null,
@@ -1624,17 +1635,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       prefixIcon: null,
       suffix: null,
       suffixIcon: null,
-      // Visual styling
-      filled: base?.filled ?? true,
-      fillColor: base?.fillColor ?? const Color(0xFFF1F1F1),
-      contentPadding:
-          base?.contentPadding ?? const EdgeInsets.symmetric(vertical: 14),
-      // Border states
-      border: hasError ? errorBorder : (base?.border ?? normalBorder),
-      enabledBorder: hasError ? errorBorder : normalBorder,
-      focusedBorder: hasError ? focusedErrorBorder : focusedBorder,
-      disabledBorder:
-          hasError ? errorBorder : (base?.disabledBorder ?? normalBorder),
+      filled: base?.filled ?? false,
+      fillColor: base?.fillColor ?? defaultDecoration.fillColor,
+      contentPadding: base?.contentPadding ?? defaultDecoration.contentPadding,
     );
   }
 
@@ -1646,6 +1649,39 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     required FormFieldsController vm,
   }) {
     final isLastDigit = index == widget.verificationLength - 1;
+    final isFocused = _verificationFocusNodes[index].hasFocus;
+    final hasInput = _verificationControllers[index].text.isNotEmpty;
+    final hasError = state.hasError;
+
+    // Underground (underline) if focused/has input/error, else border
+    InputBorder border;
+    if (widget.otpBorderType == OtpBorderType.underline) {
+      border = _buildOtpBorder(
+        hasError
+            ? widget.errorBorderColor
+            : (isFocused ? Colors.blue : widget.borderColor),
+        width: hasError ? 2 : (isFocused ? 2 : 1),
+        isActive: isFocused || hasInput || hasError,
+      );
+    } else {
+      // If focused/has input/error, show underline, else border
+      if (isFocused || hasInput || hasError) {
+        border = UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: hasError
+                ? widget.errorBorderColor
+                : (isFocused ? Colors.blue : widget.borderColor),
+            width: hasError ? 2 : (isFocused ? 2 : 1.2),
+          ),
+        );
+      } else {
+        border = OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.radius),
+          borderSide:
+              BorderSide(color: widget.borderColor.withOpacity(0.3), width: 1),
+        );
+      }
+    }
 
     return SizedBox(
       width: widget.otpBoxWidth,
@@ -1665,7 +1701,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         onTap: () => _selectVerificationDigit(index),
         onChanged: (value) =>
             _handleVerificationDigitChanged(index, value, state),
-        decoration: decoration,
+        decoration: decoration.copyWith(
+          border: border,
+          enabledBorder: border,
+          focusedBorder: border,
+          errorBorder: border,
+          focusedErrorBorder: border,
+          disabledBorder: border,
+        ),
       ),
     );
   }
