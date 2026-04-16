@@ -35,6 +35,7 @@ import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'app_routes.dart';
+import 'package:form_fields_example/ui/pages/modal_bottom_sheet_shape_examples/presenter.dart';
 
 /// Creates and configures the application's [GoRouter] instance.
 ///
@@ -102,6 +103,11 @@ GoRouter createAppRouter(
             await context.pushRoute(AppRoute.profile);
           },
         ),
+      ),
+      GoRoute(
+        path: AppRoute.modalBottomSheetShapeExamples.path,
+        name: AppRoute.modalBottomSheetShapeExamples.name,
+        builder: (context, state) => const ModalBottomSheetShapeExamplesPage(),
       ),
       GoRoute(
         path: AppRoute.settings.path,
@@ -374,5 +380,7 @@ String _routeTitleKey(AppRoute route) {
       return 'appInfo';
     case AppRoute.iconsGallery:
       return 'iconsGallery';
+    case AppRoute.modalBottomSheetShapeExamples:
+      return 'modalBottomSheetShapeExamples';
   }
 }

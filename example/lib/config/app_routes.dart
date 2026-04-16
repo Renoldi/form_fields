@@ -28,7 +28,11 @@ enum AppRoute {
     title: 'Change Password',
   ),
   language(name: 'language', title: 'Language'),
-  appInfo(name: 'app_info', title: 'App Info');
+  appInfo(name: 'app_info', title: 'App Info'),
+  modalBottomSheetShapeExamples(
+    name: 'modal_bottom_sheet_shape_examples',
+    title: 'Bottom Sheet Shapes',
+  );
 
   final String name;
   final String title;

@@ -39,6 +39,8 @@ export 'src/fields/selection/form_fields_select.dart' show FormFieldsSelect;
 export 'src/fields/selection/form_fields_dropdown.dart' show FormFieldsDropdown;
 export 'src/fields/selection/form_fields_dropdown_multi.dart'
     show FormFieldsDropdownMulti;
+// Utilities
+export 'src/utilities/app_modal_bottom_sheet.dart' show showAppModalBottomSheet;
 export 'src/fields/selection/form_fields_radio_button.dart'
     show FormFieldsRadioButton;
 export 'src/fields/selection/form_fields_checkbox.dart' show FormFieldsCheckbox;

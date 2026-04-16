@@ -114,6 +114,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.cyan,
           routeName: AppRoute.iconsGallery.name,
         ),
+        MenuItemData(
+          title: 'Bottom Sheet Shapes',
+          subtitle: 'Contoh berbagai shape',
+          icon: Icons.space_dashboard,
+          color: Colors.deepOrange,
+          routeName: AppRoute.modalBottomSheetShapeExamples.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

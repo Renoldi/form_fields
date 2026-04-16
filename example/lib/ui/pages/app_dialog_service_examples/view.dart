@@ -148,7 +148,11 @@ class View extends PresenterState {
                 child: AppButton(
                   type: AppButtonType.filled,
                   text: context.tr('lpShowSuccess'),
-                  onPressed: () => _showSuccess(context, vm),
+                  onPressed: () => _showSuccess(context, vm, onComplete: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Success dialog closed')),
+                    );
+                  }),
                 ),
               ),
               SizedBox(
@@ -156,7 +160,11 @@ class View extends PresenterState {
                 child: AppButton(
                   type: AppButtonType.outlined,
                   text: context.tr('lpShowError'),
-                  onPressed: () => _showError(context, vm),
+                  onPressed: () => _showError(context, vm, onComplete: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Error dialog closed')),
+                    );
+                  }),
                 ),
               ),
               SizedBox(
@@ -202,6 +210,48 @@ class View extends PresenterState {
               SizedBox(
                 width: 180,
                 child: AppButton(
+                  type: AppButtonType.filled,
+                  text: 'Show Visual-Only Loading',
+                  onPressed: () async {
+                    await AppDialogService(context).showLoadingVisualOnly(
+                      loadingVisual: vm.loadingVisual,
+                      loadingVariant: vm.loadingVariant,
+                      progressType: vm.progressType,
+                      position: vm.position,
+                      onComplete: () {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Visual-only loading closed')),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AppButton(
+                  type: AppButtonType.outlined,
+                  text: 'Show Visual-Only (unguarded)',
+                  onPressed: () {
+                    AppDialogService(context).unguardedLoadingVisualOnly(
+                      show: true,
+                      loadingVisual: vm.loadingVisual,
+                      loadingVariant: vm.loadingVariant,
+                      progressType: vm.progressType,
+                      position: vm.position,
+                    );
+                    Future.delayed(const Duration(seconds: 2), () {
+                      AppDialogService(context)
+                          .unguardedLoadingVisualOnly(show: false);
+                    });
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AppButton(
                   type: AppButtonType.outlined,
                   text: '${context.tr('lpTapTest')} ($_tapCounter)',
                   onPressed: () {
@@ -224,20 +274,30 @@ class View extends PresenterState {
     );
   }
 
-  Future<void> _showSuccess(BuildContext context, ViewModel vm) {
+  Future<void> _showSuccess(BuildContext context, ViewModel vm,
+      {VoidCallback? onComplete}) {
     return AppDialogService(context).showSuccess(
       title: context.tr('success'),
       message: context.tr('adsOperationCompletedSuccessfully'),
       position: vm.position,
+      onComplete: () {
+        if (!mounted) return;
+        if (onComplete != null) onComplete();
+      },
     );
   }
 
-  Future<void> _showError(BuildContext context, ViewModel vm) {
+  Future<void> _showError(BuildContext context, ViewModel vm,
+      {VoidCallback? onComplete}) {
     return AppDialogService(context).showError(
       title: context.tr('updateFailed'),
       message: context.tr('adsUnableToCompleteOperation'),
       dialogType: AppDialogType.server,
       position: vm.position,
+      onComplete: () {
+        if (!mounted) return;
+        if (onComplete != null) onComplete();
+      },
     );
   }
 
@@ -265,6 +325,7 @@ class View extends PresenterState {
       progressType: vm.progressType,
     );
 
+    if (!mounted) return;
     vm.setRunning(false);
     vm.setLastResult(result ?? context.tr('lpGuardFailedHandledByDialog'));
   }
@@ -301,6 +362,7 @@ class View extends PresenterState {
       progressType: vm.progressType,
     );
 
+    if (!mounted) return;
     vm.setRunning(false);
     vm.setLastResult(
       result ?? context.tr('adsGlobalFailedHandledByDialog'),
@@ -315,6 +377,7 @@ class View extends PresenterState {
     unawaited(
       Future<void>.delayed(const Duration(seconds: 4), () {
         if (cancelledByUser) return;
+        if (!mounted) return;
         AppGlobalDialogService.instance.hide();
         vm.setLastResult(
           context.tr('adsGlobalLoadingAutoCompletedHint'),
@@ -335,14 +398,17 @@ class View extends PresenterState {
         cancelLabel: context.tr('cancel'),
         onCancelRequested: () async {
           cancelledByUser = true;
+          if (!mounted) return false;
           vm.setLastResult(context.tr('adsCancelRequestedFromBackButton'));
           return true;
         },
         onCancelled: () async {
+          if (!mounted) return;
           vm.setLastResult(context.tr('adsGlobalLoadingCanceledByUser'));
         },
       );
     } finally {
+      if (!mounted) return;
       vm.setRunning(false);
     }
   }

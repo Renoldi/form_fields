@@ -12,6 +12,78 @@ import 'app_loading_progress_enums.dart';
 import 'app_progress_indicator.dart';
 
 class AppDialogService {
+  /// Shows or hides a visual-only loading dialog without guard or async context.
+  /// Call with `show: true` to display, and `show: false` to hide.
+  void unguardedLoadingVisualOnly({
+    required bool show,
+    AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
+    AppProgressType progressType = AppProgressType.circular,
+    AppDialogPosition position = AppDialogPosition.bottom,
+  }) {
+    if (show) {
+      if (_isLoadingDialogVisible) return;
+      _isLoadingDialogVisible = true;
+      _showProtectedDialog(
+        alignment: _alignment(position),
+        insetPadding: _inset(position),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          color: Colors.black54,
+          child: Center(
+            child: _defaultDialogCard(
+              child: _buildLoadingVisual(
+                loadingVisual: loadingVisual,
+                loadingVariant: loadingVariant,
+                progressType: progressType,
+              ),
+            ),
+          ),
+        ),
+      ).whenComplete(() {
+        _isLoadingDialogVisible = false;
+      });
+    } else {
+      _dismissLoadingIfVisible();
+    }
+  }
+
+  /// Shows only the loading visual (no message), with position and onComplete support.
+  Future<void> showLoadingVisualOnly({
+    AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
+    AppProgressType progressType = AppProgressType.circular,
+    AppDialogPosition position = AppDialogPosition.bottom,
+    VoidCallback? onComplete,
+  }) {
+    if (_isLoadingDialogVisible) {
+      return Future.value();
+    }
+
+    _isLoadingDialogVisible = true;
+
+    return _showProtectedDialog(
+      alignment: _alignment(position),
+      insetPadding: _inset(position),
+      backgroundColor: Colors.transparent,
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: _defaultDialogCard(
+            child: _buildLoadingVisual(
+              loadingVisual: loadingVisual,
+              loadingVariant: loadingVariant,
+              progressType: progressType,
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(() {
+      _isLoadingDialogVisible = false;
+      if (onComplete != null) onComplete();
+    });
+  }
+
   final BuildContext context;
   bool _isLoadingDialogVisible = false;
 
@@ -108,6 +180,7 @@ class AppDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
+    AppDialogPosition position = AppDialogPosition.bottom,
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -116,7 +189,8 @@ class AppDialogService {
     _isLoadingDialogVisible = true;
 
     return _showProtectedDialog(
-      insetPadding: EdgeInsets.zero,
+      alignment: _alignment(position),
+      insetPadding: _inset(position),
       backgroundColor: Colors.transparent,
       onBackPressed: () => _handleLoadingBackPressed(
         loadingBackBehavior: loadingBackBehavior,
@@ -164,6 +238,7 @@ class AppDialogService {
     required AppDialogType dialogType,
     AppDialogPosition position = AppDialogPosition.top,
     String okLabel = 'OK',
+    VoidCallback? onComplete,
   }) {
     return showResult(
       title: title,
@@ -172,6 +247,7 @@ class AppDialogService {
       dialogType: dialogType,
       position: position,
       okLabel: okLabel,
+      onComplete: onComplete,
     );
   }
 
@@ -210,6 +286,7 @@ class AppDialogService {
     required String message,
     AppDialogPosition position = AppDialogPosition.top,
     String okLabel = 'OK',
+    VoidCallback? onComplete,
   }) {
     return showResult(
       title: title,
@@ -217,6 +294,7 @@ class AppDialogService {
       isSuccess: true,
       position: position,
       okLabel: okLabel,
+      onComplete: onComplete,
     );
   }
 
@@ -243,6 +321,7 @@ class AppDialogService {
     AppDialogType? dialogType,
     AppDialogPosition position = AppDialogPosition.top,
     String okLabel = 'OK',
+    VoidCallback? onComplete,
   }) {
     final (icon, color) = _style(dialogType, isSuccess);
 
@@ -292,7 +371,9 @@ class AppDialogService {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      if (onComplete != null) onComplete();
+    });
   }
 
   Future<void> showExitConfirm({

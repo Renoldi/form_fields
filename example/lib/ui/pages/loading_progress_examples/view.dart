@@ -263,6 +263,9 @@ class View extends PresenterState {
       title: context.tr('success'),
       message: context.tr('lpOperationCompletedSuccessfully'),
       position: _dialogPosition,
+      onComplete: () {
+        if (!mounted) return;
+      },
     );
   }
 
@@ -272,6 +275,9 @@ class View extends PresenterState {
       message: context.tr('errorSomethingWentWrong'),
       dialogType: AppDialogType.server,
       position: _dialogPosition,
+      onComplete: () {
+        if (!mounted) return;
+      },
     );
   }
 

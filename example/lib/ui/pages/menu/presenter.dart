@@ -5,6 +5,7 @@ import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'view_model.dart';
 import 'view.dart';
+import '../modal_bottom_sheet_shape_examples/presenter.dart';
 
 class Presenter extends StatefulWidget {
   final VoidCallback onLogout;
@@ -67,6 +68,14 @@ abstract class PresenterState extends State<Presenter> {
   }
 
   void handleMenuItemTap(String routeName) {
+    if (routeName == '/modalBottomSheetShapeExamples') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const ModalBottomSheetShapeExamplesPage(),
+        ),
+      );
+      return;
+    }
     widget.onMenuItemTap(routeName);
   }
 }

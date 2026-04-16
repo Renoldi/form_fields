@@ -97,6 +97,7 @@ class AppGlobalDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
+    AppDialogPosition position = AppDialogPosition.bottom,
   }) {
     return _service.showLoading(
       message: message,
@@ -110,6 +111,7 @@ class AppGlobalDialogService {
       cancelMessage: cancelMessage,
       stayLabel: stayLabel,
       cancelLabel: cancelLabel,
+      position: position,
     );
   }
 
