@@ -3,7 +3,8 @@ library;
 
 const Map<String, String> idIDStrings = {
   // OTP Countdown
-  'resendOtp': 'Kirim Ulang',
+  'otpResendPrefix': 'Tidak menerima kode aktivasi? ',
+  'otpResendLink': 'Kirim Ulang',
   'otpResendCountdown': 'Kirim ulang dalam {value} detik',
   // Common UI
   'cancel': 'Batal',

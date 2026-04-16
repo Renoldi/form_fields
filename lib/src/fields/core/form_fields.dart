@@ -20,6 +20,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -44,7 +45,45 @@ class FormFields<T> extends StatefulWidget {
     }
   }
 
-  /// Text for the resend OTP button
+  /// Default resend OTP text widget (multi-language, styled, clickable)
+  static Widget defaultOtpResendText({
+    required BuildContext context,
+    required VoidCallback? onResend,
+    TextStyle? style,
+    TextStyle? linkStyle,
+  }) {
+    final localizations = FormFieldsLocalizations.of(context);
+    final resendPrefix = localizations
+        .get('otpResendPrefix'); //?? 'Didn\'t receive activation code? ';
+    final resendLink = localizations.get('otpResendLink'); //?? 'Resend';
+    final isEnabled = onResend != null;
+    return Builder(
+      builder: (context) {
+        return Text.rich(
+          TextSpan(
+            text: resendPrefix,
+            style:
+                style ?? const TextStyle(color: Colors.black87, fontSize: 14),
+            children: [
+              TextSpan(
+                text: resendLink,
+                style: linkStyle ??
+                    TextStyle(
+                      color: isEnabled ? Colors.blue : Colors.grey,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 14,
+                      decoration: TextDecoration.none,
+                    ),
+                recognizer: isEnabled
+                    ? (TapGestureRecognizer()..onTap = onResend)
+                    : null,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   /// Builder for countdown text. Receives context and remaining seconds.
   final String Function(BuildContext context, int seconds)?
@@ -290,28 +329,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       _otpCountdownFinished = false;
     });
     _otpCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_otpCountdownRemaining <= 1) {
+      setState(() {
+        if (_otpCountdownRemaining > 0) {
+          _otpCountdownRemaining--;
+        }
+        _otpCountdownFinished = _otpCountdownRemaining == 0;
+      });
+      if (_otpCountdownRemaining == 0) {
         timer.cancel();
-        setState(() {
-          _otpCountdownRemaining = 0;
-          _otpCountdownFinished = true;
-        });
         if (widget.onOtpCountdownComplete != null) {
           widget.onOtpCountdownComplete!();
         }
-      } else {
-        setState(() {
-          _otpCountdownRemaining--;
-        });
       }
     });
-  }
-
-  void _reloadOtpCountdown() {
-    _startOtpCountdown();
-    if (widget.onOtpCountdownReload != null) {
-      widget.onOtpCountdownReload!();
-    }
   }
 
   late FormFieldsController model;
@@ -1685,21 +1715,38 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         final countdown = widget.isOtpCountdown
             ? Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: Center(
-                  child: _otpCountdownFinished
-                      ? ElevatedButton.icon(
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label:
-                              Text(_getLocalizations(context).get('resendOtp')),
-                          onPressed: _reloadOtpCountdown,
-                        )
-                      : Text(
-                          (widget.otpCountdownTextBuilder ??
-                                  FormFields._defaultOtpCountdownTextBuilder)(
-                              context, _otpCountdownRemaining),
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (!_otpCountdownFinished)
+                      Text(
+                        (widget.otpCountdownTextBuilder ??
+                                FormFields._defaultOtpCountdownTextBuilder)(
+                            context, _otpCountdownRemaining),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Center(
+                        child: FormFields.defaultOtpResendText(
+                          context: context,
+                          onResend: _otpCountdownFinished
+                              ? () {
+                                  _startOtpCountdown();
+                                  if (widget.onOtpCountdownReload != null) {
+                                    widget.onOtpCountdownReload!();
+                                  }
+                                }
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               )
             : const SizedBox.shrink();

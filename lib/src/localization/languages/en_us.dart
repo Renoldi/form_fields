@@ -3,7 +3,8 @@ library;
 
 const Map<String, String> enUSStrings = {
   // OTP Countdown
-  'resendOtp': 'Resend',
+  'otpResendPrefix': 'Didn\'t receive activation code? ',
+  'otpResendLink': 'Resend',
   'otpResendCountdown': 'Resend in {value} seconds',
   // Common UI
   'cancel': 'Cancel',
