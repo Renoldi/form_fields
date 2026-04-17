@@ -1666,7 +1666,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final hasInput = _verificationControllers[index].text.isNotEmpty;
     final hasError = state.hasError;
 
-    // Underground (underline) if focused/has input/error, else border
+    // Border style sesuai otpBorderType
     InputBorder border;
     if (widget.otpBorderType == OtpBorderType.underline) {
       border = _buildOtpBorder(
@@ -1677,23 +1677,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         isActive: isFocused || hasInput || hasError,
       );
     } else {
-      // If focused/has input/error, show underline, else border
-      if (isFocused || hasInput || hasError) {
-        border = UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: hasError
-                ? widget.errorBorderColor
-                : (isFocused ? Colors.blue : widget.borderColor),
-            width: hasError ? 2 : (isFocused ? 2 : 1.2),
-          ),
-        );
-      } else {
-        border = OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.radius),
-          borderSide: BorderSide(
-              color: widget.borderColor.withValues(alpha: 0.3), width: 1),
-        );
-      }
+      // Selalu gunakan OutlineInputBorder (box) untuk semua kondisi
+      border = _buildOtpBorder(
+        hasError
+            ? widget.errorBorderColor
+            : (isFocused ? Colors.blue : widget.borderColor),
+        width: hasError ? 2 : (isFocused ? 2 : 1.2),
+        isActive: isFocused || hasInput || hasError,
+      );
     }
 
     return SizedBox(
