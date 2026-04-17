@@ -17,15 +17,25 @@ class AppGlobalDialogService {
 
   GlobalKey<NavigatorState>? _navigatorKey;
 
+  /// Returns true if the service is configured and context is available.
   bool get isConfigured => _navigatorKey?.currentContext != null;
 
+  /// Configure the global dialog service with your root navigator key.
+  ///
+  /// Call this once, typically in your main() or app root widget.
   void configure(GlobalKey<NavigatorState> navigatorKey) {
     _navigatorKey = navigatorKey;
   }
 
+  /// Reset the navigator key (for testing or hot reload).
+  ///
+  /// Warning: After reset, dialogs cannot be shown until reconfigured.
   void reset() {
     _navigatorKey = null;
   }
+
+  /// Returns the current BuildContext from the navigator key.
+  BuildContext get context => _requireContext();
 
   BuildContext _requireContext() {
     final context = _navigatorKey?.currentContext;
@@ -40,6 +50,8 @@ class AppGlobalDialogService {
   }
 
   AppDialogService get _service => AppDialogService(_requireContext());
+
+  // --- Dialog API Forwarders ---
 
   Future<T?> guard<T>({
     required Future<T> Function() task,
@@ -62,7 +74,6 @@ class AppGlobalDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
-    // bool isDismissible = false,
   }) {
     return _service.guard<T>(
       task: task,
@@ -101,6 +112,9 @@ class AppGlobalDialogService {
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
     AppDialogPosition position = AppDialogPosition.bottom,
+    bool isMessageLoading = true,
+    bool useSafeArea = true,
+    VoidCallback? onComplete,
   }) {
     return _service.showLoading(
       message: message,
@@ -118,7 +132,45 @@ class AppGlobalDialogService {
     );
   }
 
+  /// Show a visual-only loading dialog (no message, dismissible by default).
+  Future<void> showLoadingVisualOnly({
+    AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
+    AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
+    AppProgressType progressType = AppProgressType.circular,
+    AppDialogPosition position = AppDialogPosition.bottom,
+    VoidCallback? onComplete,
+    AppDialogLoadingBackBehavior loadingBackBehavior =
+        AppDialogLoadingBackBehavior.allow,
+    bool useSafeArea = true,
+    String cancelTitle = 'Cancel Process?',
+    String cancelMessage =
+        'The operation is still in progress. Do you want to cancel it?',
+    String stayLabel = 'Stay',
+    String cancelLabel = 'Cancel',
+    AppDialogCancelRequested? onCancelRequested,
+    AppDialogCancelled? onCancelled,
+  }) {
+    // Fallback to showLoading with message empty and isMessageLoading false
+    return _service.showLoading(
+      message: '',
+      loadingVisual: loadingVisual,
+      loadingVariant: loadingVariant,
+      progressType: progressType,
+      loadingBackBehavior: loadingBackBehavior,
+      onCancelRequested: onCancelRequested,
+      onCancelled: onCancelled,
+      cancelTitle: cancelTitle,
+      cancelMessage: cancelMessage,
+      stayLabel: stayLabel,
+      cancelLabel: cancelLabel,
+      position: position,
+    );
+  }
+
   void hide() => _service.hide();
+
+  // --- Result/Info/Error Dialogs ---
 
   Future<void> showError({
     required String title,
