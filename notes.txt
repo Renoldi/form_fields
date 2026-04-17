@@ -1,0 +1,9 @@
+"Refactor kode ini agar lebih modular dan terorganisasi dengan cara:
+
+Pisahkan setiap fungsi, helper, dan bagian UI utama ke file terpisah sesuai tanggung jawabnya (misal: input handling, validation, formatting, widgets, dsb).
+Pastikan setiap file hanya berisi satu tanggung jawab utama (single responsibility).
+Gunakan ekspor dan impor yang jelas, serta dokumentasi singkat di setiap file/fungsi.
+Pastikan seluruh kode tetap berjalan tanpa error, dan seluruh logic benar-benar berpindah tanpa kehilangan fungsionalitas.
+Terapkan best practice Dart/Flutter untuk penamaan, struktur folder, dan reusability (misal: gunakan extension, mixin, atau class helper jika perlu).
+Jangan ada duplikasi kode, dan pastikan semua dependensi antar file jelas.
+Setelah refactor, pastikan kode mudah dipahami, mudah diuji, dan mudah dikembangkan lebih lanjut."
