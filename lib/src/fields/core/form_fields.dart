@@ -1481,11 +1481,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         }
         break;
       case FormType.verification:
-        if (value is String && value.length != widget.verificationLength) {
-          return l.getWithValue(
-            'verificationLength',
-            widget.verificationLength,
-          );
+        if (value is String) {
+          if (value.length != widget.verificationLength) {
+            return l.getWithValue(
+              'verificationLength',
+              widget.verificationLength,
+            );
+          }
+          // Validasi karakter jika verificationOtpAlphanumeric false (hanya angka)
+          if (!widget.verificationOtpAlphanumeric &&
+              !RegExp(r'^\d+$').hasMatch(value)) {
+            return l.getWithLabel('enterValidInteger', vm.label);
+          }
+          // Jika verificationOtpAlphanumeric true, boleh angka/alfabet, tidak perlu validasi khusus
         }
         break;
       default:
@@ -1693,7 +1701,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         controller: _verificationControllers[index],
         focusNode: _verificationFocusNodes[index],
         keyboardType: widget.verificationOtpAlphanumeric
-            ? TextInputType.text
+            ? TextInputType.visiblePassword // agar keyboard qwerty muncul
             : TextInputType.number,
         obscureText: widget.verificationHidden && vm.obscure,
         obscuringCharacter: '•',
@@ -1704,7 +1712,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         inputFormatters: widget.otpInputFormatters ??
             (widget.verificationOtpAlphanumeric
-                ? [LengthLimitingTextInputFormatter(widget.verificationLength)]
+                ? [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                    LengthLimitingTextInputFormatter(widget.verificationLength)
+                  ]
                 : [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(widget.verificationLength)
