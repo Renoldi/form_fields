@@ -23,10 +23,11 @@ class AppDialogService {
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
     AppDialogLoadingBackBehavior loadingBackBehavior =
-      AppDialogLoadingBackBehavior.allow,
+        AppDialogLoadingBackBehavior.allow,
     bool useSafeArea = true,
     String cancelTitle = 'Cancel Process?',
-    String cancelMessage = 'The operation is still in progress. Do you want to cancel it?',
+    String cancelMessage =
+        'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
   }) {
@@ -65,59 +66,6 @@ class AppDialogService {
     } else {
       _dismissLoadingIfVisible();
     }
-  }
-
-  /// Shows only the loading visual (no message), with position and onComplete support.
-  Future<void> showLoadingVisualOnly({
-    AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
-    AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
-    AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
-    AppProgressType progressType = AppProgressType.circular,
-    AppDialogPosition position = AppDialogPosition.bottom,
-    VoidCallback? onComplete,
-    AppDialogLoadingBackBehavior loadingBackBehavior =
-      AppDialogLoadingBackBehavior.allow,
-    bool useSafeArea = true,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage = 'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
-  }) {
-    if (_isLoadingDialogVisible) {
-      return Future.value();
-    }
-
-    _isLoadingDialogVisible = true;
-    final Widget visual = _buildLoadingVisual(
-      loadingVisual: loadingVisual,
-      loadingVariant: loadingVariant,
-      progressType: progressType,
-    );
-    final Widget dialogChild =
-        loadingContainer == AppDialogLoadingContainer.card
-            ? _defaultDialogCard(child: visual)
-            : visual;
-    return _showProtectedDialog(
-      alignment: _alignment(position),
-      insetPadding: _inset(position),
-      backgroundColor: Colors.transparent,
-      barrierDismissible:
-          loadingBackBehavior == AppDialogLoadingBackBehavior.allow,
-      useSafeArea: useSafeArea,
-      onBackPressed: () => _handleLoadingBackPressed(
-        loadingBackBehavior: loadingBackBehavior,
-        onCancelRequested: null,
-        onCancelled: null,
-        cancelTitle: cancelTitle,
-        cancelMessage: cancelMessage,
-        stayLabel: stayLabel,
-        cancelLabel: cancelLabel,
-      ),
-      child: dialogChild,
-    ).whenComplete(() {
-      _isLoadingDialogVisible = false;
-      if (onComplete != null) onComplete();
-    });
   }
 
   final BuildContext context;

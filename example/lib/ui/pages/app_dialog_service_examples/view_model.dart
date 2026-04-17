@@ -17,7 +17,7 @@ class ViewModel extends ChangeNotifier {
   AppLoadingVariant loadingVariant = AppLoadingVariant.spinner;
   AppProgressType progressType = AppProgressType.circular;
   AppDialogLoadingBackBehavior loadingBackBehavior =
-      AppDialogLoadingBackBehavior.block;
+      AppDialogLoadingBackBehavior.allow;
   String lastResult = '-';
 
   void setPosition(AppDialogPosition value) {

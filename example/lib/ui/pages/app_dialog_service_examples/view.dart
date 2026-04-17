@@ -168,7 +168,6 @@ class View extends PresenterState {
                     type: AppButtonType.filled,
                     text: 'Show text Loading',
                     onPressed: () async {
-                      // Contoh: Menampilkan loading text jika loadingContainer == card
                       await AppDialogService(context).showLoading(
                         loadingContainer: vm.loadingContainer,
                         loadingVisual: vm.loadingVisual,
@@ -186,17 +185,14 @@ class View extends PresenterState {
                     type: AppButtonType.filled,
                     text: 'Show Loading',
                     onPressed: () async {
-                      // Contoh: Menampilkan loading text jika loadingContainer == card
-                      await AppDialogService(context).showLoadingVisualOnly(
+                      await AppDialogService(context).showLoading(
+                        message: "",
                         loadingContainer: vm.loadingContainer,
                         loadingVisual: vm.loadingVisual,
                         loadingVariant: vm.loadingVariant,
                         progressType: vm.progressType,
                         position: vm.loadingPosition,
                         loadingBackBehavior: vm.loadingBackBehavior,
-                        onComplete: () {},
-                        // Tambahkan child builder jika ingin custom
-                        // Jika card, tampilkan teks loading di bawah visual
                       );
                     },
                   ),
