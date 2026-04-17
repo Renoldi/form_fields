@@ -9,8 +9,14 @@ import 'package:flutter/services.dart';
 import 'app_loading_indicator.dart';
 import '../utilities/enums.dart';
 import '../utilities/dialog_typedefs.dart';
-
 import 'app_progress_indicator.dart';
+
+/// Callback when async task in [guard] succeeds.
+typedef AppDialogSuccessCallback<T> = FutureOr<void> Function(T result);
+
+/// Callback when async task in [guard] fails.
+typedef AppDialogErrorCallback = FutureOr<void> Function(
+    Object error, String message, AppDialogType type);
 
 class AppDialogService {
   /// Shows or hides a visual-only loading dialog without guard or async context.
@@ -83,6 +89,24 @@ class AppDialogService {
   /// Runs an async task and automatically shows an error dialog on failure.
   ///
   /// Returns the task result when successful, otherwise `null`.
+  ///
+  /// [onSuccess] is called after a successful task (after dialog feedback if enabled).
+  /// [onError] is called after a failed task (after error dialog feedback).
+  ///
+  /// Example:
+  /// ```dart
+  /// dialogService.guard(
+  ///   task: () async => await submitForm(),
+  ///   errorTitle: 'Failed',
+  ///   mapError: AppDialogService.defaultErrorMapper,
+  ///   onSuccess: (result) async {
+  ///     // Custom success action
+  ///   },
+  ///   onError: (error, msg, type) async {
+  ///     // Custom error action
+  ///   },
+  /// );
+  /// ```
   Future<T?> guard<T>({
     required Future<T> Function() task,
     required String errorTitle,
@@ -104,6 +128,11 @@ class AppDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
+    bool showSuccessDialog = false,
+    String successTitle = 'Success',
+    String successMessage = 'Operation completed successfully.',
+    AppDialogSuccessCallback<T>? onSuccess,
+    AppDialogErrorCallback? onError,
   }) async {
     var loadingShown = false;
 
@@ -131,7 +160,19 @@ class AppDialogService {
         await WidgetsBinding.instance.endOfFrame;
       }
 
-      return await task();
+      final result = await task();
+      if (showSuccessDialog) {
+        await showSuccess(
+          title: successTitle,
+          message: successMessage,
+          position: resultPosition,
+          okLabel: okLabel,
+        );
+      }
+      if (onSuccess != null) {
+        await onSuccess(result);
+      }
+      return result;
     } catch (error) {
       _dismissLoadingIfVisible();
       loadingShown = false;
@@ -144,6 +185,9 @@ class AppDialogService {
         position: resultPosition,
         okLabel: okLabel,
       );
+      if (onError != null) {
+        await onError(error, mapped.message, mapped.type);
+      }
       return null;
     } finally {
       if (loadingShown) {

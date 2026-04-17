@@ -58,12 +58,6 @@ class View extends PresenterState {
               selected: {vm.loadingBackBehavior},
               onSelectionChanged: (set) => vm.setLoadingBackBehavior(set.first),
             ),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: Text('Simulate Error'),
-              value: vm.simulateError,
-              onChanged: vm.setSimulateError,
-            ),
             Text('Loading Position'),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogLoadingContainer>(
@@ -193,6 +187,64 @@ class View extends PresenterState {
                         progressType: vm.progressType,
                         position: vm.loadingPosition,
                         loadingBackBehavior: vm.loadingBackBehavior,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    type: AppButtonType.filled,
+                    text: 'Guard (Simulate Success)',
+                    onPressed: () async {
+                      await AppDialogService(context).guard(
+                        task: () async {
+                          await Future.delayed(const Duration(seconds: 2));
+                          return 'Success';
+                        },
+                        errorTitle: 'Error',
+                        mapError: AppDialogService.defaultErrorMapper,
+                        loadingPosition: vm.position,
+                        resultPosition: vm.position,
+                        showBlockingLoading: true,
+                        loadingMessage: 'Processing...',
+                        loadingVisual: vm.loadingVisual,
+                        loadingVariant: vm.loadingVariant,
+                        progressType: vm.progressType,
+                        loadingBackBehavior: vm.loadingBackBehavior,
+                        showSuccessDialog: true,
+                        successTitle: 'Success',
+                        successMessage: 'Task completed successfully!',
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: AppButton(
+                    type: AppButtonType.filled,
+                    text: 'Guard (Simulate Fail)',
+                    onPressed: () async {
+                      await AppDialogService(context).guard(
+                        task: () async {
+                          await Future.delayed(const Duration(seconds: 2));
+                          throw Exception('Simulated failure');
+                        },
+                        errorTitle: 'Error',
+                        mapError: AppDialogService.defaultErrorMapper,
+                        loadingPosition: vm.position,
+                        resultPosition: vm.position,
+                        showBlockingLoading: true,
+                        loadingMessage: 'Processing...',
+                        loadingVisual: vm.loadingVisual,
+                        loadingVariant: vm.loadingVariant,
+                        progressType: vm.progressType,
+                        loadingBackBehavior: vm.loadingBackBehavior,
+                        showSuccessDialog: false,
                       );
                     },
                   ),

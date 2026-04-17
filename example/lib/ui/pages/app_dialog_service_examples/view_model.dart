@@ -20,6 +20,12 @@ class ViewModel extends ChangeNotifier {
       AppDialogLoadingBackBehavior.allow;
   String lastResult = '-';
 
+  bool simulateSuccessResult = false;
+  void setSimulateSuccessResult(bool value) {
+    simulateSuccessResult = value;
+    notifyListeners();
+  }
+
   void setPosition(AppDialogPosition value) {
     position = value;
     notifyListeners();
