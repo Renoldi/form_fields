@@ -20,24 +20,45 @@ class AppDialogService {
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
+    bool isDismissible = false,
+    bool useSafeArea = true,
   }) {
     if (show) {
       if (_isLoadingDialogVisible) return;
       _isLoadingDialogVisible = true;
-      _showProtectedDialog(
-        alignment: _alignment(position),
-        insetPadding: _inset(position),
-        backgroundColor: Colors.transparent,
-        child: _defaultDialogCard(
+      if (loadingVisual == AppDialogLoadingVisual.indicatorOnly) {
+        _showProtectedDialog(
+          alignment: _alignment(position),
+          insetPadding: _inset(position),
+          backgroundColor: Colors.transparent,
+          barrierDismissible: isDismissible,
+          useSafeArea: useSafeArea,
           child: _buildLoadingVisual(
-            loadingVisual: loadingVisual,
+            loadingVisual: AppDialogLoadingVisual.indicator,
             loadingVariant: loadingVariant,
             progressType: progressType,
           ),
-        ),
-      ).whenComplete(() {
-        _isLoadingDialogVisible = false;
-      });
+        ).whenComplete(() {
+          _isLoadingDialogVisible = false;
+        });
+      } else {
+        _showProtectedDialog(
+          alignment: _alignment(position),
+          insetPadding: _inset(position),
+          backgroundColor: Colors.transparent,
+          barrierDismissible: isDismissible,
+          useSafeArea: useSafeArea,
+          child: _defaultDialogCard(
+            child: _buildLoadingVisual(
+              loadingVisual: loadingVisual,
+              loadingVariant: loadingVariant,
+              progressType: progressType,
+            ),
+          ),
+        ).whenComplete(() {
+          _isLoadingDialogVisible = false;
+        });
+      }
     } else {
       _dismissLoadingIfVisible();
     }
@@ -50,6 +71,8 @@ class AppDialogService {
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
     VoidCallback? onComplete,
+    bool isDismissible = false,
+    bool useSafeArea = true,
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -57,21 +80,41 @@ class AppDialogService {
 
     _isLoadingDialogVisible = true;
 
-    return _showProtectedDialog(
-      alignment: _alignment(position),
-      insetPadding: _inset(position),
-      backgroundColor: Colors.transparent,
-      child: _defaultDialogCard(
+    if (loadingVisual == AppDialogLoadingVisual.indicatorOnly) {
+      return _showProtectedDialog(
+        alignment: _alignment(position),
+        insetPadding: _inset(position),
+        backgroundColor: Colors.transparent,
+        barrierDismissible: isDismissible,
+        useSafeArea: useSafeArea,
         child: _buildLoadingVisual(
-          loadingVisual: loadingVisual,
+          loadingVisual: AppDialogLoadingVisual.indicator,
           loadingVariant: loadingVariant,
           progressType: progressType,
         ),
-      ),
-    ).whenComplete(() {
-      _isLoadingDialogVisible = false;
-      if (onComplete != null) onComplete();
-    });
+      ).whenComplete(() {
+        _isLoadingDialogVisible = false;
+        if (onComplete != null) onComplete();
+      });
+    } else {
+      return _showProtectedDialog(
+        alignment: _alignment(position),
+        insetPadding: _inset(position),
+        backgroundColor: Colors.transparent,
+        barrierDismissible: isDismissible,
+        useSafeArea: useSafeArea,
+        child: _defaultDialogCard(
+          child: _buildLoadingVisual(
+            loadingVisual: loadingVisual,
+            loadingVariant: loadingVariant,
+            progressType: progressType,
+          ),
+        ),
+      ).whenComplete(() {
+        _isLoadingDialogVisible = false;
+        if (onComplete != null) onComplete();
+      });
+    }
   }
 
   final BuildContext context;
@@ -110,6 +153,7 @@ class AppDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
+    bool isDismissible = false,
   }) async {
     var loadingShown = false;
 
@@ -130,6 +174,7 @@ class AppDialogService {
             stayLabel: stayLabel,
             cancelLabel: cancelLabel,
             position: loadingPosition,
+            isDismissible: isDismissible,
           ),
         );
         // Give Flutter one frame to paint the blocking dialog
@@ -173,6 +218,7 @@ class AppDialogService {
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
     AppDialogPosition position = AppDialogPosition.bottom,
+    bool isDismissible = false,
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -433,13 +479,16 @@ class AppDialogService {
     Color? backgroundColor,
     Future<void> Function()? onBackPressed,
     required Widget child,
+    bool barrierDismissible = false,
+    bool useSafeArea = true,
   }) {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: barrierDismissible,
+      useSafeArea: useSafeArea,
       builder: (dialogContext) {
         return PopScope(
-          canPop: false,
+          canPop: barrierDismissible,
           onPopInvokedWithResult: (didPop, result) async {
             if (didPop) return;
             if (onBackPressed != null) {

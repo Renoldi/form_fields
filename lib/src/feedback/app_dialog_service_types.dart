@@ -18,6 +18,7 @@ enum AppDialogPosition {
 enum AppDialogLoadingVisual {
   indicator,
   progress,
+  indicatorOnly, // Hanya indikator tanpa background putih dan tanpa text
 }
 
 enum AppDialogLoadingBackBehavior {
