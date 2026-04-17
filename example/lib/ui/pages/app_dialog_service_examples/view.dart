@@ -58,7 +58,7 @@ class View extends PresenterState {
               selected: {vm.loadingBackBehavior},
               onSelectionChanged: (set) => vm.setLoadingBackBehavior(set.first),
             ),
-            Text('Loading Position'),
+            Text('Loading Dialog Position'),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogLoadingContainer>(
               segments: [
@@ -72,7 +72,7 @@ class View extends PresenterState {
               onSelectionChanged: (set) => vm.setLoadingContainer(set.first),
             ),
             const SizedBox(height: 10),
-            Text('Loading Position'),
+            Text('Loading Dialog Position'),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogPosition>(
               segments: [
@@ -84,6 +84,20 @@ class View extends PresenterState {
               ],
               selected: {vm.loadingPosition},
               onSelectionChanged: (set) => vm.setLoadingPosition(set.first),
+            ),
+            const SizedBox(height: 10),
+            Text('Result Dialog Position'),
+            const SizedBox(height: 8),
+            SegmentedButton<AppDialogPosition>(
+              segments: [
+                ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
+                ButtonSegment(
+                    value: AppDialogPosition.center, label: Text('Center')),
+                ButtonSegment(
+                    value: AppDialogPosition.bottom, label: Text('Bottom')),
+              ],
+              selected: {vm.resultPosition},
+              onSelectionChanged: (set) => vm.setResultPosition(set.first),
             ),
             const SizedBox(height: 10),
             Text('Loading Visual'),
@@ -128,20 +142,6 @@ class View extends PresenterState {
                 onSelectionChanged: (set) => vm.setProgressType(set.first),
               ),
             ],
-            const SizedBox(height: 8),
-            Text('Dialog Position'),
-            const SizedBox(height: 8),
-            SegmentedButton<AppDialogPosition>(
-              segments: [
-                ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
-                ButtonSegment(
-                    value: AppDialogPosition.center, label: Text('Center')),
-                ButtonSegment(
-                    value: AppDialogPosition.bottom, label: Text('Bottom')),
-              ],
-              selected: {vm.position},
-              onSelectionChanged: (set) => vm.setPosition(set.first),
-            ),
           ],
         ),
       ),
@@ -208,8 +208,8 @@ class View extends PresenterState {
                         },
                         errorTitle: 'Error',
                         mapError: AppDialogService.defaultErrorMapper,
-                        loadingPosition: vm.position,
-                        resultPosition: vm.position,
+                        loadingPosition: vm.loadingPosition,
+                        resultPosition: vm.resultPosition,
                         showBlockingLoading: true,
                         loadingMessage: 'Processing...',
                         loadingVisual: vm.loadingVisual,
@@ -236,8 +236,8 @@ class View extends PresenterState {
                         },
                         errorTitle: 'Error',
                         mapError: AppDialogService.defaultErrorMapper,
-                        loadingPosition: vm.position,
-                        resultPosition: vm.position,
+                        loadingPosition: vm.loadingPosition,
+                        resultPosition: vm.resultPosition,
                         showBlockingLoading: true,
                         loadingMessage: 'Processing...',
                         loadingVisual: vm.loadingVisual,

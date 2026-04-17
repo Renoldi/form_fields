@@ -3,6 +3,7 @@ import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
   AppDialogPosition loadingPosition = AppDialogPosition.top;
+  AppDialogPosition resultPosition = AppDialogPosition.top;
   void setLoadingPosition(AppDialogPosition value) {
     loadingPosition = value;
     notifyListeners();
@@ -11,7 +12,7 @@ class ViewModel extends ChangeNotifier {
   bool isRunning = false;
   bool simulateError = false;
   bool useBlockingLoading = true;
-  AppDialogPosition position = AppDialogPosition.top;
+  // Deprecated: Use loadingPosition and resultPosition instead
   AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator;
   AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card;
   AppLoadingVariant loadingVariant = AppLoadingVariant.spinner;
@@ -23,11 +24,6 @@ class ViewModel extends ChangeNotifier {
   bool simulateSuccessResult = false;
   void setSimulateSuccessResult(bool value) {
     simulateSuccessResult = value;
-    notifyListeners();
-  }
-
-  void setPosition(AppDialogPosition value) {
-    position = value;
     notifyListeners();
   }
 
@@ -73,6 +69,11 @@ class ViewModel extends ChangeNotifier {
 
   void setLoadingBackBehavior(AppDialogLoadingBackBehavior value) {
     loadingBackBehavior = value;
+    notifyListeners();
+  }
+
+  void setResultPosition(AppDialogPosition first) {
+    resultPosition = first;
     notifyListeners();
   }
 }
