@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
 
-import 'package:form_fields/src/utilities/app_dialog_typedefs.dart';
-
 class AppDialogService {
   /// Example usage in UI or ViewModel:
   ///

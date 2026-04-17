@@ -1,8 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
-
-import '../utilities/enums.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Reusable loading indicator with multiple visual variants.
 class AppLoadingIndicator extends StatefulWidget {

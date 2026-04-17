@@ -1,8 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
-
-import '../utilities/enums.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Reusable progress indicator that supports linear and circular types.
 class AppProgressIndicator extends StatelessWidget {

@@ -82,6 +82,7 @@ export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
 export 'src/utilities/validation_exception.dart' show ValidationException;
+export 'src/utilities/app_dialog_typedefs.dart';
 
 // -------------------
 // Localization

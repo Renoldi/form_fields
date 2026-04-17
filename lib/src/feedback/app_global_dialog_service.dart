@@ -1,10 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
-
-import 'app_dialog_service.dart';
-import '../utilities/enums.dart';
-import '../utilities/dialog_typedefs.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Global dialog coordinator using a navigator key.
 ///
