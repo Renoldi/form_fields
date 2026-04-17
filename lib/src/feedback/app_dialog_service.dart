@@ -87,6 +87,9 @@ class AppDialogService {
   static ({String message, AppDialogType type}) defaultErrorMapper(
     Object error,
   ) {
+    if (error is ValidationException) {
+      return (message: error.message, type: AppDialogType.validation);
+    }
     return (message: error.toString(), type: AppDialogType.server);
   }
 
@@ -182,13 +185,22 @@ class AppDialogService {
       loadingShown = false;
 
       final mapped = mapError(error);
-      await showError(
-        title: errorTitle,
-        message: mapped.message,
-        dialogType: mapped.type,
-        position: resultPosition,
-        okLabel: okLabel,
-      );
+      if (mapped.type == AppDialogType.validation) {
+        await showInfo(
+          title: errorTitle,
+          message: mapped.message,
+          position: resultPosition,
+          okLabel: okLabel,
+        );
+      } else {
+        await showError(
+          title: errorTitle,
+          message: mapped.message,
+          dialogType: mapped.type,
+          position: resultPosition,
+          okLabel: okLabel,
+        );
+      }
       if (onError != null) {
         await onError(error, mapped.message, mapped.type);
       }
@@ -362,6 +374,8 @@ class AppDialogService {
     VoidCallback? onComplete,
   }) {
     final (icon, color) = _style(dialogType, isSuccess);
+    final buttonColor = _buttonColor(dialogType, isSuccess);
+    final isWarning = dialogType == AppDialogType.validation && !isSuccess;
 
     return _showProtectedDialog(
       alignment: _alignment(position),
@@ -397,12 +411,18 @@ class AppDialogService {
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
+                  backgroundColor: buttonColor,
+                  foregroundColor:
+                      isWarning ? Colors.orange.shade900 : Colors.white,
+                  // Use a darker orange for text on orange background
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Text(
                   okLabel,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: isWarning ? Colors.orange.shade900 : Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -629,6 +649,14 @@ class AppDialogService {
       case AppDialogType.server:
         return (Icons.error_outline, Colors.red.shade600);
     }
+  }
+
+  Color _buttonColor(AppDialogType? type, bool isSuccess) {
+    if (isSuccess) return Colors.green.shade600;
+    if (type == AppDialogType.validation) return Colors.orange.shade600;
+    if (type == AppDialogType.network) return Colors.blue.shade600;
+    if (type == AppDialogType.authentication) return Colors.red.shade700;
+    return Colors.red.shade600;
   }
 
   Alignment _alignment(AppDialogPosition position) {

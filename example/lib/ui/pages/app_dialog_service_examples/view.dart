@@ -199,7 +199,7 @@ class View extends PresenterState {
                 Expanded(
                   child: AppButton(
                     type: AppButtonType.filled,
-                    text: 'Guard (Simulate Success)',
+                    text: 'Success',
                     onPressed: () async {
                       await AppDialogService(context).guard(
                         task: () async {
@@ -227,7 +227,7 @@ class View extends PresenterState {
                 Expanded(
                   child: AppButton(
                     type: AppButtonType.filled,
-                    text: 'Guard (Simulate Fail)',
+                    text: 'Error',
                     onPressed: () async {
                       await AppDialogService(context).guard(
                         task: () async {
@@ -235,6 +235,33 @@ class View extends PresenterState {
                           throw Exception('Simulated failure');
                         },
                         errorTitle: 'Error',
+                        mapError: AppDialogService.defaultErrorMapper,
+                        loadingPosition: vm.loadingPosition,
+                        resultPosition: vm.resultPosition,
+                        showBlockingLoading: true,
+                        loadingMessage: 'Processing...',
+                        loadingVisual: vm.loadingVisual,
+                        loadingVariant: vm.loadingVariant,
+                        progressType: vm.progressType,
+                        loadingBackBehavior: vm.loadingBackBehavior,
+                        showSuccessDialog: false,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: AppButton(
+                    type: AppButtonType.filled,
+                    text: 'Warning',
+                    onPressed: () async {
+                      await AppDialogService(context).guard(
+                        task: () async {
+                          await Future.delayed(const Duration(seconds: 2));
+                          throw ValidationException(
+                              'Simulated validation warning: Please fill all required fields.');
+                        },
+                        errorTitle: 'Warning',
                         mapError: AppDialogService.defaultErrorMapper,
                         loadingPosition: vm.loadingPosition,
                         resultPosition: vm.resultPosition,

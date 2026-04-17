@@ -81,6 +81,7 @@ export 'src/buttons/app_button_enums.dart';
 export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
+export 'src/utilities/validation_exception.dart' show ValidationException;
 
 // -------------------
 // Localization
