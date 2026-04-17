@@ -1,24 +1,28 @@
-library;
-
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:form_fields/form_fields.dart';
 
-import 'app_loading_indicator.dart';
-import '../utilities/enums.dart';
-import '../utilities/dialog_typedefs.dart';
-import 'app_progress_indicator.dart';
-
-/// Callback when async task in [guard] succeeds.
-typedef AppDialogSuccessCallback<T> = FutureOr<void> Function(T result);
-
-/// Callback when async task in [guard] fails.
-typedef AppDialogErrorCallback = FutureOr<void> Function(
-    Object error, String message, AppDialogType type);
+import 'package:form_fields/src/utilities/app_dialog_typedefs.dart';
 
 class AppDialogService {
+  /// Example usage in UI or ViewModel:
+  ///
+  /// await dialogService.guard(
+  ///   task: () async {
+  ///     if (formInvalid) throw ValidationException('Mohon lengkapi semua field.');
+  ///     // ...proses lain...
+  ///   },
+  ///   errorTitle: 'Terjadi Kesalahan',
+  ///   mapError: customErrorMapper, // from app_dialog_error_utils.dart
+  ///   onSuccess: (result) async {
+  ///     // Sukses
+  ///   },
+  ///   onError: (error, msg, type) async {
+  ///     // Logging, dsb
+  ///   },
+  /// );
   /// Shows or hides a visual-only loading dialog without guard or async context.
   /// Call with `show: true` to display, and `show: false` to hide.
   void unguardedLoadingVisualOnly({
