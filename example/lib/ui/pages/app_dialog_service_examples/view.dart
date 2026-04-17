@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
@@ -42,11 +40,23 @@ class View extends PresenterState {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: Text('Blocking Loading'),
-              value: vm.useBlockingLoading,
-              onChanged: vm.setBlockingLoading,
+            const SizedBox(height: 10),
+            Text('Loading Back Behavior'),
+            const SizedBox(height: 8),
+            SegmentedButton<AppDialogLoadingBackBehavior>(
+              segments: [
+                ButtonSegment(
+                    value: AppDialogLoadingBackBehavior.block,
+                    label: Text('Block')),
+                ButtonSegment(
+                    value: AppDialogLoadingBackBehavior.allow,
+                    label: Text('Dismissible')),
+                ButtonSegment(
+                    value: AppDialogLoadingBackBehavior.confirmCancel,
+                    label: Text('Confirm Cancel')),
+              ],
+              selected: {vm.loadingBackBehavior},
+              onSelectionChanged: (set) => vm.setLoadingBackBehavior(set.first),
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
@@ -147,7 +157,7 @@ class View extends PresenterState {
                   onChanged: (val) => vm.setIsDismissible(val ?? false),
                 ),
                 const SizedBox(width: 8),
-                const Text('isDismissible (tap outside to close)'),
+                const Text('Allow back/tap outside to close'),
               ],
             ),
           ],
@@ -168,7 +178,7 @@ class View extends PresenterState {
                 Expanded(
                   child: AppButton(
                     type: AppButtonType.filled,
-                    text: 'Show Visual-Only Loading',
+                    text: 'Show Loading',
                     onPressed: () async {
                       await AppDialogService(context).showLoadingVisualOnly(
                         loadingContainer: vm.loadingContainer,
@@ -176,7 +186,7 @@ class View extends PresenterState {
                         loadingVariant: vm.loadingVariant,
                         progressType: vm.progressType,
                         position: vm.loadingPosition,
-                        isDismissible: vm.isDismissible,
+                        loadingBackBehavior: vm.loadingBackBehavior,
                         onComplete: () {
                           // if (!mounted) return;
                           // ScaffoldMessenger.of(context).showSnackBar(

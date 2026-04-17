@@ -62,7 +62,7 @@ class AppGlobalDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
-    bool isDismissible = false,
+    // bool isDismissible = false,
   }) {
     return _service.guard<T>(
       task: task,
@@ -83,7 +83,6 @@ class AppGlobalDialogService {
       cancelMessage: cancelMessage,
       stayLabel: stayLabel,
       cancelLabel: cancelLabel,
-      isDismissible: isDismissible,
     );
   }
 

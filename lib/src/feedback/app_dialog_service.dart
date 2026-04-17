@@ -22,8 +22,13 @@ class AppDialogService {
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
-    bool isDismissible = false,
+    AppDialogLoadingBackBehavior loadingBackBehavior =
+      AppDialogLoadingBackBehavior.allow,
     bool useSafeArea = true,
+    String cancelTitle = 'Cancel Process?',
+    String cancelMessage = 'The operation is still in progress. Do you want to cancel it?',
+    String stayLabel = 'Stay',
+    String cancelLabel = 'Cancel',
   }) {
     if (show) {
       if (_isLoadingDialogVisible) return;
@@ -41,8 +46,18 @@ class AppDialogService {
         alignment: _alignment(position),
         insetPadding: _inset(position),
         backgroundColor: Colors.transparent,
-        barrierDismissible: isDismissible,
+        barrierDismissible:
+            loadingBackBehavior == AppDialogLoadingBackBehavior.allow,
         useSafeArea: useSafeArea,
+        onBackPressed: () => _handleLoadingBackPressed(
+          loadingBackBehavior: loadingBackBehavior,
+          onCancelRequested: null,
+          onCancelled: null,
+          cancelTitle: cancelTitle,
+          cancelMessage: cancelMessage,
+          stayLabel: stayLabel,
+          cancelLabel: cancelLabel,
+        ),
         child: dialogChild,
       ).whenComplete(() {
         _isLoadingDialogVisible = false;
@@ -60,8 +75,13 @@ class AppDialogService {
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
     VoidCallback? onComplete,
-    bool isDismissible = false,
+    AppDialogLoadingBackBehavior loadingBackBehavior =
+      AppDialogLoadingBackBehavior.allow,
     bool useSafeArea = true,
+    String cancelTitle = 'Cancel Process?',
+    String cancelMessage = 'The operation is still in progress. Do you want to cancel it?',
+    String stayLabel = 'Stay',
+    String cancelLabel = 'Cancel',
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -81,8 +101,18 @@ class AppDialogService {
       alignment: _alignment(position),
       insetPadding: _inset(position),
       backgroundColor: Colors.transparent,
-      barrierDismissible: isDismissible,
+      barrierDismissible:
+          loadingBackBehavior == AppDialogLoadingBackBehavior.allow,
       useSafeArea: useSafeArea,
+      onBackPressed: () => _handleLoadingBackPressed(
+        loadingBackBehavior: loadingBackBehavior,
+        onCancelRequested: null,
+        onCancelled: null,
+        cancelTitle: cancelTitle,
+        cancelMessage: cancelMessage,
+        stayLabel: stayLabel,
+        cancelLabel: cancelLabel,
+      ),
       child: dialogChild,
     ).whenComplete(() {
       _isLoadingDialogVisible = false;
@@ -126,7 +156,6 @@ class AppDialogService {
         'The operation is still in progress. Do you want to cancel it?',
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
-    bool isDismissible = false,
   }) async {
     var loadingShown = false;
 
@@ -147,7 +176,6 @@ class AppDialogService {
             stayLabel: stayLabel,
             cancelLabel: cancelLabel,
             position: loadingPosition,
-            isDismissible: isDismissible,
           ),
         );
         // Give Flutter one frame to paint the blocking dialog
@@ -192,7 +220,6 @@ class AppDialogService {
     String stayLabel = 'Stay',
     String cancelLabel = 'Cancel',
     AppDialogPosition position = AppDialogPosition.bottom,
-    bool isDismissible = false,
   }) {
     if (_isLoadingDialogVisible) {
       return Future.value();
@@ -235,6 +262,8 @@ class AppDialogService {
         stayLabel: stayLabel,
         cancelLabel: cancelLabel,
       ),
+      barrierDismissible:
+          loadingBackBehavior == AppDialogLoadingBackBehavior.allow,
       child: dialogChild,
     ).whenComplete(() {
       _isLoadingDialogVisible = false;

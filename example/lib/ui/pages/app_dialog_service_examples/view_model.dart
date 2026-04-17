@@ -16,6 +16,8 @@ class ViewModel extends ChangeNotifier {
   AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card;
   AppLoadingVariant loadingVariant = AppLoadingVariant.spinner;
   AppProgressType progressType = AppProgressType.circular;
+  AppDialogLoadingBackBehavior loadingBackBehavior =
+      AppDialogLoadingBackBehavior.block;
   String lastResult = '-';
 
   // NEW: isDismissible toggle for dialog
@@ -67,6 +69,11 @@ class ViewModel extends ChangeNotifier {
 
   void setLastResult(String value) {
     lastResult = value;
+    notifyListeners();
+  }
+
+  void setLoadingBackBehavior(AppDialogLoadingBackBehavior value) {
+    loadingBackBehavior = value;
     notifyListeners();
   }
 }
