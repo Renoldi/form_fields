@@ -66,10 +66,12 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
       AppLoadingVariant.spinner => SizedBox(
           width: widget.size,
           height: widget.size,
-          child: CircularProgressIndicator(
-            strokeWidth: widget.strokeWidth,
-            color: indicatorColor,
-            backgroundColor: bgColor,
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: widget.strokeWidth,
+              color: indicatorColor,
+              backgroundColor: bgColor,
+            ),
           ),
         ),
       AppLoadingVariant.pulse => AnimatedBuilder(

@@ -13,12 +13,13 @@ class ViewModel extends ChangeNotifier {
   bool useBlockingLoading = true;
   AppDialogPosition position = AppDialogPosition.top;
   AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator;
+  AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card;
   AppLoadingVariant loadingVariant = AppLoadingVariant.spinner;
   AppProgressType progressType = AppProgressType.circular;
   String lastResult = '-';
 
   // NEW: isDismissible toggle for dialog
-  bool isDismissible = false;
+  bool isDismissible = true;
   void setIsDismissible(bool value) {
     isDismissible = value;
     notifyListeners();
@@ -31,6 +32,11 @@ class ViewModel extends ChangeNotifier {
 
   void setLoadingVisual(AppDialogLoadingVisual value) {
     loadingVisual = value;
+    notifyListeners();
+  }
+
+  void setLoadingContainer(AppDialogLoadingContainer value) {
+    loadingContainer = value;
     notifyListeners();
   }
 

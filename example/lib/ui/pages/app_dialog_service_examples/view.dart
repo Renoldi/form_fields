@@ -71,6 +71,20 @@ class View extends PresenterState {
             const SizedBox(height: 10),
             Text('Loading Position'),
             const SizedBox(height: 8),
+            SegmentedButton<AppDialogLoadingContainer>(
+              segments: [
+                ButtonSegment(
+                    value: AppDialogLoadingContainer.card, label: Text('Card')),
+                ButtonSegment(
+                    value: AppDialogLoadingContainer.nonCard,
+                    label: Text('Non-Card')),
+              ],
+              selected: {vm.loadingContainer},
+              onSelectionChanged: (set) => vm.setLoadingContainer(set.first),
+            ),
+            const SizedBox(height: 10),
+            Text('Loading Position'),
+            const SizedBox(height: 8),
             SegmentedButton<AppDialogPosition>(
               segments: [
                 ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
@@ -157,40 +171,19 @@ class View extends PresenterState {
                     text: 'Show Visual-Only Loading',
                     onPressed: () async {
                       await AppDialogService(context).showLoadingVisualOnly(
+                        loadingContainer: vm.loadingContainer,
                         loadingVisual: vm.loadingVisual,
                         loadingVariant: vm.loadingVariant,
                         progressType: vm.progressType,
                         position: vm.loadingPosition,
                         isDismissible: vm.isDismissible,
                         onComplete: () {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Visual-only loading closed')),
-                          );
+                          // if (!mounted) return;
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(
+                          //       content: Text('Visual-only loading closed')),
+                          // );
                         },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    type: AppButtonType.outlined,
-                    text: 'Test Feedback',
-                    onPressed: () async {
-                      await AppDialogService(context).showLoading(
-                        message:
-                            'Feedback test: loading dialog with current properties',
-                        loadingVisual: vm.loadingVisual,
-                        loadingVariant: vm.loadingVariant,
-                        progressType: vm.progressType,
-                        position: vm.loadingPosition,
-                        isDismissible: vm.isDismissible,
                       );
                     },
                   ),

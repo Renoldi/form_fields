@@ -66,6 +66,7 @@ export 'src/utilities/enums.dart'
         AppDialogPosition,
         AppDialogLoadingVisual,
         AppDialogLoadingBackBehavior,
+        AppDialogLoadingContainer,
         AppLoadingVariant,
         AppProgressType;
 export 'src/utilities/dialog_typedefs.dart'

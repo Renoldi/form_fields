@@ -29,11 +29,16 @@ enum AppDialogPosition {
   bottom,
 }
 
+/// Container style for loading dialog (card/nonCard)
+enum AppDialogLoadingContainer {
+  card,
+  nonCard,
+}
+
 /// Visual style for loading dialogs
 enum AppDialogLoadingVisual {
   indicator,
   progress,
-  indicatorOnly, // Hanya indikator tanpa background putih dan tanpa text
 }
 
 /// Back button behavior for loading dialogs

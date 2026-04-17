@@ -18,6 +18,7 @@ class AppDialogService {
   void unguardedLoadingVisualOnly({
     required bool show,
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
@@ -27,39 +28,25 @@ class AppDialogService {
     if (show) {
       if (_isLoadingDialogVisible) return;
       _isLoadingDialogVisible = true;
-      if (loadingVisual == AppDialogLoadingVisual.indicatorOnly) {
-        _showProtectedDialog(
-          alignment: _alignment(position),
-          insetPadding: _inset(position),
-          backgroundColor: Colors.transparent,
-          barrierDismissible: isDismissible,
-          useSafeArea: useSafeArea,
-          child: _buildLoadingVisual(
-            loadingVisual: AppDialogLoadingVisual.indicator,
-            loadingVariant: loadingVariant,
-            progressType: progressType,
-          ),
-        ).whenComplete(() {
-          _isLoadingDialogVisible = false;
-        });
-      } else {
-        _showProtectedDialog(
-          alignment: _alignment(position),
-          insetPadding: _inset(position),
-          backgroundColor: Colors.transparent,
-          barrierDismissible: isDismissible,
-          useSafeArea: useSafeArea,
-          child: _defaultDialogCard(
-            child: _buildLoadingVisual(
-              loadingVisual: loadingVisual,
-              loadingVariant: loadingVariant,
-              progressType: progressType,
-            ),
-          ),
-        ).whenComplete(() {
-          _isLoadingDialogVisible = false;
-        });
-      }
+      final Widget visual = _buildLoadingVisual(
+        loadingVisual: loadingVisual,
+        loadingVariant: loadingVariant,
+        progressType: progressType,
+      );
+      final Widget dialogChild =
+          loadingContainer == AppDialogLoadingContainer.card
+              ? _defaultDialogCard(child: visual)
+              : visual;
+      _showProtectedDialog(
+        alignment: _alignment(position),
+        insetPadding: _inset(position),
+        backgroundColor: Colors.transparent,
+        barrierDismissible: isDismissible,
+        useSafeArea: useSafeArea,
+        child: dialogChild,
+      ).whenComplete(() {
+        _isLoadingDialogVisible = false;
+      });
     } else {
       _dismissLoadingIfVisible();
     }
@@ -68,6 +55,7 @@ class AppDialogService {
   /// Shows only the loading visual (no message), with position and onComplete support.
   Future<void> showLoadingVisualOnly({
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
     AppDialogPosition position = AppDialogPosition.bottom,
@@ -80,42 +68,26 @@ class AppDialogService {
     }
 
     _isLoadingDialogVisible = true;
-
-    if (loadingVisual == AppDialogLoadingVisual.indicatorOnly) {
-      return _showProtectedDialog(
-        alignment: _alignment(position),
-        insetPadding: _inset(position),
-        backgroundColor: Colors.transparent,
-        barrierDismissible: isDismissible,
-        useSafeArea: useSafeArea,
-        child: _buildLoadingVisual(
-          loadingVisual: AppDialogLoadingVisual.indicator,
-          loadingVariant: loadingVariant,
-          progressType: progressType,
-        ),
-      ).whenComplete(() {
-        _isLoadingDialogVisible = false;
-        if (onComplete != null) onComplete();
-      });
-    } else {
-      return _showProtectedDialog(
-        alignment: _alignment(position),
-        insetPadding: _inset(position),
-        backgroundColor: Colors.transparent,
-        barrierDismissible: isDismissible,
-        useSafeArea: useSafeArea,
-        child: _defaultDialogCard(
-          child: _buildLoadingVisual(
-            loadingVisual: loadingVisual,
-            loadingVariant: loadingVariant,
-            progressType: progressType,
-          ),
-        ),
-      ).whenComplete(() {
-        _isLoadingDialogVisible = false;
-        if (onComplete != null) onComplete();
-      });
-    }
+    final Widget visual = _buildLoadingVisual(
+      loadingVisual: loadingVisual,
+      loadingVariant: loadingVariant,
+      progressType: progressType,
+    );
+    final Widget dialogChild =
+        loadingContainer == AppDialogLoadingContainer.card
+            ? _defaultDialogCard(child: visual)
+            : visual;
+    return _showProtectedDialog(
+      alignment: _alignment(position),
+      insetPadding: _inset(position),
+      backgroundColor: Colors.transparent,
+      barrierDismissible: isDismissible,
+      useSafeArea: useSafeArea,
+      child: dialogChild,
+    ).whenComplete(() {
+      _isLoadingDialogVisible = false;
+      if (onComplete != null) onComplete();
+    });
   }
 
   final BuildContext context;
@@ -207,6 +179,7 @@ class AppDialogService {
   Future<void> showLoading({
     String message = 'Loading...',
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+    AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
     AppDialogLoadingBackBehavior loadingBackBehavior =
@@ -226,7 +199,29 @@ class AppDialogService {
     }
 
     _isLoadingDialogVisible = true;
-
+    final Widget visual = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLoadingVisual(
+          loadingVisual: loadingVisual,
+          loadingVariant: loadingVariant,
+          progressType: progressType,
+        ),
+        if (message.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    );
+    final Widget dialogChild =
+        loadingContainer == AppDialogLoadingContainer.card
+            ? _defaultDialogCard(child: visual)
+            : visual;
     return _showProtectedDialog(
       alignment: _alignment(position),
       insetPadding: _inset(position),
@@ -240,27 +235,7 @@ class AppDialogService {
         stayLabel: stayLabel,
         cancelLabel: cancelLabel,
       ),
-      child: _defaultDialogCard(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLoadingVisual(
-              loadingVisual: loadingVisual,
-              loadingVariant: loadingVariant,
-              progressType: progressType,
-            ),
-            if (message.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  message,
-                  style: const TextStyle(fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-        ),
-      ),
+      child: dialogChild,
     ).whenComplete(() {
       _isLoadingDialogVisible = false;
     });

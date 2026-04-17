@@ -44,11 +44,13 @@ class AppProgressIndicator extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: CircularProgressIndicator(
-          value: value,
-          strokeWidth: strokeWidth,
-          color: indicatorColor,
-          backgroundColor: bgColor,
+        child: Center(
+          child: CircularProgressIndicator(
+            value: value,
+            strokeWidth: strokeWidth,
+            color: indicatorColor,
+            backgroundColor: bgColor,
+          ),
         ),
       );
     }
