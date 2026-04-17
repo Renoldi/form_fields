@@ -17,6 +17,13 @@ class ViewModel extends ChangeNotifier {
   AppProgressType progressType = AppProgressType.circular;
   String lastResult = '-';
 
+  // NEW: isDismissible toggle for dialog
+  bool isDismissible = false;
+  void setIsDismissible(bool value) {
+    isDismissible = value;
+    notifyListeners();
+  }
+
   void setPosition(AppDialogPosition value) {
     position = value;
     notifyListeners();
