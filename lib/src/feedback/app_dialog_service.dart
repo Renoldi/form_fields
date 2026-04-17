@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_loading_indicator.dart';
-import 'app_dialog_service_types.dart';
-import 'app_loading_progress_enums.dart';
+import '../utilities/enums.dart';
+import '../utilities/dialog_typedefs.dart';
+
 import 'app_progress_indicator.dart';
 
 class AppDialogService {

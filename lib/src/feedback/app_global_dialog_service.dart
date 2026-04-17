@@ -3,8 +3,8 @@ library;
 import 'package:flutter/material.dart';
 
 import 'app_dialog_service.dart';
-import 'app_dialog_service_types.dart';
-import 'app_loading_progress_enums.dart';
+import '../utilities/enums.dart';
+import '../utilities/dialog_typedefs.dart';
 
 /// Global dialog coordinator using a navigator key.
 ///

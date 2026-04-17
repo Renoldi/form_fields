@@ -2,7 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'app_loading_progress_enums.dart';
+import '../utilities/enums.dart';
 
 /// Reusable loading indicator with multiple visual variants.
 class AppLoadingIndicator extends StatefulWidget {

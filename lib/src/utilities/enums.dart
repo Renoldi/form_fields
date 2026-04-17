@@ -1,5 +1,48 @@
 library;
 
+/// Visual variants for [AppLoadingIndicator].
+enum AppLoadingVariant {
+  spinner,
+  pulse,
+  dots,
+}
+
+/// Supported progress presentations for [AppProgressIndicator].
+enum AppProgressType {
+  linear,
+  circular,
+}
+// Dialog-related enums (moved from feedback/app_dialog_service_types.dart)
+
+/// Types of dialogs for AppDialogService
+enum AppDialogType {
+  validation,
+  network,
+  authentication,
+  server,
+}
+
+/// Dialog position on the screen
+enum AppDialogPosition {
+  top,
+  center,
+  bottom,
+}
+
+/// Visual style for loading dialogs
+enum AppDialogLoadingVisual {
+  indicator,
+  progress,
+  indicatorOnly, // Hanya indikator tanpa background putih dan tanpa text
+}
+
+/// Back button behavior for loading dialogs
+enum AppDialogLoadingBackBehavior {
+  block,
+  allow,
+  confirmCancel,
+}
+
 /// Jenis border untuk OTP
 enum OtpBorderType {
   box,
