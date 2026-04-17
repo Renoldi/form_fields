@@ -16,5 +16,7 @@ Refactor kode agar lebih modular dan terorganisasi dengan langkah bertahap berik
 9. Setelah seluruh refactor selesai, pastikan kode mudah dipahami, mudah diuji, dan mudah dikembangkan lebih lanjut.
 
 
+Refactor and reorganize the lib directory by moving utility, error handling, and typedef files into a dedicated lib/src/utilities/ folder. Ensure all related imports throughout the codebase are updated accordingly. Remove obsolete files and unused imports. The goal is to achieve a clean, modular, and maintainable project structure that follows best practices for scalable Flutter/Dart packages
+
 notes backend frontend
     . buat contoh request dan respond sesuai design
