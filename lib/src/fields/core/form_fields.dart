@@ -1,3 +1,7 @@
+/// Jika true, OTP/verification field menerima karakter alfanumerik (qwerty),
+/// jika false hanya angka. Default: false (hanya angka)
+library;
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,6 +34,7 @@ import '../../providers/form_fields_notifier.dart';
 class FormFields<T> extends StatefulWidget {
   /// Tipe border untuk OTP (box/underline)
   final OtpBorderType otpBorderType;
+  final bool verificationOtpAlphanumeric;
 
   /// Default builder for OTP countdown text (multi-language)
   static String _defaultOtpCountdownTextBuilder(
@@ -307,6 +312,7 @@ class FormFields<T> extends StatefulWidget {
     this.initialCountryCode,
     this.formatPhone = false,
     this.otpBorderType = OtpBorderType.box,
+    this.verificationOtpAlphanumeric = false,
   })  : assert(verificationLength > 0),
         assert(otpBoxWidth > 0),
         assert(otpBoxSpacing >= 0);
@@ -975,10 +981,18 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     if (_isVerificationType()) {
-      return [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(widget.verificationLength),
-      ];
+      if (widget.verificationOtpAlphanumeric) {
+        // Alfanumerik: tidak ada filter, hanya batasi panjang
+        return [
+          LengthLimitingTextInputFormatter(widget.verificationLength),
+        ];
+      } else {
+        // Hanya angka
+        return [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(widget.verificationLength),
+        ];
+      }
     }
 
     // For numeric types, always restrict to numeric input
@@ -1687,7 +1701,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       child: TextField(
         controller: _verificationControllers[index],
         focusNode: _verificationFocusNodes[index],
-        keyboardType: TextInputType.number,
+        keyboardType: widget.verificationOtpAlphanumeric
+            ? TextInputType.text
+            : TextInputType.number,
         obscureText: widget.verificationHidden && vm.obscure,
         obscuringCharacter: '•',
         textInputAction:
@@ -1696,7 +1712,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         style: widget.otpTextStyle ??
             const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         inputFormatters: widget.otpInputFormatters ??
-            [FilteringTextInputFormatter.digitsOnly],
+            (widget.verificationOtpAlphanumeric
+                ? [LengthLimitingTextInputFormatter(widget.verificationLength)]
+                : [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(widget.verificationLength)
+                  ]),
         onTap: () => _selectVerificationDigit(index),
         onChanged: (value) =>
             _handleVerificationDigitChanged(index, value, state),
