@@ -20,13 +20,6 @@ class ViewModel extends ChangeNotifier {
       AppDialogLoadingBackBehavior.block;
   String lastResult = '-';
 
-  // NEW: isDismissible toggle for dialog
-  bool isDismissible = true;
-  void setIsDismissible(bool value) {
-    isDismissible = value;
-    notifyListeners();
-  }
-
   void setPosition(AppDialogPosition value) {
     position = value;
     notifyListeners();

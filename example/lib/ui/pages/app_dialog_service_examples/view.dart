@@ -64,21 +64,6 @@ class View extends PresenterState {
               value: vm.simulateError,
               onChanged: vm.setSimulateError,
             ),
-            const SizedBox(height: 8),
-            Text('Dialog Position'),
-            const SizedBox(height: 8),
-            SegmentedButton<AppDialogPosition>(
-              segments: [
-                ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
-                ButtonSegment(
-                    value: AppDialogPosition.center, label: Text('Center')),
-                ButtonSegment(
-                    value: AppDialogPosition.bottom, label: Text('Bottom')),
-              ],
-              selected: {vm.position},
-              onSelectionChanged: (set) => vm.setPosition(set.first),
-            ),
-            const SizedBox(height: 10),
             Text('Loading Position'),
             const SizedBox(height: 8),
             SegmentedButton<AppDialogLoadingContainer>(
@@ -149,16 +134,19 @@ class View extends PresenterState {
                 onSelectionChanged: (set) => vm.setProgressType(set.first),
               ),
             ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: vm.isDismissible,
-                  onChanged: (val) => vm.setIsDismissible(val ?? false),
-                ),
-                const SizedBox(width: 8),
-                const Text('Allow back/tap outside to close'),
+            const SizedBox(height: 8),
+            Text('Dialog Position'),
+            const SizedBox(height: 8),
+            SegmentedButton<AppDialogPosition>(
+              segments: [
+                ButtonSegment(value: AppDialogPosition.top, label: Text('Top')),
+                ButtonSegment(
+                    value: AppDialogPosition.center, label: Text('Center')),
+                ButtonSegment(
+                    value: AppDialogPosition.bottom, label: Text('Bottom')),
               ],
+              selected: {vm.position},
+              onSelectionChanged: (set) => vm.setPosition(set.first),
             ),
           ],
         ),
