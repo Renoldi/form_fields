@@ -26,7 +26,7 @@ class View extends PresenterState {
             const SizedBox(height: 16),
             _buildOptionsCard(context, vm),
             const SizedBox(height: 16),
-            _buildActionsCard(context, vm),
+            buildActions(context, vm),
           ],
         );
       },
@@ -166,7 +166,7 @@ class View extends PresenterState {
     );
   }
 
-  Widget _buildActionsCard(BuildContext context, ViewModel vm) {
+  Widget buildActions(BuildContext context, ViewModel vm) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -178,8 +178,27 @@ class View extends PresenterState {
                 Expanded(
                   child: AppButton(
                     type: AppButtonType.filled,
+                    text: 'Show text Loading',
+                    onPressed: () async {
+                      // Contoh: Menampilkan loading text jika loadingContainer == card
+                      await AppDialogService(context).showLoading(
+                        loadingContainer: vm.loadingContainer,
+                        loadingVisual: vm.loadingVisual,
+                        loadingVariant: vm.loadingVariant,
+                        progressType: vm.progressType,
+                        position: vm.loadingPosition,
+                        loadingBackBehavior: vm.loadingBackBehavior,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: AppButton(
+                    type: AppButtonType.filled,
                     text: 'Show Loading',
                     onPressed: () async {
+                      // Contoh: Menampilkan loading text jika loadingContainer == card
                       await AppDialogService(context).showLoadingVisualOnly(
                         loadingContainer: vm.loadingContainer,
                         loadingVisual: vm.loadingVisual,
@@ -187,13 +206,9 @@ class View extends PresenterState {
                         progressType: vm.progressType,
                         position: vm.loadingPosition,
                         loadingBackBehavior: vm.loadingBackBehavior,
-                        onComplete: () {
-                          // if (!mounted) return;
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(
-                          //       content: Text('Visual-only loading closed')),
-                          // );
-                        },
+                        onComplete: () {},
+                        // Tambahkan child builder jika ingin custom
+                        // Jika card, tampilkan teks loading di bawah visual
                       );
                     },
                   ),
