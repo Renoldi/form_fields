@@ -58,22 +58,25 @@ export 'src/feedback/app_progress_indicator.dart' show AppProgressIndicator;
 export 'src/feedback/app_dialog_service.dart' show AppDialogService;
 export 'src/feedback/app_global_dialog_service.dart'
     show AppGlobalDialogService;
-export 'src/feedback/app_dialog_service_types.dart'
+
+// Dialog enums and typedefs (now in utilities)
+export 'src/utilities/enums.dart'
     show
         AppDialogType,
         AppDialogPosition,
         AppDialogLoadingVisual,
         AppDialogLoadingBackBehavior,
-        AppDialogErrorMapper,
-        AppDialogCancelRequested,
-        AppDialogCancelled;
+        AppLoadingVariant,
+        AppProgressType;
+export 'src/utilities/dialog_typedefs.dart'
+    show AppDialogErrorMapper, AppDialogCancelRequested, AppDialogCancelled;
 
 // -------------------
 // Utilities & Enums
 // -------------------
 export 'src/utilities/enums.dart';
 export 'src/buttons/app_button_enums.dart';
-export 'src/feedback/app_loading_progress_enums.dart';
+
 export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
