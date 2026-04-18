@@ -18,5 +18,15 @@ Refactor kode agar lebih modular dan terorganisasi dengan langkah bertahap berik
 
 Refactor and reorganize the lib directory by moving utility, error handling, and typedef files into a dedicated lib/src/utilities/ folder. Ensure all related imports throughout the codebase are updated accordingly. Remove obsolete files and unused imports. The goal is to achieve a clean, modular, and maintainable project structure that follows best practices for scalable Flutter/Dart packages
 
+Tambahkan parameter showDesc pada proses pengambilan gambar. Jika showDesc bernilai true, setelah gambar diambil dan sebelum dikirim ke server, tampilkan modal bottom sheet menggunakan showAppModalBottomSheet. Modal ini berisi satu FormField untuk mengisi variabel desc (default label: "Description") dan dua AppButton: "Yes" dan "No". Jika pengguna menekan "Yes", nilai desc akan ditambahkan ke formData.fields dengan key descriptionField (atau 'description' jika null), seperti contoh kode berikut:
+
+if (description != null) {
+formData.fields.add(
+MapEntry(descriptionField ?? 'description', description),
+);
+}
+
+Popup ini harus muncul setelah gambar diambil, sebelum proses upload ke server. Gunakan showAppModalBottomSheet dan AppButton sesuai komponen yang sudah ada di project.
+
 notes backend frontend
     . buat contoh request dan respond sesuai design

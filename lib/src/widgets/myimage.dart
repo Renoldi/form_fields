@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/providers/myimage_provider.dart';
 import 'package:form_fields/src/utilities/dio_service.dart';
-import 'package:form_fields/src/utilities/app_modal_bottom_sheet.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:provider/provider.dart';
-import '../providers/myimage_provider.dart';
 
 class MyImage extends StatefulWidget {
   final MyImageController? controller;
@@ -39,6 +38,9 @@ class MyImage extends StatefulWidget {
 
   final bool allow;
 
+  final bool showDesc;
+  final String? descriptionField;
+
   MyImage({
     super.key,
     this.controller,
@@ -58,6 +60,8 @@ class MyImage extends StatefulWidget {
     this.uploadFailedMessage = 'Upload failed:',
     this.uploadErrorMessage = 'Upload error:',
     this.allow = true,
+    this.showDesc = false,
+    this.descriptionField,
   }) {
     assert(
       isDirectUpload == false || (uploadUrl != null && uploadUrl!.isNotEmpty),
@@ -70,6 +74,7 @@ class MyImage extends StatefulWidget {
 }
 
 class _MyImageState extends State<MyImage> {
+  String? _lastDescription;
   late MyimageProvider _provider;
   int? _uploadingIndex;
   MyImageController? _controller;
@@ -509,6 +514,65 @@ class _MyImageState extends State<MyImage> {
       final result = await MyimageResult.fromFile(file);
       if (!mounted) return;
       int? uploadIdx;
+      String? description;
+
+      // Jika showDesc true, tampilkan modal bottom sheet untuk input deskripsi
+      if (widget.showDesc) {
+        description = await showAppModalBottomSheet<String>(
+          context: context,
+          isDismissible: false,
+          useSafeArea: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          builder: (dialogContext) {
+            final formKey = GlobalKey<FormState>();
+            String? descValue = _lastDescription;
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      initialValue: descValue,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                      ),
+                      onChanged: (v) => descValue = v,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        AppButton(
+                          text: 'No',
+                          onPressed: () => Navigator.pop(dialogContext, null),
+                        ),
+                        AppButton(
+                          text: 'Yes',
+                          onPressed: () {
+                            if (formKey.currentState?.validate() ?? true) {
+                              Navigator.pop(
+                                  dialogContext, descValue?.trim() ?? '');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+        if (!mounted) return;
+        if (description != null && description.isNotEmpty) {
+          _lastDescription = description;
+        }
+      }
+
       if (widget.maxImages == 1) {
         bool isNew =
             provider.images.isEmpty || provider.images[0].path != result.path;
@@ -555,7 +619,13 @@ class _MyImageState extends State<MyImage> {
       if (widget.isDirectUpload && uploadIdx != null) {
         _uploadingIndex = uploadIdx;
         provider.commit();
-        await _uploadImageDio(messenger, provider, result, uploadIdx);
+        await _uploadImageDio(
+          messenger,
+          provider,
+          result,
+          uploadIdx,
+          description: description,
+        );
         if (!mounted) return;
         _uploadingIndex = null;
         provider.commit();
@@ -566,9 +636,10 @@ class _MyImageState extends State<MyImage> {
   Future<void> _uploadImageDio(
     ScaffoldMessengerState? messenger,
     MyimageProvider provider,
-    MyimageResult image, [
-    int? idx,
-  ]) async {
+    MyimageResult image,
+    int? idx, {
+    String? description,
+  }) async {
     if (widget.uploadUrl == null) return;
     final images = provider.images;
     final index = idx ?? images.indexOf(image);
@@ -578,6 +649,13 @@ class _MyImageState extends State<MyImage> {
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
       headers['Authorization'] = widget.uploadToken!;
     }
+    // Siapkan formData.fields jika ada description
+    final extraFields = <MapEntry<String, String>>[];
+    if (description != null && description.isNotEmpty) {
+      extraFields.add(
+        MapEntry(widget.descriptionField ?? 'description', description),
+      );
+    }
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,
@@ -586,6 +664,7 @@ class _MyImageState extends State<MyImage> {
       onProgress: (progress) {
         provider.setUploadProgress(index, progress);
       },
+      fields: extraFields.isNotEmpty ? extraFields : null,
     );
     if (!mounted) return;
     if (response == null) {

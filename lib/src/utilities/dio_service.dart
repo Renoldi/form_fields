@@ -69,10 +69,14 @@ class DioUtil {
     String? filename,
     Map<String, String>? headers,
     void Function(double progress)? onProgress,
+    List<MapEntry<String, String>>? fields,
   }) async {
     final file = File(filePath);
     final formData = FormData();
     formData.fields.add(MapEntry('reqtype', 'fileupload'));
+    if (fields != null && fields.isNotEmpty) {
+      formData.fields.addAll(fields);
+    }
     formData.files.add(
       MapEntry(
         'fileToUpload',
