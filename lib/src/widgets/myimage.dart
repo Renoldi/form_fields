@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/localization/form_fields_localizations.dart';
 import 'package:form_fields/src/providers/myimage_provider.dart';
 import 'package:form_fields/src/utilities/dio_service.dart';
 import 'package:image_picker/image_picker.dart';
@@ -518,6 +519,8 @@ class _MyImageState extends State<MyImage> {
 
       // Jika showDesc true, tampilkan modal bottom sheet untuk input deskripsi
       if (widget.showDesc) {
+        // Ambil localization sebelum async gap
+        final l = FormFieldsLocalizations.of(context);
         description = await showAppModalBottomSheet<String>(
           context: context,
           isDismissible: false,
@@ -528,40 +531,83 @@ class _MyImageState extends State<MyImage> {
           builder: (dialogContext) {
             final formKey = GlobalKey<FormState>();
             String? descValue = _lastDescription;
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      initialValue: descValue,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
+            // Gunakan l yang sudah diambil sebelum async gap
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FormFields<String>(
+                        label: l.get('description'),
+                        currentValue: descValue ?? '',
+                        onChanged: (v) {
+                          descValue = v;
+                        },
+                        formType: FormType.string,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        isRequired: true,
                       ),
-                      onChanged: (v) => descValue = v,
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        AppButton(
-                          text: 'No',
-                          onPressed: () => Navigator.pop(dialogContext, null),
-                        ),
-                        AppButton(
-                          text: 'Yes',
-                          onPressed: () {
-                            if (formKey.currentState?.validate() ?? true) {
-                              Navigator.pop(
-                                  dialogContext, descValue?.trim() ?? '');
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              child: AppButton(
+                                text: l.cancel,
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, null),
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStatePropertyAll(
+                                      Colors.grey.shade200),
+                                  foregroundColor:
+                                      WidgetStatePropertyAll(Colors.black87),
+                                  shape: WidgetStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(24))),
+                                  elevation: WidgetStatePropertyAll(2),
+                                  padding: WidgetStatePropertyAll(
+                                      EdgeInsets.symmetric(vertical: 14)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 12),
+                              child: AppButton(
+                                text: l.yes,
+                                onPressed: () {
+                                  if (formKey.currentState?.validate() ??
+                                      true) {
+                                    Navigator.pop(
+                                        dialogContext, descValue?.trim() ?? '');
+                                  }
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStatePropertyAll(Colors.deepPurple),
+                                  foregroundColor:
+                                      WidgetStatePropertyAll(Colors.white),
+                                  shape: WidgetStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(24))),
+                                  elevation: WidgetStatePropertyAll(4),
+                                  padding: WidgetStatePropertyAll(
+                                      EdgeInsets.symmetric(vertical: 14)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
             );

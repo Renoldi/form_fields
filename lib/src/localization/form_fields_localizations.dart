@@ -89,6 +89,7 @@ class FormFieldsLocalizations {
   String get searchHint => get('searchHint');
   String get selectPrefix => get('selectPrefix');
   String get enterPrefix => get('enterPrefix');
+  String get yes => get('yes');
 
   String select(String label) => getWithLabel('select', label);
   String selectAtLeastOne(String label) =>

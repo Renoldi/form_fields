@@ -53,10 +53,19 @@ Future<T?> showAppModalBottomSheet<T>({
     builder: (ctx) {
       final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
       final child = builder(ctx);
-      return Padding(
+      Widget wrapped = Padding(
         padding: EdgeInsets.only(bottom: bottomInset),
         child: child,
       );
+      if (useSafeArea) {
+        wrapped = SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            bottom: true,
+            child: wrapped);
+      }
+      return wrapped;
     },
     backgroundColor: backgroundColor,
     elevation: elevation,
@@ -69,7 +78,7 @@ Future<T?> showAppModalBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
-    useSafeArea: useSafeArea,
+    useSafeArea: false, // builder handles SafeArea
     requestFocus: requestFocus,
     transitionAnimationController: transitionAnimationController,
     sheetAnimationStyle: sheetAnimationStyle,

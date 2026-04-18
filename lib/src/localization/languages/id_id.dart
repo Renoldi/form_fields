@@ -58,4 +58,6 @@ const Map<String, String> idIDStrings = {
   'optional': '(opsional)',
   'optionalLabel': '(opsional)',
   'notSet': 'Tidak diatur',
+  'yes': 'Ya',
+  'description': 'Deskripsi',
 };

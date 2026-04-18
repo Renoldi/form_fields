@@ -58,4 +58,6 @@ const Map<String, String> enUSStrings = {
   'optional': '(optional)',
   'optionalLabel': '(optional)',
   'notSet': 'Not set',
+  'yes': 'Yes',
+  'description': 'Description',
 };

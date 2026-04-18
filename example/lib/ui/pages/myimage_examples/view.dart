@@ -22,6 +22,26 @@ class View extends PresenterState {
               children: [
                 const Divider(height: 40, thickness: 2),
                 const Text(
+                  'MyImage with Description (showDesc)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(height: 8),
+                MyImage(
+                  controller: MyImageController(),
+                  maxImages: 1,
+                  showDesc: true,
+                  descriptionField: 'description',
+                  isDirectUpload: true,
+                  uploadUrl: 'https://catbox.moe/user/api.php',
+                  onImagesChanged: (results) {
+                    logger.i('Image with desc changed:');
+                    for (var r in results) {
+                      logger.i(r.toString());
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+                const Text(
                   'MyImage with 2 Default Network Images',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
