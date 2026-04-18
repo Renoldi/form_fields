@@ -32,6 +32,9 @@ export 'src/fields/core/form_fields.dart' show FormFields;
 export 'src/fields/autocomplete/form_fields_autocomplete.dart'
     show FormFieldsAutocomplete;
 
+// MyImage
+export 'src/myimage/myimage.dart';
+
 // -------------------
 // Field Widgets
 // -------------------

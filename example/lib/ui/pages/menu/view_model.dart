@@ -121,6 +121,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.deepOrange,
           routeName: AppRoute.modalBottomSheetShapeExamples.name,
         ),
+        AppMenuItemData(
+          title: 'MyImage',
+          subtitle: 'Contoh upload dan preview gambar',
+          icon: Icons.image,
+          color: Colors.blueGrey,
+          routeName: AppRoute.myImage.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

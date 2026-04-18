@@ -32,6 +32,10 @@ enum AppRoute {
   modalBottomSheetShapeExamples(
     name: 'modal_bottom_sheet_shape_examples',
     title: 'Bottom Sheet Shapes',
+  ),
+  myImage(
+    name: 'myimage',
+    title: 'MyImage',
   );
 
   final String name;

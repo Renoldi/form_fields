@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../utilities/dio_service.dart';
-import 'package:dio/dio.dart' show Options;
+import 'package:dio/dio.dart' show Options, Response, Dio;
+import 'package:form_fields/src/utilities/dio_service.dart';
 import 'package:logger/logger.dart';
 import '../../utilities/enums.dart';
 
@@ -53,19 +53,22 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
   Future<List<T>> _fetchOptions(String query) async {
     if (query.isEmpty) return [];
     try {
-      final dioService = DioService();
       final headers = <String, dynamic>{};
       if (apiToken != null && tokenHeaderName.isNotEmpty) {
         headers[tokenHeaderName] =
             tokenHeaderName == 'Authorization' ? 'Bearer $apiToken' : apiToken;
       }
       _logger.i('Fetching options from: $apiUrl with query: $query');
-      final response = await dioService.get(
-        apiUrl,
-        queryParameters: {searchKey: query},
-        options: headers.isNotEmpty ? Options(headers: headers) : null,
+      final dio = Dio();
+      final response = await DioUtil.safeRequest<Response>(
+        () => dio.get(
+          apiUrl,
+          queryParameters: {searchKey: query},
+          options: headers.isNotEmpty ? Options(headers: headers) : null,
+        ),
+        url: apiUrl,
       );
-      final data = response.data;
+      final data = response?.data;
       _logger.d('Response data: $data');
       if (parseResults != null) {
         return parseResults!(data);
@@ -75,10 +78,6 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
       } else if (data is Map && data['results'] is List) {
         return (data['results'] as List).map<T>((e) => e as T).toList();
       }
-      return [];
-    } on DioServiceException catch (e, stack) {
-      _logger.e('FormFieldsAutocomplete fetch error (DioServiceException)',
-          error: e, stackTrace: stack);
       return [];
     } catch (e, stack) {
       _logger.e('FormFieldsAutocomplete fetch error',

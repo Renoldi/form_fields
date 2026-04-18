@@ -1,200 +1,103 @@
+// ===================== Dio Utility =====================
+
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
-class DioServiceException implements Exception {
-  final String message;
-  final dynamic error;
-  final StackTrace? stackTrace;
-  DioServiceException(this.message, {this.error, this.stackTrace});
-  @override
-  String toString() => 'DioServiceException: $message';
-}
-
-class DioService {
-  Future<Response<T>> get<T>(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    ProgressCallback? onReceiveProgress,
+/// Utility class for file upload and download using Dio.
+class DioUtil {
+  /// Generic request wrapper to handle DioException globally.
+  static Future<T?> safeRequest<T>(
+    Future<T> Function() request, {
+    String? url,
   }) async {
-    return _request<T>(
-      () => dio.get<T>(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onReceiveProgress: onReceiveProgress,
-      ),
-      'GET $path',
-    );
-  }
-
-  Future<Response<T>> post<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    return _request<T>(
-      () => dio.post<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress,
-      ),
-      'POST $path',
-    );
-  }
-
-  Future<Response<T>> put<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    return _request<T>(
-      () => dio.put<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress,
-      ),
-      'PUT $path',
-    );
-  }
-
-  Future<Response<T>> delete<T>(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-  }) async {
-    return _request<T>(
-      () => dio.delete<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      ),
-      'DELETE $path',
-    );
-  }
-
-  Future<Response> download(
-    String urlPath,
-    String savePath, {
-    ProgressCallback? onReceiveProgress,
-    Map<String, dynamic>? queryParameters,
-    CancelToken? cancelToken,
-    bool deleteOnError = true,
-    String lengthHeader = Headers.contentLengthHeader,
-    Options? options,
-  }) async {
-    return _request(
-      () => dio.download(
-        urlPath,
-        savePath,
-        onReceiveProgress: onReceiveProgress,
-        queryParameters: queryParameters,
-        cancelToken: cancelToken,
-        deleteOnError: deleteOnError,
-        lengthHeader: lengthHeader,
-        options: options,
-      ),
-      'DOWNLOAD $urlPath',
-    );
-  }
-
-  Future<Response<T>> upload<T>(
-    String path, {
-    required Map<String, dynamic> data,
-    Map<String, dynamic>? fields,
-    List<MultipartFile>? files,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final formData = FormData.fromMap({
-      if (fields != null) ...fields,
-      ...data,
-      if (files != null) ...{
-        for (var i = 0; i < files.length; i++) 'file$i': files[i],
-      },
-    });
-    return _request<T>(
-      () => dio.post<T>(
-        path,
-        data: formData,
-        queryParameters: queryParameters,
-        options: options ?? Options(contentType: 'multipart/form-data'),
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress,
-      ),
-      'UPLOAD $path',
-    );
-  }
-
-  Future<Response<T>> _request<T>(
-    Future<Response<T>> Function() requestFn,
-    String context,
-  ) async {
     try {
-      final response = await requestFn();
-      return response;
-    } on DioException catch (e, stack) {
-      _logger.e('DioService $context error: ${e.message}',
-          error: e, stackTrace: stack);
-      throw DioServiceException('DioService $context error: ${e.message}',
-          error: e, stackTrace: stack);
+      return await request();
+    } on DioException catch (e) {
+      _logger.e('DioUtil DioException: $e', error: e, stackTrace: e.stackTrace);
+      if (T == Response) {
+        return (e.response ??
+            Response(
+              requestOptions: RequestOptions(path: url ?? ''),
+              statusCode: 500,
+              statusMessage: 'Network/server error. Please try again later.',
+              data: {
+                'errorType': e.type.toString(),
+                'errorMessage': e.message,
+              },
+            )) as T;
+      }
+      return null;
     } catch (e, stack) {
-      _logger.e('DioService $context unknown error',
-          error: e, stackTrace: stack);
-      throw DioServiceException('DioService $context unknown error',
-          error: e, stackTrace: stack);
+      _logger.e('DioUtil error: $e', error: e, stackTrace: stack);
+      if (T == Response) {
+        return Response(
+          requestOptions: RequestOptions(path: url ?? ''),
+          statusCode: 500,
+          statusMessage: 'Network/server error. Please try again later.',
+          data: {'errorType': 'Unknown', 'errorMessage': e.toString()},
+        ) as T;
+      }
+      return null;
     }
   }
 
-  static final DioService _instance = DioService._internal();
-  factory DioService() => _instance;
-  late final Dio dio;
-  final Logger _logger = Logger();
+  static final Dio _dio = Dio();
 
-  DioService._internal() {
-    dio = Dio();
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        _logger.i('Dio Request: \\${options.method} \\${options.uri}');
-        return handler.next(options);
-      },
-      onResponse: (response, handler) {
-        _logger.d('Dio Response: \\${response.statusCode} \\${response.data}');
-        return handler.next(response);
-      },
-      onError: (DioException e, handler) {
-        _logger.e('Dio Error: \\${e.message}',
-            error: e, stackTrace: e.stackTrace);
-        return handler.next(e);
-      },
-    ));
+  static final Logger _logger = Logger();
+
+  /// Downloads a file from the given URL and saves it to a temp path.
+  static Future<String?> downloadFile(String url) async {
+    final response = await safeRequest<Response>(
+      () => _dio.get(url, options: Options(responseType: ResponseType.bytes)),
+      url: url,
+    );
+    if (response != null && response.statusCode == 200) {
+      final tempDir = Directory.systemTemp;
+      final fileName = url.split('/').last;
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(response.data);
+      return file.path;
+    }
+    return null;
   }
 
-  // Add more methods as needed (post, put, delete, etc.)
+  /// Uploads a file to the given URL with optional headers and progress callback.
+  static Future<Response?> uploadFile({
+    required String url,
+    required String filePath,
+    String? filename,
+    Map<String, String>? headers,
+    void Function(double progress)? onProgress,
+  }) async {
+    final file = File(filePath);
+    final formData = FormData();
+    formData.fields.add(MapEntry('reqtype', 'fileupload'));
+    formData.files.add(
+      MapEntry(
+        'fileToUpload',
+        await MultipartFile.fromFile(
+          filePath,
+          filename: filename ?? file.path.split('/').last,
+        ),
+      ),
+    );
+    return await safeRequest<Response>(
+      () => _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          headers: headers,
+          followRedirects: true,
+          validateStatus: (status) => status != null && status < 400,
+        ),
+        onSendProgress: (sent, total) {
+          if (onProgress != null) {
+            onProgress(total > 0 ? sent / total : 0.0);
+          }
+        },
+      ),
+      url: url,
+    );
+  }
 }

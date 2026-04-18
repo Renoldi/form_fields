@@ -288,13 +288,15 @@ class View extends PresenterState {
       _isGuardRunning = true;
     });
 
+    final localTr = context.tr;
     final result = await AppDialogService(context).guard<String>(
       task: () async {
         await Future<void>.delayed(const Duration(seconds: 3));
         if (_simulateGuardError) {
           throw Exception('lpErrorRequestTimeoutSync');
         }
-        return context.tr('lpSyncCompleted');
+        // Hindari akses context langsung setelah await
+        return localTr('lpSyncCompleted');
       },
       errorTitle: context.tr('lpGuardErrorDemoTitle'),
       mapError: (error) => (

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:form_fields_example/ui/pages/login/main.dart' as login;
+import 'package:form_fields_example/ui/pages/myimage_examples/main.dart'
+    as myimage;
 import 'package:form_fields_example/ui/pages/icons_gallery/main.dart'
     as icons_gallery;
 import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
@@ -79,6 +81,16 @@ GoRouter createAppRouter(
 
     // Route definitions
     routes: [
+      // ...existing routes...
+      GoRoute(
+        path: AppRoute.myImage.path,
+        name: AppRoute.myImage.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.myImage,
+          child: const myimage.Presenter(),
+        ),
+      ),
       // Public routes
       GoRoute(
         path: AppRoute.login.path,
@@ -382,5 +394,7 @@ String _routeTitleKey(AppRoute route) {
       return 'iconsGallery';
     case AppRoute.modalBottomSheetShapeExamples:
       return 'modalBottomSheetShapeExamples';
+    case AppRoute.myImage:
+      return 'myImage';
   }
 }

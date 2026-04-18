@@ -244,6 +244,7 @@ abstract class PresenterState extends State<MyApp> {
 
     await showDialog<void>(
       context: context,
+      useSafeArea: true,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(dialogContext.tr('permissionRequired')),
