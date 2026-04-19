@@ -808,6 +808,39 @@ ValueListenableBuilder<String>(
 
 ## Advanced Usage
 
+## MyImage: Image Picker & Uploader
+
+`MyImage` memudahkan pemilihan, tampilan, dan upload gambar (atau dokumen) dengan callback perubahan, builder kustom, dan upload langsung ke server.
+
+### Contoh Penggunaan Sederhana
+
+```dart
+MyImage(
+  label: 'Lampiran',
+  maxImages: 5,
+  onImagesChanged: (images) {
+    // Daftar gambar terpilih
+  },
+)
+```
+
+### Contoh Upload Langsung
+
+```dart
+MyImage(
+  label: 'KTP',
+  maxImages: 1,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer token',
+  isDirectUpload: true,
+  onImageChanged: (image) {
+    // Hasil upload
+  },
+)
+```
+
+Gunakan `MyImageController` untuk kontrol penuh dan `MyimageResult` untuk hasil detail.
+
 ### Working with TimeOfDay vs DateTime for Time Pickers
 
 The `FormType.time` picker supports both `DateTime` and `TimeOfDay` generic types. Choose based on your use case:

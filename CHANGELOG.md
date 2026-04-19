@@ -10,6 +10,7 @@ All notable changes to the FormFields package will be documented in this file.
 - `OtpBorderType` (box/underline) for OTP digit boxes
 - Multi-language/localization for all OTP/verification UI and validation
 - Professional UX: validation above countdown, always visible timer, InputDecoration for OTP boxes
+- MyImage widget: image picker/uploader dengan upload langsung, multi-image, scanner dokumen, dan callback perubahan gambar
 
 ### Documentation
 
@@ -18,6 +19,7 @@ All notable changes to the FormFields package will be documented in this file.
 - Added usage guide section for feedback/dialog patterns and loading visual options
 - Updated architecture and project-structure docs for `lib/src/feedback`, including `app_dialog_service_types.dart` and `app_global_dialog_service.dart`
 - Refreshed example app README to include button and dialog/loading demonstration coverage
+- Added documentation for MyImage widget (README, API, USAGE)
 
 ## [1.0.0] - 2026-02-24
 

@@ -40,7 +40,49 @@ All validation and UI text is fully localized. See [LOCALIZATION.md](LOCALIZATIO
 
 ---
 
-## Feedback APIs
+## MyImage (Image Picker & Uploader)
+
+Widget untuk memilih, menampilkan, dan mengunggah gambar atau dokumen.
+
+### Properti Utama
+
+| Properti               | Tipe                                  | Deskripsi                                |
+| ---------------------- | ------------------------------------- | ---------------------------------------- |
+| `controller`           | `MyImageController?`                  | Kontrol eksternal daftar gambar          |
+| `onImagesChanged`      | `void Function(List<MyimageResult>)?` | Callback perubahan daftar gambar (multi) |
+| `onImageChanged`       | `void Function(MyimageResult)?`       | Callback perubahan gambar (single)       |
+| `label`                | `String?`                             | Label field                              |
+| `isDoc`                | `bool`                                | Mode dokumen/scanner                     |
+| `maxImages`            | `int?`                                | Maksimal jumlah gambar                   |
+| `imageBuilder`         | `Widget Function(...)`                | Kustom builder tampilan gambar           |
+| `removeIconBuilder`    | `Widget Function(...)`                | Kustom builder ikon hapus                |
+| `onRemoveImage`        | `void Function(int, MyimageResult)?`  | Callback saat gambar dihapus             |
+| `plusBuilder`          | `Widget Function(BuildContext)?`      | Kustom builder tombol tambah             |
+| `uploadUrl`            | `String?`                             | Endpoint upload gambar                   |
+| `uploadToken`          | `String?`                             | Token upload (opsional)                  |
+| `isDirectUpload`       | `bool`                                | Upload langsung ke server                |
+| `uploadSuccessMessage` | `String`                              | Pesan sukses upload                      |
+| `uploadFailedMessage`  | `String`                              | Pesan gagal upload                       |
+| `uploadErrorMessage`   | `String`                              | Pesan error upload                       |
+| `allow`                | `bool`                                | Izin upload                              |
+| `showDesc`             | `bool`                                | Tampilkan kolom deskripsi                |
+| `descriptionField`     | `String?`                             | Nama field deskripsi                     |
+
+### Contoh Penggunaan
+
+```dart
+MyImage(
+  label: 'Foto',
+  maxImages: 3,
+  onImagesChanged: (images) {
+    // Daftar gambar terpilih
+  },
+  uploadUrl: 'https://api.example.com/upload',
+  isDirectUpload: true,
+)
+```
+
+Lihat juga: `MyImageController`, `MyimageResult` untuk kontrol dan hasil gambar.
 
 ### AppDialogService
 
