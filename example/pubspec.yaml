@@ -23,8 +23,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: any
-  build_runner: any
-  json_serializable: any
 
 flutter:
   uses-material-design: true
