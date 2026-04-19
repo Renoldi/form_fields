@@ -1,5 +1,3 @@
-
-
 PROMPT REFAKTOR MODULAR (mulai dari yang mudah):
 
 
@@ -20,20 +18,25 @@ Refactor and reorganize the lib directory by moving utility, error handling, and
 
 ============================
 
+PROMPT PROFESIONAL AGAR build() HANYA DI VIEW (BUKAN DI PRESENTERSTATE):
 
-Prompt profesional untuk membuat contoh halaman baru dengan struktur PresenterState/View (seperti di settings):
-
-Buatkan contoh halaman Flutter dengan struktur berikut:
+Buatkan contoh FormFieldsSignaturePad dengan semua property yang ada dengan struktur berikut:
 - Gunakan pola Presenter-View-ViewModel seperti di halaman settings.
 - Buat file terpisah: main.dart, presenter.dart, view.dart, view_model.dart.
 - Kelas Presenter extends StatefulWidget.
-- Kelas PresenterState extends State<Presenter> (abstract).
-- Kelas View extends PresenterState, berisi UI utama.
+- Kelas PresenterState extends State<Presenter> (abstract), TANPA override build().
+- Kelas View **extends PresenterState** (bukan StatefulWidget), berisi seluruh UI dan interaksi, dan override build().
 - Kelas ViewModel untuk state dan logic.
+- Jangan gunakan parameter ViewModel di konstruktor View, akses langsung dari PresenterState.
 - Sertakan minimal satu interaksi sederhana (misal tombol, input, dsb).
 
-Contoh: halaman "ContohCounter" dengan tombol tambah dan tampilkan nilai counter, seluruh logic dan state dikelola di ViewModel, UI di View, dan struktur mengikuti pola di atas.
+Catatan:
+- Dengan pola ini, PresenterState hanya berisi state dan logic, tidak ada UI/build().
+- View sepenuhnya bertanggung jawab atas UI dan override build().
+- Akses ViewModel langsung dari PresenterState di View.
+- Struktur ini memudahkan pemisahan logic dan UI, serta memudahkan testing dan pengembangan lanjutan.
 
+Contoh: halaman "ContohCounter" dengan tombol tambah dan tampilkan nilai counter, seluruh logic dan state dikelola di ViewModel, UI di View, dan struktur mengikuti pola di atas.
 ============================
 
 notes backend frontend

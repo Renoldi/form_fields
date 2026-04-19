@@ -25,6 +25,8 @@
 
 library;
 
+export 'src/fields/core/form_fields_signature_pad.dart'
+    show FormFieldsSignaturePad;
 // -------------------
 // Core FormFields API
 // -------------------
