@@ -18,15 +18,23 @@ Refactor kode agar lebih modular dan terorganisasi dengan langkah bertahap berik
 
 Refactor and reorganize the lib directory by moving utility, error handling, and typedef files into a dedicated lib/src/utilities/ folder. Ensure all related imports throughout the codebase are updated accordingly. Remove obsolete files and unused imports. The goal is to achieve a clean, modular, and maintainable project structure that follows best practices for scalable Flutter/Dart packages
 
-Tambahkan parameter showDesc pada proses pengambilan gambar. Jika showDesc bernilai true, setelah gambar diambil dan sebelum dikirim ke server, tampilkan modal bottom sheet menggunakan showAppModalBottomSheet. Modal ini berisi satu FormField untuk mengisi variabel desc (default label: "Description") dan dua AppButton: "Yes" dan "No". Jika pengguna menekan "Yes", nilai desc akan ditambahkan ke formData.fields dengan key descriptionField (atau 'description' jika null), seperti contoh kode berikut:
+============================
 
-if (description != null) {
-formData.fields.add(
-MapEntry(descriptionField ?? 'description', description),
-);
-}
 
-Popup ini harus muncul setelah gambar diambil, sebelum proses upload ke server. Gunakan showAppModalBottomSheet dan AppButton sesuai komponen yang sudah ada di project.
+Prompt profesional untuk membuat contoh halaman baru dengan struktur PresenterState/View (seperti di settings):
+
+Buatkan contoh halaman Flutter dengan struktur berikut:
+- Gunakan pola Presenter-View-ViewModel seperti di halaman settings.
+- Buat file terpisah: main.dart, presenter.dart, view.dart, view_model.dart.
+- Kelas Presenter extends StatefulWidget.
+- Kelas PresenterState extends State<Presenter> (abstract).
+- Kelas View extends PresenterState, berisi UI utama.
+- Kelas ViewModel untuk state dan logic.
+- Sertakan minimal satu interaksi sederhana (misal tombol, input, dsb).
+
+Contoh: halaman "ContohCounter" dengan tombol tambah dan tampilkan nilai counter, seluruh logic dan state dikelola di ViewModel, UI di View, dan struktur mengikuti pola di atas.
+
+============================
 
 notes backend frontend
     . buat contoh request dan respond sesuai design
