@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../utilities/controller.dart';
+import '../../controllers/form_fields_controller.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/validators.dart';

@@ -28,10 +28,7 @@ library;
 export 'src/fields/core/form_fields_signature_pad.dart'
     show FormFieldsSignaturePad;
 
-// MyImage Field
-export 'src/fields/core/form_fields_my_image.dart' show FormFieldsMyImage;
-export 'src/controllers/form_fields_my_image_controller.dart'
-    show FormFieldsMyImageController;
+// ...existing code...
 // -------------------
 // Core FormFields API
 // -------------------
@@ -47,8 +44,8 @@ export 'src/fields/selection/form_fields_dropdown.dart' show FormFieldsDropdown;
 export 'src/fields/selection/form_fields_dropdown_multi.dart'
     show FormFieldsDropdownMulti;
 // Utilities
-export 'src/utilities/app_modal_bottom_sheet.dart' show showAppModalBottomSheet;
-export 'src/utilities/responsive_menu_grid.dart' show ResponsiveMenuGrid;
+export 'src/general/app_modal_bottom_sheet.dart' show showAppModalBottomSheet;
+export 'src/general/responsive_menu_grid.dart' show ResponsiveMenuGrid;
 export 'src/fields/selection/form_fields_radio_button.dart'
     show FormFieldsRadioButton;
 export 'src/fields/selection/form_fields_checkbox.dart' show FormFieldsCheckbox;
@@ -85,12 +82,18 @@ export 'src/utilities/dialog_typedefs.dart'
 export 'src/utilities/enums.dart';
 export 'src/buttons/app_button_enums.dart';
 
-// MyImage utilities and provider
-export 'src/utilities/myimage_result.dart';
-export 'src/providers/myimage_provider.dart';
-export 'src/utilities/dio_service.dart';
+// -------------------
+// MyImage Field & Utilities
+// -------------------
+export 'src/fields/core/form_fields_my_image.dart' show FormFieldsMyImage;
+export 'src/controllers/form_fields_my_image_controller.dart'
+    show FormFieldsMyImageController;
+export 'src/providers/form_fields_my_image_provider.dart'
+    show FormFieldsMyImageProvider;
+export 'src/utilities/myimage_result.dart' show MyimageResult;
+export 'src/service/dio_service.dart' show DioUtil;
 
-export 'src/utilities/controller.dart';
+export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
 export 'src/utilities/validation_exception.dart' show ValidationException;

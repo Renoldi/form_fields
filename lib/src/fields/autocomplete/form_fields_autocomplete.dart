@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:dio/dio.dart' show Options, Response, Dio;
-import 'package:form_fields/src/utilities/dio_service.dart';
+import 'package:form_fields/src/service/dio_service.dart';
 import 'package:logger/logger.dart';
 import '../../utilities/enums.dart';
 

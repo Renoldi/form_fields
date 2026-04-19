@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/src/utilities/myimage_result.dart';
 
-class MyimageProvider extends ChangeNotifier {
+class FormFieldsMyImageProvider extends ChangeNotifier {
   List<MyimageResult> _images = [];
   List<MyimageResult> get images => _images;
 

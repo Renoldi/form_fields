@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'enums.dart';
+import '../utilities/enums.dart';
 
 /// Controller for managing FormFields state
 class FormFieldsController extends ChangeNotifier {

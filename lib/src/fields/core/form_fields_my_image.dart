@@ -73,14 +73,14 @@ class FormFieldsMyImage extends StatefulWidget {
 
 class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   String? _lastDescription;
-  late MyimageProvider _provider;
+  late FormFieldsMyImageProvider _provider;
   int? _uploadingIndex;
   FormFieldsMyImageController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _provider = MyimageProvider();
+    _provider = FormFieldsMyImageProvider();
     if (widget.controller != null) {
       _controller = widget.controller;
       _provider.setImages(_controller!.images);
@@ -111,7 +111,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _provider,
-      child: Consumer<MyimageProvider>(
+      child: Consumer<FormFieldsMyImageProvider>(
         builder: (context, provider, _) {
           return SingleChildScrollView(
             child: Column(
@@ -143,7 +143,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Widget _buildSingleImageWidget(
     BuildContext context,
-    MyimageProvider provider,
+    FormFieldsMyImageProvider provider,
   ) {
     final hasImage = provider.images.isNotEmpty;
     return Stack(
@@ -312,7 +312,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   List<Widget> _buildMultiImageWidgets(
     BuildContext context,
-    MyimageProvider provider,
+    FormFieldsMyImageProvider provider,
   ) {
     final images = provider.images;
     final uploadProgress = provider.uploadProgress;
@@ -415,7 +415,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Future<void> _pickImage(
     BuildContext context,
-    MyimageProvider provider,
+    FormFieldsMyImageProvider provider,
   ) async {
     final mountedBeforeDialog = mounted;
     final messenger =
@@ -680,7 +680,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Future<void> _uploadImageDio(
     ScaffoldMessengerState? messenger,
-    MyimageProvider provider,
+    FormFieldsMyImageProvider provider,
     MyimageResult image,
     int? idx, {
     String? description,
