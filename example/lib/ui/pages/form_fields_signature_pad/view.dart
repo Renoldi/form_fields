@@ -23,6 +23,8 @@ class View extends PresenterState {
                 children: [
                   FormFieldsSignaturePad(
                     onExported: viewModel.setSignature,
+                    backgroundColor: Colors.transparent,
+                    exportBackgroundColor: Colors.transparent,
                   ),
                   const SizedBox(height: 24),
                   if (viewModel.signatureResult != null) ...[

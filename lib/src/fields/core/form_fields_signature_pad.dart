@@ -16,6 +16,9 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final double penStrokeWidth;
   final void Function(MyimageResult?)? onExported;
 
+  /// Jika null, export PNG transparan. Jika diisi, gunakan warna ini untuk background PNG.
+  final Color? exportBackgroundColor;
+
   const FormFieldsSignaturePad({
     super.key,
     this.height = 200,
@@ -24,6 +27,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.penColor = Colors.black,
     this.penStrokeWidth = 3.0,
     this.onExported,
+    this.exportBackgroundColor,
   });
 
   @override
@@ -39,7 +43,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _controller = SignatureController(
       penStrokeWidth: widget.penStrokeWidth,
       penColor: widget.penColor,
-      exportBackgroundColor: widget.backgroundColor,
+      exportBackgroundColor:
+          widget.exportBackgroundColor ?? widget.backgroundColor,
     );
   }
 
