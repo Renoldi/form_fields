@@ -6,14 +6,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
+import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/providers/form_fields_notifier.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/form_fields_controller.dart';
-import '../../utilities/enums.dart';
-import '../../localization/form_fields_localizations.dart';
-import '../../utilities/validators.dart';
-import '../../utilities/phone_country_codes.dart' as phone_codes;
-import '../../providers/form_fields_notifier.dart';
+import 'package:form_fields/src/utilities/phone_country_codes.dart'
+    as phone_codes;
 
 /// ---------------------------------------------------------------------------
 /// FormFields Widget
