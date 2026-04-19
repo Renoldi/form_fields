@@ -13,16 +13,11 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  provider: any
-  intl: any
   form_fields:
     path: ../
   logger: any
   go_router: any
-  dio: any
-  json_annotation: any
   shared_preferences: any
-  permission_handler: any
 
 dev_dependencies:
   flutter_test:
