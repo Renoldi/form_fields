@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' hide View;
-import 'view_model.dart';
 import 'view.dart';
 
 class Presenter extends StatefulWidget {

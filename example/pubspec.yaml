@@ -18,7 +18,10 @@ dependencies:
   logger: any
   go_router: any
   shared_preferences: any
-  provider: ^6.1.5+1
+  provider: any
+  json_annotation: any
+  dio: any
+  permission_handler: any
 
 dev_dependencies:
   flutter_test:

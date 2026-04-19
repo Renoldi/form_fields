@@ -59,6 +59,7 @@ Each component has its own documentation file for clarity and maintainability:
 - [AppSplitButton](docs/components/app_split_button.md)
 - [AppFabMenu](docs/components/app_fab_menu.md)
 - [AppDialogService](docs/components/app_dialog_service.md)
+- [AppModalBottomSheet](docs/components/app_modal_bottom_sheet.md)
 - [Loading & Progress](docs/components/loading_progress.md)
 - [FormFields](docs/components/form_fields.md)
 - [FormFieldsAutocomplete](docs/components/form_fields_autocomplete.md)
@@ -179,3 +180,18 @@ flutter test --plain-name "fast unit"
 ## License
 
 This project is licensed under the [LICENSE](LICENSE).
+
+## Catatan Versioning Android
+
+- **versionName** biasanya mengikuti format MAJOR.MINOR.PATCH (misal: 2.5.13)
+  - Angka pertama (MAJOR): perubahan besar/breaking changes
+  - Angka kedua (MINOR): penambahan fitur kompatibel
+  - Angka ketiga (PATCH): perbaikan bug/kecil
+- **versionCode** adalah integer terpisah, wajib naik setiap rilis
+- versionName hanya label untuk user, tidak mempengaruhi update logic Android
+- Untuk membedakan dev, beta, atau prod pada versionName, tambahkan label di belakang angka versi.
+  - Contoh:
+    - 1.2.3-dev (versi development)
+    - 1.2.3-beta (versi beta/testing)
+    - 1.2.3 (versi production/stabil)
+- Penamaan ini membantu user dan tim dev mengetahui status rilis aplikasi hanya dari versionName.
