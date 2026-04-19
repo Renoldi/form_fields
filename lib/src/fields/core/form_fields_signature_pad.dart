@@ -73,31 +73,45 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          color: widget.backgroundColor,
-          width: widget.width,
-          height: widget.height,
-          child: Signature(
-            controller: _controller,
-            backgroundColor: widget.backgroundColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Stack(
           children: [
-            AppButton(
-              text: localizations.get('signatureClear'),
-              onPressed: () {
-                _controller.clear();
-              },
+            Container(
+              color: widget.backgroundColor,
+              width: widget.width,
+              height: widget.height,
+              child: Signature(
+                controller: _controller,
+                backgroundColor: widget.backgroundColor,
+              ),
             ),
-            const SizedBox(width: 16),
-            AppButton(
-              text: localizations.get('signatureExport'),
-              onPressed: _exportSignature,
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.transparent,
+                child: IconButton(
+                  icon: const Icon(Icons.delete_forever,
+                      color: Colors.deepPurple),
+                  tooltip: localizations.get('signatureClear'),
+                  onPressed: () {
+                    _controller.clear();
+                  },
+                ),
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: Material(
+            color: Colors.transparent,
+            child: IconButton(
+              icon: const Icon(Icons.verified,
+                  color: Colors.deepPurple, size: 32),
+              tooltip: localizations.get('signatureExport'),
+              onPressed: _exportSignature,
+            ),
+          ),
         ),
       ],
     );

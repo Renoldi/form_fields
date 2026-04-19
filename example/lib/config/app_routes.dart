@@ -36,6 +36,10 @@ enum AppRoute {
   myImage(
     name: 'myimage',
     title: 'MyImage',
+  ),
+  formFieldsSignaturePad(
+    name: 'form_fields_signature_pad',
+    title: 'Signature Pad',
   );
 
   final String name;

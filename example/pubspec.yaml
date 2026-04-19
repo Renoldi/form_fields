@@ -18,6 +18,7 @@ dependencies:
   logger: any
   go_router: any
   shared_preferences: any
+  provider: ^6.1.5+1
 
 dev_dependencies:
   flutter_test:

@@ -33,6 +33,8 @@ import 'package:form_fields_example/ui/pages/change_password/main.dart'
 import 'package:form_fields_example/ui/pages/settings/main.dart' as settings;
 import 'package:form_fields_example/ui/pages/language/main.dart' as language;
 import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
+import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart'
+    as form_fields_signature_pad;
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -300,6 +302,15 @@ GoRouter createAppRouter(
         name: AppRoute.iconsGallery.name,
         builder: (context, state) => icons_gallery.IconsGalleryPresenter(),
       ),
+      GoRoute(
+        path: AppRoute.formFieldsSignaturePad.path,
+        name: AppRoute.formFieldsSignaturePad.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.formFieldsSignaturePad,
+          child: const form_fields_signature_pad.Presenter(),
+        ),
+      ),
     ],
 
     // Error handling
@@ -396,5 +407,7 @@ String _routeTitleKey(AppRoute route) {
       return 'modalBottomSheetShapeExamples';
     case AppRoute.myImage:
       return 'myImage';
+    case AppRoute.formFieldsSignaturePad:
+      return 'formFieldsSignaturePad';
   }
 }

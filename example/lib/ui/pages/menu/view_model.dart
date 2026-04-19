@@ -128,6 +128,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.blueGrey,
           routeName: AppRoute.myImage.name,
         ),
+        AppMenuItemData(
+          title: 'Signature Pad',
+          subtitle: 'Contoh FormFieldsSignaturePad',
+          icon: Icons.draw,
+          color: Colors.deepPurpleAccent,
+          routeName: 'form_fields_signature_pad',
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {
