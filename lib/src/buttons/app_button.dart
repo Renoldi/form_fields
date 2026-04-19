@@ -63,16 +63,18 @@ class AppButton<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = _buildButton(context);
 
-    if (!withLayout) return button;
-
-    return AppButtonLayout(
-      margin: margin,
-      horizontalPadding: horizontalPadding,
-      topPadding: topPadding,
-      respectSafeArea: respectSafeArea,
-      avoidKeyboard: avoidKeyboard,
-      child: button,
-    );
+    if (withLayout) {
+      return AppButtonLayout(
+        margin: margin,
+        horizontalPadding: horizontalPadding,
+        topPadding: topPadding,
+        respectSafeArea: respectSafeArea,
+        avoidKeyboard: avoidKeyboard,
+        child: button,
+      );
+    }
+    // Always wrap with SafeArea if not already handled
+    return SafeArea(child: button);
   }
 
   Widget _buildButton(BuildContext context) {

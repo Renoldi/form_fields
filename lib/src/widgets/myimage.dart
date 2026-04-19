@@ -391,22 +391,24 @@ class _MyImageState extends State<MyImage> {
         );
       } else {
         widgets.add(
-          GestureDetector(
-            onTap: widget.allow ? () => _pickImage(context, provider) : null,
-            child: widget.plusBuilder != null
-                ? widget.plusBuilder!(context)
-                : Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.blue, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[100],
+          SafeArea(
+            child: GestureDetector(
+              onTap: widget.allow ? () => _pickImage(context, provider) : null,
+              child: widget.plusBuilder != null
+                  ? widget.plusBuilder!(context)
+                  : Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[100],
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.add, color: Colors.blue, size: 32),
+                      ),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.add, color: Colors.blue, size: 32),
-                    ),
-                  ),
+            ),
           ),
         );
       }
