@@ -92,15 +92,19 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             Positioned(
               top: 8,
               right: 8,
-              child: Material(
-                color: Colors.transparent,
-                child: IconButton(
+              child: Tooltip(
+                message: localizations.get('signatureClear'),
+                child: AppButton(
                   icon: const Icon(Icons.delete_forever,
                       color: Colors.deepPurple),
-                  tooltip: localizations.get('signatureClear'),
+                  text: '',
+                  size: AppButtonSize.small,
+                  type: AppButtonType.icon,
                   onPressed: () {
                     _controller.clear();
                   },
+                  customIconSize: 24,
+                  customHeight: 36,
                 ),
               ),
             ),
@@ -108,13 +112,17 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         ),
         const SizedBox(height: 12),
         Center(
-          child: Material(
-            color: Colors.transparent,
-            child: IconButton(
+          child: Tooltip(
+            message: localizations.get('signatureExport'),
+            child: AppButton(
               icon: const Icon(Icons.verified,
                   color: Colors.deepPurple, size: 32),
-              tooltip: localizations.get('signatureExport'),
+              text: '',
+              size: AppButtonSize.small,
+              type: AppButtonType.icon,
               onPressed: _exportSignature,
+              customIconSize: 32,
+              customHeight: 48,
             ),
           ),
         ),
