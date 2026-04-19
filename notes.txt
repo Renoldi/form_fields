@@ -20,23 +20,81 @@ Refactor and reorganize the lib directory by moving utility, error handling, and
 
 PROMPT PROFESIONAL AGAR build() HANYA DI VIEW (BUKAN DI PRESENTERSTATE):
 
-Buatkan contoh FormFieldsSignaturePad dengan semua property yang ada dengan struktur berikut:
-- Gunakan pola Presenter-View-ViewModel seperti di halaman settings.
-- Buat file terpisah: main.dart, presenter.dart, view.dart, view_model.dart.
-- Kelas Presenter extends StatefulWidget.
-- Kelas PresenterState extends State<Presenter> (abstract), TANPA override build().
-- Kelas View **extends PresenterState** (bukan StatefulWidget), berisi seluruh UI dan interaksi, dan override build().
-- Kelas ViewModel untuk state dan logic.
-- Jangan gunakan parameter ViewModel di konstruktor View, akses langsung dari PresenterState.
-- Sertakan minimal satu interaksi sederhana (misal tombol, input, dsb).
+Professional Prompt: Flutter MVVM Page Generation
 
-Catatan:
-- Dengan pola ini, PresenterState hanya berisi state dan logic, tidak ada UI/build().
-- View sepenuhnya bertanggung jawab atas UI dan override build().
-- Akses ViewModel langsung dari PresenterState di View.
-- Struktur ini memudahkan pemisahan logic dan UI, serta memudahkan testing dan pengembangan lanjutan.
+Purpose:
+Generate a new page module in strict MVVM (MVPVM) architecture for a Flutter project, following the pattern used in contoh_generate_page.
 
-Contoh: halaman "ContohCounter" dengan tombol tambah dan tampilkan nilai counter, seluruh logic dan state dikelola di ViewModel, UI di View, dan struktur mengikuti pola di atas.
+Requirements:
+- Folder Structure:
+    - Each page in its own folder: example/lib/ui/pages/<page_name>/
+    - Each folder contains: main.dart, presenter.dart, view.dart, view_model.dart
+- Exports:
+    - main.dart only exports the Presenter widget from presenter.dart.
+- Presenter:
+    - File: presenter.dart
+    - Imports: flutter/material.dart (hide View), view_model.dart, view.dart
+    - Defines Presenter as a StatefulWidget.
+    - createState() returns an instance of View.
+    - Defines abstract PresenterState extending State<Presenter> (no build method).
+- View:
+    - File: view.dart
+    - Imports: flutter/material.dart, presenter.dart, view_model.dart, provider, and localization if needed.
+    - Defines View extending PresenterState.
+    - Implements build() in View only.
+    - Uses Consumer<ViewModel> for state access.
+- ViewModel:
+    - File: view_model.dart
+    - Standard ChangeNotifier or plain class for state.
+- No build() in PresenterState.
+- No ViewModel parameter in View constructor.
+- No logic in Presenter, only structure.
+
+Example: presenter.dart
+import 'package:flutter/material.dart' hide View;
+import 'view_model.dart';
+import 'view.dart';
+
+class Presenter extends StatefulWidget {
+    const Presenter({super.key});
+
+    @override
+    State<Presenter> createState() => View();
+}
+
+abstract class PresenterState extends State<Presenter> {}
+
+Example: view.dart
+import 'package:flutter/material.dart';
+import 'presenter.dart';
+import 'view_model.dart';
+import 'package:provider/provider.dart';
+import 'package:form_fields_example/localization/localizations.dart';
+
+class View extends PresenterState {
+    @override
+    Widget build(BuildContext context) {
+        return Consumer<ViewModel>(
+            builder: (context, viewModel, _) {
+                return Scaffold(
+                    appBar: AppBar(
+                        title: Text(context.tr('settings')),
+                    ),
+                    body: SingleChildScrollView(),
+                );
+            },
+        );
+    }
+}
+
+Usage:
+- To generate a new page, copy the structure and update the folder and class names as needed.
+- All business logic and state go in view_model.dart.
+- UI is only in view.dart.
+- Presenter and PresenterState are for structure only.
+
+---
+This prompt ensures all generated pages follow a strict, maintainable MVVM pattern, as exemplified by contoh_generate_page.
 ============================
 
 notes backend frontend
