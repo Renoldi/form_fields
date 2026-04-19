@@ -26,8 +26,8 @@ class View extends PresenterState {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
-                  controller: MyImageController(),
+                FormFieldsMyImage(
+                  controller: FormFieldsMyImageController(),
                   maxImages: 1,
                   showDesc: true,
                   descriptionField: 'description',
@@ -46,7 +46,7 @@ class View extends PresenterState {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: networkImagesController,
                   maxImages: 5,
                   allow: false,
@@ -148,7 +148,7 @@ class View extends PresenterState {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: assetImagesController,
                   maxImages: 5,
                   onRemoveImage: (index, image) => logger.i(
@@ -210,7 +210,7 @@ class View extends PresenterState {
                       fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: profileController,
                   maxImages: 1,
                   onImagesChanged: (results) {
@@ -279,7 +279,7 @@ class View extends PresenterState {
                       fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: customsController,
                   onImagesChanged: (results) {
                     setState(() {});
@@ -422,7 +422,7 @@ class View extends PresenterState {
                       fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: multiController,
                   onImagesChanged: (results) {
                     setState(() {});
@@ -474,7 +474,7 @@ class View extends PresenterState {
                       fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
-                MyImage(
+                FormFieldsMyImage(
                   controller: customController,
                   onImagesChanged: (results) {
                     setState(() {});

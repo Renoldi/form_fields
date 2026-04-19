@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:form_fields/src/localization/form_fields_localizations.dart';
-import 'package:form_fields/src/providers/myimage_provider.dart';
-import 'package:form_fields/src/utilities/dio_service.dart';
+import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import 'package:provider/provider.dart';
 
-class MyImage extends StatefulWidget {
-  final MyImageController? controller;
+class FormFieldsMyImage extends StatefulWidget {
+  final FormFieldsMyImageController? controller;
 
   /// Callback untuk perubahan daftar gambar (multi-image, kompatibilitas lama)
   final void Function(List<MyimageResult> results)? onImagesChanged;
@@ -42,7 +39,7 @@ class MyImage extends StatefulWidget {
   final bool showDesc;
   final String? descriptionField;
 
-  MyImage({
+  FormFieldsMyImage({
     super.key,
     this.controller,
     this.onImagesChanged,
@@ -71,14 +68,14 @@ class MyImage extends StatefulWidget {
   }
 
   @override
-  State<MyImage> createState() => _MyImageState();
+  State<FormFieldsMyImage> createState() => _FormFieldsMyImageState();
 }
 
-class _MyImageState extends State<MyImage> {
+class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   String? _lastDescription;
   late MyimageProvider _provider;
   int? _uploadingIndex;
-  MyImageController? _controller;
+  FormFieldsMyImageController? _controller;
 
   @override
   void initState() {
@@ -89,7 +86,7 @@ class _MyImageState extends State<MyImage> {
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
     } else {
-      _controller = MyImageController();
+      _controller = FormFieldsMyImageController();
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
     }

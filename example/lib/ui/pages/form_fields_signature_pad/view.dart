@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields_example/localization/localizations.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
@@ -13,9 +12,6 @@ class View extends PresenterState {
       child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
-            appBar: AppBar(
-              title: Text(context.tr('signaturePadTitle')),
-            ),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(

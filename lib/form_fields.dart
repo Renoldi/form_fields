@@ -27,15 +27,17 @@ library;
 
 export 'src/fields/core/form_fields_signature_pad.dart'
     show FormFieldsSignaturePad;
+
+// MyImage Field
+export 'src/fields/core/form_fields_my_image.dart' show FormFieldsMyImage;
+export 'src/controllers/form_fields_my_image_controller.dart'
+    show FormFieldsMyImageController;
 // -------------------
 // Core FormFields API
 // -------------------
 export 'src/fields/core/form_fields.dart' show FormFields;
 export 'src/fields/autocomplete/form_fields_autocomplete.dart'
     show FormFieldsAutocomplete;
-
-// MyImage
-export 'src/myimage/myimage.dart';
 
 // -------------------
 // Field Widgets
@@ -82,6 +84,11 @@ export 'src/utilities/dialog_typedefs.dart'
 // -------------------
 export 'src/utilities/enums.dart';
 export 'src/buttons/app_button_enums.dart';
+
+// MyImage utilities and provider
+export 'src/utilities/myimage_result.dart';
+export 'src/providers/myimage_provider.dart';
+export 'src/utilities/dio_service.dart';
 
 export 'src/utilities/controller.dart';
 export 'src/utilities/validators.dart';
