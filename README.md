@@ -43,9 +43,15 @@ FormFields<String>(
   - All validation and UI text is fully localized (English, Indonesian, and easy extension).
   - See [LOCALIZATION.md](LOCALIZATION.md) for details.
 
-## Component Documentation (Separated)
+## Component Documentation
 
-Each component now has its own documentation file for better readability and maintenance:
+All public widgets, controllers, and utilities are accessible via a single import:
+
+```dart
+import 'package:form_fields/form_fields.dart';
+```
+
+Each component has its own documentation file for clarity and maintainability:
 
 - [AppButton](docs/components/app_button.md)
 - [AppButtonGroup](docs/components/app_button_group.md)
@@ -61,10 +67,10 @@ Each component now has its own documentation file for better readability and mai
 - [FormFieldsRadioButton](docs/components/form_fields_radio_button.md)
 - [FormFieldsCheckbox](docs/components/form_fields_checkbox.md)
 - [FormFieldsSelect](docs/components/form_fields_select.md)
+- [FormFieldsSignaturePad](docs/components/form_fields_signature_pad.md)
+- [FormFieldsMyImage](docs/components/form_fields_my_image.md)
 
-Open the docs index:
-
-- [Documentation Index](docs/README.md)
+See the [Documentation Index](docs/README.md) for a full list.
 
 Architecture shortcuts:
 
