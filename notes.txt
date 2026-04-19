@@ -99,3 +99,5 @@ This prompt ensures all generated pages follow a strict, maintainable MVVM patte
 
 notes backend frontend
     . buat contoh request dan respond sesuai design
+
+Tolong tambahkan contoh penggunaan dalam bentuk JSON di bawah bagian "result" pada setiap contoh. Setiap JSON harus menunjukkan contoh nilai untuk setiap property yang digunakan pada contoh tersebut, sehingga pengguna dapat langsung memahami cara mengisi setiap property dengan benar. Pastikan format rapi, jelas, dan mudah dipahami
