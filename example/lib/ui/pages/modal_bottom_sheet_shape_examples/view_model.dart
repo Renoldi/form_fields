@@ -9,32 +9,44 @@ class ModalBottomSheetShapeData {
   void show(BuildContext context) {
     showAppModalBottomSheet(
       context: context,
+      isScrollControlled: true, // enables drag
+      enableDrag: true,
+      scrollControlDisabledMaxHeightRatio: 0.5, // setengah layar saat muncul
       shape: shape,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Text(label, style: Theme.of(ctx).textTheme.titleMedium),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5, // setengah layar
+        minChildSize: 0.25,
+        maxChildSize: 1.0, // bisa di-drag sampai full
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Text(label, style: Theme.of(ctx).textTheme.titleMedium),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('Info'),
+                onTap: () => Navigator.pop(ctx, 'Info'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(ctx, 'Edit'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete),
+                title: const Text('Delete'),
+                onTap: () => Navigator.pop(ctx, 'Delete'),
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('Info'),
-            onTap: () => Navigator.pop(ctx, 'Info'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit'),
-            onTap: () => Navigator.pop(ctx, 'Edit'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete),
-            title: const Text('Delete'),
-            onTap: () => Navigator.pop(ctx, 'Delete'),
-          ),
-          const SizedBox(height: 8),
-        ],
+        ),
       ),
     );
   }
