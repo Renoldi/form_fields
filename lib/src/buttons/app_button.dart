@@ -297,17 +297,6 @@ class AppButton<T> extends StatelessWidget {
     );
   }
 
-  ButtonStyle _iconButtonStyle() {
-    final dimension = _heightBySize;
-    final iconSize = _iconSizeBySize;
-
-    return ButtonStyle(
-      fixedSize: WidgetStatePropertyAll(Size.square(dimension)),
-      iconSize: WidgetStatePropertyAll(iconSize),
-      padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-    );
-  }
-
   double get _heightBySize {
     switch (size) {
       case AppButtonSize.small:
