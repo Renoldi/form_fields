@@ -298,6 +298,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     MyimageResult image,
     VoidCallback onRemove,
   ) {
+    if (!widget.allow) {
+      return const SizedBox.shrink();
+    }
     if (widget.removeIconBuilder != null) {
       return GestureDetector(
         onTap: onRemove,
