@@ -456,7 +456,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppButton(
-                    type: AppButtonType.fab,
+                    type: AppButtonType.icon,
                     onPressed: () => Navigator.pop(dialogContext, 'camera'),
                     icon: const Icon(Icons.camera_alt,
                         size: 32, color: Colors.blue),
@@ -464,7 +464,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   ),
                   SizedBox(width: 16),
                   AppButton(
-                    type: AppButtonType.fab,
+                    type: AppButtonType.icon,
                     onPressed: () => Navigator.pop(dialogContext, 'gallery'),
                     icon: const Icon(Icons.photo_library,
                         size: 32, color: Colors.green),
@@ -482,16 +482,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           //       AppButton(
           //         type: AppButtonType.fab,
           //         onPressed: () => Navigator.pop(dialogContext, 'camera'),
-          //         icon: const Icon(Icons.camera_alt,
-          //             size: 32, color: Colors.blue),
+          //         icon: const Icon(Icons.camera_alt, size: 32, color: Colors.blue),
           //         margin: const EdgeInsets.only(right: 24),
           //       ),
           //       SizedBox(width: 16),
           //       AppButton(
           //         type: AppButtonType.fab,
           //         onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-          //         icon: const Icon(Icons.photo_library,
-          //             size: 32, color: Colors.green),
+          //         icon: const Icon(Icons.photo_library, size: 32, color: Colors.green),
           //         margin: const EdgeInsets.only(left: 24),
           //       ),
           //     ],

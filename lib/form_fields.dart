@@ -100,6 +100,11 @@ export 'src/utilities/validation_exception.dart' show ValidationException;
 export 'src/utilities/app_dialog_typedefs.dart';
 
 // -------------------
+// Export AppButtonThemeData secara publik agar bisa diimport dari package utama, bukan dari src.
+// -------------------
+export 'src/buttons/app_button_theme.dart' show AppButtonThemeData;
+
+// -------------------
 // Localization
 // -------------------
 export 'src/localization/form_fields_localizations.dart';

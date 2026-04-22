@@ -31,16 +31,18 @@ class AppButtonContent extends StatelessWidget {
     final spinnerSize = _spinnerSize;
 
     if (type == AppButtonType.icon) {
-      return SizedBox(
-        width: spinnerSize,
-        height: spinnerSize,
-        child: isLoading
-            ? CircularProgressIndicator(
-                strokeWidth: 2,
-                color: IconTheme.of(context).color,
-              )
-            : icon,
-      );
+      if (isLoading) {
+        return SizedBox(
+          width: spinnerSize,
+          height: spinnerSize,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: IconTheme.of(context).color,
+          ),
+        );
+      }
+      // Icon size akan diatur oleh IconTheme di AppButton
+      return icon ?? const SizedBox.shrink();
     }
 
     if (isLoading) {

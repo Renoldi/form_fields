@@ -353,6 +353,36 @@ class View extends PresenterState {
         backgroundColor: Color(0xFF1F2937),
         foregroundColor: Colors.white,
       ),
+      extensions: <ThemeExtension<dynamic>>[
+        const AppButtonThemeData(
+          filledStyle: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+            textStyle:
+                WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          outlinedStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
+            side: WidgetStatePropertyAll(BorderSide(color: Color(0xFF2563EB))),
+          ),
+          textStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
+          ),
+          iconBackgroundColor: Colors.white, // Colors.purple.shade100
+          fabBackgroundColor: Colors.yellow, // Colors.green.shade100
+        ),
+      ],
+
+      // InputDecoration Theme for all TextFields (including FormFieldsAutocomplete)
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8))),
+        filled: true,
+        fillColor: Color(0xFFF3F4F6),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        labelStyle: TextStyle(color: Color(0xFF2563EB)),
+        hintStyle: TextStyle(color: Colors.grey),
+      ),
     );
   }
 }

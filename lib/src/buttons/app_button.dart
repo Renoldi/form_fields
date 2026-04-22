@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'app_button_content.dart';
 import 'app_button_enums.dart';
 import 'app_button_layout.dart';
+import 'app_button_theme.dart';
 
 class AppButton<T> extends StatelessWidget {
   final AppButtonType type;
@@ -92,13 +93,98 @@ class AppButton<T> extends StatelessWidget {
     );
 
     final effectiveOnPressed = _effectiveOnPressed;
+    // Ambil theme extension jika ada
+    final theme = Theme.of(context).extension<AppButtonThemeData>();
+
+    ButtonStyle? themedStyle;
+    Color? iconBgColor;
+    Color? fabBgColor;
+    if (theme != null) {
+      switch (type) {
+        case AppButtonType.filled:
+          themedStyle = theme.filledStyle;
+          break;
+        case AppButtonType.filledTonal:
+          themedStyle = theme.filledTonalStyle;
+          break;
+        case AppButtonType.elevated:
+          themedStyle = theme.elevatedStyle;
+          break;
+        case AppButtonType.outlined:
+          themedStyle = theme.outlinedStyle;
+          break;
+        case AppButtonType.text:
+          themedStyle = theme.textStyle;
+          break;
+        case AppButtonType.icon:
+          themedStyle = theme.iconStyle;
+          iconBgColor = theme.iconBackgroundColor;
+          break;
+        case AppButtonType.fab:
+          themedStyle = theme.fabStyle;
+          fabBgColor = theme.fabBackgroundColor;
+          break;
+        case AppButtonType.extendedFab:
+          themedStyle = theme.extendedFabStyle;
+          fabBgColor = theme.fabBackgroundColor;
+          break;
+      }
+    }
+    final mergedStyle = themedStyle?.merge(style) ?? style;
 
     if (isIcon) {
-      return IconButton(
-        onPressed: effectiveOnPressed,
-        style: _iconButtonStyle().merge(style),
-        icon: childWidget,
-      );
+      final double diameter = _heightBySize;
+      final double iconSize = _iconSizeBySize;
+      if (iconBgColor != null) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: effectiveOnPressed,
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: diameter,
+                height: diameter,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: IconTheme(
+                    data: IconThemeData(size: iconSize),
+                    child: icon ?? childWidget,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      } else {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: effectiveOnPressed,
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: diameter,
+                height: diameter,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: IconTheme(
+                    data: IconThemeData(size: iconSize),
+                    child: icon ?? childWidget,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
     }
 
     if (isFab) {
@@ -112,22 +198,24 @@ class AppButton<T> extends StatelessWidget {
               ),
             )
           : (icon ?? const Icon(Icons.add));
-
       switch (size) {
         case AppButtonSize.small:
           return FloatingActionButton.small(
             onPressed: effectiveOnPressed,
+            backgroundColor: fabBgColor,
             child: fabChild,
           );
         case AppButtonSize.large:
           return FloatingActionButton.large(
             onPressed: effectiveOnPressed,
+            backgroundColor: fabBgColor,
             child: fabChild,
           );
         case AppButtonSize.medium:
         case AppButtonSize.custom:
           return FloatingActionButton(
             onPressed: effectiveOnPressed,
+            backgroundColor: fabBgColor,
             child: fabChild,
           );
       }
@@ -138,33 +226,34 @@ class AppButton<T> extends StatelessWidget {
         onPressed: effectiveOnPressed,
         icon: icon,
         label: child ?? Text(text ?? 'Action'),
+        backgroundColor: fabBgColor,
       );
     }
 
     final button = switch (type) {
       AppButtonType.filled => FilledButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(style),
+          style: _buttonStyle().merge(mergedStyle),
           child: childWidget,
         ),
       AppButtonType.filledTonal => FilledButton.tonal(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(style),
+          style: _buttonStyle().merge(mergedStyle),
           child: childWidget,
         ),
       AppButtonType.elevated => ElevatedButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(style),
+          style: _buttonStyle().merge(mergedStyle),
           child: childWidget,
         ),
       AppButtonType.outlined => OutlinedButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(style),
+          style: _buttonStyle().merge(mergedStyle),
           child: childWidget,
         ),
       AppButtonType.text => TextButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(style),
+          style: _buttonStyle().merge(mergedStyle),
           child: childWidget,
         ),
       AppButtonType.icon => const SizedBox.shrink(),
