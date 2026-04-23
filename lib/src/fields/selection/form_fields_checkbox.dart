@@ -3,6 +3,7 @@ import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 
 class FormFieldsCheckbox<T> extends FormField<List<T>> {
+  final String? externalErrorText;
   FormFieldsCheckbox({
     super.key,
     required String label,
@@ -31,9 +32,13 @@ class FormFieldsCheckbox<T> extends FormField<List<T>> {
     FormFieldValidator<List<T>>? validator,
     LabelPosition labelPosition = LabelPosition.top,
     double containerGap = 8,
+    this.externalErrorText,
   }) : super(
           initialValue: initialValue ?? [],
           validator: (value) {
+            if (externalErrorText != null && externalErrorText.isNotEmpty) {
+              return externalErrorText;
+            }
             if (isRequired && (value == null || value.isEmpty)) {
               // Localization handled in build method
               return "";

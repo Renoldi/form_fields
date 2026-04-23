@@ -54,6 +54,7 @@ class FormFieldsSelect<T> extends StatefulWidget {
   final bool enableFilter;
   final String filterHintText;
 
+  final String? externalErrorText;
   const FormFieldsSelect({
     super.key,
     required this.formType,
@@ -89,6 +90,7 @@ class FormFieldsSelect<T> extends StatefulWidget {
     this.itemMarginHorizontal = 0,
     this.enableFilter = false,
     this.filterHintText = 'Search...',
+    this.externalErrorText,
   });
 
   @override
@@ -127,6 +129,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           errorBorderColor: widget.errorBorderColor,
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
+          externalErrorText: widget.externalErrorText,
         );
 
       case FormType.dropdownMulti:
@@ -146,6 +149,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           errorBorderColor: widget.errorBorderColor,
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
+          externalErrorText: widget.externalErrorText,
         );
 
       case FormType.radioButton:
@@ -167,6 +171,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           itemBorderColor: widget.itemBorderColor,
           itemBorderWidth: widget.itemBorderWidth,
           itemBorderRadius: widget.itemBorderRadius,
+          externalErrorText: widget.externalErrorText,
         );
 
       case FormType.checkbox:
@@ -190,6 +195,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           itemBorderColor: widget.itemBorderColor,
           itemBorderWidth: widget.itemBorderWidth,
           itemBorderRadius: widget.itemBorderRadius,
+          externalErrorText: widget.externalErrorText,
         );
 
       default:

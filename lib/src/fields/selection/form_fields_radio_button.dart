@@ -3,6 +3,7 @@ import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 
 class FormFieldsRadioButton<T> extends FormField<T> {
+  final String? externalErrorText;
   FormFieldsRadioButton({
     super.key,
     required String label,
@@ -39,10 +40,15 @@ class FormFieldsRadioButton<T> extends FormField<T> {
         IndicatorVerticalAlignment.center,
     bool horizontalSideBySide = false,
     FormFieldValidator<T>? validator,
+    this.externalErrorText,
   })  : assert(items != null || sections != null,
             'Either items or sections must be provided'),
         super(
           validator: (value) {
+            if (externalErrorText != null &&
+                externalErrorText.isEmpty == false) {
+              return externalErrorText;
+            }
             if (isRequired && value == null) {
               // Localization handled in build method
               return '';

@@ -25,9 +25,10 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final Color? chipDeleteIconColor;
   final bool enableFilter;
   final String? filterHintText;
+  final String? externalErrorText;
 
   const FormFieldsDropdownMulti({
-    super.key,
+    Key? key,
     required this.label,
     required this.items,
     required this.onChanged,
@@ -50,7 +51,10 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     this.chipDeleteIconColor,
     this.enableFilter = false,
     this.filterHintText,
-  });
+    this.externalErrorText,
+  }) : super(key: key);
+
+// Removed duplicate createState and stray bracket
 
   @override
   State<FormFieldsDropdownMulti<T>> createState() =>
@@ -74,26 +78,25 @@ class _FormFieldsDropdownMultiState<T>
       key: _formKey,
       initialValue: widget.initialValues ?? [],
       validator: (values) {
+        if (widget.externalErrorText != null &&
+            widget.externalErrorText!.isNotEmpty) {
+          return widget.externalErrorText;
+        }
         final selected = values ?? [];
-
         if (widget.isRequired && selected.isEmpty) {
           return l10n.selectAtLeastOne(widget.label);
         }
-
         if (widget.minSelections != null &&
             selected.length < widget.minSelections!) {
           return l10n.selectAtLeast(widget.minSelections!);
         }
-
         if (widget.maxSelections != null &&
             selected.length > widget.maxSelections!) {
           return l10n.selectAtMost(widget.maxSelections!);
         }
-
         if (widget.validator != null) {
           return widget.validator!(selected);
         }
-
         return null;
       },
       onSaved: (_) {},

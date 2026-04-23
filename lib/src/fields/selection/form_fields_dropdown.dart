@@ -25,8 +25,9 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final bool enabled;
   final bool enableFilter;
   final String? filterHintText;
+  final String? externalErrorText;
 
-  FormFieldsDropdown({
+  const FormFieldsDropdown({
     super.key,
     required this.items,
     required this.label,
@@ -48,12 +49,8 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.enabled = true,
     this.enableFilter = false,
     this.filterHintText,
-  }) : assert(
-          items.isEmpty ||
-              initialValue == null ||
-              items.where((item) => item == initialValue).length == 1,
-          "There should be exactly one item with the dropdown's value: $initialValue. Either zero or 2 or more items were detected with the same value",
-        );
+    this.externalErrorText,
+  });
 
   @override
   State<FormFieldsDropdown<T>> createState() => _FormFieldsDropdownState<T>();
@@ -101,6 +98,10 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             initialValue: FormFieldsDropdown._sanitizeInitialValue(
                 widget.initialValue, widget.items),
             validator: (value) {
+              if (widget.externalErrorText != null &&
+                  widget.externalErrorText!.isNotEmpty) {
+                return widget.externalErrorText;
+              }
               if (widget.isRequired && value == null) {
                 return l.select(widget.label);
               }

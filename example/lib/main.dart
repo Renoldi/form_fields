@@ -368,7 +368,7 @@ class View extends PresenterState {
           textStyle: ButtonStyle(
             foregroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
           ),
-          iconBackgroundColor: Colors.white, // Colors.purple.shade100
+          iconBackgroundColor: Colors.red, // Colors.purple.shade100
           fabBackgroundColor: Colors.yellow, // Colors.green.shade100
         ),
       ],

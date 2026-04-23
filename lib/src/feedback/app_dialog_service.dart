@@ -82,13 +82,25 @@ class AppDialogService {
   AppDialogService(this.context);
 
   /// Error payload used by [guard] for consistent dialog mapping.
-  static ({String message, AppDialogType type}) defaultErrorMapper(
+  static ({
+    String message,
+    AppDialogType type,
+    Map<String, List<String>>? details
+  }) defaultErrorMapper(
     Object error,
   ) {
     if (error is ValidationException) {
-      return (message: error.message, type: AppDialogType.validation);
+      return (
+        message: error.message,
+        type: AppDialogType.validation,
+        details: error.details
+      );
     }
-    return (message: error.toString(), type: AppDialogType.server);
+    return (
+      message: error.toString(),
+      type: AppDialogType.server,
+      details: null
+    );
   }
 
   /// Runs an async task and automatically shows an error dialog on failure.
@@ -138,6 +150,7 @@ class AppDialogService {
     String successMessage = 'Operation completed successfully.',
     AppDialogSuccessCallback<T>? onSuccess,
     AppDialogErrorCallback? onError,
+    void Function(Map<String, List<String>> errors)? onValidationError,
   }) async {
     var loadingShown = false;
 
@@ -184,6 +197,16 @@ class AppDialogService {
 
       final mapped = mapError(error);
       if (mapped.type == AppDialogType.validation) {
+        Map<String, List<String>>? validationErrors;
+        if (error is ValidationException && error.details != null) {
+          validationErrors = error.details;
+        } else if ((mapped as dynamic).details != null) {
+          validationErrors =
+              (mapped as dynamic).details as Map<String, List<String>>?;
+        }
+        if (onValidationError != null && validationErrors != null) {
+          onValidationError(validationErrors);
+        }
         await showInfo(
           title: errorTitle,
           message: mapped.message,

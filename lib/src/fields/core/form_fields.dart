@@ -34,6 +34,9 @@ class FormFields<T> extends StatefulWidget {
   final OtpBorderType otpBorderType;
   final bool verificationOtpAlphanumeric;
 
+  /// Error text injected from external (e.g. backend validation)
+  final String? externalErrorText;
+
   /// Default builder for OTP countdown text (multi-language)
   static String _defaultOtpCountdownTextBuilder(
       BuildContext context, int seconds) {
@@ -311,6 +314,7 @@ class FormFields<T> extends StatefulWidget {
     this.formatPhone = false,
     this.otpBorderType = OtpBorderType.box,
     this.verificationOtpAlphanumeric = false,
+    this.externalErrorText,
   })  : assert(verificationLength > 0),
         assert(otpBoxWidth > 0),
         assert(otpBoxSpacing >= 0);
@@ -2045,6 +2049,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         context,
                       );
                     } else {
+                      // Show externalErrorText if present
+                      if (widget.externalErrorText != null &&
+                          widget.externalErrorText!.isNotEmpty) {
+                        return widget.externalErrorText;
+                      }
                       return _validateRequired(
                         value as T?,
                         widget.label,

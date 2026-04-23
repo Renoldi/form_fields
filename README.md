@@ -151,6 +151,56 @@ MyImage(
 
 Lihat dokumentasi API untuk detail properti dan contoh lanjutan.
 
+## Backend Validation Error Mapping (externalErrorText)
+
+### Fitur Baru: Error Validasi Backend Langsung ke Form Field
+
+Mulai versi 2026-04, semua field utama (FormFields, Dropdown, Checkbox, dsb) mendukung parameter `externalErrorText` untuk menampilkan error validasi dari backend secara langsung di bawah field.
+
+### Cara Pakai (Contoh dengan AppDialogService.guard)
+
+1. **Lempar error validasi dari backend:**
+   ```dart
+   throw ValidationException(
+     'Validasi gagal',
+     details: {
+       'email': ['Email tidak valid'],
+       'password': ['Password minimal 8 karakter']
+     },
+   );
+   ```
+2. **Tangkap dan mapping error di UI/ViewModel:**
+   ```dart
+   await AppDialogService(context).guard(
+     task: () async {
+       // ...proses
+     },
+     errorTitle: 'Error',
+     mapError: AppDialogService.defaultErrorMapper,
+     onValidationError: (errors) {
+       // errors: Map<String, List<String>>
+       vm.setFieldErrors(errors); // mapping ke state
+     },
+   );
+   ```
+3. **Tampilkan error di FormFields:**
+   ```dart
+   FormFields(
+     label: 'Email',
+     currentValue: vm.email,
+     onChanged: vm.setEmail,
+     externalErrorText: vm.fieldErrors['email']?.join(', '),
+   )
+   ```
+
+### Catatan
+
+- Pastikan ViewModel/state punya Map<String, List<String>> fieldErrors.
+- Panggil notifyListeners/setState setelah update agar UI refresh.
+- externalErrorText akan override error validator lokal jika diisi.
+
+Lihat juga contoh implementasi di folder `example/` dan dokumentasi masing-masing field di `docs/components/`.
+
 ## Testing
 
 This package uses a lightweight baseline test to keep feedback fast during development.
