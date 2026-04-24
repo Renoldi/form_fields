@@ -40,7 +40,14 @@ abstract class PresenterState extends State<Presenter> {
     final isUpdated = await dialog.guard<bool>(
       task: () => _executeProfileUpdate(appState),
       errorTitle: context.tr('updateFailed'),
-      mapError: _mapProfileUpdateError,
+      mapError: (error) {
+        final mapped = _mapProfileUpdateError(error);
+        return (
+          message: mapped.message,
+          type: mapped.type,
+          details: null,
+        );
+      },
       loadingPosition: _toDialogPosition(appState.errorPosition),
       resultPosition: _toDialogPosition(appState.errorPosition),
       okLabel: context.tr('ok'),

@@ -302,6 +302,7 @@ class View extends PresenterState {
       mapError: (error) => (
         message: context.tr(error.toString().replaceFirst('Exception: ', '')),
         type: AppDialogType.network,
+        details: null,
       ),
       loadingPosition: _dialogPosition,
       resultPosition: _dialogPosition,

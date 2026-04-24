@@ -57,7 +57,14 @@ abstract class PresenterState extends State<Presenter> {
     return AppGlobalDialogService.instance.guard(
       task: viewModel.login,
       errorTitle: context.tr('loginFailed'),
-      mapError: (error) => _handleLoginError(error, viewModel),
+      mapError: (error) {
+        final mapped = _handleLoginError(error, viewModel);
+        return (
+          message: mapped.message,
+          type: mapped.type,
+          details: null,
+        );
+      },
       loadingPosition: position,
       resultPosition: position,
       okLabel: context.tr('ok'),

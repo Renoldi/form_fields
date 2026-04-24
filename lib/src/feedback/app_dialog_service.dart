@@ -127,7 +127,7 @@ class AppDialogService {
   Future<T?> guard<T>({
     required Future<T> Function() task,
     required String errorTitle,
-    required AppDialogErrorMapper mapError,
+    AppDialogErrorMapper? mapError,
     AppDialogPosition loadingPosition = AppDialogPosition.top,
     AppDialogPosition resultPosition = AppDialogPosition.top,
     String okLabel = 'OK',
@@ -195,7 +195,7 @@ class AppDialogService {
       _dismissLoadingIfVisible();
       loadingShown = false;
 
-      final mapped = mapError(error);
+      final mapped = (mapError ?? AppDialogService.defaultErrorMapper)(error);
       if (mapped.type == AppDialogType.validation) {
         Map<String, List<String>>? validationErrors;
         if (error is ValidationException && error.details != null) {
