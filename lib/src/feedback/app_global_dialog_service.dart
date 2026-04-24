@@ -53,7 +53,7 @@ class AppGlobalDialogService {
   Future<T?> guard<T>({
     required Future<T> Function() task,
     required String errorTitle,
-    AppDialogErrorMapper mapError,
+    AppDialogErrorMapper? mapError,
     AppDialogPosition loadingPosition = AppDialogPosition.top,
     AppDialogPosition resultPosition = AppDialogPosition.top,
     String okLabel = 'OK',
