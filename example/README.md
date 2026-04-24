@@ -8,6 +8,7 @@ This example showcases:
 
 ### ✨ Field Types
 
+- **Barcode/QR Code Scan**: Scan barcode/QR code with camera overlay (see "Barcode Scan" menu)
 - **Text Fields**: Email, phone, and general text input with validation
 - **Password Fields**: Secure input with visibility toggle
 - **Numeric Fields**: Integer and decimal with thousand separators

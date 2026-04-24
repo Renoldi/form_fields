@@ -40,6 +40,10 @@ enum AppRoute {
   formFieldsSignaturePad(
     name: 'form_fields_signature_pad',
     title: 'Signature Pad',
+  ),
+  barcodeScan(
+    name: 'barcode_scan',
+    title: 'Barcode Scan',
   );
 
   final String name;

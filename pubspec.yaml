@@ -23,6 +23,7 @@ dependencies:
   image_picker: any
   permission_handler: any
   signature: any
+  mobile_scanner: any
 
 dev_dependencies:
   build_runner: any
@@ -31,4 +32,5 @@ dev_dependencies:
     sdk: flutter
   json_serializable: any
 
-flutter: null
+flutter:
+  uses-material-design: true

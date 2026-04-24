@@ -70,6 +70,26 @@ Each component has its own documentation file for clarity and maintainability:
 - [FormFieldsSelect](docs/components/form_fields_select.md)
 - [FormFieldsSignaturePad](docs/components/form_fields_signature_pad.md)
 - [FormFieldsMyImage](docs/components/form_fields_my_image.md)
+- [FormFieldsBarcodeScan](docs/components/form_fields_barcode_scan.md)
+
+## Barcode/QR Code Scanner Field
+
+**FormFieldsBarcodeScan** is a reusable barcode/QR code scanner form field widget for Flutter, using mobile_scanner. It provides a professional overlay border, seamless integration with forms, and a consistent API with other FormFields components.
+
+### Example
+
+```dart
+FormFieldsBarcodeScan(
+  label: 'Scan Barcode',
+  currentValue: viewModel.barcode,
+  isRequired: true,
+  onChanged: (value) {
+    viewModel.setBarcode(value);
+  },
+)
+```
+
+See [FormFieldsBarcodeScan documentation](docs/components/form_fields_barcode_scan.md) for details and advanced usage.
 
 See the [Documentation Index](docs/README.md) for a full list.
 

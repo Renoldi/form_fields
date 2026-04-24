@@ -135,6 +135,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.deepPurpleAccent,
           routeName: 'form_fields_signature_pad',
         ),
+        AppMenuItemData(
+          title: 'Barcode Scan',
+          subtitle: 'Scan barcode/QR in form',
+          icon: Icons.qr_code_scanner,
+          color: Colors.deepOrange,
+          routeName: 'barcode_scan',
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {
