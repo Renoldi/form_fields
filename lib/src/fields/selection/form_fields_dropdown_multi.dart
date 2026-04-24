@@ -28,7 +28,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String? externalErrorText;
 
   const FormFieldsDropdownMulti({
-    Key? key,
+    super.key,
     required this.label,
     required this.items,
     required this.onChanged,
@@ -52,7 +52,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     this.enableFilter = false,
     this.filterHintText,
     this.externalErrorText,
-  }) : super(key: key);
+  });
 
 // Removed duplicate createState and stray bracket
 
