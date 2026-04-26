@@ -31,6 +31,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 ///   )
 /// ---------------------------------------------------------------------------
 class FormFields<T> extends StatefulWidget {
+  /// If true, the field is read-only (default: false)
+  final bool readOnly;
+
   /// Tipe border untuk OTP (box/underline)
   final OtpBorderType otpBorderType;
   final bool verificationOtpAlphanumeric;
@@ -316,6 +319,7 @@ class FormFields<T> extends StatefulWidget {
     this.otpBorderType = OtpBorderType.box,
     this.verificationOtpAlphanumeric = false,
     this.externalErrorText,
+    this.readOnly = false,
   })  : assert(verificationLength > 0),
         assert(otpBoxWidth > 0),
         assert(otpBoxSpacing >= 0);
@@ -442,7 +446,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     return TextFormField(
       controller: TextEditingController(text: value ?? ''),
-      readOnly: true,
+      readOnly: widget.readOnly,
       decoration: (widget.inputDecoration ?? const InputDecoration()).copyWith(
         labelText:
             widget.labelPosition == LabelPosition.inBorder ? label : null,
@@ -461,15 +465,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           },
         ),
       ),
-      onTap: () {
-        _showBarcodeScannerDialog(
-          onScanned: handleScan,
-          cancelButtonLabel: cancelButtonLabel,
-          overlayColor: overlayColor,
-          overlayBorderColor: overlayBorderColor,
-          overlayBorderWidth: overlayBorderWidth,
-          overlayBorderRadius: overlayBorderRadius,
-        );
+      onChanged: (text) {
+        widget.onChanged(text as T);
       },
     );
   }
