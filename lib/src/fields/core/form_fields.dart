@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/src/utilities/phone_country_codes.dart'
     as phone_codes;
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 /// ---------------------------------------------------------------------------
 /// FormFields Widget
@@ -323,7 +324,156 @@ class FormFields<T> extends StatefulWidget {
   State<FormFields<T>> createState() => _FormFieldsState<T>();
 }
 
+class _ScannerOverlay extends StatelessWidget {
+  const _ScannerOverlay({
+    this.overlayColor = Colors.black54,
+    this.borderColor = Colors.white,
+    this.borderWidth = 3.0,
+    this.borderRadius = 16.0,
+  });
+
+  final Color overlayColor;
+  final Color borderColor;
+  final double borderWidth;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth * 0.8;
+        final height = constraints.maxHeight * 0.4;
+        return Stack(
+          children: [
+            Container(
+              color: overlayColor.withValues(alpha: 0.5),
+            ),
+            Center(
+              child: Container(
+                width: width,
+                height: height,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: borderColor,
+                    width: borderWidth,
+                  ),
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  color: Colors.transparent,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _FormFieldsState<T> extends State<FormFields<T>> {
+  // Barcode scanner dialog for scanBarcode type
+  Future<void> _showBarcodeScannerDialog({
+    required ValueChanged<String> onScanned,
+    String cancelButtonLabel = 'Cancel',
+    Color overlayColor = Colors.black54,
+    Color overlayBorderColor = Colors.white,
+    double overlayBorderWidth = 3.0,
+    double overlayBorderRadius = 16.0,
+  }) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            MobileScanner(
+              // Updated for latest mobile_scanner API
+              onDetect: (capture) {
+                final barcodes = capture.barcodes;
+                if (barcodes.isNotEmpty) {
+                  final code = barcodes.first.rawValue;
+                  if (code != null) {
+                    Navigator.of(context).pop(code);
+                  }
+                }
+              },
+            ),
+            _ScannerOverlay(
+              overlayColor: overlayColor,
+              borderColor: overlayBorderColor,
+              borderWidth: overlayBorderWidth,
+              borderRadius: overlayBorderRadius,
+            ),
+            Positioned(
+              top: 48,
+              right: 24,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.of(context).pop(),
+                tooltip: cancelButtonLabel,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) {
+      onScanned(result);
+    }
+  }
+
+  // Barcode scan field builder
+  Widget _buildBarcodeScanField() {
+    final String? value = widget.currentValue as String?;
+    final errorText = widget.externalErrorText;
+    final label = widget.label;
+    final scanIcon = const Icon(Icons.qr_code_scanner);
+    // final scanButtonLabel = 'Scan';
+    final cancelButtonLabel = 'Cancel';
+    final overlayColor = Colors.black54;
+    final overlayBorderColor = Colors.white;
+    final overlayBorderWidth = 3.0;
+    final overlayBorderRadius = 16.0;
+
+    void handleScan(String? code) {
+      if (code != null) {
+        widget.onChanged(code as T);
+      }
+    }
+
+    return TextFormField(
+      controller: TextEditingController(text: value ?? ''),
+      readOnly: true,
+      decoration: (widget.inputDecoration ?? const InputDecoration()).copyWith(
+        labelText:
+            widget.labelPosition == LabelPosition.inBorder ? label : null,
+        errorText: errorText,
+        suffixIcon: IconButton(
+          icon: scanIcon,
+          onPressed: () {
+            _showBarcodeScannerDialog(
+              onScanned: handleScan,
+              cancelButtonLabel: cancelButtonLabel,
+              overlayColor: overlayColor,
+              overlayBorderColor: overlayBorderColor,
+              overlayBorderWidth: overlayBorderWidth,
+              overlayBorderRadius: overlayBorderRadius,
+            );
+          },
+        ),
+      ),
+      onTap: () {
+        _showBarcodeScannerDialog(
+          onScanned: handleScan,
+          cancelButtonLabel: cancelButtonLabel,
+          overlayColor: overlayColor,
+          overlayBorderColor: overlayBorderColor,
+          overlayBorderWidth: overlayBorderWidth,
+          overlayBorderRadius: overlayBorderRadius,
+        );
+      },
+    );
+  }
+
   // OTP Countdown State
   Timer? _otpCountdownTimer;
   int _otpCountdownRemaining = 0;
@@ -1871,6 +2021,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             value: model,
             child: Consumer<FormFieldsController>(
               builder: (ctx, vm, child) {
+                // Barcode scan field integration
+                if (widget.formType == FormType.scanBarcode) {
+                  return _buildBarcodeScanField();
+                }
+
                 if (_isVerificationType() && widget.verificationAsOtp) {
                   final verificationField =
                       _buildVerificationOtpField(vm, context);

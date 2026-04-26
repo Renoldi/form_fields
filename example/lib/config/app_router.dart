@@ -35,8 +35,6 @@ import 'package:form_fields_example/ui/pages/language/main.dart' as language;
 import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
 import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart'
     as form_fields_signature_pad;
-import 'package:form_fields_example/ui/pages/form_fields_barcode_scan/presenter.dart'
-    as barcode_scan;
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -311,16 +309,6 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.formFieldsSignaturePad,
           child: const form_fields_signature_pad.Presenter(),
-        ),
-      ),
-      // Removed invalid AppRoute.formFieldsBarcodeScan usage (does not exist in AppRoute)
-      GoRoute(
-        path: AppRoute.barcodeScan.path,
-        name: AppRoute.barcodeScan.name,
-        builder: (context, state) => _buildExamplePage(
-          context: context,
-          route: AppRoute.barcodeScan,
-          child: const barcode_scan.BarcodeScanPresenter(),
         ),
       ),
     ],

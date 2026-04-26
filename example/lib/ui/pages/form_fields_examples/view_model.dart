@@ -138,6 +138,8 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
   // For Product autocomplete demo
   Product? selectedProduct;
 
+  String? barcode;
+
   void updateSelectedProduct(Product? value) {
     selectedProduct = value;
     notifyListeners();
@@ -268,5 +270,10 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
     focusNode1.dispose();
     focusNode2.dispose();
     super.dispose();
+  }
+
+  void setBarcode(String value) {
+    barcode = value;
+    notifyListeners();
   }
 }

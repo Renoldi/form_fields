@@ -78,8 +78,25 @@ Each component has its own documentation file for clarity and maintainability:
 ### Example
 
 ```dart
-FormFieldsBarcodeScan(
+FormFields<String>(
   label: 'Scan Barcode',
+  formType: FormType.scanBarcode,
+  labelPosition: LabelPosition.inBorder, // label inside border
+  currentValue: viewModel.barcode,
+  isRequired: true,
+  onChanged: (value) {
+    viewModel.setBarcode(value);
+  },
+)
+```
+
+### Example: Barcode Scan Field with No Label
+
+```dart
+FormFields<String>(
+  label: 'Scan Barcode',
+  formType: FormType.scanBarcode,
+  labelPosition: LabelPosition.none, // no label at all
   currentValue: viewModel.barcode,
   isRequired: true,
   onChanged: (value) {

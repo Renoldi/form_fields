@@ -72,6 +72,7 @@ enum FormType {
   dropdownMulti,
   radioButton,
   checkbox,
+  scanBarcode,
 }
 
 /// Label positions relative to the input field
