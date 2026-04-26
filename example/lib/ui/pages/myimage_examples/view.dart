@@ -183,12 +183,20 @@ class View extends PresenterState {
                                     fit: BoxFit.cover,
                                   )
                                 : (result.path.isNotEmpty
-                                    ? Image.asset(
-                                        result.path,
-                                        height: 100,
-                                        width: 100,
-                                        fit: BoxFit.cover,
-                                      )
+                                    ? (result.path.startsWith('/') ||
+                                            result.path.startsWith('file://')
+                                        ? Image.file(
+                                            File(result.path),
+                                            height: 100,
+                                            width: 100,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Image.asset(
+                                            result.path,
+                                            height: 100,
+                                            width: 100,
+                                            fit: BoxFit.cover,
+                                          ))
                                     : Container(
                                         width: 100,
                                         height: 100,
