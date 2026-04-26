@@ -29,12 +29,6 @@ FormFieldsBarcodeScan(
 - Uses IgnorePointer so scan area is not blocked
 - Cancel button to close scanner
 
-## Integration
-
-- Example page: `example/lib/ui/pages/form_fields_barcode_scan/`
-- Route: `AppRoute.barcodeScan`
-- Menu: Barcode Scan
-
 ## Requirements
 
 - Add `mobile_scanner` to your pubspec.yaml

@@ -70,7 +70,6 @@ Each component has its own documentation file for clarity and maintainability:
 - [FormFieldsSelect](docs/components/form_fields_select.md)
 - [FormFieldsSignaturePad](docs/components/form_fields_signature_pad.md)
 - [FormFieldsMyImage](docs/components/form_fields_my_image.md)
-- [FormFieldsBarcodeScan](docs/components/form_fields_barcode_scan.md)
 
 ## Barcode/QR Code Scanner Field
 
@@ -88,16 +87,6 @@ FormFieldsBarcodeScan(
   },
 )
 ```
-
-See [FormFieldsBarcodeScan documentation](docs/components/form_fields_barcode_scan.md) for details and advanced usage.
-
-See the [Documentation Index](docs/README.md) for a full list.
-
-Architecture shortcuts:
-
-- [Architecture Diagram](ARCHITECTURE.md#architecture-diagram)
-- [FormFields Validation Flow](ARCHITECTURE.md#formfields-validation-flow)
-- [AppButton Family Diagram](ARCHITECTURE.md#appbutton-family-diagram)
 
 ---
 

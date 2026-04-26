@@ -38,7 +38,6 @@ export 'src/fields/autocomplete/form_fields_autocomplete.dart'
 
 // -------------------
 // Field Widgets
-export 'src/fields/form_fields_barcode_scan.dart' show FormFieldsBarcodeScan;
 // -------------------
 export 'src/fields/selection/form_fields_select.dart' show FormFieldsSelect;
 export 'src/fields/selection/form_fields_dropdown.dart' show FormFieldsDropdown;
