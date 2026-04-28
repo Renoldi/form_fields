@@ -135,6 +135,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.deepPurpleAccent,
           routeName: 'form_fields_signature_pad',
         ),
+        AppMenuItemData(
+          title: 'Responsive Grid',
+          subtitle: 'ResponsiveMenuGrid Widget',
+          icon: Icons.grid_view,
+          color: Colors.lightBlue,
+          routeName: AppRoute.responsiveMenuGrid.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

@@ -35,6 +35,8 @@ import 'package:form_fields_example/ui/pages/language/main.dart' as language;
 import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
 import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart'
     as form_fields_signature_pad;
+import 'package:form_fields_example/ui/pages/responsive_menu_grid_examples/main.dart'
+    as responsive_menu_grid_examples;
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -311,6 +313,18 @@ GoRouter createAppRouter(
           child: const form_fields_signature_pad.Presenter(),
         ),
       ),
+      GoRoute(
+        path: AppRoute.responsiveMenuGrid.path,
+        name: AppRoute.responsiveMenuGrid.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.responsiveMenuGrid,
+          child: ChangeNotifierProvider(
+            create: (_) => responsive_menu_grid_examples.ViewModel(),
+            child: const responsive_menu_grid_examples.Presenter(),
+          ),
+        ),
+      ),
     ],
 
     // Error handling
@@ -409,6 +423,8 @@ String _routeTitleKey(AppRoute route) {
       return 'myImage';
     case AppRoute.formFieldsSignaturePad:
       return 'formFieldsSignaturePad';
+    case AppRoute.responsiveMenuGrid:
+      return 'responsiveMenuGrid';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
   }

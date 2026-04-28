@@ -41,6 +41,10 @@ enum AppRoute {
     name: 'form_fields_signature_pad',
     title: 'Signature Pad',
   ),
+  responsiveMenuGrid(
+    name: 'responsive_menu_grid',
+    title: 'Responsive Menu Grid',
+  ),
   barcodeScan(
     name: 'barcode_scan',
     title: 'Barcode Scan',
