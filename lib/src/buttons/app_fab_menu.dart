@@ -16,7 +16,8 @@ class AppFabMenuItem {
   });
 }
 
-/// A compact expandable FAB menu for related quick actions.
+/// A compact expandable FAB menu that floats items above the button
+/// using [Overlay] + [CompositedTransformFollower]. No Scaffold required.
 class AppFabMenu extends StatefulWidget {
   final List<AppFabMenuItem> items;
   final Widget? mainIcon;
@@ -33,114 +34,189 @@ class AppFabMenu extends StatefulWidget {
   State<AppFabMenu> createState() => _AppFabMenuState();
 }
 
-class _AppFabMenuState extends State<AppFabMenu> {
+class _AppFabMenuState extends State<AppFabMenu>
+    with SingleTickerProviderStateMixin {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
-  void _toggle() {
-    setState(() {
-      _isOpen = !_isOpen;
-    });
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
+      reverseCurve: Curves.easeInCubic,
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (final item in widget.items.reversed) ...[
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            child: _isOpen
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(item.label),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildMenuFab(item),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
+  void dispose() {
+    _removeOverlay();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _toggle() {
+    if (_isOpen) {
+      _controller.reverse().then((_) {
+        _removeOverlay();
+        if (mounted) setState(() => _isOpen = false);
+      });
+    } else {
+      setState(() => _isOpen = true);
+      _overlayEntry = _buildOverlayEntry();
+      Overlay.of(context).insert(_overlayEntry!);
+      _controller.forward(from: 0);
+    }
+  }
+
+  OverlayEntry _buildOverlayEntry() {
+    return OverlayEntry(
+      builder: (_) => Stack(
+        children: [
+          // Tap outside to close
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _toggle,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          // Items floating above the FAB
+          CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: const Offset(0, -8),
+            targetAnchor: Alignment.topRight,
+            followerAnchor: Alignment.bottomRight,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) => ClipRect(
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  heightFactor: _animation.value,
+                  child: child,
+                ),
+              ),
+              child: FadeTransition(
+                opacity: _animation,
+                child: IntrinsicWidth(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: widget.items
+                        .map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _buildItemRow(item),
+                            ))
+                        .toList(),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
-        _buildMainFab(),
+      ),
+    );
+  }
+
+  Widget _buildItemRow(AppFabMenuItem item) {
+    void onPress() {
+      item.onPressed();
+      _toggle();
+    }
+
+    final fab = switch (widget.size) {
+      AppButtonSize.small => FloatingActionButton.small(
+          heroTag: null,
+          onPressed: onPress,
+          child: item.icon,
+        ),
+      AppButtonSize.large => FloatingActionButton.large(
+          heroTag: null,
+          onPressed: onPress,
+          child: item.icon,
+        ),
+      _ => FloatingActionButton(
+          heroTag: null,
+          onPressed: onPress,
+          child: item.icon,
+        ),
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(item.label,
+                style: const TextStyle(fontWeight: FontWeight.w500)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        fab,
       ],
     );
   }
 
-  Widget _buildMenuFab(AppFabMenuItem item) {
-    switch (widget.size) {
-      case AppButtonSize.small:
-        return FloatingActionButton.small(
-          onPressed: () {
-            item.onPressed();
-            _toggle();
-          },
-          child: item.icon,
-        );
-      case AppButtonSize.large:
-        return FloatingActionButton.large(
-          onPressed: () {
-            item.onPressed();
-            _toggle();
-          },
-          child: item.icon,
-        );
-      case AppButtonSize.medium:
-      case AppButtonSize.custom:
-        return FloatingActionButton(
-          onPressed: () {
-            item.onPressed();
-            _toggle();
-          },
-          child: item.icon,
-        );
-    }
+  Widget _buildMainFab() {
+    final icon = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, anim) => RotationTransition(
+        turns: anim,
+        child: FadeTransition(opacity: anim, child: child),
+      ),
+      child: _isOpen
+          ? const Icon(Icons.close, key: ValueKey('close'))
+          : (widget.mainIcon ??
+              const Icon(Icons.add, key: ValueKey('open'))),
+    );
+
+    return switch (widget.size) {
+      AppButtonSize.small => FloatingActionButton.small(
+          heroTag: null,
+          onPressed: _toggle,
+          child: icon,
+        ),
+      AppButtonSize.large => FloatingActionButton.large(
+          heroTag: null,
+          onPressed: _toggle,
+          child: icon,
+        ),
+      _ => FloatingActionButton(
+          heroTag: null,
+          onPressed: _toggle,
+          child: icon,
+        ),
+    };
   }
 
-  Widget _buildMainFab() {
-    switch (widget.size) {
-      case AppButtonSize.small:
-        return FloatingActionButton.small(
-          onPressed: _toggle,
-          child: AnimatedRotation(
-            duration: const Duration(milliseconds: 180),
-            turns: _isOpen ? 0.125 : 0,
-            child: widget.mainIcon ?? const Icon(Icons.add),
-          ),
-        );
-      case AppButtonSize.large:
-        return FloatingActionButton.large(
-          onPressed: _toggle,
-          child: AnimatedRotation(
-            duration: const Duration(milliseconds: 180),
-            turns: _isOpen ? 0.125 : 0,
-            child: widget.mainIcon ?? const Icon(Icons.add),
-          ),
-        );
-      case AppButtonSize.medium:
-      case AppButtonSize.custom:
-        return FloatingActionButton(
-          onPressed: _toggle,
-          child: AnimatedRotation(
-            duration: const Duration(milliseconds: 180),
-            turns: _isOpen ? 0.125 : 0,
-            child: widget.mainIcon ?? const Icon(Icons.add),
-          ),
-        );
-    }
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: _buildMainFab(),
+    );
   }
 }
