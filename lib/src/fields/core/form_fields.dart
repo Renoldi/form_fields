@@ -1604,12 +1604,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     // 2. Check required field constraint
-    if (isRequired && (value == null || (value is String && value.isEmpty))) {
+    final isBlankString = value is String && value.trim().isEmpty;
+
+    if (isRequired && (value == null || isBlankString)) {
       return l.getWithLabel('required', label);
     }
 
     // 3. Skip validation for optional empty fields
-    if (!isRequired && (value == null || (value is String && value.isEmpty))) {
+    if (!isRequired && (value == null || isBlankString)) {
       return null;
     }
 
@@ -1662,16 +1664,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // 5. Numeric type validation
     if (_isIntType()) {
       if (value is String) {
-        final cleaned =
-            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
+        final normalized = value.trim();
+        final cleaned = widget.stripSeparators
+            ? _stripSeparatorsForParse(normalized)
+            : normalized;
         if (int.tryParse(cleaned) == null) {
           return l.getWithLabel('enterValidInteger', vm.label);
         }
       }
     } else if (_isDoubleType()) {
       if (value is String) {
-        final cleaned =
-            widget.stripSeparators ? _stripSeparatorsForParse(value) : value;
+        final normalized = value.trim();
+        final cleaned = widget.stripSeparators
+            ? _stripSeparatorsForParse(normalized)
+            : normalized;
         if (double.tryParse(cleaned) == null) {
           return l.getWithLabel('enterValidNumber', vm.label);
         }
@@ -2164,7 +2170,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   },
                   validator: (value) {
                     if (_isIntType()) {
-                      if (value == null || value.isEmpty) {
+                      final normalized = value?.trim() ?? '';
+                      if (normalized.isEmpty) {
                         return _validateRequired(
                           null,
                           widget.label,
@@ -2174,8 +2181,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         );
                       }
                       final parsed = int.tryParse(widget.stripSeparators
-                          ? _stripSeparatorsForParse(value)
-                          : value);
+                          ? _stripSeparatorsForParse(normalized)
+                          : normalized);
                       return _validateRequired(
                         parsed as T?,
                         widget.label,
@@ -2184,7 +2191,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         context,
                       );
                     } else if (_isDoubleType()) {
-                      if (value == null || value.isEmpty) {
+                      final normalized = value?.trim() ?? '';
+                      if (normalized.isEmpty) {
                         return _validateRequired(
                           null,
                           widget.label,
@@ -2194,8 +2202,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         );
                       }
                       final parsed = double.tryParse(widget.stripSeparators
-                          ? _stripSeparatorsForParse(value)
-                          : value);
+                          ? _stripSeparatorsForParse(normalized)
+                          : normalized);
                       return _validateRequired(
                         parsed as T?,
                         widget.label,
