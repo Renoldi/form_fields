@@ -453,16 +453,18 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         errorText: errorText,
         suffixIcon: IconButton(
           icon: scanIcon,
-          onPressed: () {
-            _showBarcodeScannerDialog(
-              onScanned: handleScan,
-              cancelButtonLabel: cancelButtonLabel,
-              overlayColor: overlayColor,
-              overlayBorderColor: overlayBorderColor,
-              overlayBorderWidth: overlayBorderWidth,
-              overlayBorderRadius: overlayBorderRadius,
-            );
-          },
+          onPressed: widget.readOnly
+              ? null
+              : () {
+                  _showBarcodeScannerDialog(
+                    onScanned: handleScan,
+                    cancelButtonLabel: cancelButtonLabel,
+                    overlayColor: overlayColor,
+                    overlayBorderColor: overlayBorderColor,
+                    overlayBorderWidth: overlayBorderWidth,
+                    overlayBorderRadius: overlayBorderRadius,
+                  );
+                },
         ),
       ),
       onChanged: (text) {
@@ -1042,18 +1044,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           isDense: true,
           icon: const Icon(Icons.arrow_drop_down, size: 18),
           style: const TextStyle(fontSize: 14, color: Colors.black87),
-          onChanged: (value) {
-            if (value == null) return;
-            _selectedCountryCode = value;
-            _notifier.setSelectedCountryCode(value);
-            // Update text field to show only local digits
-            final localFormatted = widget.formatPhone
-                ? _formatPhoneLocalOnly(model.controller.text)
-                : _extractLocalPhoneDigits(model.controller.text);
-            if (model.controller.text != localFormatted) {
-              model.setController = localFormatted;
-            }
-          },
+          onChanged: widget.readOnly
+              ? null
+              : (value) {
+                  if (value == null) return;
+                  _selectedCountryCode = value;
+                  _notifier.setSelectedCountryCode(value);
+                  // Update text field to show only local digits
+                  final localFormatted = widget.formatPhone
+                      ? _formatPhoneLocalOnly(model.controller.text)
+                      : _extractLocalPhoneDigits(model.controller.text);
+                  if (model.controller.text != localFormatted) {
+                    model.setController = localFormatted;
+                  }
+                },
           items: codes
               .map(
                 (code) => DropdownMenuItem<String>(
@@ -1490,6 +1494,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   Future<void> _showPicker(BuildContext ctx, FormFieldsController vm) async {
+    if (widget.readOnly) return;
+
     if (_isDateTimeType()) {
       switch (widget.formType) {
         case FormType.date:
@@ -1533,6 +1539,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   void _handleClearIconTap(FormFieldsController vm) {
+    if (widget.readOnly) return;
+
     if (_isIntType()) {
       if (_isNullable()) {
         vm.setController = "";
@@ -1570,6 +1578,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   void _handleVisibilityToggleTap(FormFieldsController vm) {
+    if (widget.readOnly) return;
+
     vm.obscure = !vm.obscure;
   }
 
@@ -1849,6 +1859,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       child: TextField(
         controller: _verificationControllers[index],
         focusNode: _verificationFocusNodes[index],
+        readOnly: widget.readOnly,
         keyboardType: widget.verificationOtpAlphanumeric
             ? TextInputType.visiblePassword // agar keyboard qwerty muncul
             : TextInputType.number,
@@ -1929,7 +1940,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           ? Icons.visibility_off_rounded
                           : Icons.visibility_rounded,
                     ),
-                    onPressed: () => _handleVisibilityToggleTap(vm),
+                    onPressed: widget.readOnly
+                        ? null
+                        : () => _handleVisibilityToggleTap(vm),
                   ),
                 ),
             ],
@@ -2042,6 +2055,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       ? TextAlignVertical.center
                       : TextAlignVertical.top,
                   textAlign: TextAlign.start,
+                  readOnly: widget.readOnly,
                   maxLength:
                       _isVerificationType() ? widget.verificationLength : null,
                   maxLines: vm.formType == FormType.password ||
@@ -2217,6 +2231,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   },
                   controller: vm.controller,
                   onTap: () async {
+                    if (widget.readOnly) return;
                     if (!mounted) return;
                     final ctx = context;
                     await _showPicker(ctx, vm);
@@ -2245,23 +2260,29 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                       ? Icons.visibility_off_rounded
                                       : Icons.visibility_rounded,
                                 ),
-                                onPressed: () => _handleVisibilityToggleTap(vm),
+                                onPressed: widget.readOnly
+                                    ? null
+                                    : () => _handleVisibilityToggleTap(vm),
                               )
                             : (_isDateTimeType() ||
                                     _isTimeOfDayType() ||
                                     _isDateTimeRangeType())
                                 ? IconButton(
                                     icon: Icon(_getPickerIcon()),
-                                    onPressed: () async {
-                                      if (!mounted) return;
-                                      final ctx = context;
-                                      await _showPicker(ctx, vm);
-                                    },
+                                    onPressed: widget.readOnly
+                                        ? null
+                                        : () async {
+                                            if (!mounted) return;
+                                            final ctx = context;
+                                            await _showPicker(ctx, vm);
+                                          },
                                   )
                                 : widget.suffixIcon ??
                                     IconButton(
                                       icon: const Icon(Icons.close),
-                                      onPressed: () => _handleClearIconTap(vm),
+                                      onPressed: widget.readOnly
+                                          ? null
+                                          : () => _handleClearIconTap(vm),
                                     ),
                         prefix: widget.prefix,
                         prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
