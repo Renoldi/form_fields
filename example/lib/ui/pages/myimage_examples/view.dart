@@ -17,15 +17,14 @@ class View extends PresenterState {
       child: Consumer<FormFieldsExamplesViewModel>(
         builder: (context, viewModel, _) {
           return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(height: 40, thickness: 2),
-                const Text(
-                  'MyImage with Description (showDesc)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                _buildSectionTitle(
+                    'Basic Usage', Colors.teal.shade700, Colors.teal.shade400),
+                _buildFieldTitle(
+                    'With Description (showDesc)', Colors.teal.shade600),
                 FormFieldsMyImage(
                   controller: FormFieldsMyImageController(),
                   maxImages: 1,
@@ -40,12 +39,34 @@ class View extends PresenterState {
                     }
                   },
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'MyImage with 2 Default Network Images',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "FormFieldsMyImageController()",\n  "maxImages": 1,\n  "showDesc": true,\n  "descriptionField": "description",\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { ... }"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 8),
+                _buildFieldTitle(
+                    'With Default Network Images', Colors.teal.shade600),
                 FormFieldsMyImage(
                   controller: networkImagesController,
                   maxImages: 5,
@@ -81,6 +102,31 @@ class View extends PresenterState {
                   ),
                   onImagesChanged: (images) => logger.i(
                     'Images changed: ${images.map((image) => image.link.isNotEmpty ? image.link : image.path).join(', ')}',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "networkImagesController",\n  "maxImages": 5,\n  "allow": false,\n  "imageBuilder": "(context, image, index) => Image.network(image.link)",\n  "onRemoveImage": "(index, image) => logger.i(...)",\n  "onImagesChanged": "(images) => logger.i(...)"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
                   ),
                 ),
                 AnimatedBuilder(
@@ -142,12 +188,10 @@ class View extends PresenterState {
                     );
                   },
                 ),
-                const Divider(height: 40, thickness: 2),
-                const Text(
-                  'MyImage with 2 Default Asset Images',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                _buildSectionTitle('Default Images', Colors.blue.shade700,
+                    Colors.blue.shade400),
+                _buildFieldTitle(
+                    'With Default Asset Images', Colors.blue.shade600),
                 FormFieldsMyImage(
                   controller: assetImagesController,
                   maxImages: 5,
@@ -160,6 +204,31 @@ class View extends PresenterState {
                       'Images changed: ${images.map((image) => image.link.isNotEmpty ? image.link : image.path).join(', ')}',
                     );
                   },
+                ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "assetImagesController",\n  "maxImages": 5,\n  "onRemoveImage": "(index, image) => logger.i(...)",\n  "onImagesChanged": "(images) => { setState(() {}); logger.i(...) }"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
                 ),
                 if (assetImagesController.images.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -212,12 +281,10 @@ class View extends PresenterState {
                     ),
                   ),
                 ],
-                Text(
-                  'Single Profile Image',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                _buildSectionTitle('Single Image', Colors.indigo.shade700,
+                    Colors.indigo.shade400),
+                _buildFieldTitle(
+                    'Profile Image (with Upload)', Colors.indigo.shade600),
                 FormFieldsMyImage(
                   controller: profileController,
                   maxImages: 1,
@@ -243,6 +310,31 @@ class View extends PresenterState {
                   isDoc: true,
                   isDirectUpload: true,
                   uploadUrl: 'https://catbox.moe/user/api.php',
+                ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "isDoc": true,\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => setState(() { singleImageLog = ... })",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
                 ),
                 if (singleImageLog != null)
                   Padding(
@@ -280,13 +372,8 @@ class View extends PresenterState {
                   ),
                   Text('Link: ${profileController.images[0].link}...'),
                 ],
-                const Divider(height: 40, thickness: 2),
-                Text(
-                  'single Image Picker (Custom Builder)',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                _buildFieldTitle('Single Image Picker (Custom Builder)',
+                    Colors.indigo.shade600),
                 FormFieldsMyImage(
                   controller: customsController,
                   onImagesChanged: (results) {
@@ -370,6 +457,31 @@ class View extends PresenterState {
                     );
                   },
                 ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "isDoc": true,\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
                 if (singleImageLog != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4, bottom: 2),
@@ -422,14 +534,9 @@ class View extends PresenterState {
                     ),
                   ),
                 ],
-                const SizedBox(height: 32),
-                const Divider(height: 40, thickness: 2),
-                Text(
-                  'Multi Image Picker',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                const SizedBox(height: 8),
+                _buildSectionTitle('Multi Image', Colors.purple.shade700,
+                    Colors.purple.shade400),
+                _buildFieldTitle('Multi Image Picker', Colors.purple.shade600),
                 FormFieldsMyImage(
                   controller: multiController,
                   onImagesChanged: (results) {
@@ -437,6 +544,31 @@ class View extends PresenterState {
                   },
                   uploadUrl: 'https://catbox.moe/user/api.php',
                   uploadToken: '',
+                ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "multiController",\n  "onImagesChanged": "(results) => setState(() {})",\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadToken": ""\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
                 ),
                 if (multiController.images.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -474,14 +606,9 @@ class View extends PresenterState {
                     ),
                   ),
                 ],
-                const SizedBox(height: 32), // Extra space to prevent overflow
-                const Divider(height: 40, thickness: 2),
-                Text(
-                  'start Multi Image Picker (Custom Builder)',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18),
-                ),
                 const SizedBox(height: 8),
+                _buildFieldTitle('Multi Image Picker (Custom Builder)',
+                    Colors.purple.shade600),
                 FormFieldsMyImage(
                   controller: customController,
                   onImagesChanged: (results) {
@@ -523,6 +650,31 @@ class View extends PresenterState {
                     );
                   },
                 ),
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "controller": "customController",\n  "maxImages": null,\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})"\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
                 if (customController.images.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text('Selected images:'),
@@ -549,12 +701,46 @@ class View extends PresenterState {
                     ),
                   ),
                 ],
-
-                // Extra space to prevent overflow
+                const SizedBox(height: 32),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, Color color1, Color color2) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8, bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [color1, color2]),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        title,
+        style: const TextStyle(
+            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildFieldTitle(String title, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Container(
+              width: 4,
+              height: 18,
+              color: color,
+              margin: const EdgeInsets.only(right: 8)),
+          Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, fontSize: 15, color: color)),
+        ],
       ),
     );
   }

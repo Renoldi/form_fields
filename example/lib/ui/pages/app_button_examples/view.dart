@@ -34,13 +34,29 @@ class View extends PresenterState {
                       hintText: 'Tap here, then focus on button behavior',
                     ),
                   ),
-                  // Property JSON untuk FormFields di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Property JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "FormFields<String>",\n  "label": "Keyboard test field",\n  "currentValue": _keyboardTestValue,\n  "onChanged": "(value) { ... }",\n  "inputDecoration": { "hintText": "Tap here, then focus on button behavior" }\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String>",\n  "label": "Keyboard test field",\n  "currentValue": _keyboardTestValue,\n  "onChanged": "(value) { ... }",\n  "inputDecoration": { "hintText": "Tap here, then focus on button behavior" }\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   AppButton(
@@ -50,12 +66,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.check_circle_outline),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.large",\n  "text": "Filled Large",\n  "icon": "Icons.check_circle_outline",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.large",\n  "text": "Filled Large",\n  "icon": "Icons.check_circle_outline",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -65,12 +98,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.rocket_launch_outlined),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.elevated",\n  "size": "AppButtonSize.medium",\n  "text": "Elevated Medium",\n  "icon": "Icons.rocket_launch_outlined",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.elevated",\n  "size": "AppButtonSize.medium",\n  "text": "Elevated Medium",\n  "icon": "Icons.rocket_launch_outlined",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -80,12 +130,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.edit_outlined),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Outlined Medium",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Outlined Medium",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -95,12 +162,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.info_outline),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.text",\n  "size": "AppButtonSize.small",\n  "text": "Text Small",\n  "icon": "Icons.info_outline",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.text",\n  "size": "AppButtonSize.small",\n  "text": "Text Small",\n  "icon": "Icons.info_outline",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -110,12 +194,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.palette_outlined),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filledTonal",\n  "size": "AppButtonSize.medium",\n  "text": "Filled Tonal",\n  "icon": "Icons.palette_outlined",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filledTonal",\n  "size": "AppButtonSize.medium",\n  "text": "Filled Tonal",\n  "icon": "Icons.palette_outlined",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -129,12 +230,29 @@ class View extends PresenterState {
                     icon: const Icon(Icons.straighten),
                     onPressed: () {},
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.custom",\n  "customHeight": 52,\n  "customHorizontalPadding": 28,\n  "customIconSize": 26,\n  "customSpinnerSize": 20,\n  "text": "Custom Size",\n  "icon": "Icons.straighten",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.custom",\n  "customHeight": 52,\n  "customHorizontalPadding": 28,\n  "customIconSize": 26,\n  "customSpinnerSize": 20,\n  "text": "Custom Size",\n  "icon": "Icons.straighten",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   AppButton<String>(
@@ -149,12 +267,29 @@ class View extends PresenterState {
                       });
                     },
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Contoh penggunaan JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Typed Callback (T)",\n  "icon": "Icons.data_object",\n  "value": "checkout",\n  "onPressedWithValue": "(value) { ... }"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Typed Callback (T)",\n  "icon": "Icons.data_object",\n  "value": "checkout",\n  "onPressedWithValue": "(value) { ... }"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text('Last typed payload: $_lastTypedButtonValue'),
@@ -233,6 +368,30 @@ class View extends PresenterState {
                       ),
                     ],
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "widget": "AppButtonGroup",\n  "spacing": 10,\n  "runSpacing": 10,\n  "children": "[SizedBox(width:170, child: AppButton(...)), ...]",\n  "note": "Wraps multiple AppButtons in a Wrap layout"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: 220,
@@ -241,6 +400,30 @@ class View extends PresenterState {
                       text: 'Disabled',
                       icon: const Icon(Icons.block_outlined),
                       onPressed: null,
+                    ),
+                  ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "text": "Disabled",\n  "icon": "Icons.block_outlined",\n  "onPressed": null\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -375,21 +558,77 @@ class View extends PresenterState {
                       ),
                     ],
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.favorite_border",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.favorite_border",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.bookmark_border",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.bookmark_border",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.share_outlined",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.icon",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.share_outlined",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -421,21 +660,77 @@ class View extends PresenterState {
                       ),
                     ],
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.edit",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.edit",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.edit_note",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.edit_note",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Align(
@@ -447,11 +742,29 @@ class View extends PresenterState {
                       onPressed: () {},
                     ),
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.extendedFab",\n  "text": "New task",\n  "icon": "Icons.add",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.extendedFab",\n  "text": "New task",\n  "icon": "Icons.add",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -483,16 +796,53 @@ class View extends PresenterState {
                       ),
                     ],
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.medium",\n  "text": "Custom Style Override",\n  "icon": "Icons.tune",\n  "style": "FilledButton.styleFrom(StadiumBorder)",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.medium",\n  "text": "Custom Style Override",\n  "icon": "Icons.tune",\n  "style": "FilledButton.styleFrom(StadiumBorder)",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.small",\n  "text": "Custom Style Override",\n  "icon": "Icons.tune",\n  "style": "FilledButton.styleFrom(StadiumBorder)",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.small",\n  "text": "Custom Style Override",\n  "icon": "Icons.tune",\n  "style": "FilledButton.styleFrom(StadiumBorder)",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -530,16 +880,53 @@ class View extends PresenterState {
                       ),
                     ],
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.elevated",\n  "size": "AppButtonSize.medium",\n  "text": "Rounded 16",\n  "icon": "Icons.rounded_corner",\n  "style": "ElevatedButton.styleFrom(RoundedRectangleBorder(16))",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.elevated",\n  "size": "AppButtonSize.medium",\n  "text": "Rounded 16",\n  "icon": "Icons.rounded_corner",\n  "style": "ElevatedButton.styleFrom(RoundedRectangleBorder(16))",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Beveled",\n  "icon": "Icons.crop_16_9",\n  "style": "OutlinedButton.styleFrom(BeveledRectangleBorder(10))",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.outlined",\n  "size": "AppButtonSize.medium",\n  "text": "Beveled",\n  "icon": "Icons.crop_16_9",\n  "style": "OutlinedButton.styleFrom(BeveledRectangleBorder(10))",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   AppButton(
@@ -554,11 +941,29 @@ class View extends PresenterState {
                     ),
                     onPressed: () {},
                   ),
-                  // Property JSON untuk AppButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  SelectableText(
-                    '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.medium",\n  "text": "Continuous Rectangle Shape",\n  "icon": "Icons.hexagon_outlined",\n  "style": "FilledButton.styleFrom(ContinuousRectangleBorder(28))",\n  "onPressed": "() {}"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppButtonType.filled",\n  "size": "AppButtonSize.medium",\n  "text": "Continuous Rectangle Shape",\n  "icon": "Icons.hexagon_outlined",\n  "style": "FilledButton.styleFrom(ContinuousRectangleBorder(28))",\n  "onPressed": "() {}"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -590,13 +995,29 @@ class View extends PresenterState {
                       });
                     },
                   ),
-                  // Property JSON untuk AppSegmentedButton di atas
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Property JSON:'),
-                  const SizedBox(height: 2),
-                  SelectableText(
-                    '{\n  "type": "AppSegmentedButton<String>",\n  "size": "AppButtonSize.medium",\n  "segments": [ButtonSegment<String>],\n  "selected": _selectedSegment,\n  "onSelectionChanged": "(value) { ... }"\n}',
-                    style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "AppSegmentedButton<String>",\n  "size": "AppButtonSize.medium",\n  "segments": [ButtonSegment<String>],\n  "selected": _selectedSegment,\n  "onSelectionChanged": "(value) { ... }"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -633,6 +1054,30 @@ class View extends PresenterState {
                       });
                     },
                   ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "widget": "AppSplitButton<String>",\n  "size": "AppButtonSize.large",\n  "text": "Add to cart",\n  "icon": "Icons.shopping_cart_outlined",\n  "onPressed": "() { setState(() { _lastSplitAction = default; }) }",\n  "items": "[AppSplitButtonItem(save, wishlist, gift)]",\n  "onSelected": "(value) { setState(() { _lastSplitAction = value; }) }"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Text('Last split action: $_lastSplitAction'),
                   const SizedBox(height: 16),
@@ -662,6 +1107,30 @@ class View extends PresenterState {
                           onPressed: () {},
                         ),
                       ],
+                    ),
+                  ),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "widget": "AppFabMenu",\n  "size": "AppButtonSize.small",\n  "items": "[AppFabMenuItem(First, Second, Third)]",\n  "note": "Expandable FAB with labeled action items"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 120),

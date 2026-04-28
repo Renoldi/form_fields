@@ -51,6 +51,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context.tr('ffFullName'),
                       viewModel.stringNonNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String>",\n  "label": "Nama Lengkap",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": "",\n  "onChanged": "viewModel.setStringNonNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
@@ -72,6 +97,31 @@ class View extends PresenterState {
                   buildResultDisplay(context.tr('ffMiddleName'),
                       viewModel.stringNonNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String>",\n  "label": "Nama Tengah",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": "",\n  "onChanged": "viewModel.setStringNonNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
@@ -92,6 +142,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context.tr('ffLastName'), viewModel.stringNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String?>",\n  "label": "Nama Belakang",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": null,\n  "onChanged": "viewModel.setStringNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
@@ -113,6 +188,31 @@ class View extends PresenterState {
                   buildResultDisplay(
                       context.tr('valNickname'), viewModel.stringNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String?>",\n  "label": "Panggilan",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": null,\n  "onChanged": "viewModel.setStringNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // ===== INT VALIDATION PATTERNS =====
@@ -137,6 +237,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context.tr('ffAge'), viewModel.intNonNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<int>",\n  "label": "Umur",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": 0,\n  "onChanged": "viewModel.setIntNonNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
@@ -158,6 +283,31 @@ class View extends PresenterState {
                   buildResultDisplay(context.tr('valPhoneExtension'),
                       viewModel.intNonNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<int>",\n  "label": "Ekstensi Telepon",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": 0,\n  "onChanged": "viewModel.setIntNonNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
@@ -178,6 +328,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context.tr('ffQuantity'), viewModel.intNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<int?>",\n  "label": "Kuantitas",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": null,\n  "onChanged": "viewModel.setIntNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
@@ -199,6 +374,31 @@ class View extends PresenterState {
                   buildResultDisplay(
                       context.tr('valEmployeeId'), viewModel.intNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<int?>",\n  "label": "ID Karyawan",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": null,\n  "onChanged": "viewModel.setIntNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // ===== DOUBLE VALIDATION PATTERNS =====
@@ -227,6 +427,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context.tr('ffProductPrice'),
                       viewModel.doubleNonNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<double>",\n  "label": "Harga Produk",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": 0.0,\n  "prefix": "Text(\'\$\')",\n  "onChanged": "viewModel.setDoubleNonNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 2: Non-Nullable + isRequired: false
@@ -252,6 +477,31 @@ class View extends PresenterState {
                   buildResultDisplay(context.tr('valShippingCost'),
                       viewModel.doubleNonNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<double>",\n  "label": "Biaya Pengiriman",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": 0.0,\n  "prefix": "Text(\'\$\')",\n  "onChanged": "viewModel.setDoubleNonNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 3: Nullable + isRequired: true
@@ -276,6 +526,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context.tr('valDiscountRate'),
                       viewModel.doubleNullRequired),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<double?>",\n  "label": "Diskon (%)",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": null,\n  "suffix": "Text(\'%\')",\n  "onChanged": "viewModel.setDoubleNullRequired"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // PATTERN 4: Nullable + isRequired: false
@@ -301,6 +576,31 @@ class View extends PresenterState {
                   buildResultDisplay(context.tr('valCommissionAmount'),
                       viewModel.doubleNullOptional,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<double?>",\n  "label": "Komisi",\n  "formType": "FormType.string",\n  "isRequired": false,\n  "currentValue": null,\n  "prefix": "Text(\'\$\')",\n  "onChanged": "viewModel.setDoubleNullOptional"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // ===== CUSTOM VALIDATION =====
@@ -339,6 +639,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context.tr('valUsername'), viewModel.usernameCustom),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String>",\n  "label": "Username",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": "",\n  "validator": "(value) { min 3, max 20, only alphanumeric+underscore }",\n  "onChanged": "viewModel.setUsernameCustom"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   buildFieldTitle(context.tr('valCustomValidation2Title'),
@@ -375,6 +700,31 @@ class View extends PresenterState {
                   buildResultDisplay(
                       context.tr('valEmail'), viewModel.emailCustom,
                       isOptional: true),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<String?>",\n  "label": "Email",\n  "formType": "FormType.email",\n  "isRequired": false,\n  "currentValue": null,\n  "validator": "(value) { must be @company.com domain }",\n  "onChanged": "viewModel.setEmailCustom"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   buildFieldTitle(context.tr('valCustomValidation3Title'),
@@ -405,6 +755,31 @@ class View extends PresenterState {
                     currentValue: viewModel.ageCustom,
                   ),
                   buildResultDisplay(context.tr('valAge'), viewModel.ageCustom),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "type": "FormFields<int>",\n  "label": "Umur",\n  "formType": "FormType.string",\n  "isRequired": true,\n  "currentValue": 0,\n  "validator": "(value) { min 18, max 65 }",\n  "onChanged": "viewModel.setAgeCustom"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // ===== VALIDATION RULES SUMMARY =====

@@ -19,8 +19,33 @@ class View extends PresenterState {
                 children: [
                   FormFieldsSignaturePad(
                     onExported: viewModel.setSignature,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: Colors.white,
                     exportBackgroundColor: Colors.transparent,
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "onExported": "(result) => setSignature(result)",\n  "backgroundColor": "Colors.transparent",\n  "exportBackgroundColor": "Colors.transparent"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   if (viewModel.signatureResult != null) ...[
