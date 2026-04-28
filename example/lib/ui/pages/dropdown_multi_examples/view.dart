@@ -123,6 +123,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('dmProgramming'),
                       viewModel.multiDropdown1),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Bahasa Pemrograman",\n  "items": ["Dart", "Java", "Kotlin", "Swift", "JavaScript", "..."],\n  "initialValues": ["Dart", "Kotlin"],\n  "isRequired": true,\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 2: With Min/Max Constraints
                   buildFieldTitle(
@@ -151,6 +176,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('dmSelectedSkills'),
                       viewModel.multiDropdown2),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Skills",\n  "items": ["Flutter", "Firebase", "REST API", "GraphQL", "..."],\n  "initialValues": ["Flutter", "Firebase"],\n  "isRequired": true,\n  "minSelections": 2,\n  "maxSelections": 4,\n  "chipBackgroundColor": "Colors.blue.shade100",\n  "chipDeleteIconColor": "Colors.blue.shade700",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 3: Custom Styled
                   buildFieldTitle(
@@ -176,6 +226,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('dmSelectedInterests'),
                       viewModel.multiDropdown3),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Minat",\n  "items": ["Gaming", "Music", "Sports", "Reading", "Travel", "..."],\n  "initialValues": ["Music", "Travel"],\n  "isRequired": false,\n  "chipBackgroundColor": "Colors.green.shade600",\n  "chipTextColor": "Colors.white",\n  "chipDeleteIconColor": "Colors.white",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 4: With Item Count Display
                   buildFieldTitle(
@@ -204,6 +279,31 @@ class View extends PresenterState {
                       context,
                       context.tr('dmSelectedFrameworks'),
                       viewModel.multiDropdown4),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Framework",\n  "items": ["React", "Vue", "Angular", "Flutter", "React Native", "..."],\n  "initialValues": ["Flutter", "React"],\n  "isRequired": false,\n  "showItemCount": true,\n  "chipBackgroundColor": "Colors.orange.shade100",\n  "chipTextColor": "Colors.orange.shade900",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 5: Custom Borders and Hint
                   buildFieldTitle(context.tr('dmCustomBorderTitle'),
@@ -258,6 +358,31 @@ class View extends PresenterState {
                       context,
                       context.tr('dmSelectedCountriesVisited'),
                       viewModel.multiDropdown5),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Negara yang Dikunjungi",\n  "items": ["USA", "Canada", "UK", "Germany", "..."],\n  "initialValues": ["Japan", "Singapore"],\n  "isRequired": false,\n  "hintText": "Pilih negara...",\n  "borderColor": "Colors.grey.shade400",\n  "focusedBorderColor": "Colors.purple",\n  "radius": 12,\n  "labelPosition": "LabelPosition.top",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 6: With Filter/Search
                   buildFieldTitle(
@@ -309,6 +434,31 @@ class View extends PresenterState {
                       context,
                       context.tr('dmSelectedLanguagesFiltered'),
                       viewModel.multiDropdown6),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Bahasa Pemrograman (Filter)",\n  "items": ["Dart", "Java", "Kotlin", "Swift", "JavaScript", "..."],\n  "initialValues": ["Dart", "Python"],\n  "isRequired": false,\n  "enableFilter": true,\n  "filterHintText": "Cari bahasa...",\n  "chipBackgroundColor": "Colors.indigo.shade100",\n  "chipTextColor": "Colors.indigo.shade900",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 32),
 

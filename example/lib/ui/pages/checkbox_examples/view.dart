@@ -38,7 +38,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox1,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -85,7 +85,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox2,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -159,7 +159,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox3,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -228,7 +228,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox4,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -310,7 +310,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox5,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -361,7 +361,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox6,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -426,7 +426,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox7,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -474,7 +474,7 @@ class View extends PresenterState {
                       onChanged: viewModel.setCheckbox8,
                     ),
                     const SizedBox(height: 8),
-                    Text('Contoh penggunaan JSON:',
+                    Text('Contoh Pengisian (JSON):',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
@@ -533,6 +533,33 @@ class View extends PresenterState {
                     context.tr('cbCustomValidationResult'),
                     viewModel.checkbox3),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Pilihan Minimal 2 Opsi",\n  "initialValue": [],\n  "items": ["Option A", "Option B", "Option C", "Option D"],\n  "isRequired": true,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.red",\n  "activeColor": "Colors.red",\n  "validator": "(value) => min 2 selections",\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 // Example 10: Custom Styling
                 buildFieldTitle(
                     context.tr('cbCustomPadding'), Colors.pink.shade600),
@@ -577,6 +604,33 @@ class View extends PresenterState {
                 buildResultDisplay(context, context.tr('cbDietaryRestrictions'),
                     viewModel.checkbox4),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Dietary Restrictions",\n  "initialValue": [],\n  "items": ["Vegetarian", "Vegan", "Gluten-Free", ...],\n  "isRequired": false,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.green",\n  "activeColor": "Colors.green",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 10, horizontal: 4)",\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 // Example 11: Horizontal Layout with Custom Border
                 buildFieldTitle(
                     context.tr('cbNotificationsLayout'), Colors.pink.shade600),
@@ -599,6 +653,33 @@ class View extends PresenterState {
                 ),
                 buildResultDisplay(context, context.tr('cbNotifications'),
                     viewModel.checkbox5),
+
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Notifications",\n  "initialValue": [],\n  "items": ["Push", "Email", "SMS", "In-App"],\n  "isRequired": false,\n  "direction": "Axis.horizontal",\n  "horizontalSideBySide": true,\n  "borderColor": "Colors.deepPurple",\n  "activeColor": "Colors.deepPurple",\n  "itemBorderColor": "Colors.deepPurple.shade300",\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
 
                 // Example 12: Many Options
                 buildFieldTitle(context.tr('cbManyOptionsScrollable'),
@@ -651,6 +732,33 @@ class View extends PresenterState {
                     context.tr('cbSelectedCountriesVisited'),
                     viewModel.checkbox6),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Countries Visited",\n  "initialValue": [],\n  "items": ["United States", "United Kingdom", ...],\n  "isRequired": false,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.amber",\n  "activeColor": "Colors.amber",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 6, horizontal: 4)",\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 buildSectionTitle(context.tr('cbLabelPositions'),
                     Colors.pink.shade700, Colors.pink.shade400),
 
@@ -672,6 +780,33 @@ class View extends PresenterState {
                 buildResultDisplay(
                     context, context.tr('cbPreferences'), viewModel.checkbox9),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Preferences",\n  "initialValue": [],\n  "items": ["Dark Mode", "Notifications", "Analytics"],\n  "labelPosition": "LabelPosition.bottom",\n  "containerGap": 12,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 // Example 14: Label Position - Left
                 buildFieldTitle(
                     context.tr('cbLabelLeft'), Colors.pink.shade600),
@@ -689,6 +824,33 @@ class View extends PresenterState {
                 ),
                 buildResultDisplay(
                     context, context.tr('cbPermissions'), viewModel.checkbox10),
+
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Permissions",\n  "initialValue": [],\n  "items": ["Read", "Write", "Delete", "Admin"],\n  "labelPosition": "LabelPosition.left",\n  "containerGap": 16,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 32),
 
@@ -711,6 +873,33 @@ class View extends PresenterState {
                 buildResultDisplay(context, context.tr('cbNotifications'),
                     viewModel.checkbox11),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Notifications",\n  "initialValue": [],\n  "items": ["Email", "SMS", "Push"],\n  "labelPosition": "LabelPosition.top",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 // Example 16: Label Position - Right
                 buildFieldTitle(
                     context.tr('cbLabelRight'), Colors.pink.shade600),
@@ -728,6 +917,33 @@ class View extends PresenterState {
                 ),
                 buildResultDisplay(
                     context, context.tr('cbThemes'), viewModel.checkbox12),
+
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Themes",\n  "initialValue": [],\n  "items": ["Light", "Dark", "Auto"],\n  "labelPosition": "LabelPosition.right",\n  "containerGap": 16,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
 
                 // Example 17: Label Position - InBorder
                 buildFieldTitle(
@@ -747,6 +963,33 @@ class View extends PresenterState {
                 buildResultDisplay(
                     context, context.tr('cbFeatures'), viewModel.checkbox13),
 
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Features",\n  "initialValue": [],\n  "items": ["Feature A", "Feature B", "Feature C"],\n  "labelPosition": "LabelPosition.inBorder",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
                 // Example 18: Label Position - None
                 buildFieldTitle(
                     context.tr('cbLabelNone'), Colors.pink.shade600),
@@ -764,6 +1007,33 @@ class View extends PresenterState {
                 ),
                 buildResultDisplay(
                     context, context.tr('cbOptions'), viewModel.checkbox14),
+
+                const SizedBox(height: 8),
+                Text('Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "label": "Options",\n  "initialValue": [],\n  "items": ["Option 1", "Option 2", "Option 3"],\n  "labelPosition": "LabelPosition.none",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
+
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 32),
 

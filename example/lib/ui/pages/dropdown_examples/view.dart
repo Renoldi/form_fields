@@ -36,6 +36,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Top)', viewModel.labelTopValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.top",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionBottom'),
@@ -46,6 +71,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Bottom)', viewModel.labelBottomValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.bottom",\n  "items": ["A", "B", "C"],\n  "initialValue": "B",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Left', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionLeft'),
@@ -56,6 +106,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Left)', viewModel.labelLeftValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.left",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Right', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionRight'),
@@ -66,6 +141,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Right)', viewModel.labelRightValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.right",\n  "items": ["A", "B", "C"],\n  "initialValue": "C",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label In Border', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionInBorder'),
@@ -77,6 +177,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, 'Selected (InBorder)',
                       viewModel.labelInBorderValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.inBorder",\n  "items": ["A", "B", "C"],\n  "initialValue": "B",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label None', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionNone'),
@@ -87,6 +212,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (None)', viewModel.labelNoneValue),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.none",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildSectionTitle(context.tr('ddBasicExamples'),
                       Colors.green.shade700, Colors.green.shade400),
 
@@ -102,6 +252,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedCountry'),
                       viewModel.dropdown1),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Negara",\n  "items": ["Indonesia", "Malaysia", "Singapore", "..."],\n  "initialValue": "Indonesia",\n  "isRequired": true,\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 2: Optional Dropdown
                   buildFieldTitle(context.tr('ddOptionalNotRequired'),
@@ -123,6 +298,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedLanguage'),
                       viewModel.dropdown2),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Bahasa",\n  "items": ["English", "Spanish", "French", "German", "Chinese"],\n  "initialValue": null,\n  "isRequired": false,\n  "hintText": "Pilih Bahasa",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('ddCustomStyling'),
                       Colors.green.shade700, Colors.green.shade400),
@@ -143,6 +343,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedColor'),
                       viewModel.dropdown3),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Warna",\n  "items": ["Red", "Green", "Blue", "..."],\n  "initialValue": "Blue",\n  "isRequired": true,\n  "borderColor": "Colors.purple",\n  "focusedBorderColor": "Colors.deepPurple",\n  "radius": 15,\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 4: With Icons
                   buildFieldTitle(
@@ -163,6 +388,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedSize'),
                       viewModel.dropdown4),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Ukuran",\n  "items": ["S", "M", "L", "XL"],\n  "initialValue": "M",\n  "isRequired": true,\n  "borderColor": "Colors.teal",\n  "prefixIcon": "Icon(Icons.shopping_bag)",\n  "hintText": "Pilih Ukuran",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('ddLabelPositions'),
                       Colors.green.shade700, Colors.green.shade400),
@@ -186,6 +436,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedShipping'),
                       viewModel.dropdown5),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Metode Pengiriman",\n  "labelPosition": "LabelPosition.top",\n  "items": ["Standard", "Express", "Overnight", "International"],\n  "initialValue": "Express",\n  "isRequired": true,\n  "borderColor": "Colors.orange",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 6: Label at Left
                   buildFieldTitle('Label Top', Colors.pink.shade600),
@@ -198,6 +473,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Top)', viewModel.dropdown1),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.top",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionBottom'),
@@ -208,6 +508,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Bottom)', viewModel.dropdown2),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.bottom",\n  "items": ["A", "B", "C"],\n  "initialValue": "B",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Left', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionLeft'),
@@ -218,6 +543,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Left)', viewModel.dropdown3),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.left",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label Right', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionRight'),
@@ -228,6 +578,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (Right)', viewModel.dropdown4),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.right",\n  "items": ["A", "B", "C"],\n  "initialValue": "C",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label In Border', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionInBorder'),
@@ -238,6 +613,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, 'Selected (InBorder)', viewModel.dropdown5),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.inBorder",\n  "items": ["A", "B", "C"],\n  "initialValue": "B",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
                   buildFieldTitle('Label None', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionNone'),
@@ -251,6 +651,31 @@ class View extends PresenterState {
 
                   buildResultDisplay(context,
                       context.tr('ddSelectedDepartment'), viewModel.dropdown8),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Opsi",\n  "labelPosition": "LabelPosition.none",\n  "items": ["A", "B", "C"],\n  "initialValue": "A",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('ddCustomDecoration'),
                       Colors.green.shade700, Colors.green.shade400),
@@ -291,6 +716,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedTheme'),
                       viewModel.dropdown9),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Tema",\n  "items": ["Light", "Dark", "Auto", "System"],\n  "initialValue": "Light",\n  "isRequired": false,\n  "decoration": "InputDecoration(hintText: \\"Pilih Tema\\", filled: true, ...)",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('ddWithFilter'),
                       Colors.green.shade700, Colors.green.shade400),
@@ -315,6 +765,31 @@ class View extends PresenterState {
                       context,
                       context.tr('ddSelectedCountryFiltered'),
                       viewModel.dropdown10),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Negara",\n  "items": ["Indonesia", "Malaysia", "Singapore", "..."],\n  "initialValue": "Indonesia",\n  "isRequired": true,\n  "enableFilter": true,\n  "filterHintText": "Cari negara...",\n  "borderColor": "Colors.teal",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 32),
 

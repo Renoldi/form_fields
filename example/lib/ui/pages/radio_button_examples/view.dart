@@ -41,6 +41,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, context.tr('selectedGender'), viewModel.radio1),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Jenis Kelamin",\n  "isRequired": true,\n  "direction": "vertical",\n  "items": ["Laki-laki", "Perempuan", "Lainnya"],\n  "onChanged": "(value) => setRadio1(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 2: Horizontal Radio Button
                   buildFieldTitle(
@@ -60,6 +85,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedMaritalStatus'), viewModel.radio2),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Status Pernikahan",\n  "isRequired": true,\n  "direction": "horizontal",\n  "horizontalSideBySide": true,\n  "items": ["Belum Menikah", "Menikah", "Cerai"],\n  "onChanged": "(value) => setRadio2(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('radioBorderColors'),
                       Colors.orange.shade700, Colors.orange.shade400),
@@ -88,6 +138,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, context.tr('selectedPlan'), viewModel.radio3),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Paket Berlangganan",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.purple",\n  "activeColor": "Colors.purple",\n  "radius": 15,\n  "items": ["Gratis", "Basic", "Premium", "Enterprise"],\n  "onChanged": "(value) => setRadio3(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 4: Custom Item Spacing & Padding
                   buildFieldTitle(
@@ -110,6 +185,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('selectedDelivery'),
                       viewModel.radio4),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Opsi Pengiriman",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.orange",\n  "activeColor": "Colors.orange",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 12, horizontal: 8)",\n  "items": ["Ambil Sendiri", "Reguler", "Ekspres"],\n  "onChanged": "(value) => setRadio4(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('radioLayoutVariations'),
                       Colors.orange.shade700, Colors.orange.shade400),
@@ -130,6 +230,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, context.tr('selectedRating'), viewModel.radio5),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Rating",\n  "isRequired": true,\n  "direction": "horizontal",\n  "horizontalSideBySide": true,\n  "borderColor": "Colors.amber",\n  "activeColor": "Colors.amber",\n  "items": ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],\n  "onChanged": "(value) => setRadio5(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 6: Different Label Positions
                   buildFieldTitle(
@@ -150,6 +275,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('selectedPriority'),
                       viewModel.radio6),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Prioritas",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.red",\n  "activeColor": "Colors.red",\n  "items": ["Rendah", "Sedang", "Tinggi"],\n  "onChanged": "(value) => setRadio6(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('radioAdvancedFeatures'),
                       Colors.orange.shade700, Colors.orange.shade400),
@@ -183,6 +333,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedPaymentMethod'), viewModel.radio7),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Metode Pembayaran",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.teal",\n  "activeColor": "Colors.teal",\n  "items": ["Kartu Kredit", "Kartu Debit", "PayPal", "COD"],\n  "validator": "(value) { if (value == null) return \'Pilih metode\'; if (value == \'COD\') return \'COD tidak tersedia\'; return null; }",\n  "onChanged": "(value) => setRadio7(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 8: With Custom Icon Size
                   buildFieldTitle(
@@ -208,6 +383,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('selectedFrequency'),
                       viewModel.radio8),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Frekuensi Newsletter",\n  "isRequired": false,\n  "direction": "vertical",\n  "borderColor": "Colors.indigo",\n  "activeColor": "Colors.indigo",\n  "indicatorVerticalAlignment": "IndicatorVerticalAlignment.bottom",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 10, horizontal: 4)",\n  "items": ["Harian", "Mingguan", "Bulanan", "Tidak Pernah"],\n  "onChanged": "(value) => setRadio8(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   buildSectionTitle(context.tr('rbLabelPositions'),
                       Colors.orange.shade700, Colors.orange.shade400),
@@ -233,6 +433,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedCommunication'), viewModel.radio9),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Metode Komunikasi",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.cyan",\n  "activeColor": "Colors.cyan",\n  "labelPosition": "LabelPosition.bottom",\n  "items": ["Email", "Telepon", "SMS", "Push Notification"],\n  "onChanged": "(value) => setRadio9(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 10: Label Position Top
                   buildFieldTitle(
@@ -254,6 +479,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(
                       context, context.tr('selectedTheme'), viewModel.radio10),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Tema",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.lime",\n  "activeColor": "Colors.lime",\n  "labelPosition": "LabelPosition.top",\n  "items": ["Terang", "Gelap", "Sistem"],\n  "onChanged": "(value) => setRadio10(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 11: Label Position Left
                   buildFieldTitle(
@@ -271,6 +521,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedAccessibility'), viewModel.radio11),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Aksesibilitas",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.pink",\n  "activeColor": "Colors.pink",\n  "labelPosition": "LabelPosition.left",\n  "items": ["Aktif", "Nonaktif"],\n  "onChanged": "(value) => setRadio11(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 12: Label Position Right
                   buildFieldTitle(
@@ -292,6 +567,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('selectedVisibility'),
                       viewModel.radio12),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Visibilitas",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.deepOrange",\n  "activeColor": "Colors.deepOrange",\n  "labelPosition": "LabelPosition.right",\n  "items": ["Publik", "Privat", "Terbatas"],\n  "onChanged": "(value) => setRadio12(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 13: Label Position InBorder
                   buildFieldTitle(
@@ -313,6 +613,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedVerification'), viewModel.radio13),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Status Verifikasi",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.green",\n  "activeColor": "Colors.green",\n  "labelPosition": "LabelPosition.inBorder",\n  "items": ["Terverifikasi", "Menunggu", "Belum Terverifikasi"],\n  "onChanged": "(value) => setRadio13(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   // Example 14: Label Position None
                   buildFieldTitle(
@@ -334,6 +659,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context,
                       context.tr('selectedNotification'), viewModel.radio14),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Preferensi Notifikasi",\n  "isRequired": true,\n  "direction": "vertical",\n  "borderColor": "Colors.blue",\n  "activeColor": "Colors.blue",\n  "labelPosition": "LabelPosition.none",\n  "items": ["Aktif", "Nonaktif", "Senyap"],\n  "onChanged": "(value) => setRadio14(value ?? \'\')"\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 32),
 

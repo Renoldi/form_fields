@@ -86,8 +86,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ccSelectedCountry'),
                       viewModel.selectedCountry),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Negara",\n  "items": [Country(\'US\', \'United States\', \'🇺🇸\'), ...],\n  "initialValue": Country(\'US\', \'United States\', \'🇺🇸\'),\n  "isRequired": true,\n  "itemLabelBuilder": "(country) => \\"\${country.flag} \${country.name}\\"",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedCountry != null)
                     _buildInfoCard(
@@ -123,8 +146,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ccSelectedSkills'),
                       viewModel.selectedSkills),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Skills",\n  "items": [Skill(\'flutter\', \'Flutter\', \'Mobile\', ...), ...],\n  "initialValues": [Skill(\'flutter\', ...), Skill(\'dart\', ...)],\n  "isRequired": true,\n  "minSelections": 2,\n  "maxSelections": 5,\n  "itemLabelBuilder": "(skill) => \\"\${skill.name} (\${skill.category})\\"",\n  "showItemCount": true,\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedSkills.isNotEmpty)
                     _buildInfoCard(
@@ -209,8 +255,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ccSelectedPlan'),
                       viewModel.selectedPlan),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Paket Langganan",\n  "items": [SubscriptionPlan(\'pro\', \'Pro\', 9.99, \'Advanced features\'), ...],\n  "initialValue": SubscriptionPlan(\'pro\', \'Pro\', 9.99, ...),\n  "isRequired": true,\n  "direction": "Axis.vertical",\n  "itemLabelBuilder": "(plan) => \\"\${plan.name} - \$\${plan.price}/month\\"",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedPlan != null)
                     _buildInfoCard(
@@ -283,8 +352,31 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context, context.tr('ccSelectedInterests'),
                       viewModel.selectedInterests),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Minat",\n  "items": [Interest(\'gaming\', \'Gaming\', Colors.purple), ...],\n  "initialValue": [Interest(\'music\', \'Music\', ...), Interest(\'travel\', \'Travel\', ...)],\n  "isRequired": false,\n  "direction": "Axis.vertical",\n  "activeColor": "Colors.green",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedInterests.isNotEmpty)
                     _buildInfoCard(
@@ -321,8 +413,31 @@ class View extends PresenterState {
                       context,
                       context.tr('ccSelectedCountryFiltered'),
                       viewModel.selectedCountryWithFilter),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Negara (dengan Filter)",\n  "items": [Country(\'US\', \'United States\', \'🇺🇸\'), ...],\n  "initialValue": Country(\'JP\', \'Japan\', \'🇯🇵\'),\n  "isRequired": true,\n  "enableFilter": true,\n  "filterHintText": "Cari negara...",\n  "itemLabelBuilder": "(country) => \\"\${country.flag} \${country.name}\\"",\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedCountryWithFilter != null)
                     _buildInfoCard(
@@ -361,8 +476,31 @@ class View extends PresenterState {
                       context,
                       context.tr('ccSelectedSkillsFiltered'),
                       viewModel.selectedSkillsWithFilter),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Contoh Pengisian (JSON):',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Color(0xFFE0E0E0)),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SelectableText(
+                        '{\n  "label": "Pilih Skills (dengan Filter)",\n  "items": [Skill(\'flutter\', \'Flutter\', \'Mobile\', ...), ...],\n  "initialValues": [Skill(\'react\', ...), Skill(\'docker\', ...)],\n  "isRequired": false,\n  "enableFilter": true,\n  "filterHintText": "Cari skill...",\n  "itemLabelBuilder": "(skill) => \\"\${skill.name} (\${skill.category})\\"",\n  "showItemCount": true,\n  "onChanged": "(value) => ..."\n}',
+                        style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Color(0xFF333333)),
+                      ),
+                    ),
+                  ),
 
                   if (viewModel.selectedSkillsWithFilter.isNotEmpty)
                     _buildInfoCard(
