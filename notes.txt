@@ -104,3 +104,76 @@ Tolong tambahkan contoh penggunaan dalam bentuk JSON di bawah bagian "result" pa
 
 ================================
 Buatkan contoh library/fitur baru dengan struktur profesional seperti page setting, terdiri dari file main, presenter, view_model, dan view. Implementasi harus mengikuti pola arsitektur yang konsisten dan terorganisir, serta siap diintegrasikan ke menu dan routing aplikasi. Sertakan juga contoh penggunaan widget/fungsionalitas utama pada view.
+
+Audit file example/lib/ui/pages/form_fields_examples/view.dart.
+
+Untuk setiap section yang diawali dengan `buildFieldTitle(...)` atau `buildSectionTitle(...)`,
+periksa apakah terdapat blok "Contoh Pengisian (JSON):" sebelum section berikutnya.
+
+Jika belum ada:
+1. Baca properti widget FormFields / FormFieldsAutocomplete yang dipakai di section tersebut
+2. Tambahkan blok berikut tepat setelah `buildResultDisplay(...)` terakhir di section itu:
+
+const SizedBox(height: 12),
+Text('Contoh Pengisian (JSON):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+SizedBox(
+  width: double.infinity,
+  child: Card(
+    color: Color(0xFFF5F5F5),
+    margin: EdgeInsets.symmetric(vertical: 8),
+    child: Padding(
+      padding: EdgeInsets.all(12),
+      child: SelectableText(
+        '{\n'
+        '  "properti1": "nilai1",\n'
+        ...
+        '}',
+        style: TextStyle(fontFamily: 'monospace', fontSize: 13),
+      ),
+    ),
+  ),
+),
+
+Pastikan tidak ada duplikat. Semua string di dalam SelectableText harus menggunakan escape \n
+bukan newline literal, dan tidak ada single quote yang tidak di-escape di dalam string Dart.
+
+================================
+PROMPT PROFESIONAL (REUSABLE UNTUK HALAMAN LAIN)
+
+Tolong audit dan lengkapi contoh pemakaian pada file: <TARGET_FILE_DART>.
+
+Tujuan:
+Pastikan setiap section field demo memiliki tepat 1 blok "Contoh Pengisian (JSON):".
+
+Definisi section:
+- Section dimulai dari buildFieldTitle(...) (atau pola judul section setara di file tersebut)
+- Section berakhir tepat sebelum buildFieldTitle(...) berikutnya
+
+Aturan pengerjaan:
+1. Jika dalam 1 section belum ada "Contoh Pengisian (JSON):", tambahkan 1 blok setelah buildResultDisplay(...) terakhir di section itu.
+2. Jika dalam 1 section ada lebih dari 1 blok, sisakan hanya 1 (hapus duplikat).
+3. Jangan menaruh blok contoh di tengah argumen fungsi (misalnya di tengah buildResultDisplay(...)).
+4. Jangan mengubah logic widget/validator/state; hanya tambah/perbaiki blok contoh.
+5. Pertahankan style file yang sudah ada (indentasi, spacing, gaya string).
+
+Format blok yang harus dipakai:
+- Header: Text('Contoh Pengisian (JSON):', ...)
+- Body: SelectableText dengan string JSON multi-line model:
+    '{\n'
+    '  "key": "value",\n'
+    '  ...\n'
+    '}'
+
+Kualitas output:
+- JSON contoh harus relevan dengan properti field di section tersebut (label, formType, isRequired, onChanged, dll).
+- Hindari placeholder generik yang tidak sesuai section.
+
+Validasi wajib setelah edit:
+- Pastikan analyzer/compile error = 0 pada file yang diubah.
+- Laporkan ringkas:
+    - jumlah section yang ditambah contoh
+    - jumlah duplikat yang dihapus
+    - status final error analyzer
+
+Versi singkat:
+Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "Contoh Pengisian (JSON):" sebelum section berikutnya. Tambahkan jika belum ada, hapus jika duplikat, tempatkan setelah buildResultDisplay(...) terakhir, jangan ubah logic lain, jaga style existing, lalu pastikan analyzer clean.
