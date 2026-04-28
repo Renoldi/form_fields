@@ -435,7 +435,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           jpgCompressionQuality: 0.5,
         ),
       );
-      if (!mounted) return;
+      if (!context.mounted) return;
       if (scanned != null && scanned.isNotEmpty) {
         file = File(scanned.first);
       }
@@ -497,23 +497,23 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           // );
         },
       );
-      if (!mounted) return;
+      if (!context.mounted) return;
       if (source == null) return;
       if (source == 'camera' || source == 'gallery') {
         final picker = ImagePicker();
         final picked = await picker.pickImage(
           source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
         );
-        if (!mounted) return;
+        if (!context.mounted) return;
         if (picked != null) {
           file = File(picked.path);
         }
       }
     }
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (file != null) {
       final result = await MyimageResult.fromFile(file);
-      if (!mounted) return;
+      if (!context.mounted) return;
       int? uploadIdx;
       String? description;
 
@@ -613,7 +613,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             );
           },
         );
-        if (!mounted) return;
+        if (!context.mounted) return;
         if (description != null && description.isNotEmpty) {
           _lastDescription = description;
         }
@@ -672,7 +672,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           uploadIdx,
           description: description,
         );
-        if (!mounted) return;
+        if (!context.mounted) return;
         _uploadingIndex = null;
         provider.commit();
       }
