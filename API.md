@@ -1,144 +1,71 @@
-# API Reference - FormFields Package
+# API Reference — FormFields Package
 
-## Public Entry Point
+> **Single import:** `import 'package:form_fields/form_fields.dart';`
 
-Use [lib/form_fields.dart](lib/form_fields.dart) as the only import surface:
+---
+
+## Table of Contents
+
+1. [Package Overview](#1-package-overview)
+2. [FormFields\<T\>](#2-formfieldst) — Core text/date/time/OTP/dropdown input widget
+3. [FormFieldsAutocomplete\<T\>](#3-formfieldsautocompletelt) — API-driven autocomplete field
+4. [FormFieldsSelect\<T\>](#4-formfieldsselectltt) — Modal single-select field
+5. [FormFieldsDropdown\<T\>](#5-formfieldsdropdownltt) — Inline dropdown field
+6. [FormFieldsDropdownMulti\<T\>](#6-formfieldsdropdownmultiltt) — Multi-select dropdown field
+7. [FormFieldsRadioButton\<T\>](#7-formfieldsradiobuttonltt) — Radio button group
+8. [FormFieldsCheckbox\<T\>](#8-formfieldscheckboxltt) — Checkbox group
+9. [FormFieldsMyImage](#9-formfieldsmyimage) — Image picker & direct uploader
+10. [FormFieldsSignaturePad](#10-formfieldssignaturepad) — Signature pad with optional live camera
+11. [FormFieldsLiveCameraCapture](#11-formfieldslivecameracapture) — Standalone live front-camera widget
+12. [AppButton](#12-appbutton) — Unified button widget
+13. [AppButtonGroup](#13-appbuttongroup) — Button layout group
+14. [AppSegmentedButton\<T\>](#14-appsegmentedbuttonltt) — Material 3 segmented button wrapper
+15. [AppSplitButton\<T\>](#15-appsplitbuttonltt) — Split button with dropdown actions
+16. [AppFabMenu](#16-appfabmenu) — Expandable FAB menu
+17. [AppDialogService](#17-appdialogservice) — Context-scoped dialog helper
+18. [AppGlobalDialogService](#18-appglobaldialogservice) — Navigator-key-scoped dialog helper
+19. [AppLoadingIndicator](#19-apploadingindicator) — Animated loading widget
+20. [AppProgressIndicator](#20-appprogressindicator) — Determinate / indeterminate progress widget
+21. [showAppModalBottomSheet](#21-showappmodalbottomsheet) — Keyboard-aware modal bottom sheet
+22. [ResponsiveMenuGrid](#22-responsivemenugrid) — Auto-column responsive grid
+23. [FormFieldsMyImageController](#23-formfieldsmyimagecontroller) — External image controller
+24. [FormFieldsMyImageProvider](#24-formfieldsmyimageprovider) — Image state provider (ChangeNotifier)
+25. [MyimageResult](#25-myimageresult) — Image data model
+26. [DioUtil](#26-dioutil) — File upload & download utility
+27. [FormFieldValidators](#27-formfieldvalidators) — Static validator methods
+28. [Enums Reference](#28-enums-reference)
+29. [String Extensions](#29-string-extensions)
+30. [DateTime & TimeOfDay Extensions](#30-datetime--timeofday-extensions)
+
+---
+
+## 1. Package Overview
+
+FormFields is a comprehensive Flutter form-field and UI component package. It covers all standard field types, selection widgets, media capture, dialogs, buttons, and utility helpers — all from a single import.
 
 ```dart
 import 'package:form_fields/form_fields.dart';
 ```
 
-Export groups from the entry point:
+**Export groups:**
 
-- Core field: `FormFields`
-- Autocomplete: `FormFieldsAutocomplete`
-- Selection fields: `FormFieldsSelect`, `FormFieldsDropdown`, `FormFieldsDropdownMulti`, `FormFieldsRadioButton`, `FormFieldsCheckbox`
-- Button family: `AppButton`, `AppButtonGroup`, `AppSegmentedButton`, `AppSplitButton`, `AppFabMenu`, plus related layout/content and enums
-- Feedback family: `AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`
-- Shared utilities and localization: enums, validators, extensions, controller, and localizations
-
-## OTP & Verification Field API
-
-### Key Parameters
-
-| Parameter              | Type              | Description                              |
-| ---------------------- | ----------------- | ---------------------------------------- |
-| `verificationAsOtp`    | `bool`            | Show as OTP digit boxes                  |
-| `verificationLength`   | `int`             | Number of OTP digits                     |
-| `isOtpCountdown`       | `bool`            | Enable countdown timer                   |
-| `otpCountdownDuration` | `Duration`        | Duration for countdown                   |
-| `onOtpCountdownReload` | `VoidCallback`    | Callback for resend button               |
-| `otpBorderType`        | `OtpBorderType`   | `box` or `underline` for OTP digit boxes |
-| `inputDecoration`      | `InputDecoration` | Custom InputDecoration for OTP boxes     |
-| `otpBoxWidth`          | `double`          | Width of each OTP box                    |
-| `otpBoxSpacing`        | `double`          | Spacing between OTP boxes                |
-| `otpTextStyle`         | `TextStyle`       | Text style for OTP digits                |
-| `labelPosition`        | `LabelPosition`   | Flexible label placement                 |
-| `verificationHidden`   | `bool`            | Hide/obscure OTP input                   |
-
-All validation and UI text is fully localized. See [LOCALIZATION.md](LOCALIZATION.md).
+| Group                | Classes                                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Core field           | `FormFields<T>`                                                                                                    |
+| Autocomplete         | `FormFieldsAutocomplete<T>`                                                                                        |
+| Selection            | `FormFieldsSelect`, `FormFieldsDropdown`, `FormFieldsDropdownMulti`, `FormFieldsRadioButton`, `FormFieldsCheckbox` |
+| Media                | `FormFieldsMyImage`, `FormFieldsSignaturePad`, `FormFieldsLiveCameraCapture`                                       |
+| Buttons              | `AppButton`, `AppButtonGroup`, `AppSegmentedButton`, `AppSplitButton`, `AppFabMenu`                                |
+| Feedback             | `AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`                        |
+| Utilities            | `showAppModalBottomSheet`, `ResponsiveMenuGrid`, `DioUtil`, `FormFieldValidators`                                  |
+| Models & Controllers | `MyimageResult`, `FormFieldsMyImageController`, `FormFieldsMyImageProvider`                                        |
+| Enums                | `FormType`, `LabelPosition`, `BorderType`, `AppButtonType`, `AppButtonSize`, `AppDialogType`, etc.                 |
 
 ---
 
-## MyImage (Image Picker & Uploader)
+## 2. FormFields\<T\>
 
-Widget untuk memilih, menampilkan, dan mengunggah gambar atau dokumen.
-
-### Properti Utama
-
-| Properti               | Tipe                                  | Deskripsi                                |
-| ---------------------- | ------------------------------------- | ---------------------------------------- |
-| `controller`           | `MyImageController?`                  | Kontrol eksternal daftar gambar          |
-| `onImagesChanged`      | `void Function(List<MyimageResult>)?` | Callback perubahan daftar gambar (multi) |
-| `onImageChanged`       | `void Function(MyimageResult)?`       | Callback perubahan gambar (single)       |
-| `label`                | `String?`                             | Label field                              |
-| `isDoc`                | `bool`                                | Mode dokumen/scanner                     |
-| `maxImages`            | `int?`                                | Maksimal jumlah gambar                   |
-| `imageBuilder`         | `Widget Function(...)`                | Kustom builder tampilan gambar           |
-| `removeIconBuilder`    | `Widget Function(...)`                | Kustom builder ikon hapus                |
-| `onRemoveImage`        | `void Function(int, MyimageResult)?`  | Callback saat gambar dihapus             |
-| `plusBuilder`          | `Widget Function(BuildContext)?`      | Kustom builder tombol tambah             |
-| `uploadUrl`            | `String?`                             | Endpoint upload gambar                   |
-| `uploadToken`          | `String?`                             | Token upload (opsional)                  |
-| `isDirectUpload`       | `bool`                                | Upload langsung ke server                |
-| `uploadSuccessMessage` | `String`                              | Pesan sukses upload                      |
-| `uploadFailedMessage`  | `String`                              | Pesan gagal upload                       |
-| `uploadErrorMessage`   | `String`                              | Pesan error upload                       |
-| `allow`                | `bool`                                | Izin upload                              |
-| `showDesc`             | `bool`                                | Tampilkan kolom deskripsi                |
-| `descriptionField`     | `String?`                             | Nama field deskripsi                     |
-
-### Contoh Penggunaan
-
-```dart
-MyImage(
-  label: 'Foto',
-  maxImages: 3,
-  onImagesChanged: (images) {
-    // Daftar gambar terpilih
-  },
-  uploadUrl: 'https://api.example.com/upload',
-  isDirectUpload: true,
-)
-```
-
-Lihat juga: `MyImageController`, `MyimageResult` untuk kontrol dan hasil gambar.
-
-### AppDialogService
-
-Reusable dialog helper for loading, success/error/info dialogs, and guarded async flows.
-
-Main methods:
-
-- `showLoading(...)`
-- `hide()`
-- `showSuccess(...)`
-- `showError(...)`
-- `showInfo(...)`
-- `showResult(...)`
-- `showExitConfirm(...)`
-- `guard<T>(...)`
-
-### AppGlobalDialogService
-
-Global coordinator that delegates to `AppDialogService` using a configured root navigator key.
-
-Main methods:
-
-- `configure(GlobalKey<NavigatorState>)`
-- `reset()`
-- `showLoading(...)`
-- `hide()`
-- `showSuccess(...)`
-- `showError(...)`
-- `showInfo(...)`
-- `showResult(...)`
-- `showExitConfirm(...)`
-- `guard<T>(...)`
-
-Loading options for `showLoading` and `guard`:
-
-- `AppDialogLoadingVisual.indicator` with `AppLoadingVariant.spinner|pulse|dots`
-- `AppDialogLoadingVisual.progress` with `AppProgressType.circular|linear`
-
-### AppLoadingIndicator
-
-Animated loading widget with variants:
-
-- `AppLoadingVariant.spinner`
-- `AppLoadingVariant.pulse`
-- `AppLoadingVariant.dots`
-
-### AppProgressIndicator
-
-Progress widget for determinate and indeterminate states:
-
-- `AppProgressType.linear`
-- `AppProgressType.circular`
-
-## Core Widget: FormFields<T>
-
-The main widget for creating form fields.
+The core input widget. Supports text, phone, email, password, OTP/verification, numeric, date, time, datetime, date-range, and selection types via the `formType` parameter.
 
 ### Constructor
 
@@ -146,495 +73,280 @@ The main widget for creating form fields.
 FormFields<T>({
   required ValueChanged<T> onChanged,
   required String label,
-  FormFieldValidator<String>? validator,
   T? currentValue,
-  FocusNode? nextFocusNode,
+  FormType formType = FormType.string,
+  LabelPosition labelPosition = LabelPosition.none,
+  bool isRequired = false,
+  FormFieldValidator<String>? validator,
+  AutovalidateMode? autovalidateMode,
   FocusNode? focusNode,
+  FocusNode? nextFocusNode,
   Widget? prefix,
   Widget? prefixIcon,
   Widget? suffix,
   Widget? suffixIcon,
   InputDecoration? inputDecoration,
-  FormType formType = FormType.string,
-  LabelPosition labelPosition = LabelPosition.none,
-  bool isRequired = false,
   double radius = 10,
   BorderType borderType = BorderType.outlineInputBorder,
   int multiLine = 0,
+  // OTP/Verification
   int verificationLength = 6,
+  bool verificationAsOtp = false,
   bool verificationHidden = false,
+  bool isOtpCountdown = false,
+  Duration otpCountdownDuration,
+  VoidCallback? onOtpCountdownReload,
+  OtpBorderType otpBorderType = OtpBorderType.box,
+  double? otpBoxWidth,
+  double? otpBoxSpacing,
+  TextStyle? otpTextStyle,
+  // Date / time
   String? customFormat,
   bool stripSeparators = true,
   DateTime? firstDate,
   DateTime? lastDate,
+  // Locale
+  String? locale,
 })
 ```
 
 ### Properties
 
-#### Required Properties
-
-| Property    | Type              | Description                       |
-| ----------- | ----------------- | --------------------------------- |
-| `onChanged` | `ValueChanged<T>` | Callback when field value changes |
-| `label`     | `String`          | Label text for the field          |
-
-#### Optional Properties
-
-| Property             | Type                          | Default              | Description                                                                                                                                             |
-| -------------------- | ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `formType`           | `FormType`                    | `FormType.string`    | Type of form field                                                                                                                                      |
-| `labelPosition`      | `LabelPosition`               | `LabelPosition.none` | Position of label                                                                                                                                       |
-| `isRequired`         | `bool`                        | `false`              | Enable validation                                                                                                                                       |
-| `validator`          | `FormFieldValidator<String>?` | `null`               | Custom validator                                                                                                                                        |
-| `currentValue`       | `T?`                          | `null`               | Initial value                                                                                                                                           |
-| `focusNode`          | `FocusNode?`                  | `null`               | Focus control                                                                                                                                           |
-| `nextFocusNode`      | `FocusNode?`                  | `null`               | Next field focus                                                                                                                                        |
-| `prefix`             | `Widget?`                     | `null`               | Widget before input                                                                                                                                     |
-| `prefixIcon`         | `Widget?`                     | `null`               | Icon before input                                                                                                                                       |
-| `suffix`             | `Widget?`                     | `null`               | Widget after input                                                                                                                                      |
-| `suffixIcon`         | `Widget?`                     | `null`               | Icon after input                                                                                                                                        |
-| `inputDecoration`    | `InputDecoration?`            | `null`               | Custom decoration                                                                                                                                       |
-| `radius`             | `double`                      | `10`                 | Border radius                                                                                                                                           |
-| `borderType`         | `BorderType`                  | `outlineInputBorder` | Border style                                                                                                                                            |
-| `multiLine`          | `int`                         | `0`                  | Lines for text area                                                                                                                                     |
-| `verificationLength` | `int`                         | `6`                  | Number of digits for verification input                                                                                                                 |
-| `verificationHidden` | `bool`                        | `false`              | Hide verification digits with visibility toggle                                                                                                         |
-| `locale`             | `String?`                     | `null`               | Custom locale ('id', 'en' or 'id_ID', 'en_US') for validation text and date/time pickers. Unsupported locales fall back to English. No delegate needed! |
-| `customFormat`       | `String?`                     | `null`               | Custom date format                                                                                                                                      |
-| `stripSeparators`    | `bool`                        | `true`               | Format numbers                                                                                                                                          |
-| `firstDate`          | `DateTime?`                   | `null`               | First selectable date (default: 100 years ago)                                                                                                          |
-| `lastDate`           | `DateTime?`                   | `null`               | Last selectable date (default: today)                                                                                                                   |
-
-## Enums
-
-### FormType
-
-```dart
-enum FormType {
-  string,      // Basic text input
-  phone,       // Phone with validation
-  password,    // Password with toggle
-  verification, // Verification/OTP input (digits only)
-  email,       // Email with validation
-  date,        // Date picker (returns DateTime)
-  time,        // Time picker (supports DateTime or TimeOfDay)
-  dateTime,    // DateTime picker (returns DateTime)
-  dateTimeRange, // Date range picker (returns DateTimeRange)
-  timeOfDay,   // Time picker (returns TimeOfDay)
-  dropdown,    // Single-select dropdown
-  dropdownMulti, // Multi-select dropdown
-  radioButton, // Radio button group
-  checkbox,    // Checkbox group
-}
-```
-
-Verification example:
-
-```dart
-FormFields<String>(
-  label: 'Verification Code',
-  formType: FormType.verification,
-  verificationLength: 6,
-  verificationHidden: true,
-  onChanged: (value) {},
-)
-```
-
-### LabelPosition
-
-```dart
-enum LabelPosition {
-  top,        // Label above input
-  bottom,     // Label below input
-  left,       // Label to the left
-  right,      // Label to the right
-  inBorder,   // Floating label in border
-  none,       // No label
-}
-```
-
-### BorderType
-
-```dart
-enum BorderType {
-  outlineInputBorder,      // Outlined border
-  underlineInputBorder,    // Underline border
-  none,                    // No border
-}
-```
-
-## Validators: FormFieldValidators
-
-### Static Methods
-
-#### required(label, {customMessage})
-
-Validates that field is not empty.
-
-```dart
-FormFieldValidators.required('Email')
-```
-
-#### email(label, {customMessage})
-
-Validates email format.
-
-```dart
-FormFieldValidators.email('Email')
-```
-
-#### phone(label, {customMessage})
-
-Validates phone format (Indonesian: 0 + 11 digits).
-
-```dart
-FormFieldValidators.phone('Phone')
-```
-
-#### password(label, {customMessage})
-
-Validates password (minimum 6 characters).
-
-```dart
-FormFieldValidators.password('Password')
-```
-
-#### number(label, {customMessage})
-
-Validates numeric input.
-
-```dart
-FormFieldValidators.number('Amount')
-```
-
-#### minLength(label, minLength, {customMessage})
-
-Validates minimum string length.
-
-```dart
-FormFieldValidators.minLength('Username', 3)
-```
-
-#### maxLength(label, maxLength, {customMessage})
-
-Validates maximum string length.
-
-```dart
-FormFieldValidators.maxLength('Code', 8)
-```
-
-#### range(label, min, max, {customMessage})
-
-Validates number is within range.
-
-```dart
-FormFieldValidators.range('Age', 18, 100)
-```
-
-#### pattern(label, pattern, {customMessage})
-
-Validates against regex pattern.
-
-```dart
-FormFieldValidators.pattern('Username', r'^[a-zA-Z0-9_]+$')
-```
-
-#### match(label, matchValue, {customMessage})
-
-Validates field matches another value.
-
-```dart
-FormFieldValidators.match('Password Confirm', passwordValue)
-```
-
-#### compose(validators)
-
-Combines multiple validators.
-
-```dart
-FormFieldValidators.compose([
-  FormFieldValidators.required('Field'),
-  FormFieldValidators.minLength('Field', 3),
-])
-```
-
-## String Extensions
-
-### Validation Properties
-
-```dart
-String email = 'test@example.com';
-
-email.isValidEmail          // true
-email.isValidPhone          // false
-email.isValidPassword       // true (length > 5)
-email.isValidNumber         // false
-email.isWhiteSpace          // false
-email.isValidVerification   // true (length >= 1)
-```
-
-### Manipulation Methods
-
-```dart
-String phone = '081234567890';
-
-phone.hidePhone     // '*'.repeat(7) + '7890'
-phone.is0Phone      // '081234567890' (or adds 0)
-phone.toTitleCase   // Title case conversion
-```
-
-## DateTime Extensions
-
-### Comparison Methods
-
-```dart
-DateTime? date = DateTime.now();
-
-date.isBefore(other)           // Compare dates
-date.isAfter(other)            // Compare dates
-date.isAtSameMomentAs(other)   // Exact comparison
-```
-
-### Formatting Methods
-
-```dart
-DateTime? date = DateTime.now();
-
-date.toStrings()                           // Default format
-date.toStrings(format: Formats.date)       // Date only
-date.toStrings(format: Formats.time)       // Time only
-date.toStrings(format: Formats.dateTime)   // DateTime
-date.toStrings(stringFormat: 'dd/MM/yyyy') // Custom format
-```
-
-### Conversion Methods
-
-```dart
-DateTime? dateTime = DateTime.now();
-
-// Convert to TimeOfDay
-TimeOfDay? timeOfDay = dateTime.toTimeOfDay();
-// Returns: TimeOfDay(hour: dateTime.hour, minute: dateTime.minute)
-```
-
-## TimeOfDay Extensions
-
-### Conversion Methods
-
-```dart
-TimeOfDay? time = TimeOfDay(hour: 14, minute: 30);
-
-// Convert to DateTime (uses current date)
-DateTime? dateTime = time.toDateTime();
-
-// Convert to DateTime with specific date
-DateTime specificDate = DateTime(2026, 12, 25);
-DateTime? christmas2pm = time.toDateTimeWithDate(specificDate);
-```
-
-**Example Usage:**
-
-```dart
-// Get TimeOfDay from FormFields
-FormFields<TimeOfDay>(
-  label: 'Meeting Time',
-  formType: FormType.time,
-  onChanged: (TimeOfDay? value) {
-    if (value != null) {
-      // Convert to DateTime for API submission
-      DateTime meetingDateTime = value.toDateTime()!;
-
-      // Or with specific date
-      DateTime eventDate = DateTime(2026, 3, 15);
-      DateTime fullDateTime = value.toDateTimeWithDate(eventDate)!;
-    }
-  },
-)
-```
-
-## Controller: FormFieldsController
-
-Internal state management controller.
-
-### Properties
-
-```dart
-TextEditingController controller          // Internal text controller
-bool obscure                              // Password visibility state
-String form                               // Form value
-FormType formType                         // Field type
-String label                              // Field label
-bool isLabel                              // Label display state
-bool isValid                              // Validation state
-Duration d100YEARS                        // 100-year duration
-```
-
-### Methods
-
-```dart
-void commit()                             // Notify listeners
-void dispose()                            // Cleanup resources
-```
-
-## ColorUtil
-
-Predefined colors for UI customization.
-
-```dart
-ColorUtil.primaryColor          // #1F1B62
-ColorUtil.redColor              // Colors.red
-ColorUtil.whiteColor            // Colors.white
-ColorUtil.colorC7C7C7           // #C7C7C7
-// ... many more colors available
-```
-
-## Type Support
+#### Required
+
+| Property    | Type              | Description                 |
+| ----------- | ----------------- | --------------------------- |
+| `onChanged` | `ValueChanged<T>` | Fires on every value change |
+| `label`     | `String`          | Label text                  |
+
+#### Common Optional
+
+| Property                | Type                          | Default              | Description                                         |
+| ----------------------- | ----------------------------- | -------------------- | --------------------------------------------------- |
+| `formType`              | `FormType`                    | `string`             | Field behaviour variant                             |
+| `currentValue`          | `T?`                          | `null`               | Initial / controlled value                          |
+| `labelPosition`         | `LabelPosition`               | `none`               | Label placement                                     |
+| `isRequired`            | `bool`                        | `false`              | Enables built-in required validation                |
+| `validator`             | `FormFieldValidator<String>?` | `null`               | Custom validator                                    |
+| `autovalidateMode`      | `AutovalidateMode?`           | `null`               | When to auto-validate                               |
+| `focusNode`             | `FocusNode?`                  | `null`               | Focus control                                       |
+| `nextFocusNode`         | `FocusNode?`                  | `null`               | Auto-advance focus                                  |
+| `prefix` / `prefixIcon` | `Widget?`                     | `null`               | Leading decoration                                  |
+| `suffix` / `suffixIcon` | `Widget?`                     | `null`               | Trailing decoration                                 |
+| `inputDecoration`       | `InputDecoration?`            | `null`               | Full decoration override                            |
+| `radius`                | `double`                      | `10`                 | Border corner radius                                |
+| `borderType`            | `BorderType`                  | `outlineInputBorder` | Border style                                        |
+| `multiLine`             | `int`                         | `0`                  | `> 0` = textarea with that many lines               |
+| `locale`                | `String?`                     | `null`               | `'id'` / `'en'` — affects validation text & pickers |
+
+#### OTP / Verification
+
+| Property               | Type            | Default                 | Description                          |
+| ---------------------- | --------------- | ----------------------- | ------------------------------------ |
+| `verificationAsOtp`    | `bool`          | `false`                 | Show individual digit boxes          |
+| `verificationLength`   | `int`           | `6`                     | Number of digit boxes                |
+| `verificationHidden`   | `bool`          | `false`                 | Obscure input with visibility toggle |
+| `isOtpCountdown`       | `bool`          | `false`                 | Show countdown timer                 |
+| `otpCountdownDuration` | `Duration`      | `Duration(seconds: 60)` | Countdown length                     |
+| `onOtpCountdownReload` | `VoidCallback?` | `null`                  | Called when resend is tapped         |
+| `otpBorderType`        | `OtpBorderType` | `box`                   | `box` or `underline`                 |
+| `otpBoxWidth`          | `double?`       | `null`                  | Width of each digit box              |
+| `otpBoxSpacing`        | `double?`       | `null`                  | Gap between boxes                    |
+| `otpTextStyle`         | `TextStyle?`    | `null`                  | Text style inside each box           |
+
+#### Date / Time
+
+| Property          | Type        | Default | Description                                       |
+| ----------------- | ----------- | ------- | ------------------------------------------------- |
+| `customFormat`    | `String?`   | `null`  | Custom `DateFormat` pattern                       |
+| `stripSeparators` | `bool`      | `true`  | Strip thousand-separator for numeric types        |
+| `firstDate`       | `DateTime?` | `null`  | Earliest selectable date (default: 100 years ago) |
+| `lastDate`        | `DateTime?` | `null`  | Latest selectable date (default: today)           |
 
 ### Supported Generic Types
 
-FormFields supports the following generic types:
+| Type            | Compatible `formType` values                           |
+| --------------- | ------------------------------------------------------ |
+| `String`        | `string`, `phone`, `email`, `password`, `verification` |
+| `int`           | `string` (numeric)                                     |
+| `double`        | `string` (decimal)                                     |
+| `DateTime`      | `date`, `time`, `dateTime`                             |
+| `TimeOfDay`     | `time`, `timeOfDay`                                    |
+| `DateTimeRange` | `dateTimeRange`                                        |
 
-- `FormFields<String>` - Text input, email, phone, password
-- `FormFields<int>` - Integer number input with optional formatting
-- `FormFields<double>` - Decimal number input with optional formatting
-- `FormFields<DateTime>` - Date, time, or datetime pickers
-- `FormFields<TimeOfDay>` - Time picker (time-only values)
-- `FormFields<DateTimeRange>` - Date range picker
-
-### TimeOfDay vs DateTime for Time Pickers
-
-#### Using TimeOfDay
+### Usage Examples
 
 ```dart
-FormFields<TimeOfDay>(
-  label: 'Meeting Time',
-  formType: FormType.time,
-  onChanged: (TimeOfDay? value) {
-    if (value != null) {
-      print('Hour: ${value.hour}, Minute: ${value.minute}');
-      String formatted = value.format(context);
-    }
-  },
+// Basic text
+FormFields<String>(
+  label: 'Username',
+  formType: FormType.string,
+  labelPosition: LabelPosition.top,
+  isRequired: true,
+  onChanged: (value) => setState(() => username = value ?? ''),
+)
+
+// OTP with countdown
+FormFields<String>(
+  label: 'Verification Code',
+  formType: FormType.verification,
+  verificationAsOtp: true,
+  verificationLength: 6,
+  isOtpCountdown: true,
+  otpCountdownDuration: const Duration(seconds: 120),
+  onOtpCountdownReload: () => resendCode(),
+  onChanged: (value) => setState(() => otp = value ?? ''),
+)
+
+// Date range
+FormFields<DateTimeRange>(
+  label: 'Stay Period',
+  formType: FormType.dateTimeRange,
+  labelPosition: LabelPosition.top,
+  onChanged: (range) => setState(() => stayPeriod = range),
+)
+
+// Textarea
+FormFields<String>(
+  label: 'Notes',
+  multiLine: 4,
+  labelPosition: LabelPosition.top,
+  onChanged: (value) => setState(() => notes = value ?? ''),
 )
 ```
 
-**Use TimeOfDay when:**
+---
 
-- You only need time (hour and minute)
-- You want a lightweight time representation
-- You don't need date context
+## 3. FormFieldsAutocomplete\<T\>
 
-#### Using DateTime for Time
+API-driven autocomplete field. Queries a remote endpoint as the user types and renders results in a Material autocomplete overlay.
+
+### Constructor
 
 ```dart
-FormFields<DateTime>(
-  label: 'Appointment Time',
-  formType: FormType.time,
-  onChanged: (DateTime? value) {
-    if (value != null) {
-      String formatted = DateFormat.jm().format(value);
-    }
-  },
+FormFieldsAutocomplete<T>({
+  required String fieldLabel,
+  required String apiUrl,
+  String? apiToken,
+  required void Function(T?) onItemSelected,
+  InputDecoration? inputDecoration,
+  String searchKey = 'q',
+  String tokenHeaderName = 'Authorization',
+  List<T> Function(dynamic data)? parseResults,
+  LabelPosition labelPlacement = LabelPosition.none,
+  BorderType borderStyle = BorderType.outlineInputBorder,
+  Widget? trailingIcon,
+  bool hideTrailingIcon = false,
+  String Function(T)? itemSelectedBuilder,
+  Widget Function(T item, bool selected)? itemBuilder,
+})
+```
+
+### Properties
+
+| Property              | Type                         | Default              | Description                                                                     |
+| --------------------- | ---------------------------- | -------------------- | ------------------------------------------------------------------------------- |
+| `fieldLabel`          | `String`                     | —                    | Label text (required)                                                           |
+| `apiUrl`              | `String`                     | —                    | Remote endpoint URL (required)                                                  |
+| `apiToken`            | `String?`                    | `null`               | Bearer token appended to `Authorization` header                                 |
+| `onItemSelected`      | `void Function(T?)`          | —                    | Called when user selects an item (required)                                     |
+| `searchKey`           | `String`                     | `'q'`                | Query parameter name sent to the API                                            |
+| `tokenHeaderName`     | `String`                     | `'Authorization'`    | Header name for the token                                                       |
+| `parseResults`        | `List<T> Function(dynamic)?` | `null`               | Custom JSON-to-list parser; falls back to `data` as `List` or `data['results']` |
+| `inputDecoration`     | `InputDecoration?`           | `null`               | Full decoration override                                                        |
+| `labelPlacement`      | `LabelPosition`              | `none`               | Label position                                                                  |
+| `borderStyle`         | `BorderType`                 | `outlineInputBorder` | Border style                                                                    |
+| `itemSelectedBuilder` | `String Function(T)?`        | `null`               | Convert item to display string in the text field                                |
+| `itemBuilder`         | `Widget Function(T, bool)?`  | `null`               | Custom widget for each dropdown option                                          |
+| `trailingIcon`        | `Widget?`                    | `null`               | Custom trailing icon                                                            |
+| `hideTrailingIcon`    | `bool`                       | `false`              | Hide the trailing icon                                                          |
+
+### Usage Example
+
+```dart
+FormFieldsAutocomplete<Map<String, dynamic>>(
+  fieldLabel: 'City',
+  apiUrl: 'https://api.example.com/cities',
+  apiToken: authToken,
+  searchKey: 'name',
+  parseResults: (data) => (data['data'] as List).cast<Map<String, dynamic>>(),
+  itemSelectedBuilder: (item) => item['name'] as String,
+  itemBuilder: (item, selected) => ListTile(
+    title: Text(item['name'] as String),
+    selected: selected,
+  ),
+  onItemSelected: (item) => setState(() => selectedCity = item),
 )
 ```
 
-**Use DateTime when:**
+---
 
-- You need full date-time context
-- You're working with APIs that expect DateTime
-- You need date arithmetic capabilities
+## 4. FormFieldsSelect\<T\>
 
-## Formats Enum (for DateTime)
+A tappable field that opens a full-screen or modal selection list. Useful for long lists.
 
-```dart
-enum Formats {
-  date,           // Date only
-  time,           // Time only
-  dateTime,       // Date and time
-  dayDate,        // Day + date
-  dayDateTime,    // Day + datetime
-  month,          // Month only
-  string,         // Custom string
-}
-```
+### Key Parameters
 
-## Complete Example
+| Property           | Type                  | Description                |
+| ------------------ | --------------------- | -------------------------- |
+| `label`            | `String`              | Field label                |
+| `items`            | `List<T>`             | List of selectable options |
+| `onChanged`        | `ValueChanged<T?>`    | Selection callback         |
+| `initialValue`     | `T?`                  | Pre-selected value         |
+| `itemLabelBuilder` | `String Function(T)?` | Display text per item      |
+| `isRequired`       | `bool`                | Required validation        |
+| `labelPosition`    | `LabelPosition`       | Label placement            |
 
-```dart
-import 'package:form_fields/form_fields.dart';
-import 'package:flutter/material.dart';
+---
 
-class MyForm extends StatefulWidget {
-  @override
-  _MyFormState createState() => _MyFormState();
-}
+## 5. FormFieldsDropdown\<T\>
 
-class _MyFormState extends State<MyForm> {
-  final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+Inline Material dropdown (single select).
 
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          FormFields<String>(
-            label: 'Email',
-            formType: FormType.email,
-            labelPosition: LabelPosition.top,
-            isRequired: true,
-            onChanged: (value) {
-              setState(() => _email = value ?? '');
-            },
-          ),
-          FormFields<String>(
-            label: 'Password',
-            formType: FormType.password,
-            labelPosition: LabelPosition.top,
-            isRequired: true,
-            onChanged: (value) {
-              setState(() => _password = value ?? '');
-            },
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                print('Email: $_email, Password: $_password');
-              }
-            },
-            child: const Text('Login'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-```
+### Key Parameters
 
-## Related Resources
+| Property           | Type                  | Description           |
+| ------------------ | --------------------- | --------------------- |
+| `label`            | `String`              | Field label           |
+| `items`            | `List<T>`             | Dropdown items        |
+| `onChanged`        | `ValueChanged<T?>`    | Selection callback    |
+| `initialValue`     | `T?`                  | Pre-selected value    |
+| `itemLabelBuilder` | `String Function(T)?` | Display text per item |
+| `isRequired`       | `bool`                | Required validation   |
+| `labelPosition`    | `LabelPosition`       | Label placement       |
 
-- [README](README.md) - Full package documentation
-- [USAGE](USAGE.md) - Detailed usage manual
-- [QUICKSTART](QUICKSTART.md) - Quick start guide
-- [Example App](example/lib/main.dart) - Complete example application
+---
 
-## FormFieldsRadioButton<T>
+## 6. FormFieldsDropdownMulti\<T\>
 
-Radio button group widget for single selection from multiple options.
+Inline dropdown for selecting multiple values simultaneously.
+
+### Key Parameters
+
+| Property           | Type                    | Description                          |
+| ------------------ | ----------------------- | ------------------------------------ |
+| `label`            | `String`                | Field label                          |
+| `items`            | `List<T>`               | All available options                |
+| `onChanged`        | `ValueChanged<List<T>>` | Called with updated selection list   |
+| `initialValue`     | `List<T>?`              | Pre-selected values                  |
+| `itemLabelBuilder` | `String Function(T)?`   | Display text per item                |
+| `isRequired`       | `bool`                  | Validates at least one item selected |
+| `labelPosition`    | `LabelPosition`         | Label placement                      |
+
+---
+
+## 7. FormFieldsRadioButton\<T\>
+
+Radio button group for single selection. Supports flat lists, horizontal/vertical layout, sectioned grouped lists, custom item widgets, and rich visual styling.
 
 ### Constructor
 
 ```dart
 FormFieldsRadioButton<T>({
   required String label,
-  List<T>? items,                                    // Simple list of options
-  Map<String, List<T>>? sections,                   // Grouped options by section
+  List<T>? items,
+  Map<String, List<T>>? sections,
   required ValueChanged<T?> onChanged,
-  String Function(T item)? itemLabelBuilder,
-  Widget Function(T item, bool selected)? itemBuilder,
   T? initialValue,
   bool isRequired = false,
   Axis direction = Axis.vertical,
@@ -644,283 +356,131 @@ FormFieldsRadioButton<T>({
   Color activeColor = Colors.blue,
   EdgeInsets itemPadding = const EdgeInsets.symmetric(vertical: 8),
   double sectionSpacing = 12,
-  Color? itemBorderColor,                           // Optional border for items
-  double itemBorderWidth = 1.0,                    // Width of item borders
-  double itemBorderRadius = 8,                     // Radius of item borders
-  double textRightPadding = 0,                     // Right padding for text
-  Color? selectedItemBackgroundColor,              // Background color for selected item
-  Color? selectedItemTextColor,                    // Text color for selected item
-  Color? hoverBackgroundColor,                     // Background color on hover
-  bool itemShadow = false,                         // Show shadow on selected item
-  LabelPosition labelPosition = LabelPosition.top, // Label position (top, bottom, left, right, inBorder, none)
-  double containerPadding = 12,                    // Padding inside radio container
-  double containerGap = 8,                         // Gap betweenlabel and container
-  double itemMarginTop = 4,                        // Top margin for each item
-  double itemMarginBottom = 4,                     // Bottom margin for each item
+  Color? itemBorderColor,
+  double itemBorderWidth = 1.0,
+  double itemBorderRadius = 8,
+  double textRightPadding = 0,
+  double itemTextMarginRight = 0,
+  Color? selectedItemBackgroundColor,
+  Color? selectedItemTextColor,
+  Color? hoverBackgroundColor,
+  bool itemShadow = false,
+  LabelPosition labelPosition = LabelPosition.top,
+  double containerPadding = 12,
+  double containerGap = 8,
+  double itemMarginTop = 4,
+  double itemMarginBottom = 4,
+  String Function(T)? itemLabelBuilder,
+  Widget Function(T, bool selected)? itemBuilder,
   FormFieldValidator<T>? validator,
 })
 ```
 
+> **Either `items` or `sections` must be provided**, not both.
+> When using `sections`, items within each section always render horizontally.
+
 ### Properties
 
-#### Required Properties
+#### Required
 
-| Property    | Type               | Description                     |
-| ----------- | ------------------ | ------------------------------- |
-| `label`     | `String`           | Label text for the radio group  |
-| `onChanged` | `ValueChanged<T?>` | Callback when selection changes |
+| Property    | Type               | Description                |
+| ----------- | ------------------ | -------------------------- |
+| `label`     | `String`           | Group label                |
+| `onChanged` | `ValueChanged<T?>` | Called on selection change |
 
-#### Optional Properties
+#### Layout & Appearance
 
-| Property                      | Type                        | Default                  | Description                                               |
-| ----------------------------- | --------------------------- | ------------------------ | --------------------------------------------------------- |
-| `items`                       | `List<T>?`                  | `null`                   | Simple list of options (OR use `sections`)                |
-| `sections`                    | `Map<String, List<T>>?`     | `null`                   | Grouped options by section name                           |
-| `initialValue`                | `T?`                        | `null`                   | Initial selected value                                    |
-| `isRequired`                  | `bool`                      | `false`                  | Enable validation                                         |
-| `direction`                   | `Axis`                      | `Axis.vertical`          | Layout direction (only for simple `items`)                |
-| `borderColor`                 | `Color`                     | `Color(0xFFC7C7C7)`      | Border color                                              |
-| `errorBorderColor`            | `Color`                     | `Colors.red`             | Border color when error                                   |
-| `activeColor`                 | `Color`                     | `Colors.blue`            | Active radio button color                                 |
-| `radius`                      | `double`                    | `10`                     | Border radius                                             |
-| `itemPadding`                 | `EdgeInsets`                | `symmetric(vertical: 8)` | Padding per item                                          |
-| `sectionSpacing`              | `double`                    | `12`                     | Spacing between sections                                  |
-| `itemBorderColor`             | `Color?`                    | `null`                   | Border color for each item (if null, no border)           |
-| `itemBorderWidth`             | `double`                    | `1.0`                    | Width of item borders                                     |
-| `itemBorderRadius`            | `double`                    | `8`                      | Border radius for corner rounding                         |
-| `textRightPadding`            | `double`                    | `0`                      | Right padding of text within item                         |
-| `itemTextMarginRight`         | `double`                    | `0`                      | Right margin for text (spacing after text)                |
-| `selectedItemBackgroundColor` | `Color?`                    | `null`                   | Background color for selected item                        |
-| `selectedItemTextColor`       | `Color?`                    | `null`                   | Text color for selected item                              |
-| `hoverBackgroundColor`        | `Color?`                    | `null`                   | Background color on hover                                 |
-| `itemShadow`                  | `bool`                      | `false`                  | Show shadow effect on selected item                       |
-| `labelPosition`               | `LabelPosition`             | `top`                    | Label position (top, bottom, left, right, inBorder, none) |
-| `containerPadding`            | `double`                    | `12`                     | Padding inside the radio container                        |
-| `containerGap`                | `double`                    | `8`                      | Gap between label and container                           |
-| `itemMarginTop`               | `double`                    | `4`                      | Top margin for each item                                  |
-| `itemMarginBottom`            | `double`                    | `4`                      | Bottom margin for each item                               |
-| `itemLabelBuilder`            | `String Function(T)?`       | `null`                   | Custom text for each item                                 |
-| `itemBuilder`                 | `Widget Function(T, bool)?` | `null`                   | Custom widget for each item                               |
-| `validator`                   | `FormFieldValidator<T>?`    | `null`                   | Custom validation                                         |
+| Property           | Type                    | Default             | Description                       |
+| ------------------ | ----------------------- | ------------------- | --------------------------------- |
+| `items`            | `List<T>?`              | `null`              | Flat list of options              |
+| `sections`         | `Map<String, List<T>>?` | `null`              | Grouped options by section title  |
+| `initialValue`     | `T?`                    | `null`              | Pre-selected value                |
+| `isRequired`       | `bool`                  | `false`             | Required validation               |
+| `direction`        | `Axis`                  | `vertical`          | Layout direction for flat `items` |
+| `labelPosition`    | `LabelPosition`         | `top`               | Label placement                   |
+| `activeColor`      | `Color`                 | `Colors.blue`       | Active radio indicator color      |
+| `borderColor`      | `Color`                 | `Color(0xFFC7C7C7)` | Container border color            |
+| `errorBorderColor` | `Color`                 | `Colors.red`        | Border color when invalid         |
+| `radius`           | `double`                | `10`                | Container corner radius           |
+| `sectionSpacing`   | `double`                | `12`                | Vertical gap between sections     |
+| `containerPadding` | `double`                | `12`                | Inner padding of the container    |
+| `containerGap`     | `double`                | `8`                 | Gap between label and container   |
+
+#### Item Styling
+
+| Property                      | Type         | Default                  | Description                               |
+| ----------------------------- | ------------ | ------------------------ | ----------------------------------------- |
+| `itemPadding`                 | `EdgeInsets` | `symmetric(vertical: 8)` | Padding inside each item                  |
+| `itemMarginTop`               | `double`     | `4`                      | Top margin per item                       |
+| `itemMarginBottom`            | `double`     | `4`                      | Bottom margin per item                    |
+| `itemBorderColor`             | `Color?`     | `null`                   | Border color per item; `null` = no border |
+| `itemBorderWidth`             | `double`     | `1.0`                    | Item border thickness                     |
+| `itemBorderRadius`            | `double`     | `8`                      | Item corner radius                        |
+| `textRightPadding`            | `double`     | `0`                      | Right padding of label text inside item   |
+| `itemTextMarginRight`         | `double`     | `0`                      | Right margin after text                   |
+| `selectedItemBackgroundColor` | `Color?`     | `null`                   | Background of selected item               |
+| `selectedItemTextColor`       | `Color?`     | `null`                   | Text color of selected item               |
+| `hoverBackgroundColor`        | `Color?`     | `null`                   | Background on hover/press                 |
+| `itemShadow`                  | `bool`       | `false`                  | Drop shadow on selected item              |
+
+#### Builders & Validation
+
+| Property           | Type                        | Default | Description                  |
+| ------------------ | --------------------------- | ------- | ---------------------------- |
+| `itemLabelBuilder` | `String Function(T)?`       | `null`  | Custom display text per item |
+| `itemBuilder`      | `Widget Function(T, bool)?` | `null`  | Fully custom item widget     |
+| `validator`        | `FormFieldValidator<T>?`    | `null`  | Custom validator             |
 
 ### Usage Examples
 
-#### Basic Usage (Simple Items, Vertical)
-
 ```dart
+// Vertical list
 FormFieldsRadioButton<String>(
   label: 'Gender',
   items: const ['Male', 'Female', 'Other'],
-  initialValue: 'Male',
   isRequired: true,
-  direction: Axis.vertical,
-  activeColor: Colors.blue,
-  onChanged: (value) {
-    setState(() => selectedGender = value ?? '');
-  },
+  onChanged: (value) => setState(() => gender = value ?? ''),
 )
-```
 
-#### Horizontal Layout
-
-```dart
+// Horizontal layout
 FormFieldsRadioButton<String>(
-  label: 'Marital Status',
-  items: const ['Single', 'Married', 'Divorced'],
-  isRequired: true,
-  direction: Axis.horizontal,  // Items displayed in a row
-  onChanged: (value) {
-    setState(() => maritalStatus = value ?? '');
-  },
-)
-```
-
-#### Sectioned with Horizontal Items
-
-```dart
-FormFieldsRadioButton<String>(
-  label: 'Subscription Plan',
-  sections: {
-    'Cloud Services': ['Starter', 'Professional', 'Enterprise'],
-    'Support Level': ['Basic', 'Premium', '24/7'],
-    'Duration': ['Monthly', 'Quarterly', 'Yearly'],
-  },
-  isRequired: true,
-  sectionSpacing: 16,
-  activeColor: Colors.green,
-  onChanged: (value) {
-    setState(() => selectedPlan = value ?? '');
-  },
-)
-```
-
-**Output Format:**
-
-```
-Cloud Services
-[ Starter ] [ Professional ] [ Enterprise ]
-
-Support Level
-[ Basic ] [ Premium ] [ 24/7 ]
-
-Duration
-[ Monthly ] [ Quarterly ] [ Yearly ]
-```
-
-#### Beautiful Styling with Selection Highlights
-
-```dart
-FormFieldsRadioButton<String>(
-  label: 'Delivery Option',
-  items: const ['Pickup', 'Standard Delivery', 'Express Delivery'],
-  isRequired: true,
-  activeColor: Colors.orange.shade600,
-  selectedItemBackgroundColor: Colors.orange.shade50,    // Selected item background
-  selectedItemTextColor: Colors.orange.shade900,         // Selected item text color
-  hoverBackgroundColor: Colors.orange.shade100,          // Hover background
-  itemBorderColor: Colors.orange.shade300,
-  itemBorderWidth: 1.5,
-  itemBorderRadius: 10,
-  itemShadow: true,                                       // Show shadow on selected
-  itemPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-  onChanged: (value) {
-    setState(() => selectedDelivery = value ?? '');
-  },
-)
-```
-
-**Features:**
-
-- ✅ Beautiful background highlight when item is selected
-- ✅ Text color changes to emphasize selection
-- ✅ Smooth hover effects with color change
-- ✅ Optional shadow effect on selected item
-- ✅ Better spacing and visual hierarchy
-
-#### Sectioned with Item Borders
-
-```dart
-FormFieldsRadioButton<String>(
-  label: 'Theme Preferences',
-  sections: {
-    'Theme': ['Light', 'Dark', 'Auto'],
-    'Notifications': ['All', 'Important', 'None'],
-  },
-  isRequired: true,
-  borderColor: Colors.grey,
-  activeColor: Colors.teal,
-  itemBorderColor: Colors.teal.shade300,  // Add border to each item
-  itemBorderWidth: 1.5,
-  itemBorderRadius: 6,
-  textRightPadding: 8,                     // Add right padding to text
-  sectionSpacing: 16,
-  onChanged: (value) {
-    setState(() => preference = value ?? '');
-  },
-)
-```
-
-**Output Format:**
-
-```
-Theme
-[Light] [Dark] [Auto]
-
-Notifications
-[All] [Important] [None]
-```
-
-(With teal borders around each item and right-padded text)
-
-#### Custom Item Labels
-
-```dart
-FormFieldsRadioButton<int>(
-  label: 'Rating',
-  items: const [1, 2, 3, 4, 5],
-  itemLabelBuilder: (value) => '⭐' * value,
-  isRequired: true,
+  label: 'Priority',
+  items: const ['Low', 'Medium', 'High'],
   direction: Axis.horizontal,
-  onChanged: (value) {
-    setState(() => rating = value ?? 0);
-  },
+  activeColor: Colors.orange,
+  onChanged: (value) => setState(() => priority = value ?? ''),
 )
-```
 
-#### Custom Item Widgets
-
-```dart
-FormFieldsRadioButton<PaymentMethod>(
-  label: 'Payment Method',
-  items: [
-    PaymentMethod(id: 1, name: 'Credit Card', icon: Icons.credit_card),
-    PaymentMethod(id: 2, name: 'PayPal', icon: Icons.paypal),
-    PaymentMethod(id: 3, name: 'Apple Pay', icon: Icons.apple),
-  ],
-  itemBuilder: (item, selected) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: selected ? Colors.blue : Colors.grey,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(item.icon, color: selected ? Colors.blue : Colors.grey),
-          const SizedBox(height: 4),
-          Text(item.name),
-        ],
-      ),
-    );
-  },
-  onChanged: (value) {
-    setState(() => paymentMethod = value);
-  },
-)
-```
-
-#### With Validation
-
-```dart
+// Sectioned
 FormFieldsRadioButton<String>(
-  label: 'Accept Terms',
-  items: const ['I Agree', 'I Disagree'],
-  isRequired: true,
-  validator: (value) {
-    if (value == 'I Disagree') {
-      return 'You must agree to terms to proceed';
-    }
-    return null;
+  label: 'Plan',
+  sections: {
+    'Cloud': ['Starter', 'Pro', 'Enterprise'],
+    'Support': ['Basic', 'Premium', '24/7'],
   },
-  onChanged: (value) {
-    setState(() => termsAccepted = value ?? '');
-  },
+  activeColor: Colors.green,
+  sectionSpacing: 16,
+  onChanged: (value) => setState(() => plan = value ?? ''),
+)
+
+// With selection highlight
+FormFieldsRadioButton<String>(
+  label: 'Delivery',
+  items: const ['Pickup', 'Standard', 'Express'],
+  selectedItemBackgroundColor: Colors.orange.shade50,
+  selectedItemTextColor: Colors.orange.shade900,
+  itemBorderColor: Colors.orange.shade300,
+  itemShadow: true,
+  activeColor: Colors.orange,
+  onChanged: (value) => setState(() => delivery = value ?? ''),
 )
 ```
 
-### Comparison: Items vs Sections
+---
 
-| Feature   | `items`                    | `sections`                           |
-| --------- | -------------------------- | ------------------------------------ |
-| Layout    | Single group, linear       | Multiple groups, organized           |
-| Use Case  | 2-5 options                | 6+ options or logical grouping       |
-| Direction | `vertical` or `horizontal` | Always horizontal per section        |
-| Example   | Gender, Marital Status     | Plans with features, settings groups |
+## 8. FormFieldsCheckbox\<T\>
 
-### Notes
-
-- **Either `items` or `sections` must be provided**, not both
-- When using `sections`, items within each section are always displayed horizontally
-- When using `items` with `direction: Axis.horizontal`, takes advantage of Wrap widget for responsive layout
-- Validation automatically shows error message with red border
-- All items must be of the same generic type `<T>`
-
-## FormFieldsCheckbox<T>
-
-Checkbox group widget for multi-selection from multiple options.
+Checkbox group for multi-selection. Shares most visual options with `FormFieldsRadioButton`.
 
 ### Constructor
 
@@ -940,69 +500,215 @@ FormFieldsCheckbox<T>({
   double itemMarginTop = 4,
   double itemMarginBottom = 4,
   double itemMarginHorizontal = 0,
-  Color? itemBorderColor,                           // Optional border for items
-  double itemBorderWidth = 1.0,                    // Width of item borders
-  double itemBorderRadius = 8,                     // Radius of item borders
-  String Function(T item)? itemLabelBuilder,
-  Widget Function(T item, bool selected)? itemBuilder,
+  Color? itemBorderColor,
+  double itemBorderWidth = 1.0,
+  double itemBorderRadius = 8,
+  String Function(T)? itemLabelBuilder,
+  Widget Function(T, bool selected)? itemBuilder,
   FormFieldValidator<List<T>>? validator,
 })
 ```
 
 ### Properties
 
-#### Required Properties
-
-| Property    | Type                    | Description                       |
-| ----------- | ----------------------- | --------------------------------- |
-| `label`     | `String`                | Label text for the checkbox group |
-| `items`     | `List<T>`               | List of options                   |
-| `onChanged` | `ValueChanged<List<T>>` | Callback when selection changes   |
-
-#### Optional Properties
-
-| Property               | Type                           | Default                  | Description                                     |
-| ---------------------- | ------------------------------ | ------------------------ | ----------------------------------------------- |
-| `initialValue`         | `List<T>?`                     | `null`                   | Initial selected values                         |
-| `isRequired`           | `bool`                         | `false`                  | Enable validation                               |
-| `direction`            | `Axis`                         | `Axis.vertical`          | Layout direction                                |
-| `radius`               | `double`                       | `10`                     | Border radius                                   |
-| `borderColor`          | `Color`                        | `Color(0xFFC7C7C7)`      | Border color                                    |
-| `errorBorderColor`     | `Color`                        | `Colors.red`             | Border color when error                         |
-| `activeColor`          | `Color`                        | `Colors.blue`            | Active checkbox color                           |
-| `itemPadding`          | `EdgeInsets`                   | `symmetric(vertical: 6)` | Padding per item                                |
-| `itemMarginTop`        | `double`                       | `4`                      | Top margin for each item                        |
-| `itemMarginBottom`     | `double`                       | `4`                      | Bottom margin for each item                     |
-| `itemMarginHorizontal` | `double`                       | `0`                      | Left/right margin for each item                 |
-| `itemBorderColor`      | `Color?`                       | `null`                   | Border color for each item (if null, no border) |
-| `itemBorderWidth`      | `double`                       | `1.0`                    | Width of item borders                           |
-| `itemBorderRadius`     | `double`                       | `8`                      | Border radius for each item                     |
-| `itemLabelBuilder`     | `String Function(T)?`          | `null`                   | Custom text for each item                       |
-| `itemBuilder`          | `Widget Function(T, bool)?`    | `null`                   | Custom widget for each item                     |
-| `validator`            | `FormFieldValidator<List<T>>?` | `null`                   | Custom validation                               |
+| Property               | Type                           | Default       | Description                                   |
+| ---------------------- | ------------------------------ | ------------- | --------------------------------------------- |
+| `label`                | `String`                       | —             | Group label (required)                        |
+| `items`                | `List<T>`                      | —             | All available options (required)              |
+| `onChanged`            | `ValueChanged<List<T>>`        | —             | Called with updated selection list (required) |
+| `initialValue`         | `List<T>?`                     | `null`        | Pre-selected values                           |
+| `isRequired`           | `bool`                         | `false`       | Validates at least one item checked           |
+| `direction`            | `Axis`                         | `vertical`    | Layout direction                              |
+| `activeColor`          | `Color`                        | `Colors.blue` | Checkbox active color                         |
+| `itemMarginHorizontal` | `double`                       | `0`           | Horizontal margin per item                    |
+| `itemBorderColor`      | `Color?`                       | `null`        | Border per item; `null` = no border           |
+| `itemLabelBuilder`     | `String Function(T)?`          | `null`        | Custom display text                           |
+| `itemBuilder`          | `Widget Function(T, bool)?`    | `null`        | Custom item widget                            |
+| `validator`            | `FormFieldValidator<List<T>>?` | `null`        | Custom validator                              |
 
 ### Usage Example
 
 ```dart
 FormFieldsCheckbox<String>(
   label: 'Interests',
-  items: const ['Sports', 'Music', 'Reading'],
+  items: const ['Sports', 'Music', 'Reading', 'Travel'],
   initialValue: const ['Music'],
   isRequired: true,
-  itemBorderColor: Colors.grey,
-  itemBorderWidth: 1.0,
-  itemBorderRadius: 8,
-  onChanged: (value) {
-    setState(() => interests = value);
-  },
+  direction: Axis.vertical,
+  itemBorderColor: Colors.grey.shade300,
+  onChanged: (selected) => setState(() => interests = selected),
 )
 ```
 
 ---
 
-## FormFieldsSignaturePad
+## 9. FormFieldsMyImage
 
-Signature pad widget for capturing handwritten signatures as PNG images. Supports optional integrated live front-camera preview that automatically captures a selfie the moment the user begins drawing.
+Widget for picking, displaying, and uploading images or scanned documents. Supports single-image and multi-image modes, direct upload with per-image progress indicator, document scanning via `CunningDocumentScanner`, optional description input, and programmatic control via `FormFieldsMyImageController`.
+
+### Constructor
+
+```dart
+FormFieldsMyImage({
+  FormFieldsMyImageController? controller,
+  void Function(List<MyimageResult>)? onImagesChanged,
+  void Function(MyimageResult)? onImageChanged,
+  String? label,
+  bool isDoc = false,
+  int? maxImages,
+  Widget Function(BuildContext, MyimageResult, int)? imageBuilder,
+  Widget Function(BuildContext, int index, MyimageResult)? removeIconBuilder,
+  void Function(int index, MyimageResult)? onRemoveImage,
+  Widget Function(BuildContext)? plusBuilder,
+  String? uploadUrl,
+  String? uploadToken,
+  bool isDirectUpload = false,
+  String? uploadSuccessTitle,
+  String? uploadFailedTitle,
+  String? uploadErrorTitle,
+  String? uploadSuccessMessage,
+  String? uploadFailedMessage,
+  String? uploadErrorMessage,
+  String uploadFileUrlKey = 'fileUrl',
+  String uploadImageIdKey = 'imageId',
+  bool allow = true,
+  bool showUploadResultDialog = false,
+  bool showDesc = false,
+  String? descriptionField,
+})
+```
+
+> **Assertion:** `isDirectUpload: true` requires a non-empty `uploadUrl`.
+
+### Properties
+
+#### Source & Callbacks
+
+| Property          | Type                                  | Default | Description                                            |
+| ----------------- | ------------------------------------- | ------- | ------------------------------------------------------ |
+| `controller`      | `FormFieldsMyImageController?`        | `null`  | External controller; bidirectional sync                |
+| `onImagesChanged` | `void Function(List<MyimageResult>)?` | `null`  | Fires on any change to the image list                  |
+| `onImageChanged`  | `void Function(MyimageResult)?`       | `null`  | Single-image mode only; `MyimageResult()` when removed |
+| `onRemoveImage`   | `void Function(int, MyimageResult)?`  | `null`  | Fires on image removal; index is `0` in single mode    |
+| `allow`           | `bool`                                | `true`  | `false` = read-only (add/remove disabled)              |
+
+#### Display
+
+| Property            | Type                                                 | Default | Description                                 |
+| ------------------- | ---------------------------------------------------- | ------- | ------------------------------------------- |
+| `label`             | `String?`                                            | `null`  | Optional label above the widget             |
+| `maxImages`         | `int?`                                               | `null`  | `1` = single-image mode; `null` = unlimited |
+| `imageBuilder`      | `Widget Function(BuildContext, MyimageResult, int)?` | `null`  | Custom image tile builder                   |
+| `removeIconBuilder` | `Widget Function(BuildContext, int, MyimageResult)?` | `null`  | Custom remove-icon builder                  |
+| `plusBuilder`       | `Widget Function(BuildContext)?`                     | `null`  | Custom add-button builder                   |
+
+#### Document Scanner
+
+| Property | Type   | Default | Description                                                            |
+| -------- | ------ | ------- | ---------------------------------------------------------------------- |
+| `isDoc`  | `bool` | `false` | Open `CunningDocumentScanner` directly, skipping camera/gallery picker |
+
+#### Direct Upload
+
+| Property                 | Type      | Default     | Description                                              |
+| ------------------------ | --------- | ----------- | -------------------------------------------------------- |
+| `isDirectUpload`         | `bool`    | `false`     | Upload immediately after picking                         |
+| `uploadUrl`              | `String?` | `null`      | Upload endpoint (required when `isDirectUpload: true`)   |
+| `uploadToken`            | `String?` | `null`      | Bearer token for `Authorization` header                  |
+| `uploadFileUrlKey`       | `String`  | `'fileUrl'` | JSON key for the uploaded file URL in the response       |
+| `uploadImageIdKey`       | `String`  | `'imageId'` | JSON key for the image ID in the response                |
+| `showUploadResultDialog` | `bool`    | `false`     | Show `AppDialogService` dialog on upload success/failure |
+
+#### Upload Messages
+
+All message/title fields are optional; missing values fall back to `FormFieldsLocalizations`.
+
+| Property               | Type      | Description                      |
+| ---------------------- | --------- | -------------------------------- |
+| `uploadSuccessTitle`   | `String?` | Success dialog title             |
+| `uploadFailedTitle`    | `String?` | HTTP-error dialog title          |
+| `uploadErrorTitle`     | `String?` | Network/parse-error dialog title |
+| `uploadSuccessMessage` | `String?` | Success dialog body              |
+| `uploadFailedMessage`  | `String?` | HTTP-error dialog body           |
+| `uploadErrorMessage`   | `String?` | Network/parse-error dialog body  |
+
+#### Description Field
+
+| Property           | Type      | Default         | Description                                   |
+| ------------------ | --------- | --------------- | --------------------------------------------- |
+| `showDesc`         | `bool`    | `false`         | Show a description bottom-sheet after picking |
+| `descriptionField` | `String?` | `'description'` | Form-data field name sent to the server       |
+
+### Behavior Notes
+
+- **Single mode** (`maxImages == 1`): new image replaces the old one. `onImageChanged` is always called; an empty `MyimageResult()` signals removal.
+- **Multi mode**: images accumulate up to `maxImages`. The `+` button disappears when the limit is reached.
+- **Direct upload**: after picking, `DioUtil.uploadFile` is called with a linear progress indicator. On success, `MyimageResult.link` and `MyimageResult.imageId` are populated from the server response.
+- **Picker source**: a bottom-sheet lets the user choose camera or gallery. Use `controller.pickImage(source: 'camera'|'gallery')` to skip the sheet programmatically.
+- **Controller sync**: every change (add, remove, upload complete) is synced to `controller.images` before any callback fires.
+
+### Usage Examples
+
+```dart
+// Single image
+FormFieldsMyImage(
+  maxImages: 1,
+  onImageChanged: (image) {
+    setState(() => profilePhoto = image.path.isNotEmpty ? image : null);
+  },
+)
+
+// Multi image with limit
+FormFieldsMyImage(
+  maxImages: 5,
+  onImagesChanged: (images) => setState(() => attachments = images),
+)
+
+// Direct upload
+FormFieldsMyImage(
+  maxImages: 1,
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer $token',
+  showUploadResultDialog: true,
+  onImageChanged: (image) {
+    if (image.link.isNotEmpty) print('URL: ${image.link}');
+  },
+)
+
+// With description
+FormFieldsMyImage(
+  maxImages: 3,
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  showDesc: true,
+  descriptionField: 'caption',
+  onImagesChanged: (images) => setState(() => photos = images),
+)
+
+// Document scanner
+FormFieldsMyImage(
+  isDoc: true,
+  maxImages: 1,
+  onImageChanged: (image) => setState(() => scannedDoc = image),
+)
+
+// Programmatic control
+final ctrl = FormFieldsMyImageController();
+
+FormFieldsMyImage(controller: ctrl, maxImages: 3, onImagesChanged: (_) {})
+
+ElevatedButton(
+  onPressed: () => ctrl.pickImage(source: 'gallery'),
+  child: const Text('Choose Photo'),
+)
+```
+
+---
+
+## 10. FormFieldsSignaturePad
+
+Signature pad for capturing handwritten signatures as PNG. Supports optional integrated live front-camera preview that auto-captures a selfie the moment the user begins drawing.
 
 ### Constructor
 
@@ -1016,123 +722,89 @@ FormFieldsSignaturePad({
   Color? exportBackgroundColor,
   void Function(MyimageResult?)? onExported,
   void Function(SignaturePadExportResult)? onExportedResult,
-  void Function(MyimageResult captured)? onLiveCaptured,
+  void Function(MyimageResult)? onLiveCaptured,
   bool showLiveCamera = false,
   double liveCameraHeight = 200,
   FormFieldsMyImageController? liveCameraController,
-  Widget Function(BuildContext, Widget, Widget?)? layoutBuilder,
-  Widget Function(BuildContext, Widget)? liveCameraBuilder,
+  Widget Function(BuildContext, Widget signaturePad, Widget? camera)? layoutBuilder,
+  Widget Function(BuildContext, Widget camera)? liveCameraBuilder,
 })
 ```
 
 ### Properties
 
-| Property                | Type                                       | Default           | Description                                            |
-| ----------------------- | ------------------------------------------ | ----------------- | ------------------------------------------------------ |
-| `height`                | `double`                                   | `200`             | Height of the signature drawing area                   |
-| `width`                 | `double`                                   | `double.infinity` | Width of the signature drawing area                    |
-| `backgroundColor`       | `Color`                                    | `Colors.white`    | Background color of the drawing canvas                 |
-| `penColor`              | `Color`                                    | `Colors.black`    | Pen stroke color                                       |
-| `penStrokeWidth`        | `double`                                   | `3.0`             | Pen stroke thickness                                   |
-| `exportBackgroundColor` | `Color?`                                   | `null`            | PNG background color override; `null` = transparent    |
-| `onExported`            | `void Function(MyimageResult?)?`           | `null`            | Callback with signature only (backward-compatible)     |
-| `onExportedResult`      | `void Function(SignaturePadExportResult)?` | `null`            | Callback with signature + optional live capture        |
-| `onLiveCaptured`        | `void Function(MyimageResult)?`            | `null`            | Fired immediately after the auto-capture on draw start |
-| `showLiveCamera`        | `bool`                                     | `false`           | Enable integrated live front-camera preview            |
-| `liveCameraHeight`      | `double`                                   | `200`             | Height of the camera preview widget                    |
-| `liveCameraController`  | `FormFieldsMyImageController?`             | `null`            | External controller updated with the captured image    |
-| `layoutBuilder`         | `Widget Function(ctx, pad, camera)?`       | `null`            | Fully custom layout for pad + camera                   |
-| `liveCameraBuilder`     | `Widget Function(ctx, camera)?`            | `null`            | Custom wrapper for the camera section only             |
+| Property                | Type                                       | Default           | Description                                        |
+| ----------------------- | ------------------------------------------ | ----------------- | -------------------------------------------------- |
+| `height`                | `double`                                   | `200`             | Drawing canvas height                              |
+| `width`                 | `double`                                   | `double.infinity` | Drawing canvas width                               |
+| `backgroundColor`       | `Color`                                    | `Colors.white`    | Canvas background color                            |
+| `penColor`              | `Color`                                    | `Colors.black`    | Stroke color                                       |
+| `penStrokeWidth`        | `double`                                   | `3.0`             | Stroke thickness                                   |
+| `exportBackgroundColor` | `Color?`                                   | `null`            | PNG background override; `null` = transparent      |
+| `onExported`            | `void Function(MyimageResult?)?`           | `null`            | Signature-only callback (backward-compat)          |
+| `onExportedResult`      | `void Function(SignaturePadExportResult)?` | `null`            | Signature + optional live capture                  |
+| `onLiveCaptured`        | `void Function(MyimageResult)?`            | `null`            | Fired immediately after auto-capture on draw start |
+| `showLiveCamera`        | `bool`                                     | `false`           | Enable integrated front-camera                     |
+| `liveCameraHeight`      | `double`                                   | `200`             | Camera preview height                              |
+| `liveCameraController`  | `FormFieldsMyImageController?`             | `null`            | External controller updated with captured selfie   |
+| `layoutBuilder`         | `Widget Function(ctx, pad, camera?)?`      | `null`            | Fully custom pad + camera layout                   |
+| `liveCameraBuilder`     | `Widget Function(ctx, camera)?`            | `null`            | Custom wrapper around camera section only          |
 
 ### SignaturePadExportResult
 
 ```dart
 class SignaturePadExportResult {
-  final MyimageResult signature;    // Always present after export
-  final MyimageResult? liveCapture; // null when live camera is disabled or no capture occurred
+  final MyimageResult signature;    // always present
+  final MyimageResult? liveCapture; // null when camera disabled or not yet captured
 }
 ```
 
 ### Usage Examples
 
-#### Basic Signature Pad
-
 ```dart
+// Basic
 FormFieldsSignaturePad(
   height: 200,
   penColor: Colors.black,
-  backgroundColor: Colors.white,
-  penStrokeWidth: 3.0,
   onExported: (result) {
-    if (result != null) {
-      // result.base64 contains the PNG as a data URI
-      // result.path contains the temp file path
-    }
+    if (result != null) uploadSignature(result.base64);
   },
 )
-```
 
-#### With Integrated Live Camera
-
-```dart
-final liveCameraController = FormFieldsMyImageController();
-
+// With live camera
 FormFieldsSignaturePad(
   showLiveCamera: true,
   liveCameraController: liveCameraController,
-  onLiveCaptured: (captured) {
-    // Fired immediately when user starts signing
-  },
+  onLiveCaptured: (selfie) => print('Selfie: ${selfie.path}'),
   onExportedResult: (result) {
-    final MyimageResult signature = result.signature;
-    final MyimageResult? selfie = result.liveCapture;
+    uploadBoth(result.signature, result.liveCapture);
   },
 )
-```
 
-#### Custom Layout (side-by-side)
-
-```dart
+// Side-by-side layout
 FormFieldsSignaturePad(
   showLiveCamera: true,
   layoutBuilder: (ctx, pad, camera) => Row(
     children: [
       Expanded(child: pad),
-      if (camera != null) SizedBox(width: 140, child: camera),
+      if (camera != null) SizedBox(width: 150, child: camera),
     ],
   ),
   onExportedResult: (_) {},
 )
 ```
 
-#### Custom Camera Wrapper
+### Behavior Notes
 
-```dart
-FormFieldsSignaturePad(
-  showLiveCamera: true,
-  liveCameraBuilder: (ctx, cam) => Container(
-    decoration: BoxDecoration(
-      border: Border.all(color: Colors.deepPurple, width: 2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    padding: const EdgeInsets.all(8),
-    child: cam,
-  ),
-  onExportedResult: (_) {},
-)
-```
-
-### Notes
-
-- The live camera auto-captures exactly once per signing session (on `onDrawStart`).
-- Reset is performed automatically when the clear button is pressed.
-- Either `onExported` or `onExportedResult` can be used; prefer `onExportedResult` when `showLiveCamera` is enabled.
+- Camera auto-captures **once per signing session** (on first `onDrawStart`).
+- Pressing the clear button resets the auto-capture guard so the next draw attempt will capture again.
+- Prefer `onExportedResult` over `onExported` when `showLiveCamera: true`.
 
 ---
 
-## FormFieldsLiveCameraCapture
+## 11. FormFieldsLiveCameraCapture
 
-Standalone live front-camera preview widget. Can be used independently or as the camera source inside `FormFieldsSignaturePad`. Capture is screenshot-based (`RepaintBoundary.toImage`) to avoid CameraX surface-combination conflicts.
+Standalone live front-camera preview widget. Can be used independently or embedded inside `FormFieldsSignaturePad`. Capture is screenshot-based (`RepaintBoundary.toImage`) to avoid CameraX surface-combination conflicts. Front camera is used by default.
 
 ### Constructor
 
@@ -1140,43 +812,37 @@ Standalone live front-camera preview widget. Can be used independently or as the
 FormFieldsLiveCameraCapture({
   double height = 100,
   FormFieldsMyImageController? cameraController,
-  void Function(MyimageResult captured)? onCaptured,
+  void Function(MyimageResult)? onCaptured,
 })
 ```
 
 ### Properties
 
-| Property           | Type                            | Default | Description                                               |
-| ------------------ | ------------------------------- | ------- | --------------------------------------------------------- |
-| `height`           | `double`                        | `100`   | Height of the camera preview area                         |
-| `cameraController` | `FormFieldsMyImageController?`  | `null`  | External controller; links capture/reset programmatically |
-| `onCaptured`       | `void Function(MyimageResult)?` | `null`  | Called each time `capture()` succeeds                     |
+| Property           | Type                            | Default | Description                                        |
+| ------------------ | ------------------------------- | ------- | -------------------------------------------------- |
+| `height`           | `double`                        | `100`   | Camera preview height                              |
+| `cameraController` | `FormFieldsMyImageController?`  | `null`  | External controller for programmatic capture/reset |
+| `onCaptured`       | `void Function(MyimageResult)?` | `null`  | Called each time `capture()` succeeds              |
 
-### FormFieldsLiveCameraCaptureState Methods
+### State Methods (via `GlobalKey<FormFieldsLiveCameraCaptureState>`)
 
-Accessible via `GlobalKey<FormFieldsLiveCameraCaptureState>`:
-
-| Method                             | Description                                   |
-| ---------------------------------- | --------------------------------------------- |
-| `Future<MyimageResult?> capture()` | Capture the current preview frame as PNG      |
-| `void resetCapture()`              | Clear capture and return to live preview mode |
+| Method           | Return                   | Description                                                      |
+| ---------------- | ------------------------ | ---------------------------------------------------------------- |
+| `capture()`      | `Future<MyimageResult?>` | Capture current frame as PNG; returns `null` if camera not ready |
+| `resetCapture()` | `void`                   | Clear capture and return to live preview                         |
 
 ### Usage Examples
 
-#### With GlobalKey
-
 ```dart
+// Via GlobalKey
 final cameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
 
 FormFieldsLiveCameraCapture(
   key: cameraKey,
   height: 200,
-  onCaptured: (result) {
-    print(result.path); // temp PNG file path
-  },
+  onCaptured: (result) => setState(() => photo = result),
 )
 
-// Trigger from a button
 ElevatedButton(
   onPressed: () async {
     final result = await cameraKey.currentState?.capture();
@@ -1184,110 +850,689 @@ ElevatedButton(
   child: const Text('Capture'),
 )
 
-// Reset to live preview
-cameraKey.currentState?.resetCapture();
-```
-
-#### With Controller
-
-```dart
-final cameraController = FormFieldsMyImageController();
+// Via controller (suitable for ViewModel / outside widget tree)
+final cameraCtrl = FormFieldsMyImageController();
 
 FormFieldsLiveCameraCapture(
   height: 200,
-  cameraController: cameraController,
-  onCaptured: (result) { },
+  cameraController: cameraCtrl,
 )
 
-// Trigger capture from outside the widget tree (e.g. ViewModel)
-final result = await cameraController.capture();
-cameraController.resetCapture();
+final result = await cameraCtrl.capture();
+cameraCtrl.resetCapture();
 ```
 
 ---
 
-## FormFieldsMyImageController
+## 12. AppButton
 
-`ChangeNotifier`-based controller for `FormFieldsMyImage` and `FormFieldsLiveCameraCapture`. Allows reading and mutating captured/picked images, and triggering capture or picker programmatically from outside the widget tree.
+Unified button widget supporting all Material button variants, loading states, optional `AppButtonLayout` wrapping, and typed value callbacks.
+
+### Constructor
+
+```dart
+AppButton<T>({
+  AppButtonType type = AppButtonType.filled,
+  AppButtonSize size = AppButtonSize.medium,
+  String? text,
+  Widget? child,
+  Widget? icon,
+  VoidCallback? onPressed,
+  T? value,
+  ValueChanged<T?>? onPressedWithValue,
+  bool isLoading = false,
+  ButtonStyle? style,
+  double? customHeight,
+  double? customHorizontalPadding,
+  double? customIconSize,
+  double? customSpinnerSize,
+  bool withLayout = false,
+  EdgeInsetsGeometry? margin,
+  double horizontalPadding = 16,
+  double topPadding = 12,
+  bool respectSafeArea = true,
+  bool avoidKeyboard = true,
+})
+```
+
+> At least one of `text`, `child`, or `icon` must be provided.
 
 ### Properties
 
-| Property | Type                  | Description            |
-| -------- | --------------------- | ---------------------- |
-| `images` | `List<MyimageResult>` | Current list of images |
+| Property                  | Type                  | Default  | Description                                        |
+| ------------------------- | --------------------- | -------- | -------------------------------------------------- |
+| `type`                    | `AppButtonType`       | `filled` | Visual variant                                     |
+| `size`                    | `AppButtonSize`       | `medium` | Size preset                                        |
+| `text`                    | `String?`             | `null`   | Button label                                       |
+| `child`                   | `Widget?`             | `null`   | Fully custom content                               |
+| `icon`                    | `Widget?`             | `null`   | Leading / only icon                                |
+| `onPressed`               | `VoidCallback?`       | `null`   | Tap callback                                       |
+| `value`                   | `T?`                  | `null`   | Value passed to `onPressedWithValue`               |
+| `onPressedWithValue`      | `ValueChanged<T?>?`   | `null`   | Tap callback with value                            |
+| `isLoading`               | `bool`                | `false`  | Show spinner and disable interactions              |
+| `style`                   | `ButtonStyle?`        | `null`   | Override button style                              |
+| `customHeight`            | `double?`             | `null`   | Active when `size == custom`                       |
+| `customHorizontalPadding` | `double?`             | `null`   | Active when `size == custom`                       |
+| `customIconSize`          | `double?`             | `null`   | Active when `size == custom`                       |
+| `withLayout`              | `bool`                | `false`  | Wrap with `AppButtonLayout` for keyboard avoidance |
+| `horizontalPadding`       | `double`              | `16`     | Passed to `AppButtonLayout`                        |
+| `topPadding`              | `double`              | `12`     | Passed to `AppButtonLayout`                        |
+| `respectSafeArea`         | `bool`                | `true`   | Passed to `AppButtonLayout`                        |
+| `avoidKeyboard`           | `bool`                | `true`   | Passed to `AppButtonLayout`                        |
+| `margin`                  | `EdgeInsetsGeometry?` | `null`   | Passed to `AppButtonLayout`                        |
 
-### Methods
-
-| Method                                     | Description                                                                                                                                  |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `addImage(MyimageResult)`                  | Append an image to the list and notify listeners                                                                                             |
-| `clear()`                                  | Remove all images and notify listeners                                                                                                       |
-| `Future<MyimageResult?> capture()`         | Trigger capture on the linked `FormFieldsLiveCameraCapture`; no-op if none                                                                   |
-| `void resetCapture()`                      | Reset the linked `FormFieldsLiveCameraCapture` to live preview; no-op if none                                                                |
-| `Future<void> pickImage({String? source})` | Open the image picker on the linked `FormFieldsMyImage`. `source` can be `'camera'`, `'gallery'`, or `null` to show the bottom-sheet chooser |
-| `dispose()`                                | Release resources (ChangeNotifier)                                                                                                           |
-
-### Usage Example
+### AppButtonType Enum
 
 ```dart
-final controller = FormFieldsMyImageController();
+enum AppButtonType {
+  filled,       // Filled background
+  filledTonal,  // Filled tonal variant
+  elevated,     // Elevated with shadow
+  outlined,     // Border only
+  text,         // Text only
+  icon,         // Icon only
+  fab,          // Floating action button
+  extendedFab,  // FAB with label
+}
+```
 
-// Listen to changes
-controller.addListener(() {
-  final images = controller.images; // List<MyimageResult>
-});
+### AppButtonSize Enum
 
-// Open gallery programmatically
-await controller.pickImage(source: 'gallery');
+```dart
+enum AppButtonSize {
+  small,   // Compact
+  medium,  // Standard (default)
+  large,   // Larger touch target
+  custom,  // Use customHeight / customHorizontalPadding / customIconSize
+}
+```
 
-// Open camera programmatically
-await controller.pickImage(source: 'camera');
+### AppButtonThemeData
 
-// Trigger live camera capture
-final result = await controller.capture();
+Theme extension for per-app style overrides:
 
-// Reset live camera to preview
-controller.resetCapture();
+```dart
+ThemeData(
+  extensions: [
+    AppButtonThemeData(
+      filledStyle: FilledButton.styleFrom(backgroundColor: Colors.indigo),
+      elevatedStyle: ElevatedButton.styleFrom(elevation: 4),
+    ),
+  ],
+)
+```
 
-// Always dispose when done
-controller.dispose();
+### Usage Examples
+
+```dart
+// Primary filled
+AppButton(
+  text: 'Submit',
+  onPressed: () => submit(),
+)
+
+// Loading state
+AppButton(
+  text: 'Saving…',
+  isLoading: isSaving,
+  onPressed: isSaving ? null : () => save(),
+)
+
+// Icon button
+AppButton(
+  type: AppButtonType.icon,
+  icon: const Icon(Icons.add),
+  onPressed: () => addItem(),
+)
+
+// Keyboard-aware bottom button
+AppButton(
+  text: 'Continue',
+  withLayout: true,
+  onPressed: () => next(),
+)
 ```
 
 ---
 
-## FormFieldsMyImageProvider
+## 13. AppButtonGroup
 
-`ChangeNotifier`-based state provider for managing a list of `MyimageResult` objects with upload-progress tracking. Suitable for use with `provider` or `ChangeNotifierProvider`.
+Lightweight layout wrapper for grouping related `AppButton` widgets.
+
+### Constructor
+
+```dart
+AppButtonGroup({
+  required List<Widget> children,
+  Axis direction = Axis.horizontal,
+  double spacing = 8,
+  double runSpacing = 8,
+  MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
+  WrapAlignment wrapAlignment = WrapAlignment.start,
+})
+```
 
 ### Properties
 
-| Property         | Type                  | Description                           |
-| ---------------- | --------------------- | ------------------------------------- |
-| `images`         | `List<MyimageResult>` | Current list of images                |
-| `uploadProgress` | `List<double>`        | Per-image upload progress (0.0 – 1.0) |
-| `loading`        | `bool`                | Global loading state flag             |
-
-### Methods
-
-| Method                                  | Description                                            |
-| --------------------------------------- | ------------------------------------------------------ |
-| `setImages(List<MyimageResult>)`        | Replace the entire list and reset all progress entries |
-| `addImage(MyimageResult)`               | Append one image with progress initialized to 0.0      |
-| `removeImage(int index)`                | Remove image and its progress entry at the given index |
-| `updateImage(int index, MyimageResult)` | Replace the image at the given index                   |
-| `clearImages()`                         | Remove all images and progress entries                 |
-| `setUploadProgress(int index, double)`  | Set upload progress for the image at the given index   |
-| `resetUploadProgress(int index)`        | Reset progress to 0.0 for the image at the given index |
+| Property        | Type            | Default      | Description                                        |
+| --------------- | --------------- | ------------ | -------------------------------------------------- |
+| `children`      | `List<Widget>`  | —            | Buttons or any widgets (required)                  |
+| `direction`     | `Axis`          | `horizontal` | `horizontal` uses `Wrap`; `vertical` uses `Column` |
+| `spacing`       | `double`        | `8`          | Gap between items                                  |
+| `runSpacing`    | `double`        | `8`          | Gap between wrapped rows (horizontal mode)         |
+| `wrapAlignment` | `WrapAlignment` | `start`      | Alignment in horizontal/Wrap mode                  |
 
 ### Usage Example
 
 ```dart
-final provider = FormFieldsMyImageProvider();
+AppButtonGroup(
+  spacing: 12,
+  children: [
+    AppButton(text: 'Cancel', type: AppButtonType.outlined, onPressed: cancel),
+    AppButton(text: 'Confirm', onPressed: confirm),
+  ],
+)
+```
 
-provider.addImage(imageResult);
-provider.setUploadProgress(0, 0.75); // 75 % uploaded
+---
 
-// In a ChangeNotifierProvider tree
+## 14. AppSegmentedButton\<T\>
+
+Typed wrapper around Material 3 `SegmentedButton` with size presets.
+
+### Constructor
+
+```dart
+AppSegmentedButton<T>({
+  required List<ButtonSegment<T>> segments,
+  required Set<T> selected,
+  required ValueChanged<Set<T>> onSelectionChanged,
+  bool multiSelectionEnabled = false,
+  bool emptySelectionAllowed = false,
+  AppButtonSize size = AppButtonSize.medium,
+  ButtonStyle? style,
+  bool showSelectedIcon = true,
+  Widget? selectedIcon,
+})
+```
+
+### Usage Example
+
+```dart
+AppSegmentedButton<String>(
+  segments: const [
+    ButtonSegment(value: 'day', label: Text('Day')),
+    ButtonSegment(value: 'week', label: Text('Week')),
+    ButtonSegment(value: 'month', label: Text('Month')),
+  ],
+  selected: {selectedRange},
+  onSelectionChanged: (val) => setState(() => selectedRange = val.first),
+)
+```
+
+---
+
+## 15. AppSplitButton\<T\>
+
+A split button combining a primary action button with a dropdown of secondary actions.
+
+### Constructor
+
+```dart
+AppSplitButton<T>({
+  required String text,
+  required VoidCallback? onPressed,
+  required List<AppSplitButtonItem<T>> items,
+  required ValueChanged<T> onSelected,
+  Widget? icon,
+  bool isLoading = false,
+  AppButtonSize size = AppButtonSize.medium,
+  double? height,
+  double? mainHorizontalPadding,
+  double? dropdownWidth,
+  double? width,
+  bool expand = false,
+})
+```
+
+### AppSplitButtonItem\<T\>
+
+```dart
+class AppSplitButtonItem<T> {
+  final T value;
+  final String label;
+  final Widget? leading;
+}
+```
+
+### Usage Example
+
+```dart
+AppSplitButton<String>(
+  text: 'Save',
+  icon: const Icon(Icons.save),
+  onPressed: () => save(),
+  items: const [
+    AppSplitButtonItem(value: 'draft', label: 'Save as Draft'),
+    AppSplitButtonItem(value: 'publish', label: 'Publish'),
+  ],
+  onSelected: (value) => handleAction(value),
+)
+```
+
+---
+
+## 16. AppFabMenu
+
+Expandable FAB menu that floats action items above the button using an `Overlay`. No `Scaffold` required.
+
+### Constructor
+
+```dart
+AppFabMenu({
+  required List<AppFabMenuItem> items,
+  Widget? mainIcon,
+  AppButtonSize size = AppButtonSize.medium,
+})
+```
+
+### AppFabMenuItem
+
+```dart
+class AppFabMenuItem {
+  final String label;
+  final Widget icon;
+  final VoidCallback onPressed;
+}
+```
+
+### Usage Example
+
+```dart
+AppFabMenu(
+  mainIcon: const Icon(Icons.add),
+  items: [
+    AppFabMenuItem(
+      label: 'Upload Photo',
+      icon: const Icon(Icons.photo),
+      onPressed: () => uploadPhoto(),
+    ),
+    AppFabMenuItem(
+      label: 'Scan Document',
+      icon: const Icon(Icons.document_scanner),
+      onPressed: () => scanDoc(),
+    ),
+  ],
+)
+```
+
+---
+
+## 17. AppDialogService
+
+Context-scoped dialog helper for loading spinners, result dialogs, and guarded async flows with automatic error handling.
+
+### Constructor
+
+```dart
+AppDialogService(BuildContext context)
+```
+
+### Methods
+
+#### `guard<T>`
+
+Runs an async task with optional blocking loader, shows an error dialog on failure, and calls success/error callbacks.
+
+```dart
+Future<T?> guard<T>({
+  required Future<T> Function() task,
+  required String errorTitle,
+  AppDialogErrorMapper? mapError,
+  bool showBlockingLoading = false,
+  String loadingMessage = 'Loading...',
+  AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
+  AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
+  AppProgressType progressType = AppProgressType.circular,
+  AppDialogLoadingBackBehavior loadingBackBehavior = AppDialogLoadingBackBehavior.block,
+  AppDialogCancelRequested? onCancelRequested,
+  AppDialogCancelled? onCancelled,
+  bool showSuccessDialog = false,
+  String successTitle = 'Success',
+  String successMessage = 'Operation completed successfully.',
+  AppDialogSuccessCallback<T>? onSuccess,
+  AppDialogErrorCallback? onError,
+  void Function(Map<String, List<String>>)? onValidationError,
+  AppDialogPosition loadingPosition = AppDialogPosition.top,
+  AppDialogPosition resultPosition = AppDialogPosition.top,
+  String okLabel = 'OK',
+})
+```
+
+#### Other Methods
+
+| Method                                                                               | Description                                        |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `showLoading({...})`                                                                 | Show a standalone loading dialog                   |
+| `hide()`                                                                             | Dismiss the loading dialog                         |
+| `showSuccess({title, message, position, okLabel, onComplete})`                       | Show success dialog                                |
+| `showError({title, message, dialogType, position, okLabel, onComplete})`             | Show error dialog                                  |
+| `showInfo({title, message, position, okLabel})`                                      | Show info/validation dialog                        |
+| `showResult({title, message, isSuccess, dialogType, position, okLabel, onComplete})` | Low-level result dialog                            |
+| `showExitConfirm({...})`                                                             | Show "are you sure you want to exit?" confirmation |
+| `unguardedLoadingVisualOnly({show, ...})`                                            | Toggle loading dialog imperatively                 |
+
+#### `defaultErrorMapper` (static)
+
+Maps `ValidationException` → `AppDialogType.validation`; everything else → `AppDialogType.server`.
+
+### Usage Example
+
+```dart
+final dialog = AppDialogService(context);
+
+await dialog.guard<void>(
+  task: () async {
+    if (!formValid) throw ValidationException('Please fill all fields.');
+    await api.submit(formData);
+  },
+  errorTitle: 'Submission Failed',
+  mapError: AppDialogService.defaultErrorMapper,
+  showBlockingLoading: true,
+  loadingMessage: 'Submitting…',
+  showSuccessDialog: true,
+  successTitle: 'Done',
+  successMessage: 'Form submitted successfully.',
+  onSuccess: (_) async => Navigator.pop(context),
+  onValidationError: (errors) => highlightErrors(errors),
+);
+```
+
+---
+
+## 18. AppGlobalDialogService
+
+Singleton coordinator that delegates all dialog calls to `AppDialogService` using a configured root navigator key. Allows showing dialogs from anywhere without `BuildContext`.
+
+### Setup
+
+```dart
+// main.dart
+final navigatorKey = GlobalKey<NavigatorState>();
+
+void main() {
+  AppGlobalDialogService.instance.configure(navigatorKey);
+  runApp(MyApp(navigatorKey: navigatorKey));
+}
+```
+
+### Methods
+
+Same API as `AppDialogService`:
+
+| Method                                 | Description                                    |
+| -------------------------------------- | ---------------------------------------------- |
+| `configure(GlobalKey<NavigatorState>)` | Register the root navigator key                |
+| `reset()`                              | Clear the navigator key (testing / hot reload) |
+| `guard<T>({...})`                      | Guarded async task                             |
+| `showLoading({...})`                   | Show loading dialog                            |
+| `hide()`                               | Dismiss loading dialog                         |
+| `showSuccess({...})`                   | Success dialog                                 |
+| `showError({...})`                     | Error dialog                                   |
+| `showInfo({...})`                      | Info dialog                                    |
+| `showResult({...})`                    | Low-level result dialog                        |
+| `showExitConfirm({...})`               | Exit confirmation                              |
+
+### Usage Example
+
+```dart
+// From ViewModel / service layer — no BuildContext needed
+await AppGlobalDialogService.instance.guard<void>(
+  task: () => repository.save(data),
+  errorTitle: 'Save Failed',
+  showBlockingLoading: true,
+);
+```
+
+---
+
+## 19. AppLoadingIndicator
+
+Animated loading widget with three visual variants.
+
+### Constructor
+
+```dart
+AppLoadingIndicator({
+  AppLoadingVariant variant = AppLoadingVariant.spinner,
+  double size = 34,
+  Color? color,
+})
+```
+
+### AppLoadingVariant Enum
+
+| Value     | Description               |
+| --------- | ------------------------- |
+| `spinner` | Standard circular spinner |
+| `pulse`   | Pulsating circle          |
+| `dots`    | Three-dot wave animation  |
+
+### Usage Example
+
+```dart
+AppLoadingIndicator(
+  variant: AppLoadingVariant.dots,
+  size: 40,
+  color: Colors.blue,
+)
+```
+
+---
+
+## 20. AppProgressIndicator
+
+Determinate or indeterminate progress indicator with linear and circular types.
+
+### Constructor
+
+```dart
+AppProgressIndicator({
+  required AppProgressType type,
+  double? value,       // null = indeterminate
+  double? size,        // for circular
+  double? minHeight,   // for linear
+  Color? color,
+  Color? backgroundColor,
+})
+```
+
+### AppProgressType Enum
+
+| Value      | Description             |
+| ---------- | ----------------------- |
+| `linear`   | Horizontal progress bar |
+| `circular` | Circular progress ring  |
+
+### Usage Example
+
+```dart
+// Indeterminate linear
+AppProgressIndicator(type: AppProgressType.linear, value: null)
+
+// Determinate circular (60 %)
+AppProgressIndicator(type: AppProgressType.circular, value: 0.6, size: 48)
+```
+
+---
+
+## 21. showAppModalBottomSheet
+
+Top-level helper function that wraps `showModalBottomSheet` with safe-area handling and keyboard-aware bottom inset padding.
+
+### Signature
+
+```dart
+Future<T?> showAppModalBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  Color? backgroundColor,
+  double? elevation,
+  ShapeBorder? shape,
+  Clip? clipBehavior,
+  BoxConstraints? constraints,
+  bool? showDragHandle,
+  bool isScrollControlled = true,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  bool useSafeArea = true,
+  bool useRootNavigator = false,
+  bool? requestFocus,
+  double scrollControlDisabledMaxHeightRatio = 9 / 16,
+  AnimationController? transitionAnimationController,
+  AnimationStyle? sheetAnimationStyle,
+  Offset? anchorPoint,
+  RouteSettings? routeSettings,
+  Color? barrierColor,
+  String? barrierLabel,
+})
+```
+
+### Key Parameters
+
+| Parameter            | Type            | Default | Description                                    |
+| -------------------- | --------------- | ------- | ---------------------------------------------- |
+| `context`            | `BuildContext`  | —       | Required                                       |
+| `builder`            | `WidgetBuilder` | —       | Sheet content builder (required)               |
+| `isScrollControlled` | `bool`          | `true`  | Allow full-height sheet                        |
+| `useSafeArea`        | `bool`          | `true`  | Wraps with `SafeArea` + keyboard inset padding |
+| `isDismissible`      | `bool`          | `true`  | Dismiss on outside tap                         |
+| `enableDrag`         | `bool`          | `true`  | Swipe-down to dismiss                          |
+| `shape`              | `ShapeBorder?`  | `null`  | Rounded corners etc.                           |
+
+### Usage Example
+
+```dart
+showAppModalBottomSheet(
+  context: context,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ),
+  builder: (ctx) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ListTile(title: const Text('Option A'), onTap: () => Navigator.pop(ctx, 'a')),
+      ListTile(title: const Text('Option B'), onTap: () => Navigator.pop(ctx, 'b')),
+    ],
+  ),
+);
+```
+
+---
+
+## 22. ResponsiveMenuGrid
+
+Responsive square grid that auto-calculates column count from available width and a fixed `itemSize`.
+
+### Constructor
+
+```dart
+ResponsiveMenuGrid({
+  required List<Widget> widgets,
+  double itemSize = 80,
+  double horizontalMargin = 16,
+  double verticalSpacing = 16,
+  bool alignLeft = false,
+})
+```
+
+### Properties
+
+| Property           | Type           | Default | Description                         |
+| ------------------ | -------------- | ------- | ----------------------------------- |
+| `widgets`          | `List<Widget>` | —       | Grid children (required)            |
+| `itemSize`         | `double`       | `80`    | Fixed width and height of each cell |
+| `horizontalMargin` | `double`       | `16`    | Left and right margin               |
+| `verticalSpacing`  | `double`       | `16`    | Row gap                             |
+| `alignLeft`        | `bool`         | `false` | Force left alignment                |
+
+### Usage Example
+
+```dart
+ResponsiveMenuGrid(
+  itemSize: 80,
+  widgets: menuItems
+      .map((item) => MenuTile(icon: item.icon, label: item.title))
+      .toList(),
+)
+```
+
+---
+
+## 23. FormFieldsMyImageController
+
+`ChangeNotifier`-based external controller for `FormFieldsMyImage` and `FormFieldsLiveCameraCapture`. Provides bidirectional sync and programmatic trigger of capture and picker.
+
+### Properties
+
+| Property | Type                  | Description                                    |
+| -------- | --------------------- | ---------------------------------------------- |
+| `images` | `List<MyimageResult>` | Current image list (setter notifies listeners) |
+
+### Methods
+
+| Method                        | Return                   | Description                                                                                              |
+| ----------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `addImage(MyimageResult)`     | `void`                   | Append and notify                                                                                        |
+| `clear()`                     | `void`                   | Remove all and notify                                                                                    |
+| `capture()`                   | `Future<MyimageResult?>` | Trigger capture on linked `FormFieldsLiveCameraCapture`; no-op if none                                   |
+| `resetCapture()`              | `void`                   | Trigger reset on linked `FormFieldsLiveCameraCapture`; no-op if none                                     |
+| `pickImage({String? source})` | `Future<void>`           | Open picker on linked `FormFieldsMyImage`; `source`: `'camera'`, `'gallery'`, or `null` for bottom-sheet |
+| `dispose()`                   | `void`                   | Release resources                                                                                        |
+
+### Usage Example
+
+```dart
+final ctrl = FormFieldsMyImageController();
+
+ctrl.addListener(() => print(ctrl.images.length));
+
+await ctrl.pickImage(source: 'camera');
+final selfie = await ctrl.capture();
+ctrl.resetCapture();
+
+ctrl.dispose();
+```
+
+---
+
+## 24. FormFieldsMyImageProvider
+
+`ChangeNotifier`-based state provider for managing a list of `MyimageResult` with per-image upload-progress tracking. Suitable for use with `provider` or `ChangeNotifierProvider`.
+
+### Properties
+
+| Property         | Type                  | Description                    |
+| ---------------- | --------------------- | ------------------------------ |
+| `images`         | `List<MyimageResult>` | Current image list             |
+| `uploadProgress` | `List<double>`        | Progress per image (0.0 – 1.0) |
+| `loading`        | `bool`                | Global loading state           |
+
+### Methods
+
+| Method                                  | Description                                 |
+| --------------------------------------- | ------------------------------------------- |
+| `setImages(List<MyimageResult>)`        | Replace list and reset all progress entries |
+| `addImage(MyimageResult)`               | Append image with progress 0.0              |
+| `removeImage(int index)`                | Remove image and its progress entry         |
+| `updateImage(int index, MyimageResult)` | Replace image at index                      |
+| `clearImages()`                         | Remove all images and progress              |
+| `setUploadProgress(int index, double)`  | Set progress for image at index             |
+| `resetUploadProgress(int index)`        | Reset progress to 0.0 for image at index    |
+
+### Usage Example
+
+```dart
 ChangeNotifierProvider(
   create: (_) => FormFieldsMyImageProvider(),
   child: Consumer<FormFieldsMyImageProvider>(
@@ -1305,18 +1550,18 @@ ChangeNotifierProvider(
 
 ---
 
-## MyimageResult
+## 25. MyimageResult
 
-Data class representing a captured or picked image. Returned by `FormFieldsLiveCameraCapture.capture()`, `FormFieldsMyImage` callbacks, and other image-producing widgets.
+Immutable data class representing a captured, picked, or uploaded image.
 
 ### Properties
 
-| Property  | Type     | Description                                          |
-| --------- | -------- | ---------------------------------------------------- |
-| `path`    | `String` | Absolute path to the image file (temp directory)     |
-| `base64`  | `String` | Base64 data URI: `data:<mime>;base64,<data>`         |
-| `link`    | `String` | Remote URL after upload (empty if not yet uploaded)  |
-| `imageId` | `String` | Server-assigned image ID (empty if not yet uploaded) |
+| Property  | Type     | Description                              |
+| --------- | -------- | ---------------------------------------- |
+| `path`    | `String` | Absolute local file path                 |
+| `base64`  | `String` | Data URI: `data:<mime>;base64,<data>`    |
+| `link`    | `String` | Remote URL (empty before upload)         |
+| `imageId` | `String` | Server-assigned ID (empty before upload) |
 
 ### Factory
 
@@ -1324,363 +1569,305 @@ Data class representing a captured or picked image. Returned by `FormFieldsLiveC
 static Future<MyimageResult> fromFile(File file, {String? link})
 ```
 
-Reads the file, encodes to base64, and auto-detects MIME type from extension.
+Reads bytes, encodes to base64, and auto-detects MIME type from extension.
 
-Supported MIME types: `image/jpeg`, `image/png`, `image/gif`, `image/bmp`, `image/webp`, `image/svg+xml`, `image/heic`, `video/mp4`, `video/quicktime`, `application/pdf`, and `application/octet-stream` as fallback.
+**Supported MIME types:** `image/jpeg`, `image/png`, `image/gif`, `image/bmp`, `image/webp`, `image/svg+xml`, `image/heic`, `video/mp4`, `video/quicktime`, `application/pdf`, `application/octet-stream` (fallback).
 
 ### Usage Example
 
 ```dart
-final file = File('/tmp/photo.png');
-final result = await MyimageResult.fromFile(file);
-
+final result = await MyimageResult.fromFile(File('/tmp/photo.png'));
 print(result.path);   // /tmp/photo.png
 print(result.base64); // data:image/png;base64,...
-print(result.link);   // '' (empty until uploaded)
+print(result.link);   // '' (until uploaded)
 ```
 
 ---
 
-## showAppModalBottomSheet
+## 26. DioUtil
 
-Top-level helper function that wraps `showModalBottomSheet` with sensible defaults: keyboard-aware bottom padding and `SafeArea` handling.
+Static utility class for file upload and download via Dio with built-in error handling and structured logging.
 
-### Signature
+### Methods
+
+#### `safeRequest<T>`
 
 ```dart
-Future<T?> showAppModalBottomSheet<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  Color? backgroundColor,
-  double? elevation,
-  ShapeBorder? shape,
-  Clip? clipBehavior,
-  BoxConstraints? constraints,
-  bool? showDragHandle,
-  bool isScrollControlled = true,
-  double scrollControlDisabledMaxHeightRatio = 9 / 16,
-  bool useRootNavigator = false,
-  bool isDismissible = true,
-  bool enableDrag = true,
-  bool useSafeArea = true,
-  bool? requestFocus,
-  AnimationController? transitionAnimationController,
-  AnimationStyle? sheetAnimationStyle,
-  Offset? anchorPoint,
-  RouteSettings? routeSettings,
-  Color? barrierColor,
-  String? barrierLabel,
+static Future<T?> safeRequest<T>(
+  Future<T> Function() request, {
+  String? url,
 })
 ```
 
-### Key Parameters
+Wraps any Dio call. Returns `null` on error for non-`Response` types, or a synthetic `500` `Response` when `T == Response`.
 
-| Parameter            | Type            | Default | Description                                             |
-| -------------------- | --------------- | ------- | ------------------------------------------------------- |
-| `context`            | `BuildContext`  | —       | Build context (required)                                |
-| `builder`            | `WidgetBuilder` | —       | Content builder (required)                              |
-| `isScrollControlled` | `bool`          | `true`  | Allow sheet to take full screen height                  |
-| `useSafeArea`        | `bool`          | `true`  | Apply `SafeArea` bottom + keyboard bottom inset padding |
-| `isDismissible`      | `bool`          | `true`  | Dismiss when tapping outside                            |
-| `enableDrag`         | `bool`          | `true`  | Allow swipe-down to dismiss                             |
-| `shape`              | `ShapeBorder?`  | `null`  | Sheet shape (e.g. rounded top corners)                  |
-
-### Usage Example
+#### `downloadFile`
 
 ```dart
-showAppModalBottomSheet(
-  context: context,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-  ),
-  builder: (ctx) => Padding(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text('Choose an option'),
-        ListTile(title: const Text('Option A'), onTap: () {}),
-        ListTile(title: const Text('Option B'), onTap: () {}),
-      ],
-    ),
-  ),
-);
+static Future<String?> downloadFile(String url)
 ```
 
----
+Downloads a file to the system temp directory. Returns the local file path on success, `null` on failure.
 
-## ResponsiveMenuGrid
-
-A responsive grid that automatically calculates the number of columns based on available width and a fixed `itemSize`. Useful for menu/icon grids that need to adapt to different screen widths.
-
-### Constructor
+#### `uploadFile`
 
 ```dart
-ResponsiveMenuGrid({
-  required List<Widget> widgets,
-  double itemSize = 80,
-  double horizontalMargin = 16,
-  double verticalSpacing = 16,
-  bool alignLeft = false,
+static Future<Response?> uploadFile({
+  required String url,
+  required String filePath,
+  String? filename,
+  Map<String, String>? headers,
+  void Function(double progress)? onProgress,
+  List<MapEntry<String, String>>? fields,
 })
 ```
-
-### Properties
-
-| Property           | Type           | Default | Description                               |
-| ------------------ | -------------- | ------- | ----------------------------------------- |
-| `widgets`          | `List<Widget>` | —       | List of child widgets (required)          |
-| `itemSize`         | `double`       | `80`    | Fixed width/height for each grid cell     |
-| `horizontalMargin` | `double`       | `16`    | Left and right margin applied to the grid |
-| `verticalSpacing`  | `double`       | `16`    | Vertical gap between rows                 |
-| `alignLeft`        | `bool`         | `false` | Force left-align (no auto-centering)      |
-
-### Usage Example
-
-```dart
-ResponsiveMenuGrid(
-  itemSize: 80,
-  horizontalMargin: 16,
-  verticalSpacing: 12,
-  widgets: [
-    MenuIconItem(icon: Icons.home, label: 'Home'),
-    MenuIconItem(icon: Icons.settings, label: 'Settings'),
-    MenuIconItem(icon: Icons.person, label: 'Profile'),
-    MenuIconItem(icon: Icons.notifications, label: 'Alerts'),
-  ],
-)
-```
-
----
-
-## DioUtil
-
-Utility class for file upload and download via Dio with built-in error handling and logging.
-
-### Static Methods
-
-#### `safeRequest<T>(Future<T> Function() request, {String? url})`
-
-Wraps any Dio call and catches `DioException`. Returns `null` on error for non-`Response` types, or a synthetic `500` `Response` when `T == Response`.
-
-```dart
-final response = await DioUtil.safeRequest<Response>(
-  () => dio.get('https://api.example.com/data'),
-  url: 'https://api.example.com/data',
-);
-```
-
-#### `downloadFile(String url)`
-
-Downloads a file to the system temp directory and returns its local path.
-
-```dart
-final String? localPath = await DioUtil.downloadFile(
-  'https://example.com/document.pdf',
-);
-```
-
-#### `uploadFile({...})`
 
 Uploads a file as `multipart/form-data`.
 
-```dart
-final Response? response = await DioUtil.uploadFile(
-  url: 'https://api.example.com/upload',
-  filePath: '/tmp/photo.png',
-  filename: 'photo.png',
-  headers: {'Authorization': 'Bearer $token'},
-  onProgress: (progress) {
-    print('${(progress * 100).toStringAsFixed(0)}%');
-  },
-  fields: [
-    MapEntry('userId', '42'),
-  ],
-);
-```
-
-| Parameter    | Type                              | Description                                |
-| ------------ | --------------------------------- | ------------------------------------------ |
-| `url`        | `String`                          | Upload endpoint URL (required)             |
-| `filePath`   | `String`                          | Absolute path to the local file (required) |
-| `filename`   | `String?`                         | Override file name sent to server          |
-| `headers`    | `Map<String, String>?`            | Additional HTTP headers                    |
-| `onProgress` | `void Function(double)?`          | Progress callback (0.0 – 1.0)              |
-| `fields`     | `List<MapEntry<String, String>>?` | Additional form fields                     |
-
----
-
-## AppButtonLayout
-
-Keyboard-aware layout wrapper that keeps action buttons visible above the keyboard while respecting bottom safe areas. Can be used standalone or applied automatically via `AppButton(withLayout: true)`.
-
-### Constructor
-
-```dart
-AppButtonLayout({
-  required Widget child,
-  EdgeInsetsGeometry? margin,
-  double horizontalPadding = 16,
-  double topPadding = 12,
-  bool respectSafeArea = true,
-  bool avoidKeyboard = true,
-  Duration duration = const Duration(milliseconds: 220),
-  Curve curve = Curves.easeOutCubic,
-})
-```
-
-### Properties
-
-| Property            | Type                  | Default                       | Description                                       |
-| ------------------- | --------------------- | ----------------------------- | ------------------------------------------------- |
-| `child`             | `Widget`              | —                             | Button or content to wrap (required)              |
-| `margin`            | `EdgeInsetsGeometry?` | `null`                        | Outer margin                                      |
-| `horizontalPadding` | `double`              | `16`                          | Left/right padding applied via `SafeArea.minimum` |
-| `topPadding`        | `double`              | `12`                          | Top padding for the internal `AnimatedContainer`  |
-| `respectSafeArea`   | `bool`                | `true`                        | Apply bottom safe area                            |
-| `avoidKeyboard`     | `bool`                | `true`                        | Add `viewInsets.bottom` to bottom padding         |
-| `duration`          | `Duration`            | `Duration(milliseconds: 220)` | Animation duration for keyboard avoidance         |
-| `curve`             | `Curve`               | `Curves.easeOutCubic`         | Animation curve                                   |
+| Parameter    | Type                              | Description                       |
+| ------------ | --------------------------------- | --------------------------------- |
+| `url`        | `String`                          | Upload endpoint (required)        |
+| `filePath`   | `String`                          | Absolute local path (required)    |
+| `filename`   | `String?`                         | Override file name sent to server |
+| `headers`    | `Map<String, String>?`            | Additional HTTP headers           |
+| `onProgress` | `void Function(double)?`          | Progress callback (0.0 – 1.0)     |
+| `fields`     | `List<MapEntry<String, String>>?` | Additional form fields            |
 
 ### Usage Example
 
 ```dart
-AppButtonLayout(
-  child: AppButton(
-    text: 'Submit',
-    onPressed: () {},
-  ),
-)
+final response = await DioUtil.uploadFile(
+  url: 'https://api.example.com/upload',
+  filePath: '/tmp/photo.png',
+  headers: {'Authorization': 'Bearer $token'},
+  onProgress: (p) => setState(() => progress = p),
+  fields: [MapEntry('userId', '42')],
+);
+
+final localPath = await DioUtil.downloadFile('https://example.com/file.pdf');
 ```
 
-Or, use the shorthand on `AppButton` itself:
+---
+
+## 27. FormFieldValidators
+
+Static helper methods that return `FormFieldValidator<String?>` functions, compatible with any Flutter form field.
+
+### Methods
+
+| Method      | Signature                                                         | Description                            |
+| ----------- | ----------------------------------------------------------------- | -------------------------------------- |
+| `required`  | `required(String label, {String? customMessage})`                 | Non-empty                              |
+| `email`     | `email(String label, {String? customMessage})`                    | Email format                           |
+| `phone`     | `phone(String label, {String? customMessage})`                    | Indonesian phone (0 + 11 digits)       |
+| `password`  | `password(String label, {String? customMessage})`                 | Minimum 6 characters                   |
+| `number`    | `number(String label, {String? customMessage})`                   | Numeric only                           |
+| `minLength` | `minLength(String label, int min, {String? customMessage})`       | Minimum length                         |
+| `maxLength` | `maxLength(String label, int max, {String? customMessage})`       | Maximum length                         |
+| `range`     | `range(String label, num min, num max, {String? customMessage})`  | Numeric range                          |
+| `pattern`   | `pattern(String label, String pattern, {String? customMessage})`  | Regex match                            |
+| `match`     | `match(String label, String matchValue, {String? customMessage})` | Equality check (e.g. confirm password) |
+| `compose`   | `compose(List<FormFieldValidator<String?>> validators)`           | Chain multiple validators              |
+
+### Usage Example
 
 ```dart
-AppButton(
-  text: 'Submit',
-  withLayout: true,
-  onPressed: () {},
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  validator: FormFieldValidators.compose([
+    FormFieldValidators.required('Email'),
+    FormFieldValidators.email('Email'),
+  ]),
+  onChanged: (_) {},
 )
 ```
 
 ---
 
-## AppButtonContent
+## 28. Enums Reference
 
-Low-level widget that renders the inner content of an `AppButton` — spinner during loading, icon, text, or child. Useful when building a custom button shell while reusing the standard loading/icon/text logic.
-
-### Constructor
+### FormType
 
 ```dart
-AppButtonContent({
-  required AppButtonType type,
-  required AppButtonSize size,
-  bool isLoading = false,
-  Widget? icon,
-  String? text,
-  Widget? child,
-  double? customSpinnerSize,
-})
+enum FormType {
+  string,        // Plain text
+  phone,         // Phone number
+  password,      // Password with visibility toggle
+  verification,  // OTP / digit-only
+  email,         // Email
+  date,          // Date picker → DateTime
+  time,          // Time picker → DateTime or TimeOfDay
+  dateTime,      // Date + time picker → DateTime
+  dateTimeRange, // Date range picker → DateTimeRange
+  timeOfDay,     // Time picker → TimeOfDay
+  dropdown,      // Single-select dropdown
+  dropdownMulti, // Multi-select dropdown
+  radioButton,   // Radio group
+  checkbox,      // Checkbox group
+  scanBarcode,   // Barcode scanner
+}
 ```
 
-### Properties
+### LabelPosition
 
-| Property            | Type            | Default | Description                                            |
-| ------------------- | --------------- | ------- | ------------------------------------------------------ |
-| `type`              | `AppButtonType` | —       | Button variant (controls spinner color logic)          |
-| `size`              | `AppButtonSize` | —       | Size preset (controls spinner size)                    |
-| `isLoading`         | `bool`          | `false` | Show spinner instead of content                        |
-| `icon`              | `Widget?`       | `null`  | Icon widget (used for `AppButtonType.icon`)            |
-| `text`              | `String?`       | `null`  | Label text                                             |
-| `child`             | `Widget?`       | `null`  | Fully custom content (overrides text + icon)           |
-| `customSpinnerSize` | `double?`       | `null`  | Override spinner size (active when `size` is `custom`) |
+```dart
+enum LabelPosition { top, bottom, left, right, inBorder, none }
+```
 
----
+### BorderType
 
-## AppButtonType & AppButtonSize Enums
+```dart
+enum BorderType { outlineInputBorder, underlineInputBorder, none }
+```
+
+### OtpBorderType
+
+```dart
+enum OtpBorderType { box, underline }
+```
 
 ### AppButtonType
 
 ```dart
-enum AppButtonType {
-  filled,       // Filled background (Material filled button)
-  filledTonal,  // Filled tonal variant
-  elevated,     // Elevated button with shadow
-  outlined,     // Outlined/border button
-  text,         // Text-only button
-  icon,         // Icon-only button
-  fab,          // Floating action button
-  extendedFab,  // Extended FAB with label
-}
+enum AppButtonType { filled, filledTonal, elevated, outlined, text, icon, fab, extendedFab }
 ```
 
 ### AppButtonSize
 
 ```dart
-enum AppButtonSize {
-  small,   // Compact size
-  medium,  // Standard size (default)
-  large,   // Larger touch target
-  custom,  // Use customHeight / customHorizontalPadding / customIconSize
-}
+enum AppButtonSize { small, medium, large, custom }
+```
+
+### AppDialogType
+
+```dart
+enum AppDialogType { validation, network, authentication, server }
+```
+
+### AppDialogPosition
+
+```dart
+enum AppDialogPosition { top, center, bottom }
+```
+
+### AppDialogLoadingVisual
+
+```dart
+enum AppDialogLoadingVisual { indicator, progress }
+```
+
+### AppDialogLoadingContainer
+
+```dart
+enum AppDialogLoadingContainer { card, nonCard }
+```
+
+### AppDialogLoadingBackBehavior
+
+```dart
+enum AppDialogLoadingBackBehavior { block, allow, confirmCancel }
+```
+
+### AppLoadingVariant
+
+```dart
+enum AppLoadingVariant { spinner, pulse, dots }
+```
+
+### AppProgressType
+
+```dart
+enum AppProgressType { linear, circular }
+```
+
+### Formats (for DateTime extensions)
+
+```dart
+enum Formats { date, time, dateTime, dayDate, dayDateTime, month, string }
 ```
 
 ---
 
-## Dialog Typedefs
+## 29. String Extensions
 
-Exported from `package:form_fields/form_fields.dart`.
+### Validation Properties
 
-### AppDialogErrorMapper
+| Extension              | Return | Description                            |
+| ---------------------- | ------ | -------------------------------------- |
+| `.isValidEmail`        | `bool` | Valid email format                     |
+| `.isValidPhone`        | `bool` | Valid Indonesian phone (0 + 11 digits) |
+| `.isValidPassword`     | `bool` | Length ≥ 6                             |
+| `.isValidNumber`       | `bool` | Numeric only                           |
+| `.isWhiteSpace`        | `bool` | Empty or whitespace only               |
+| `.isValidVerification` | `bool` | Length ≥ 1                             |
+
+### Manipulation Methods
+
+| Extension      | Return   | Description                  |
+| -------------- | -------- | ---------------------------- |
+| `.hidePhone`   | `String` | Mask first 7 chars with `*`  |
+| `.is0Phone`    | `String` | Ensure phone starts with `0` |
+| `.toTitleCase` | `String` | Convert to Title Case        |
+
+---
+
+## 30. DateTime & TimeOfDay Extensions
+
+### DateTime? Extensions
+
+#### Comparison
 
 ```dart
-typedef AppDialogErrorMapper = ({
-  String message,
-  AppDialogType type,
-  Map<String, List<String>>? details,
-}) Function(Object error);
+date.isBefore(other)
+date.isAfter(other)
+date.isAtSameMomentAs(other)
 ```
 
-Maps an exception to a `(message, type, details)` record for use with `AppDialogService.guard(mapError: ...)`.
-
-### AppDialogCancelRequested
+#### Formatting
 
 ```dart
-typedef AppDialogCancelRequested = FutureOr<bool> Function();
+date.toStrings()                              // default format
+date.toStrings(format: Formats.date)          // date only
+date.toStrings(format: Formats.time)          // time only
+date.toStrings(format: Formats.dateTime)      // date + time
+date.toStrings(stringFormat: 'dd/MM/yyyy')    // custom pattern
 ```
 
-Called when the user attempts to cancel a loading dialog. Return `true` to allow cancellation.
-
-### AppDialogCancelled
+#### Conversion
 
 ```dart
-typedef AppDialogCancelled = FutureOr<void> Function();
+TimeOfDay? tod = date.toTimeOfDay();
 ```
 
-Called after a loading dialog is successfully cancelled.
+### TimeOfDay? Extensions
+
+```dart
+DateTime? dt   = time.toDateTime();                              // current date + time
+DateTime? dt2  = time.toDateTimeWithDate(DateTime(2026, 6, 1)); // specific date + time
+```
 
 ### Usage Example
 
 ```dart
-AppDialogErrorMapper myMapper = (error) {
-  if (error is ValidationException) {
-    return (
-      message: error.message,
-      type: AppDialogType.validation,
-      details: null,
-    );
-  }
-  return (
-    message: error.toString(),
-    type: AppDialogType.server,
-    details: null,
-  );
-};
-
-await AppGlobalDialogService.guard<void>(
-  action: () async { /* async work */ },
-  mapError: myMapper,
-  onCancelRequested: () => true,
-  onCancelled: () { /* cleanup */ },
-);
+FormFields<TimeOfDay>(
+  label: 'Meeting Time',
+  formType: FormType.time,
+  onChanged: (time) {
+    if (time != null) {
+      final fullDateTime = time.toDateTimeWithDate(selectedDate);
+    }
+  },
+)
 ```
+
+---
+
+## Related Resources
+
+- [README](README.md) — Package overview and installation
+- [USAGE](USAGE.md) — Comprehensive usage manual
+- [QUICKSTART](QUICKSTART.md) — Quick start guide
+- [LOCALIZATION](LOCALIZATION.md) — i18n and locale configuration
+- [CHANGELOG](CHANGELOG.md) — Version history
+- [Example App](example/lib/main.dart) — Runnable example application
