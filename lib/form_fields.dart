@@ -26,7 +26,7 @@
 library;
 
 export 'src/fields/core/form_fields_signature_pad.dart'
-    show FormFieldsSignaturePad;
+    show FormFieldsSignaturePad, SignaturePadExportResult;
 
 // ...existing code...
 // -------------------

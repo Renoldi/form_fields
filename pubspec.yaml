@@ -24,6 +24,7 @@ dependencies:
   permission_handler: any
   signature: any
   mobile_scanner: any
+  camera: any
 
 dev_dependencies:
   build_runner: any

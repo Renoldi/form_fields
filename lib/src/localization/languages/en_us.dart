@@ -54,6 +54,16 @@ const Map<String, String> enUSStrings = {
   'passwordMinLength': 'Password must be at least {value} characters',
   'verificationLength': 'Please enter a {value}-digit verification code',
 
+  // Signature Pad + Live Camera
+  'signatureClear': 'Clear signature',
+  'signatureExport': 'Export signature',
+  'liveCaptureTitle': 'Live Capture',
+  'liveCaptureAutoOnSign': 'auto on sign',
+  'cameraInitializing': 'Initializing camera...',
+  'cameraNoCamerasFound': 'No cameras found',
+  'cameraReady': 'Ready',
+  'cameraCaptured': 'Captured',
+
   // Optional/Labels
   'optional': '(optional)',
   'optionalLabel': '(optional)',

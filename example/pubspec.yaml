@@ -22,6 +22,7 @@ dependencies:
   json_annotation: any
   dio: any
   permission_handler: any
+  camera: any
 
 dev_dependencies:
   flutter_test:

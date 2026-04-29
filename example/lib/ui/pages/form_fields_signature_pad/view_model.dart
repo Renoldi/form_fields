@@ -2,10 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
+  // ── Basic example ────────────────────────────────────────────────────────
   MyimageResult? signatureResult;
 
   void setSignature(MyimageResult? result) {
     signatureResult = result;
     notifyListeners();
+  }
+
+  // ── Live camera example ──────────────────────────────────────────────────
+  /// External camera controller so the host page can read the captured photo.
+  final FormFieldsMyImageController liveCameraController =
+      FormFieldsMyImageController();
+
+  SignaturePadExportResult? exportResult;
+  MyimageResult? liveCaptureResult;
+
+  void setExportResult(SignaturePadExportResult result) {
+    exportResult = result;
+    notifyListeners();
+  }
+
+  void setLiveCapture(MyimageResult captured) {
+    liveCaptureResult = captured;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    liveCameraController.dispose();
+    super.dispose();
   }
 }
