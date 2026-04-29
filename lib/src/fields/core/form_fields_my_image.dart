@@ -525,6 +525,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       if (widget.showDesc) {
         // Ambil localization sebelum async gap
         final l = FormFieldsLocalizations.of(context);
+        final formKey = GlobalKey<FormState>();
         description = await showAppModalBottomSheet<String>(
           context: context,
           isDismissible: false,
@@ -533,87 +534,92 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           builder: (dialogContext) {
-            final formKey = GlobalKey<FormState>();
-            String? descValue = _lastDescription;
-            // Gunakan l yang sudah diambil sebelum async gap
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FormFields<String>(
-                        label: l.get('description'),
-                        currentValue: descValue ?? '',
-                        onChanged: (v) {
-                          descValue = v;
-                        },
-                        formType: FormType.string,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        isRequired: true,
-                      ),
-                      Row(
+            // StatefulBuilder agar descValue tersimpan saat keyboard muncul
+            // dan builder sheet dipanggil ulang oleh MediaQuery viewInsets.
+            return StatefulBuilder(
+              builder: (sbContext, setSheetState) {
+                String descValue = _lastDescription ?? '';
+                return SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 12),
-                              child: AppButton(
-                                text: l.cancel,
-                                onPressed: () =>
-                                    Navigator.pop(dialogContext, null),
-                                style: ButtonStyle(
-                                  backgroundColor: WidgetStatePropertyAll(
-                                      Colors.grey.shade200),
-                                  foregroundColor:
-                                      WidgetStatePropertyAll(Colors.black87),
-                                  shape: WidgetStatePropertyAll(
-                                      RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24))),
-                                  elevation: WidgetStatePropertyAll(2),
-                                  padding: WidgetStatePropertyAll(
-                                      EdgeInsets.symmetric(vertical: 14)),
+                          FormFields<String>(
+                            label: l.get('description'),
+                            currentValue: descValue,
+                            onChanged: (v) {
+                              setSheetState(() => descValue = v);
+                            },
+                            formType: FormType.string,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            isRequired: true,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: AppButton(
+                                    text: l.cancel,
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext, null),
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStatePropertyAll(
+                                          Colors.grey.shade200),
+                                      foregroundColor: WidgetStatePropertyAll(
+                                          Colors.black87),
+                                      shape: WidgetStatePropertyAll(
+                                          RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(24))),
+                                      elevation: WidgetStatePropertyAll(2),
+                                      padding: WidgetStatePropertyAll(
+                                          EdgeInsets.symmetric(vertical: 14)),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 12),
-                              child: AppButton(
-                                text: l.yes,
-                                onPressed: () {
-                                  if (formKey.currentState?.validate() ??
-                                      true) {
-                                    Navigator.pop(
-                                        dialogContext, descValue?.trim() ?? '');
-                                  }
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                      WidgetStatePropertyAll(Colors.deepPurple),
-                                  foregroundColor:
-                                      WidgetStatePropertyAll(Colors.white),
-                                  shape: WidgetStatePropertyAll(
-                                      RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(24))),
-                                  elevation: WidgetStatePropertyAll(4),
-                                  padding: WidgetStatePropertyAll(
-                                      EdgeInsets.symmetric(vertical: 14)),
+                              Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.only(left: 12),
+                                  child: AppButton(
+                                    text: l.yes,
+                                    onPressed: () {
+                                      if (formKey.currentState?.validate() ??
+                                          true) {
+                                        Navigator.pop(
+                                            dialogContext, descValue.trim());
+                                      }
+                                    },
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStatePropertyAll(
+                                          Colors.deepPurple),
+                                      foregroundColor:
+                                          WidgetStatePropertyAll(Colors.white),
+                                      shape: WidgetStatePropertyAll(
+                                          RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(24))),
+                                      elevation: WidgetStatePropertyAll(4),
+                                      padding: WidgetStatePropertyAll(
+                                          EdgeInsets.symmetric(vertical: 14)),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
         );
