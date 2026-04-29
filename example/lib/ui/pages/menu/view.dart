@@ -116,7 +116,9 @@ class View extends PresenterState {
                       ResponsiveMenuGrid(
                         widgets: viewModel.menuItems
                             .map((item) => Column(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisSize: MainAxisSize.max,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Material(
                                       color: item.color.withValues(alpha: 0.1),
@@ -126,29 +128,32 @@ class View extends PresenterState {
                                         onTap: () =>
                                             handleMenuItemTap(item.routeName),
                                         child: SizedBox(
-                                          width: 80,
-                                          height: 80,
+                                          width: 64,
+                                          height: 64,
                                           child: Icon(
                                             item.icon,
-                                            size: 50,
+                                            size: 36,
                                             color: item.color,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      item.title,
-                                      textAlign: TextAlign.center,
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                    const SizedBox(height: 6),
+                                    Flexible(
+                                      child: Text(
+                                        item.title,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ],
                                 ))
                             .toList(),
-                        itemSize: 100,
+                        itemSize: 110,
                         horizontalMargin: 8,
                         verticalSpacing: 32,
                         alignLeft: true,
