@@ -43,6 +43,190 @@ FormFields<String>(
   - All validation and UI text is fully localized (English, Indonesian, and easy extension).
   - See [LOCALIZATION.md](LOCALIZATION.md) for details.
 
+## Signature Pad + Live Camera (New)
+
+`FormFieldsSignaturePad` now supports integrated live front-camera preview and automatic capture, and the camera module can also be used as a standalone widget.
+
+### What is New
+
+- Integrated live camera in `FormFieldsSignaturePad`.
+- Auto-capture on first draw start (one time per signing session).
+- Auto-capture reset when user taps clear.
+- New combined export model: `SignaturePadExportResult`.
+- New standalone camera widget: `FormFieldsLiveCameraCapture`.
+- Full camera status labels now localized (EN/ID).
+
+### `FormFieldsSignaturePad` New Capabilities
+
+- `showLiveCamera`: enable live front-camera preview.
+- `liveCameraHeight`: control camera preview height.
+- `liveCameraController`: external `FormFieldsMyImageController` for reading captured image.
+- `onLiveCaptured`: callback fired immediately after camera capture.
+- `onExportedResult`: receive signature + optional live capture in one payload.
+- `layoutBuilder`: fully custom signature + camera layout.
+- `liveCameraBuilder`: custom wrapper for camera section while keeping default layout.
+
+### Signature + Live Camera Example
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  liveCameraController: liveCameraController,
+  onLiveCaptured: (captured) {
+    // Called right after first draw-start capture
+  },
+  onExportedResult: (result) {
+    final MyimageResult signature = result.signature;
+    final MyimageResult? liveCapture = result.liveCapture;
+    // Handle both results together
+  },
+)
+```
+
+### Standalone Live Camera Example
+
+Use this when you need live camera capture without signature pad.
+
+```dart
+final cameraController = FormFieldsMyImageController();
+final cameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
+
+FormFieldsLiveCameraCapture(
+  key: cameraKey,
+  height: 200,
+  cameraController: cameraController,
+  onCaptured: (result) {
+    // Called when capture() succeeds
+  },
+)
+
+// Trigger capture programmatically
+await cameraKey.currentState?.capture();
+
+// Reset to live preview mode
+cameraKey.currentState?.resetCapture();
+```
+
+### Behavior Notes
+
+- Camera source is front camera by default.
+- No camera/gallery chooser dialog is shown.
+- In signature flow, capture fires once on first draw start.
+- Capture will fire again only after clear/reset.
+- Existing `onExported` remains supported for backward compatibility.
+
+### Localization Keys Added (EN/ID)
+
+- `signatureClear`
+- `signatureExport`
+- `liveCaptureTitle`
+- `liveCaptureAutoOnSign`
+- `cameraInitializing`
+- `cameraNoCamerasFound`
+- `cameraReady`
+- `cameraCaptured`
+
+### Example App Updates
+
+The `example` app now includes:
+
+- Basic signature export.
+- Signature + live camera auto-capture.
+- Custom layout via `layoutBuilder`.
+- Custom camera wrapper via `liveCameraBuilder`.
+- Standalone live camera with capture/reset controls and preview.
+
+### Technical Notes
+
+#### Camera Initialization
+
+- Front camera is initialized lazily on first widget build.
+- Uses shared singleton manager to avoid multi-instance conflicts.
+- Only one `CameraController` is active at a time (ref-counted).
+
+#### Capture Mechanism
+
+- Capture uses `RepaintBoundary.toImage()` (screenshot-based).
+- Avoids CameraX "No supported surface combination" errors.
+- Captured image is saved as PNG to system temp directory.
+- Result wrapped in `MyimageResult` (same as FormFieldsMyImage).
+
+#### Permissions
+
+- Requires `CAMERA` permission on Android/iOS.
+- Add to `android/app/src/main/AndroidManifest.xml`:
+  ```xml
+  <uses-permission android:name="android.permission.CAMERA" />
+  ```
+- Add to `ios/Runner/Info.plist`:
+  ```xml
+  <key>NSCameraUsageDescription</key>
+  <string>Camera access needed to capture signature photo</string>
+  ```
+- Use `permission_handler` package to request at runtime (optional but recommended).
+
+#### Dependencies
+
+- Signature pad: `package:signature`
+- Camera: `package:camera`
+- Image processing: `package:flutter/rendering`
+
+### API Reference (Summary)
+
+#### FormFieldsSignaturePad
+
+```dart
+FormFieldsSignaturePad(
+  // Signature pad appearance
+  height: 200,
+  width: double.infinity,
+  backgroundColor: Colors.white,
+  penColor: Colors.black,
+  penStrokeWidth: 3.0,
+  exportBackgroundColor: null, // null = transparent
+
+  // Callbacks
+  onExported: (MyimageResult?) { },      // Legacy: signature only
+  onExportedResult: (SignaturePadExportResult) { },  // New: both signature + live capture
+  onLiveCaptured: (MyimageResult) { },    // Called right after capture
+
+  // Live camera
+  showLiveCamera: false,
+  liveCameraHeight: 200,
+  liveCameraController: controller,       // Optional external controller
+  layoutBuilder: (ctx, pad, camera) => ..., // Custom layout
+  liveCameraBuilder: (ctx, cam) => ...,     // Custom camera wrapper
+)
+```
+
+#### SignaturePadExportResult
+
+```dart
+class SignaturePadExportResult {
+  final MyimageResult signature;      // Always present (signature drawing)
+  final MyimageResult? liveCapture;   // Optional (null if disabled or not captured)
+}
+```
+
+#### FormFieldsLiveCameraCapture
+
+```dart
+FormFieldsLiveCameraCapture(
+  key: GlobalKey<FormFieldsLiveCameraCaptureState>(),
+  height: 200,
+  cameraController: FormFieldsMyImageController(),
+  onCaptured: (MyimageResult) { },
+)
+```
+
+#### FormFieldsLiveCameraCaptureState
+
+```dart
+// Methods accessible via GlobalKey<FormFieldsLiveCameraCaptureState>()
+Future<MyimageResult?> capture()    // Capture current frame
+void resetCapture()                 // Clear capture, return to live preview
+```
+
 ## Component Documentation
 
 All public widgets, controllers, and utilities are accessible via a single import:
@@ -70,6 +254,7 @@ Each component has its own documentation file for clarity and maintainability:
 - [FormFieldsSelect](docs/components/form_fields_select.md)
 - [FormFieldsSignaturePad](docs/components/form_fields_signature_pad.md)
 - [FormFieldsMyImage](docs/components/form_fields_my_image.md)
+- `FormFieldsLiveCameraCapture` (standalone live camera widget; see section above)
 
 ## Barcode/QR Code Scanner Field
 
