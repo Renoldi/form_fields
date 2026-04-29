@@ -30,13 +30,17 @@ class FormFieldsMyImage extends StatefulWidget {
   final String? uploadToken;
   final bool isDirectUpload;
   // Customizable upload messages
-  final String uploadSuccessMessage;
-  final String uploadFailedMessage;
-  final String uploadErrorMessage;
+  final String? uploadSuccessTitle;
+  final String? uploadFailedTitle;
+  final String? uploadErrorTitle;
+  final String? uploadSuccessMessage;
+  final String? uploadFailedMessage;
+  final String? uploadErrorMessage;
   final String uploadFileUrlKey;
   final String uploadImageIdKey;
 
   final bool allow;
+  final bool showUploadResultDialog;
 
   final bool showDesc;
   final String? descriptionField;
@@ -56,12 +60,16 @@ class FormFieldsMyImage extends StatefulWidget {
     this.uploadUrl,
     this.uploadToken,
     this.isDirectUpload = false,
-    this.uploadSuccessMessage = 'Upload successful!',
-    this.uploadFailedMessage = 'Upload failed:',
-    this.uploadErrorMessage = 'Upload error:',
+    this.uploadSuccessTitle,
+    this.uploadFailedTitle,
+    this.uploadErrorTitle,
+    this.uploadSuccessMessage,
+    this.uploadFailedMessage,
+    this.uploadErrorMessage,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.allow = true,
+    this.showUploadResultDialog = false,
     this.showDesc = false,
     this.descriptionField,
   }) {
@@ -273,22 +281,24 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           height: 120,
           decoration: BoxDecoration(
             color: Colors.grey.shade300,
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: ClipOval(
-            child: Center(
-              child: Icon(
-                Icons.image_not_supported,
-                size: 48,
-                color: Colors.grey,
-              ),
+          child: Center(
+            child: Icon(
+              Icons.image_not_supported,
+              size: 48,
+              color: Colors.grey,
             ),
           ),
         );
       }
-      return CircleAvatar(
-        radius: 60,
-        backgroundColor: Colors.grey.shade300,
+      return Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
@@ -305,17 +315,21 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         child: widget.imageBuilder!(context, image, index),
       );
     }
-    if (image.link.isNotEmpty) {
-      return CircleAvatar(
-        radius: 60,
-        backgroundColor: Colors.grey.shade300,
-        backgroundImage: NetworkImage(image.link),
-      );
-    }
-    return CircleAvatar(
-      radius: 60,
-      backgroundColor: Colors.grey.shade300,
-      backgroundImage: FileImage(File(image.path)),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 120,
+        height: 120,
+        child: image.link.isNotEmpty
+            ? Image.network(
+                image.link,
+                fit: BoxFit.cover,
+              )
+            : Image.file(
+                File(image.path),
+                fit: BoxFit.cover,
+              ),
+      ),
     );
   }
 
@@ -448,9 +462,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     FormFieldsMyImageProvider provider, {
     String? initialSource,
   }) async {
-    final mountedBeforeDialog = mounted;
-    final messenger =
-        mountedBeforeDialog ? ScaffoldMessenger.of(context) : null;
     File? file;
     String? source;
     // If isDoc, call CunningDocumentScanner directly
@@ -703,7 +714,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         _uploadingIndex = uploadIdx;
         provider.commit();
         await _uploadImageDio(
-          messenger,
           provider,
           result,
           uploadIdx,
@@ -717,7 +727,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   Future<void> _uploadImageDio(
-    ScaffoldMessengerState? messenger,
     FormFieldsMyImageProvider provider,
     MyimageResult image,
     int? idx, {
@@ -750,10 +759,28 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       fields: extraFields.isNotEmpty ? extraFields : null,
     );
     if (!mounted) return;
+    final l = FormFieldsLocalizations.of(context);
+    final dialog = AppDialogService(context);
+    final uploadSuccessTitle =
+        widget.uploadSuccessTitle ?? l.get('uploadSuccessTitle');
+    final uploadFailedTitle =
+        widget.uploadFailedTitle ?? l.get('uploadFailedTitle');
+    final uploadErrorTitle =
+        widget.uploadErrorTitle ?? l.get('uploadErrorTitle');
+    final uploadSuccessMessage =
+        widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage');
+    final uploadFailedMessage =
+        widget.uploadFailedMessage ?? l.get('uploadFailedMessage');
+    final uploadErrorMessage =
+        widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
-      messenger?.showSnackBar(
-        SnackBar(content: Text(widget.uploadErrorMessage)),
-      );
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadFailedTitle,
+          message: uploadErrorMessage,
+          dialogType: AppDialogType.network,
+        );
+      }
       return;
     }
     try {
@@ -792,22 +819,29 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         );
         provider.setUploadProgress(index, 1.0);
         widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
-        messenger?.showSnackBar(
-          SnackBar(content: Text(widget.uploadSuccessMessage)),
-        );
+        if (widget.showUploadResultDialog) {
+          await dialog.showSuccess(
+            title: uploadSuccessTitle,
+            message: uploadSuccessMessage,
+          );
+        }
       } else {
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text(
-              '${widget.uploadFailedMessage} ${response.statusMessage ?? ''} ',
-            ),
-          ),
-        );
+        if (widget.showUploadResultDialog) {
+          await dialog.showError(
+            title: uploadFailedTitle,
+            message: '$uploadFailedMessage ${response.statusMessage ?? ''}',
+            dialogType: AppDialogType.server,
+          );
+        }
       }
     } catch (e) {
-      messenger?.showSnackBar(
-        SnackBar(content: Text('${widget.uploadErrorMessage} $e')),
-      );
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadErrorTitle,
+          message: '$uploadErrorMessage $e',
+          dialogType: AppDialogType.server,
+        );
+      }
     }
   }
 }

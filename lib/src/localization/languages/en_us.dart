@@ -70,4 +70,12 @@ const Map<String, String> enUSStrings = {
   'notSet': 'Not set',
   'yes': 'Yes',
   'description': 'Description',
+
+  // Upload Result
+  'uploadSuccessTitle': 'Upload Success',
+  'uploadFailedTitle': 'Upload Failed',
+  'uploadErrorTitle': 'Upload Error',
+  'uploadSuccessMessage': 'Upload successful!',
+  'uploadFailedMessage': 'Upload failed:',
+  'uploadErrorMessage': 'Upload error:',
 };

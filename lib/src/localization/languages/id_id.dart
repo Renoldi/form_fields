@@ -70,4 +70,12 @@ const Map<String, String> idIDStrings = {
   'notSet': 'Tidak diatur',
   'yes': 'Ya',
   'description': 'Deskripsi',
+
+  // Upload Result
+  'uploadSuccessTitle': 'Upload Berhasil',
+  'uploadFailedTitle': 'Upload Gagal',
+  'uploadErrorTitle': 'Kesalahan Upload',
+  'uploadSuccessMessage': 'Upload berhasil!',
+  'uploadFailedMessage': 'Upload gagal:',
+  'uploadErrorMessage': 'Kesalahan upload:',
 };
