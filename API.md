@@ -1691,7 +1691,6 @@ FormFields<String>(
 
 ```dart
 enum FormType {
-  string,        // Plain text
   phone,         // Phone number
   password,      // Password with visibility toggle
   verification,  // OTP / digit-only
