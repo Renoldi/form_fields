@@ -54,6 +54,8 @@ FormFields<String>(
 - Auto-capture reset when user taps clear.
 - New combined export model: `SignaturePadExportResult`.
 - New standalone camera widget: `FormFieldsLiveCameraCapture`.
+- `cameraController` is now **optional** — use a `GlobalKey` or a controller, or both.
+- `FormFieldsMyImageController` now supports programmatic `capture()`, `resetCapture()`, and `pickImage()` without needing a `GlobalKey`.
 - Full camera status labels now localized (EN/ID).
 
 ### `FormFieldsSignaturePad` New Capabilities
@@ -87,25 +89,47 @@ FormFieldsSignaturePad(
 
 Use this when you need live camera capture without signature pad.
 
+Two approaches are available — choose the one that fits your needs:
+
+#### Option A — GlobalKey (no controller needed)
+
 ```dart
-final cameraController = FormFieldsMyImageController();
 final cameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
 
 FormFieldsLiveCameraCapture(
   key: cameraKey,
   height: 200,
-  cameraController: cameraController,
   onCaptured: (result) {
     // Called when capture() succeeds
   },
 )
 
-// Trigger capture programmatically
+// Trigger capture
 await cameraKey.currentState?.capture();
 
-// Reset to live preview mode
+// Reset to live preview
 cameraKey.currentState?.resetCapture();
 ```
+
+#### Option B — Controller (no GlobalKey needed)
+
+```dart
+final cameraController = FormFieldsMyImageController();
+
+FormFieldsLiveCameraCapture(
+  height: 200,
+  cameraController: cameraController,
+  onCaptured: (result) { },
+)
+
+// Trigger capture from anywhere
+final result = await cameraController.capture();
+
+// Reset from anywhere
+cameraController.resetCapture();
+```
+
+Both `cameraController` and `key` can be used together for maximum flexibility.
 
 ### Behavior Notes
 
@@ -134,7 +158,8 @@ The `example` app now includes:
 - Signature + live camera auto-capture.
 - Custom layout via `layoutBuilder`.
 - Custom camera wrapper via `liveCameraBuilder`.
-- Standalone live camera with capture/reset controls and preview.
+- Standalone live camera with capture/reset via `GlobalKey`.
+- Standalone live camera with capture/reset via **controller** (no `GlobalKey`).
 
 ### Technical Notes
 
@@ -212,9 +237,9 @@ class SignaturePadExportResult {
 
 ```dart
 FormFieldsLiveCameraCapture(
-  key: GlobalKey<FormFieldsLiveCameraCaptureState>(),
+  key: GlobalKey<FormFieldsLiveCameraCaptureState>(), // optional
   height: 200,
-  cameraController: FormFieldsMyImageController(),
+  cameraController: FormFieldsMyImageController(),   // optional
   onCaptured: (MyimageResult) { },
 )
 ```
@@ -226,6 +251,22 @@ FormFieldsLiveCameraCapture(
 Future<MyimageResult?> capture()    // Capture current frame
 void resetCapture()                 // Clear capture, return to live preview
 ```
+
+#### FormFieldsMyImageController — Camera & Picker Methods
+
+```dart
+// Capture current frame from the linked FormFieldsLiveCameraCapture
+Future<MyimageResult?> capture()
+
+// Reset the linked FormFieldsLiveCameraCapture to live preview
+void resetCapture()
+
+// Open image picker on the linked FormFieldsMyImage
+// source: 'camera' | 'gallery' | null (shows bottom-sheet chooser)
+Future<void> pickImage({String? source})
+```
+
+These methods are no-ops when no widget is currently linked to the controller.
 
 ## Component Documentation
 

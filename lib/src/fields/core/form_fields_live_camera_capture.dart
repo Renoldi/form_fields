@@ -12,15 +12,17 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final double height;
 
   /// Controller that will be updated with the latest captured image.
-  final FormFieldsMyImageController cameraController;
+  /// Optional — only needed when you want to read captured images or trigger
+  /// capture/reset programmatically without a [GlobalKey].
+  final FormFieldsMyImageController? cameraController;
 
   /// Called each time [FormFieldsLiveCameraCaptureState.capture] succeeds.
   final void Function(MyimageResult captured)? onCaptured;
 
   const FormFieldsLiveCameraCapture({
     super.key,
-    required this.height,
-    required this.cameraController,
+    this.height = 100,
+    this.cameraController,
     this.onCaptured,
   });
 
@@ -45,15 +47,15 @@ class FormFieldsLiveCameraCaptureState
     super.initState();
     _cam.addListener(_onCameraReady);
     _cam.acquire();
-    widget.cameraController.registerCaptureHandler(capture, resetCapture);
+    widget.cameraController?.registerCaptureHandler(capture, resetCapture);
   }
 
   @override
   void didUpdateWidget(FormFieldsLiveCameraCapture oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.cameraController != oldWidget.cameraController) {
-      oldWidget.cameraController.unregisterCaptureHandler();
-      widget.cameraController.registerCaptureHandler(capture, resetCapture);
+      oldWidget.cameraController?.unregisterCaptureHandler();
+      widget.cameraController?.registerCaptureHandler(capture, resetCapture);
     }
   }
 
@@ -82,7 +84,7 @@ class FormFieldsLiveCameraCaptureState
       await file.writeAsBytes(bytes);
       final result = await MyimageResult.fromFile(file);
 
-      widget.cameraController.images = [result];
+      widget.cameraController?.images = [result];
       widget.onCaptured?.call(result);
       if (mounted) setState(() => _capturedResult = result);
       return result;
@@ -93,13 +95,13 @@ class FormFieldsLiveCameraCaptureState
 
   /// Reset to live preview mode and clear the connected controller.
   void resetCapture() {
-    widget.cameraController.clear();
+    widget.cameraController?.clear();
     if (mounted) setState(() => _capturedResult = null);
   }
 
   @override
   void dispose() {
-    widget.cameraController.unregisterCaptureHandler();
+    widget.cameraController?.unregisterCaptureHandler();
     _cam.removeListener(_onCameraReady);
     _cam.release();
     super.dispose();

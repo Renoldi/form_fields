@@ -155,7 +155,6 @@ class View extends PresenterState {
                         'FormFieldsLiveCameraCapture(\n'
                         '  key: key,\n'
                         '  height: 200,\n'
-                        '  cameraController: controller,\n'
                         '  onCaptured: (img) { },\n'
                         ')\n\n'
                         'await key.currentState?.capture();\n'
@@ -173,7 +172,7 @@ class View extends PresenterState {
                           height: 200,
                           cameraController:
                               viewModel.standaloneCameraController,
-                          onCaptured: viewModel.setStandaloneCapture,
+                          // onCaptured: viewModel.setStandaloneCapture,
                         ),
                         const SizedBox(height: 10),
                         Row(
