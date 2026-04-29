@@ -14,9 +14,12 @@ class ViewModel extends ChangeNotifier {
   /// External camera controller so the host page can read the captured photo.
   final FormFieldsMyImageController liveCameraController =
       FormFieldsMyImageController();
+  final FormFieldsMyImageController standaloneCameraController =
+      FormFieldsMyImageController();
 
   SignaturePadExportResult? exportResult;
   MyimageResult? liveCaptureResult;
+  MyimageResult? standaloneCaptureResult;
 
   void setExportResult(SignaturePadExportResult result) {
     exportResult = result;
@@ -28,9 +31,15 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setStandaloneCapture(MyimageResult? captured) {
+    standaloneCaptureResult = captured;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     liveCameraController.dispose();
+    standaloneCameraController.dispose();
     super.dispose();
   }
 }

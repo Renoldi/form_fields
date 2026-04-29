@@ -7,6 +7,9 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 
 class View extends PresenterState {
+  final GlobalKey<FormFieldsLiveCameraCaptureState> _standaloneCameraKey =
+      GlobalKey<FormFieldsLiveCameraCaptureState>();
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -136,6 +139,74 @@ class View extends PresenterState {
                         padding: const EdgeInsets.all(8),
                         child: cam,
                       ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── 5. Standalone live camera ─────────────────────────────
+                  _ExampleCard(
+                    index: 5,
+                    title: 'Standalone Live Camera',
+                    subtitle:
+                        'Use live camera capture without FormFieldsSignaturePad',
+                    snippet:
+                        'final key = GlobalKey<FormFieldsLiveCameraCaptureState>();\n\n'
+                        'FormFieldsLiveCameraCapture(\n'
+                        '  key: key,\n'
+                        '  height: 200,\n'
+                        '  cameraController: controller,\n'
+                        '  onCaptured: (img) { },\n'
+                        ')\n\n'
+                        'await key.currentState?.capture();\n'
+                        'key.currentState?.resetCapture();',
+                    result: viewModel.standaloneCaptureResult != null
+                        ? _StandaloneLiveCapturePreview(
+                            result: viewModel.standaloneCaptureResult!,
+                          )
+                        : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FormFieldsLiveCameraCapture(
+                          key: _standaloneCameraKey,
+                          height: 200,
+                          cameraController:
+                              viewModel.standaloneCameraController,
+                          onCaptured: viewModel.setStandaloneCapture,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  _standaloneCameraKey.currentState
+                                      ?.resetCapture();
+                                  viewModel.setStandaloneCapture(null);
+                                },
+                                icon: const Icon(Icons.restart_alt, size: 18),
+                                label: const Text('Reset'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () async {
+                                  final result = await _standaloneCameraKey
+                                      .currentState
+                                      ?.capture();
+                                  if (result != null) {
+                                    viewModel.setStandaloneCapture(result);
+                                  }
+                                },
+                                icon: const Icon(Icons.camera_alt, size: 18),
+                                label: const Text('Capture'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
 
@@ -498,6 +569,58 @@ class _ResultTile extends StatelessWidget {
           child: child,
         ),
       ],
+    );
+  }
+}
+
+class _StandaloneLiveCapturePreview extends StatelessWidget {
+  final MyimageResult result;
+  const _StandaloneLiveCapturePreview({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: .2)),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.photo_camera_back,
+                  size: 14, color: Colors.deepPurple),
+              const SizedBox(width: 6),
+              Text(
+                'Standalone capture result',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.deepPurple.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: result.path.isNotEmpty
+                ? Image.file(
+                    File(result.path),
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                : Image.memory(
+                    Uri.parse(result.base64).data!.contentAsBytes(),
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

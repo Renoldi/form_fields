@@ -27,6 +27,8 @@ library;
 
 export 'src/fields/core/form_fields_signature_pad.dart'
     show FormFieldsSignaturePad, SignaturePadExportResult;
+export 'src/fields/core/form_fields_live_camera_capture.dart'
+    show FormFieldsLiveCameraCapture, FormFieldsLiveCameraCaptureState;
 
 // ...existing code...
 // -------------------
