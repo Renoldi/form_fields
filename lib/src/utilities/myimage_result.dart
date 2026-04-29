@@ -5,11 +5,13 @@ class MyimageResult {
   final String link;
   final String base64;
   final String path;
+  final String imageId;
 
-  MyimageResult({this.link = "", this.base64 = "", this.path = ""});
+  MyimageResult(
+      {this.link = "", this.base64 = "", this.path = "", this.imageId = ""});
   @override
   String toString() {
-    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)})';
+    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId)';
   }
 
   static Future<MyimageResult> fromFile(File file, {String? link}) async {

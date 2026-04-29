@@ -33,6 +33,8 @@ class FormFieldsMyImage extends StatefulWidget {
   final String uploadSuccessMessage;
   final String uploadFailedMessage;
   final String uploadErrorMessage;
+  final String uploadFileUrlKey;
+  final String uploadImageIdKey;
 
   final bool allow;
 
@@ -57,6 +59,8 @@ class FormFieldsMyImage extends StatefulWidget {
     this.uploadSuccessMessage = 'Upload successful!',
     this.uploadFailedMessage = 'Upload failed:',
     this.uploadErrorMessage = 'Upload error:',
+    this.uploadFileUrlKey = 'fileUrl',
+    this.uploadImageIdKey = 'imageId',
     this.allow = true,
     this.showDesc = false,
     this.descriptionField,
@@ -723,6 +727,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       if (response.statusCode == 200) {
         String? uploadedLink;
         String? downloadedPath;
+        String? imageId;
         final data = response.data;
         if (data is String) {
           final html = data;
@@ -737,7 +742,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             uploadedLink = html;
           }
         } else if (data is Map) {
-          uploadedLink = data['url'] as String?;
+          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
+          imageId = data[widget.uploadImageIdKey]?.toString();
         }
         if ((uploadedLink ?? '').isNotEmpty) {
           downloadedPath = await DioUtil.downloadFile(uploadedLink!);
@@ -748,6 +754,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             link: uploadedLink ?? images[index].link,
             base64: images[index].base64,
             path: downloadedPath ?? images[index].path,
+            imageId: imageId ?? images[index].imageId,
           ),
         );
         provider.setUploadProgress(index, 1.0);
