@@ -1867,6 +1867,201 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  // ========== DROPDOWN ==========
+                  buildSectionTitle(
+                    'Dropdown',
+                    Colors.purple.shade700,
+                    Colors.purple.shade400,
+                  ),
+                  buildFieldTitle(
+                      'Single Select Dropdown', Colors.purple.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Kategori',
+                    isRequired: true,
+                    items: const [
+                      'Elektronik',
+                      'Pakaian',
+                      'Makanan',
+                      'Olahraga'
+                    ],
+                    initialValue: viewModel.dropdownValue,
+                    onChanged: viewModel.setDropdownValue,
+                  ),
+                  buildResultDisplay(
+                      context, 'Kategori Dipilih', viewModel.dropdownValue),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Card(
+                      color: Color(0xFFF5F5F5),
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SelectableText(
+                          '{\n'
+                          '  "label": "Kategori",\n'
+                          '  "formType": "FormType.dropdown",\n'
+                          '  "isRequired": true,\n'
+                          '  "items": ["Elektronik", "Pakaian", "Makanan", "Olahraga"],\n'
+                          '  "initialValue": "viewModel.dropdownValue",\n'
+                          '  "onChanged": "viewModel.setDropdownValue"\n'
+                          '}',
+                          style:
+                              TextStyle(fontFamily: 'monospace', fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ========== DROPDOWN MULTI ==========
+                  buildSectionTitle(
+                    'Dropdown Multi',
+                    Colors.deepPurple.shade700,
+                    Colors.deepPurple.shade400,
+                  ),
+                  buildFieldTitle(
+                      'Multi Select Dropdown', Colors.deepPurple.shade600),
+                  FormFieldsDropdownMulti<String>(
+                    label: 'Hobi',
+                    isRequired: true,
+                    items: const [
+                      'Membaca',
+                      'Olahraga',
+                      'Musik',
+                      'Memasak',
+                      'Traveling'
+                    ],
+                    initialValues: viewModel.dropdownMultiValues,
+                    onChanged: viewModel.setDropdownMultiValues,
+                  ),
+                  buildResultDisplay(
+                      context, 'Hobi Dipilih', viewModel.dropdownMultiValues),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Card(
+                      color: Color(0xFFF5F5F5),
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SelectableText(
+                          '{\n'
+                          '  "label": "Hobi",\n'
+                          '  "formType": "FormType.dropdownMulti",\n'
+                          '  "isRequired": true,\n'
+                          '  "items": ["Membaca", "Olahraga", "Musik", "Memasak", "Traveling"],\n'
+                          '  "initialValue": "viewModel.dropdownMultiValues",\n'
+                          '  "onChanged": "viewModel.setDropdownMultiValues"\n'
+                          '}',
+                          style:
+                              TextStyle(fontFamily: 'monospace', fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ========== RADIO BUTTON ==========
+                  buildSectionTitle(
+                    'Radio Button',
+                    Colors.orange.shade700,
+                    Colors.orange.shade400,
+                  ),
+                  buildFieldTitle(
+                      'Radio Button (Horizontal)', Colors.orange.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: 'Jenis Kelamin',
+                    isRequired: true,
+                    items: const ['Laki-laki', 'Perempuan', 'Lainnya'],
+                    initialValue: viewModel.radioValue,
+                    direction: Axis.horizontal,
+                    onChanged: viewModel.setRadioValue,
+                  ),
+                  buildResultDisplay(
+                      context, 'Jenis Kelamin', viewModel.radioValue),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Card(
+                      color: Color(0xFFF5F5F5),
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SelectableText(
+                          '{\n'
+                          '  "label": "Jenis Kelamin",\n'
+                          '  "formType": "FormType.radioButton",\n'
+                          '  "isRequired": true,\n'
+                          '  "items": ["Laki-laki", "Perempuan", "Lainnya"],\n'
+                          '  "direction": "Axis.horizontal",\n'
+                          '  "initialValue": "viewModel.radioValue",\n'
+                          '  "onChanged": "viewModel.setRadioValue"\n'
+                          '}',
+                          style:
+                              TextStyle(fontFamily: 'monospace', fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ========== CHECKBOX ==========
+                  buildSectionTitle(
+                    'Checkbox',
+                    Colors.pink.shade700,
+                    Colors.pink.shade400,
+                  ),
+                  buildFieldTitle(
+                      'Checkbox (Multi Selection)', Colors.pink.shade600),
+                  FormFieldsCheckbox<String>(
+                    label: 'Minat',
+                    isRequired: true,
+                    items: const ['Teknologi', 'Seni', 'Bisnis', 'Pendidikan'],
+                    initialValue: viewModel.checkboxValues,
+                    direction: Axis.vertical,
+                    onChanged: viewModel.setCheckboxValues,
+                  ),
+                  buildResultDisplay(
+                      context, 'Minat Dipilih', viewModel.checkboxValues),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Contoh Pengisian (JSON):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Card(
+                      color: Color(0xFFF5F5F5),
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SelectableText(
+                          '{\n'
+                          '  "label": "Minat",\n'
+                          '  "formType": "FormType.checkbox",\n'
+                          '  "isRequired": true,\n'
+                          '  "items": ["Teknologi", "Seni", "Bisnis", "Pendidikan"],\n'
+                          '  "direction": "Axis.vertical",\n'
+                          '  "initialValue": "viewModel.checkboxValues",\n'
+                          '  "onChanged": "viewModel.setCheckboxValues"\n'
+                          '}',
+                          style:
+                              TextStyle(fontFamily: 'monospace', fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
 
                   // Submit Button

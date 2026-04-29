@@ -265,6 +265,34 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ========== DROPDOWN ==========
+  String? dropdownValue;
+  void setDropdownValue(String? v) {
+    dropdownValue = v;
+    notifyListeners();
+  }
+
+  // ========== DROPDOWN MULTI ==========
+  List<String> dropdownMultiValues = [];
+  void setDropdownMultiValues(List<String> v) {
+    dropdownMultiValues = v;
+    notifyListeners();
+  }
+
+  // ========== RADIO BUTTON ==========
+  String? radioValue;
+  void setRadioValue(String? v) {
+    radioValue = v;
+    notifyListeners();
+  }
+
+  // ========== CHECKBOX ==========
+  List<String> checkboxValues = [];
+  void setCheckboxValues(List<String> v) {
+    checkboxValues = v;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     focusNode1.dispose();

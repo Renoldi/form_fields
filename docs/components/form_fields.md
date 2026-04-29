@@ -6,45 +6,183 @@ Main flexible form widget that supports multiple input types (`FormType`) with v
 
 ```dart
 FormFields<String>(
-  label: 'Email',
-  formType: FormType.email,
+  label: 'Username',
+  formType: FormType.string,
   currentValue: value,
   onChanged: (v) => value = v,
 )
 ```
 
-## OTP & Verification Field Example
+## FormType Examples
+
+### string — Plain text
 
 ```dart
 FormFields<String>(
-  label: 'OTP Code',
+  label: 'Nama',
+  formType: FormType.string,
+  isRequired: true,
+  currentValue: viewModel.name,
+  onChanged: viewModel.setName,
+)
+```
+
+### email
+
+```dart
+FormFields<String>(
+  label: 'Email',
+  formType: FormType.email,
+  isRequired: true,
+  currentValue: viewModel.email,
+  onChanged: viewModel.setEmail,
+)
+```
+
+### phone
+
+```dart
+FormFields<String>(
+  label: 'No. HP',
+  formType: FormType.phone,
+  isRequired: true,
+  currentValue: viewModel.phone,
+  onChanged: viewModel.setPhone,
+)
+```
+
+### password
+
+```dart
+FormFields<String>(
+  label: 'Password',
+  formType: FormType.password,
+  isRequired: true,
+  currentValue: viewModel.password,
+  onChanged: viewModel.setPassword,
+)
+```
+
+### date
+
+```dart
+FormFields<String>(
+  label: 'Tanggal Lahir',
+  formType: FormType.date,
+  currentValue: viewModel.birthDate,
+  onChanged: viewModel.setBirthDate,
+)
+```
+
+### time
+
+```dart
+FormFields<String>(
+  label: 'Jam Mulai',
+  formType: FormType.time,
+  currentValue: viewModel.startTime,
+  onChanged: viewModel.setStartTime,
+)
+```
+
+### dateTime
+
+```dart
+FormFields<String>(
+  label: 'Jadwal',
+  formType: FormType.dateTime,
+  currentValue: viewModel.schedule,
+  onChanged: viewModel.setSchedule,
+)
+```
+
+### dateTimeRange
+
+```dart
+FormFields<String>(
+  label: 'Periode',
+  formType: FormType.dateTimeRange,
+  currentValue: viewModel.period,
+  onChanged: viewModel.setPeriod,
+)
+```
+
+### timeOfDay
+
+```dart
+FormFields<String>(
+  label: 'Waktu',
+  formType: FormType.timeOfDay,
+  currentValue: viewModel.time,
+  onChanged: viewModel.setTime,
+)
+```
+
+### multiline (string + multiLine > 1)
+
+```dart
+FormFields<String>(
+  label: 'Catatan',
+  formType: FormType.string,
+  multiLine: 4,
+  currentValue: viewModel.notes,
+  onChanged: viewModel.setNotes,
+)
+```
+
+### scanBarcode
+
+```dart
+FormFields<String>(
+  label: 'Scan Barcode',
+  formType: FormType.scanBarcode,
+  labelPosition: LabelPosition.inBorder,
+  currentValue: viewModel.barcode,
+  isRequired: true,
+  onChanged: viewModel.setBarcode,
+)
+```
+
+### verification / OTP
+
+```dart
+FormFields<String>(
+  label: 'Kode OTP',
   formType: FormType.verification,
   verificationAsOtp: true,
   verificationLength: 6,
   isOtpCountdown: true,
-  otpCountdownDuration: Duration(seconds: 60),
-  onOtpCountdownReload: () => print('Resend OTP!'),
-  otpBorderType: OtpBorderType.box, // or OtpBorderType.underline
-  onChanged: (val) => print(val),
+  otpCountdownDuration: const Duration(seconds: 60),
+  onOtpCountdownReload: () {
+    // Kirim ulang OTP
+  },
+  otpBorderType: OtpBorderType.box, // atau OtpBorderType.underline
+  currentValue: viewModel.otp,
+  onChanged: viewModel.setOtp,
 )
 ```
 
 ## Common Options
 
-- `formType`: Selects input behavior (email, phone, password, date, verification/OTP, etc).
+- `formType`: Selects input behavior (see list above).
 - `isRequired`: Enables required-field validation.
 - `validator`: Adds custom validation.
-- `labelPosition`: Controls label placement (top, bottom, left, right, inline, hidden).
-- `borderType` and `radius`: Border appearance for standard fields.
-- `inputDecoration`: Additional InputDecoration control for all fields (including OTP boxes).
-- `verificationAsOtp`: Show as OTP digit boxes (true) or single field (false).
+- `labelPosition`: Controls label placement (`top`, `bottom`, `left`, `right`, `inBorder`, `none`).
+- `borderType` and `radius`: Border appearance.
+- `multiLine`: Lines for textarea mode (`FormType.string` only).
+- `inputDecoration`: Additional `InputDecoration` control.
+- `externalErrorText`: Show backend validation error directly on the field.
+
+## OTP-Specific Options
+
+- `verificationAsOtp`: Show as OTP digit boxes (`true`) or single field (`false`).
 - `verificationLength`: Number of OTP digits.
-- `isOtpCountdown`: Enable countdown timer for OTP resend.
+- `verificationHidden`: Hide/obscure OTP input.
+- `isOtpCountdown`: Enable countdown timer for resend.
 - `otpCountdownDuration`: Duration for countdown.
 - `onOtpCountdownReload`: Callback for resend button.
-- `otpBorderType`: `OtpBorderType.box` or `OtpBorderType.underline` for OTP digit boxes.
+- `otpBorderType`: `OtpBorderType.box` or `OtpBorderType.underline`.
 - `otpBoxWidth`, `otpBoxSpacing`, `otpTextStyle`: OTP box customization.
-- `verificationHidden`: Hide/obscure OTP input.
 
 ## Localization
 

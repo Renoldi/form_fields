@@ -295,7 +295,7 @@ Each component has its own documentation file for clarity and maintainability:
 - [FormFieldsSelect](docs/components/form_fields_select.md)
 - [FormFieldsSignaturePad](docs/components/form_fields_signature_pad.md)
 - [FormFieldsMyImage](docs/components/form_fields_my_image.md)
-- `FormFieldsLiveCameraCapture` (standalone live camera widget; see section above)
+- [FormFieldsLiveCameraCapture](docs/components/form_fields_live_camera_capture.md)
 
 ## Barcode/QR Code Scanner Field
 
@@ -389,7 +389,7 @@ AppButton<LoginAction>(
 ### Contoh Penggunaan Dasar
 
 ```dart
-MyImage(
+FormFieldsMyImage(
   label: 'Foto Profil',
   maxImages: 1,
   onImageChanged: (image) {
