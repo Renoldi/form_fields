@@ -7,11 +7,12 @@ Main flexible form widget that supports multiple input types (`FormType`) with v
 ```dart
 FormFields<String>(
   label: 'Username',
-
   currentValue: value,
   onChanged: (v) => value = v,
 )
 ```
+
+Text mode is the default. You can omit `formType` for basic text fields.
 
 ## FormType Examples
 
@@ -20,7 +21,6 @@ FormFields<String>(
 ```dart
 FormFields<String>(
   label: 'Nama',
-
   isRequired: true,
   currentValue: viewModel.name,
   onChanged: viewModel.setName,
@@ -85,6 +85,8 @@ FormFields<DateTime>(
 )
 ```
 
+`FormType.time` returns `DateTime`. Use `FormType.timeOfDay` if you want `TimeOfDay`.
+
 ### dateTime
 
 ```dart
@@ -124,12 +126,34 @@ FormFields<TimeOfDay>(
 ```dart
 FormFields<String>(
   label: 'Catatan',
-
   multiLine: 4,
   currentValue: viewModel.notes,
   onChanged: viewModel.setNotes,
 )
 ```
+
+### int / double (numeric via generic `T`)
+
+Use numeric generic types directly. Numeric parsing/formatting is inferred from `T`.
+
+```dart
+// int
+FormFields<int>(
+  label: 'Umur',
+  currentValue: viewModel.age,
+  onChanged: viewModel.setAge,
+)
+
+// double
+FormFields<double>(
+  label: 'Harga',
+  stripSeparators: true,
+  currentValue: viewModel.price,
+  onChanged: viewModel.setPrice,
+)
+```
+
+Avoid `T = num` because numeric behavior is implemented specifically for `int` and `double`.
 
 ### scanBarcode
 
@@ -166,11 +190,13 @@ FormFields<String>(
 ## Common Options
 
 - `formType`: Selects input behavior (see list above).
+- `formType` default: text mode (omit `formType`).
+- Numeric fields: use `T = int/int?/double/double?`.
 - `isRequired`: Enables required-field validation.
 - `validator`: Adds custom validation.
 - `labelPosition`: Controls label placement (`top`, `bottom`, `left`, `right`, `inBorder`, `none`).
 - `borderType` and `radius`: Border appearance.
-- `multiLine`: Lines for textarea mode (`FormType.string` only).
+- `multiLine`: Lines for textarea mode (text mode).
 - `inputDecoration`: Additional `InputDecoration` control.
 - `externalErrorText`: Show backend validation error directly on the field.
 
