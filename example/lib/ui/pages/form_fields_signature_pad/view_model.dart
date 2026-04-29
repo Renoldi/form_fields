@@ -16,6 +16,15 @@ class ViewModel extends ChangeNotifier {
       FormFieldsMyImageController();
   final FormFieldsMyImageController standaloneCameraController =
       FormFieldsMyImageController();
+  final FormFieldsMyImageController controllerCaptureController =
+      FormFieldsMyImageController();
+
+  MyimageResult? controllerCaptureResult;
+
+  void setControllerCapture(MyimageResult? captured) {
+    controllerCaptureResult = captured;
+    notifyListeners();
+  }
 
   SignaturePadExportResult? exportResult;
   MyimageResult? liveCaptureResult;
@@ -40,6 +49,7 @@ class ViewModel extends ChangeNotifier {
   void dispose() {
     liveCameraController.dispose();
     standaloneCameraController.dispose();
+    controllerCaptureController.dispose();
     super.dispose();
   }
 }

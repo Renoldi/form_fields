@@ -89,6 +89,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       _controller = widget.controller;
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
+      widget.controller!.registerPickImageHandler(
+        (source) => _pickImage(context, _provider, initialSource: source),
+      );
     } else {
       _controller = FormFieldsMyImageController();
       _provider.setImages(_controller!.images);
@@ -98,7 +101,27 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   @override
+  void didUpdateWidget(FormFieldsMyImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller?.unregisterPickImageHandler();
+      oldWidget.controller?.removeListener(_onControllerChanged);
+      if (widget.controller != null) {
+        _controller = widget.controller;
+        _provider.setImages(_controller!.images);
+        _controller!.addListener(_onControllerChanged);
+        widget.controller!.registerPickImageHandler(
+          (source) => _pickImage(context, _provider, initialSource: source),
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    if (widget.controller != null) {
+      widget.controller!.unregisterPickImageHandler();
+    }
     _controller?.removeListener(_onControllerChanged);
     super.dispose();
   }
@@ -422,8 +445,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Future<void> _pickImage(
     BuildContext context,
-    FormFieldsMyImageProvider provider,
-  ) async {
+    FormFieldsMyImageProvider provider, {
+    String? initialSource,
+  }) async {
     final mountedBeforeDialog = mounted;
     final messenger =
         mountedBeforeDialog ? ScaffoldMessenger.of(context) : null;
@@ -444,65 +468,69 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         file = File(scanned.first);
       }
     } else {
-      source = await showAppModalBottomSheet<String>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        useSafeArea: true,
-        isDismissible: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (dialogContext) {
-          return SafeArea(
-            child: SizedBox(
-              height: 120,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppButton(
-                    type: AppButtonType.icon,
-                    onPressed: () => Navigator.pop(dialogContext, 'camera'),
-                    icon: const Icon(Icons.camera_alt,
-                        size: 32, color: Colors.blue),
-                    margin: const EdgeInsets.only(right: 24),
-                  ),
-                  SizedBox(width: 16),
-                  AppButton(
-                    type: AppButtonType.icon,
-                    onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-                    icon: const Icon(Icons.photo_library,
-                        size: 32, color: Colors.green),
-                    margin: const EdgeInsets.only(left: 24),
-                  ),
-                ],
+      if (initialSource != null) {
+        source = initialSource;
+      } else {
+        source = await showAppModalBottomSheet<String>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          useSafeArea: true,
+          isDismissible: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          builder: (dialogContext) {
+            return SafeArea(
+              child: SizedBox(
+                height: 120,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AppButton(
+                      type: AppButtonType.icon,
+                      onPressed: () => Navigator.pop(dialogContext, 'camera'),
+                      icon: const Icon(Icons.camera_alt,
+                          size: 32, color: Colors.blue),
+                      margin: const EdgeInsets.only(right: 24),
+                    ),
+                    SizedBox(width: 16),
+                    AppButton(
+                      type: AppButtonType.icon,
+                      onPressed: () => Navigator.pop(dialogContext, 'gallery'),
+                      icon: const Icon(Icons.photo_library,
+                          size: 32, color: Colors.green),
+                      margin: const EdgeInsets.only(left: 24),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-          // return Material(
-          //   color: Colors.transparent,
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.center,
-          //     children: [
-          //       AppButton(
-          //         type: AppButtonType.fab,
-          //         onPressed: () => Navigator.pop(dialogContext, 'camera'),
-          //         icon: const Icon(Icons.camera_alt, size: 32, color: Colors.blue),
-          //         margin: const EdgeInsets.only(right: 24),
-          //       ),
-          //       SizedBox(width: 16),
-          //       AppButton(
-          //         type: AppButtonType.fab,
-          //         onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-          //         icon: const Icon(Icons.photo_library, size: 32, color: Colors.green),
-          //         margin: const EdgeInsets.only(left: 24),
-          //       ),
-          //     ],
-          //   ),
-          // );
-        },
-      );
-      if (!context.mounted) return;
-      if (source == null) return;
+            );
+            // return Material(
+            //   color: Colors.transparent,
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       AppButton(
+            //         type: AppButtonType.fab,
+            //         onPressed: () => Navigator.pop(dialogContext, 'camera'),
+            //         icon: const Icon(Icons.camera_alt, size: 32, color: Colors.blue),
+            //         margin: const EdgeInsets.only(right: 24),
+            //       ),
+            //       SizedBox(width: 16),
+            //       AppButton(
+            //         type: AppButtonType.fab,
+            //         onPressed: () => Navigator.pop(dialogContext, 'gallery'),
+            //         icon: const Icon(Icons.photo_library, size: 32, color: Colors.green),
+            //         margin: const EdgeInsets.only(left: 24),
+            //       ),
+            //     ],
+            //   ),
+            // );
+          },
+        );
+        if (!context.mounted) return;
+        if (source == null) return;
+      }
       if (source == 'camera' || source == 'gallery') {
         final picker = ImagePicker();
         final picked = await picker.pickImage(

@@ -702,6 +702,79 @@ class View extends PresenterState {
                   ),
                 ],
                 const SizedBox(height: 32),
+
+                // ── Controller.pickImage() ─────────────────────────────────
+                _buildSectionTitle('Controller.pickImage()',
+                    Colors.orange.shade700, Colors.orange.shade400),
+                _buildFieldTitle(
+                    'Trigger Picker from Controller', Colors.orange.shade600),
+                FormFieldsMyImage(
+                  controller: pickImageController,
+                  maxImages: 5,
+                  onImagesChanged: (results) {
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => pickImageController.pickImage(),
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: const Text('Pick (choose)'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            pickImageController.pickImage(source: 'camera'),
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text('Camera'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            pickImageController.pickImage(source: 'gallery'),
+                        icon: const Icon(Icons.image_outlined),
+                        label: const Text('Gallery'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (pickImageController.images.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Selected images:'),
+                  SizedBox(
+                    height: 120,
+                    child: AnimatedBuilder(
+                      animation: pickImageController,
+                      builder: (context, _) => ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: pickImageController.images.length,
+                        itemBuilder: (context, idx) {
+                          final result = pickImageController.images[idx];
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(result.path),
+                                height: 100,
+                                width: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
               ],
             ),
           );

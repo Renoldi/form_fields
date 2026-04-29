@@ -45,6 +45,16 @@ class FormFieldsLiveCameraCaptureState
     super.initState();
     _cam.addListener(_onCameraReady);
     _cam.acquire();
+    widget.cameraController.registerCaptureHandler(capture, resetCapture);
+  }
+
+  @override
+  void didUpdateWidget(FormFieldsLiveCameraCapture oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.cameraController != oldWidget.cameraController) {
+      oldWidget.cameraController.unregisterCaptureHandler();
+      widget.cameraController.registerCaptureHandler(capture, resetCapture);
+    }
   }
 
   void _onCameraReady() {
@@ -89,6 +99,7 @@ class FormFieldsLiveCameraCaptureState
 
   @override
   void dispose() {
+    widget.cameraController.unregisterCaptureHandler();
     _cam.removeListener(_onCameraReady);
     _cam.release();
     super.dispose();

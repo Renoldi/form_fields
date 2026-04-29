@@ -44,6 +44,8 @@ abstract class PresenterState extends State<Presenter> {
       FormFieldsMyImageController();
   final FormFieldsMyImageController customsController =
       FormFieldsMyImageController();
+  final FormFieldsMyImageController pickImageController =
+      FormFieldsMyImageController();
 
   String? singleImageLog;
   String? singleRemoveLog;

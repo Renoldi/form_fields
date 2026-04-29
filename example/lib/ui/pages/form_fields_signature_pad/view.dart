@@ -210,6 +210,73 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // ── 6. Controller capture ──────────────────────────────────
+                  _ExampleCard(
+                    index: 6,
+                    title: 'Controller Capture',
+                    subtitle:
+                        'Trigger capture and reset directly from FormFieldsMyImageController',
+                    snippet:
+                        'final controller = FormFieldsMyImageController();\n\n'
+                        'FormFieldsLiveCameraCapture(\n'
+                        '  cameraController: controller,\n'
+                        '  onCaptured: (img) { },\n'
+                        ')\n\n'
+                        '// Capture from controller:\n'
+                        'await controller.capture();\n'
+                        '// Reset from controller:\n'
+                        'controller.resetCapture();',
+                    result: viewModel.controllerCaptureResult != null
+                        ? _StandaloneLiveCapturePreview(
+                            result: viewModel.controllerCaptureResult!,
+                          )
+                        : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FormFieldsLiveCameraCapture(
+                          height: 200,
+                          cameraController:
+                              viewModel.controllerCaptureController,
+                          onCaptured: viewModel.setControllerCapture,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  viewModel.controllerCaptureController
+                                      .resetCapture();
+                                  viewModel.setControllerCapture(null);
+                                },
+                                icon: const Icon(Icons.restart_alt, size: 18),
+                                label: const Text('Reset'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () async {
+                                  final result = await viewModel
+                                      .controllerCaptureController
+                                      .capture();
+                                  if (result != null) {
+                                    viewModel.setControllerCapture(result);
+                                  }
+                                },
+                                icon: const Icon(Icons.camera_alt, size: 18),
+                                label: const Text('Capture'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ),
