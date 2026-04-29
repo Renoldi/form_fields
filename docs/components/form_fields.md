@@ -7,7 +7,7 @@ Main flexible form widget that supports multiple input types (`FormType`) with v
 ```dart
 FormFields<String>(
   label: 'Username',
-  formType: FormType.string,
+
   currentValue: value,
   onChanged: (v) => value = v,
 )
@@ -20,7 +20,7 @@ FormFields<String>(
 ```dart
 FormFields<String>(
   label: 'Nama',
-  formType: FormType.string,
+
   isRequired: true,
   currentValue: viewModel.name,
   onChanged: viewModel.setName,
@@ -124,7 +124,7 @@ FormFields<TimeOfDay>(
 ```dart
 FormFields<String>(
   label: 'Catatan',
-  formType: FormType.string,
+
   multiLine: 4,
   currentValue: viewModel.notes,
   onChanged: viewModel.setNotes,

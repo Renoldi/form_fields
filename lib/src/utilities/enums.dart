@@ -58,7 +58,6 @@ enum OtpBorderType {
 
 /// Supported form field types
 enum FormType {
-  string,
   phone,
   password,
   verification,

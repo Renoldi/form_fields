@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../utilities/enums.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Controller for managing FormFields state
 class FormFieldsController extends ChangeNotifier {
@@ -57,7 +57,7 @@ class FormFieldsController extends ChangeNotifier {
   }
 
   /// Form type
-  FormType formType = FormType.string;
+  FormType? formType;
 
   /// Field label
   String label = "";

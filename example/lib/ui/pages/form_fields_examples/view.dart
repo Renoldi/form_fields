@@ -588,7 +588,6 @@ class View extends PresenterState {
                       context.tr('ffStringBasic'), Colors.blue.shade600),
                   FormFields<String>(
                     label: context.tr('ffFullName'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     onChanged: viewModel.updateString1,
@@ -628,7 +627,6 @@ class View extends PresenterState {
                       context.tr('ffStringOptional'), Colors.blue.shade600),
                   FormFields<String?>(
                     label: context.tr('ffMiddleName'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     onChanged: viewModel.updateString2,
@@ -668,7 +666,6 @@ class View extends PresenterState {
                       context.tr('ffStringCustomParams'), Colors.blue.shade600),
                   FormFields<String>(
                     label: context.tr('ffDescription'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     multiLine: 4,
@@ -1371,7 +1368,6 @@ class View extends PresenterState {
                       context.tr('ffIntBasic'), Colors.blue.shade600),
                   FormFields<int>(
                     label: context.tr('ffAge'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: false,
                     isRequired: true,
@@ -1411,7 +1407,6 @@ class View extends PresenterState {
                       context.tr('ffIntOptional'), Colors.blue.shade600),
                   FormFields<int?>(
                     label: context.tr('ffQuantity'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: true,
                     isRequired: false,
@@ -1465,7 +1460,6 @@ class View extends PresenterState {
                       context.tr('ffDoubleBasic'), Colors.blue.shade600),
                   FormFields<double>(
                     label: context.tr('ffProductPrice'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     stripSeparators: true,
                     isRequired: true,
@@ -1515,7 +1509,6 @@ class View extends PresenterState {
                       context.tr('ffDoubleOptional'), Colors.blue.shade600),
                   FormFields<double?>(
                     label: context.tr('ffDiscountPercentage'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.orange,

@@ -170,7 +170,7 @@ Basic text input for names, usernames, etc.
 ```dart
 FormFields<String>(
   label: 'Username',
-  formType: FormType.string,
+
   labelPosition: LabelPosition.top,
   onChanged: (value) {
     setState(() => _username = value ?? '');
@@ -253,7 +253,7 @@ Numeric input for whole numbers.
 ```dart
 FormFields<int>(
   label: 'Quantity',
-  formType: FormType.string,  // Use string type for input
+    // Use string type for input
   stripSeparators: true,  // Format with commas: 1,000
   onChanged: (value) {
     setState(() => _quantity = value ?? 0);
@@ -1335,7 +1335,7 @@ FormFields<String>(
 // AVOID
 FormFields<String>(
   label: 'Email',
-  formType: FormType.string,  // Loss of validation
+    // Loss of validation
   onChanged: (value) {},
 )
 ```

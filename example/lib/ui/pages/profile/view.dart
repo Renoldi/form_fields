@@ -73,7 +73,6 @@ class View extends PresenterState {
                     FormFields<String>(
                       label: context.tr('firstName'),
                       currentValue: viewModel.user.firstName ?? '',
-                      formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
@@ -91,7 +90,6 @@ class View extends PresenterState {
                     FormFields<String>(
                       label: context.tr('lastName'),
                       currentValue: viewModel.user.lastName ?? '',
-                      formType: FormType.string,
                       labelPosition: LabelPosition.inBorder,
                       prefixIcon: const Icon(Icons.person_outline),
                       onChanged: (value) {
@@ -130,7 +128,6 @@ class View extends PresenterState {
                       child: FormFields<String>(
                         label: context.tr('username'),
                         currentValue: viewModel.user.username ?? '',
-                        formType: FormType.string,
                         labelPosition: LabelPosition.inBorder,
                         prefixIcon: const Icon(Icons.account_circle_outlined),
                         inputDecoration: InputDecoration(

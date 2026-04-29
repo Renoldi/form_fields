@@ -142,7 +142,7 @@ class FormFields<T> extends StatefulWidget {
   // FIELD CONFIGURATION
   // -------------------------------------------------------------------------
   /// Form field type (email, phone, password, etc.)
-  final FormType formType;
+  final FormType? formType;
 
   /// Field label text
   final String label;
@@ -274,7 +274,7 @@ class FormFields<T> extends StatefulWidget {
     this.customPasswordValidator,
     this.minLengthPasswordErrorText,
     // Field Configuration
-    this.formType = FormType.string,
+    this.formType,
     this.labelPosition = LabelPosition.none,
     this.multiLine = 0,
     this.verificationLength = 6,

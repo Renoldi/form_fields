@@ -42,7 +42,6 @@ class View extends PresenterState {
                   ),
                   FormFields<String>(
                     label: context.tr('ffFullName'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.green,
@@ -87,7 +86,6 @@ class View extends PresenterState {
                   ),
                   FormFields<String>(
                     label: context.tr('ffMiddleName'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.orange,
@@ -133,7 +131,6 @@ class View extends PresenterState {
                   ),
                   FormFields<String?>(
                     label: context.tr('ffLastName'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.red,
@@ -178,7 +175,6 @@ class View extends PresenterState {
                   ),
                   FormFields<String?>(
                     label: context.tr('valNickname'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.purple,
@@ -228,7 +224,6 @@ class View extends PresenterState {
                   ),
                   FormFields<int>(
                     label: context.tr('ffAge'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.green,
@@ -273,7 +268,6 @@ class View extends PresenterState {
                   ),
                   FormFields<int>(
                     label: context.tr('valPhoneExtension'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.orange,
@@ -319,7 +313,6 @@ class View extends PresenterState {
                   ),
                   FormFields<int?>(
                     label: context.tr('ffQuantity'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.red,
@@ -364,7 +357,6 @@ class View extends PresenterState {
                   ),
                   FormFields<int?>(
                     label: context.tr('valEmployeeId'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.purple,
@@ -414,7 +406,6 @@ class View extends PresenterState {
                   ),
                   FormFields<double>(
                     label: context.tr('ffProductPrice'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.green,
@@ -463,7 +454,6 @@ class View extends PresenterState {
                   ),
                   FormFields<double>(
                     label: context.tr('valShippingCost'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.orange,
@@ -513,7 +503,6 @@ class View extends PresenterState {
                   ),
                   FormFields<double?>(
                     label: context.tr('valDiscountRate'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.red,
@@ -562,7 +551,6 @@ class View extends PresenterState {
                   ),
                   FormFields<double?>(
                     label: context.tr('valCommissionAmount'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
                     borderColor: Colors.purple,
@@ -615,7 +603,6 @@ class View extends PresenterState {
                   ),
                   FormFields<String>(
                     label: context.tr('valUsername'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.teal,
@@ -735,7 +722,6 @@ class View extends PresenterState {
                   ),
                   FormFields<int>(
                     label: context.tr('valAge'),
-                    formType: FormType.string,
                     labelPosition: LabelPosition.top,
                     isRequired: true,
                     borderColor: Colors.indigo,

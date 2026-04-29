@@ -581,7 +581,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                             onChanged: (v) {
                               setSheetState(() => descValue = v);
                             },
-                            formType: FormType.string,
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
                             isRequired: true,

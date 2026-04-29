@@ -104,7 +104,6 @@ class View extends PresenterState {
     return FormFields<String>(
       label: context.tr('username'),
       currentValue: viewModel.username,
-      formType: FormType.string,
       prefixIcon: const Icon(Icons.person),
       onChanged: (value) => handleUsernameChanged(value, viewModel),
     );
