@@ -997,3 +997,690 @@ FormFieldsCheckbox<String>(
   },
 )
 ```
+
+---
+
+## FormFieldsSignaturePad
+
+Signature pad widget for capturing handwritten signatures as PNG images. Supports optional integrated live front-camera preview that automatically captures a selfie the moment the user begins drawing.
+
+### Constructor
+
+```dart
+FormFieldsSignaturePad({
+  double height = 200,
+  double width = double.infinity,
+  Color backgroundColor = Colors.white,
+  Color penColor = Colors.black,
+  double penStrokeWidth = 3.0,
+  Color? exportBackgroundColor,
+  void Function(MyimageResult?)? onExported,
+  void Function(SignaturePadExportResult)? onExportedResult,
+  void Function(MyimageResult captured)? onLiveCaptured,
+  bool showLiveCamera = false,
+  double liveCameraHeight = 200,
+  FormFieldsMyImageController? liveCameraController,
+  Widget Function(BuildContext, Widget, Widget?)? layoutBuilder,
+  Widget Function(BuildContext, Widget)? liveCameraBuilder,
+})
+```
+
+### Properties
+
+| Property                | Type                                       | Default           | Description                                            |
+| ----------------------- | ------------------------------------------ | ----------------- | ------------------------------------------------------ |
+| `height`                | `double`                                   | `200`             | Height of the signature drawing area                   |
+| `width`                 | `double`                                   | `double.infinity` | Width of the signature drawing area                    |
+| `backgroundColor`       | `Color`                                    | `Colors.white`    | Background color of the drawing canvas                 |
+| `penColor`              | `Color`                                    | `Colors.black`    | Pen stroke color                                       |
+| `penStrokeWidth`        | `double`                                   | `3.0`             | Pen stroke thickness                                   |
+| `exportBackgroundColor` | `Color?`                                   | `null`            | PNG background color override; `null` = transparent    |
+| `onExported`            | `void Function(MyimageResult?)?`           | `null`            | Callback with signature only (backward-compatible)     |
+| `onExportedResult`      | `void Function(SignaturePadExportResult)?` | `null`            | Callback with signature + optional live capture        |
+| `onLiveCaptured`        | `void Function(MyimageResult)?`            | `null`            | Fired immediately after the auto-capture on draw start |
+| `showLiveCamera`        | `bool`                                     | `false`           | Enable integrated live front-camera preview            |
+| `liveCameraHeight`      | `double`                                   | `200`             | Height of the camera preview widget                    |
+| `liveCameraController`  | `FormFieldsMyImageController?`             | `null`            | External controller updated with the captured image    |
+| `layoutBuilder`         | `Widget Function(ctx, pad, camera)?`       | `null`            | Fully custom layout for pad + camera                   |
+| `liveCameraBuilder`     | `Widget Function(ctx, camera)?`            | `null`            | Custom wrapper for the camera section only             |
+
+### SignaturePadExportResult
+
+```dart
+class SignaturePadExportResult {
+  final MyimageResult signature;    // Always present after export
+  final MyimageResult? liveCapture; // null when live camera is disabled or no capture occurred
+}
+```
+
+### Usage Examples
+
+#### Basic Signature Pad
+
+```dart
+FormFieldsSignaturePad(
+  height: 200,
+  penColor: Colors.black,
+  backgroundColor: Colors.white,
+  penStrokeWidth: 3.0,
+  onExported: (result) {
+    if (result != null) {
+      // result.base64 contains the PNG as a data URI
+      // result.path contains the temp file path
+    }
+  },
+)
+```
+
+#### With Integrated Live Camera
+
+```dart
+final liveCameraController = FormFieldsMyImageController();
+
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  liveCameraController: liveCameraController,
+  onLiveCaptured: (captured) {
+    // Fired immediately when user starts signing
+  },
+  onExportedResult: (result) {
+    final MyimageResult signature = result.signature;
+    final MyimageResult? selfie = result.liveCapture;
+  },
+)
+```
+
+#### Custom Layout (side-by-side)
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  layoutBuilder: (ctx, pad, camera) => Row(
+    children: [
+      Expanded(child: pad),
+      if (camera != null) SizedBox(width: 140, child: camera),
+    ],
+  ),
+  onExportedResult: (_) {},
+)
+```
+
+#### Custom Camera Wrapper
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  liveCameraBuilder: (ctx, cam) => Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.deepPurple, width: 2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    padding: const EdgeInsets.all(8),
+    child: cam,
+  ),
+  onExportedResult: (_) {},
+)
+```
+
+### Notes
+
+- The live camera auto-captures exactly once per signing session (on `onDrawStart`).
+- Reset is performed automatically when the clear button is pressed.
+- Either `onExported` or `onExportedResult` can be used; prefer `onExportedResult` when `showLiveCamera` is enabled.
+
+---
+
+## FormFieldsLiveCameraCapture
+
+Standalone live front-camera preview widget. Can be used independently or as the camera source inside `FormFieldsSignaturePad`. Capture is screenshot-based (`RepaintBoundary.toImage`) to avoid CameraX surface-combination conflicts.
+
+### Constructor
+
+```dart
+FormFieldsLiveCameraCapture({
+  double height = 100,
+  FormFieldsMyImageController? cameraController,
+  void Function(MyimageResult captured)? onCaptured,
+})
+```
+
+### Properties
+
+| Property           | Type                            | Default | Description                                               |
+| ------------------ | ------------------------------- | ------- | --------------------------------------------------------- |
+| `height`           | `double`                        | `100`   | Height of the camera preview area                         |
+| `cameraController` | `FormFieldsMyImageController?`  | `null`  | External controller; links capture/reset programmatically |
+| `onCaptured`       | `void Function(MyimageResult)?` | `null`  | Called each time `capture()` succeeds                     |
+
+### FormFieldsLiveCameraCaptureState Methods
+
+Accessible via `GlobalKey<FormFieldsLiveCameraCaptureState>`:
+
+| Method                             | Description                                   |
+| ---------------------------------- | --------------------------------------------- |
+| `Future<MyimageResult?> capture()` | Capture the current preview frame as PNG      |
+| `void resetCapture()`              | Clear capture and return to live preview mode |
+
+### Usage Examples
+
+#### With GlobalKey
+
+```dart
+final cameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
+
+FormFieldsLiveCameraCapture(
+  key: cameraKey,
+  height: 200,
+  onCaptured: (result) {
+    print(result.path); // temp PNG file path
+  },
+)
+
+// Trigger from a button
+ElevatedButton(
+  onPressed: () async {
+    final result = await cameraKey.currentState?.capture();
+  },
+  child: const Text('Capture'),
+)
+
+// Reset to live preview
+cameraKey.currentState?.resetCapture();
+```
+
+#### With Controller
+
+```dart
+final cameraController = FormFieldsMyImageController();
+
+FormFieldsLiveCameraCapture(
+  height: 200,
+  cameraController: cameraController,
+  onCaptured: (result) { },
+)
+
+// Trigger capture from outside the widget tree (e.g. ViewModel)
+final result = await cameraController.capture();
+cameraController.resetCapture();
+```
+
+---
+
+## FormFieldsMyImageController
+
+`ChangeNotifier`-based controller for `FormFieldsMyImage` and `FormFieldsLiveCameraCapture`. Allows reading and mutating captured/picked images, and triggering capture or picker programmatically from outside the widget tree.
+
+### Properties
+
+| Property | Type                  | Description            |
+| -------- | --------------------- | ---------------------- |
+| `images` | `List<MyimageResult>` | Current list of images |
+
+### Methods
+
+| Method                                     | Description                                                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `addImage(MyimageResult)`                  | Append an image to the list and notify listeners                                                                                             |
+| `clear()`                                  | Remove all images and notify listeners                                                                                                       |
+| `Future<MyimageResult?> capture()`         | Trigger capture on the linked `FormFieldsLiveCameraCapture`; no-op if none                                                                   |
+| `void resetCapture()`                      | Reset the linked `FormFieldsLiveCameraCapture` to live preview; no-op if none                                                                |
+| `Future<void> pickImage({String? source})` | Open the image picker on the linked `FormFieldsMyImage`. `source` can be `'camera'`, `'gallery'`, or `null` to show the bottom-sheet chooser |
+| `dispose()`                                | Release resources (ChangeNotifier)                                                                                                           |
+
+### Usage Example
+
+```dart
+final controller = FormFieldsMyImageController();
+
+// Listen to changes
+controller.addListener(() {
+  final images = controller.images; // List<MyimageResult>
+});
+
+// Open gallery programmatically
+await controller.pickImage(source: 'gallery');
+
+// Open camera programmatically
+await controller.pickImage(source: 'camera');
+
+// Trigger live camera capture
+final result = await controller.capture();
+
+// Reset live camera to preview
+controller.resetCapture();
+
+// Always dispose when done
+controller.dispose();
+```
+
+---
+
+## FormFieldsMyImageProvider
+
+`ChangeNotifier`-based state provider for managing a list of `MyimageResult` objects with upload-progress tracking. Suitable for use with `provider` or `ChangeNotifierProvider`.
+
+### Properties
+
+| Property         | Type                  | Description                           |
+| ---------------- | --------------------- | ------------------------------------- |
+| `images`         | `List<MyimageResult>` | Current list of images                |
+| `uploadProgress` | `List<double>`        | Per-image upload progress (0.0 – 1.0) |
+| `loading`        | `bool`                | Global loading state flag             |
+
+### Methods
+
+| Method                                  | Description                                            |
+| --------------------------------------- | ------------------------------------------------------ |
+| `setImages(List<MyimageResult>)`        | Replace the entire list and reset all progress entries |
+| `addImage(MyimageResult)`               | Append one image with progress initialized to 0.0      |
+| `removeImage(int index)`                | Remove image and its progress entry at the given index |
+| `updateImage(int index, MyimageResult)` | Replace the image at the given index                   |
+| `clearImages()`                         | Remove all images and progress entries                 |
+| `setUploadProgress(int index, double)`  | Set upload progress for the image at the given index   |
+| `resetUploadProgress(int index)`        | Reset progress to 0.0 for the image at the given index |
+
+### Usage Example
+
+```dart
+final provider = FormFieldsMyImageProvider();
+
+provider.addImage(imageResult);
+provider.setUploadProgress(0, 0.75); // 75 % uploaded
+
+// In a ChangeNotifierProvider tree
+ChangeNotifierProvider(
+  create: (_) => FormFieldsMyImageProvider(),
+  child: Consumer<FormFieldsMyImageProvider>(
+    builder: (context, provider, _) {
+      return Column(
+        children: [
+          for (var i = 0; i < provider.images.length; i++)
+            LinearProgressIndicator(value: provider.uploadProgress[i]),
+        ],
+      );
+    },
+  ),
+)
+```
+
+---
+
+## MyimageResult
+
+Data class representing a captured or picked image. Returned by `FormFieldsLiveCameraCapture.capture()`, `FormFieldsMyImage` callbacks, and other image-producing widgets.
+
+### Properties
+
+| Property  | Type     | Description                                          |
+| --------- | -------- | ---------------------------------------------------- |
+| `path`    | `String` | Absolute path to the image file (temp directory)     |
+| `base64`  | `String` | Base64 data URI: `data:<mime>;base64,<data>`         |
+| `link`    | `String` | Remote URL after upload (empty if not yet uploaded)  |
+| `imageId` | `String` | Server-assigned image ID (empty if not yet uploaded) |
+
+### Factory
+
+```dart
+static Future<MyimageResult> fromFile(File file, {String? link})
+```
+
+Reads the file, encodes to base64, and auto-detects MIME type from extension.
+
+Supported MIME types: `image/jpeg`, `image/png`, `image/gif`, `image/bmp`, `image/webp`, `image/svg+xml`, `image/heic`, `video/mp4`, `video/quicktime`, `application/pdf`, and `application/octet-stream` as fallback.
+
+### Usage Example
+
+```dart
+final file = File('/tmp/photo.png');
+final result = await MyimageResult.fromFile(file);
+
+print(result.path);   // /tmp/photo.png
+print(result.base64); // data:image/png;base64,...
+print(result.link);   // '' (empty until uploaded)
+```
+
+---
+
+## showAppModalBottomSheet
+
+Top-level helper function that wraps `showModalBottomSheet` with sensible defaults: keyboard-aware bottom padding and `SafeArea` handling.
+
+### Signature
+
+```dart
+Future<T?> showAppModalBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  Color? backgroundColor,
+  double? elevation,
+  ShapeBorder? shape,
+  Clip? clipBehavior,
+  BoxConstraints? constraints,
+  bool? showDragHandle,
+  bool isScrollControlled = true,
+  double scrollControlDisabledMaxHeightRatio = 9 / 16,
+  bool useRootNavigator = false,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  bool useSafeArea = true,
+  bool? requestFocus,
+  AnimationController? transitionAnimationController,
+  AnimationStyle? sheetAnimationStyle,
+  Offset? anchorPoint,
+  RouteSettings? routeSettings,
+  Color? barrierColor,
+  String? barrierLabel,
+})
+```
+
+### Key Parameters
+
+| Parameter            | Type            | Default | Description                                             |
+| -------------------- | --------------- | ------- | ------------------------------------------------------- |
+| `context`            | `BuildContext`  | —       | Build context (required)                                |
+| `builder`            | `WidgetBuilder` | —       | Content builder (required)                              |
+| `isScrollControlled` | `bool`          | `true`  | Allow sheet to take full screen height                  |
+| `useSafeArea`        | `bool`          | `true`  | Apply `SafeArea` bottom + keyboard bottom inset padding |
+| `isDismissible`      | `bool`          | `true`  | Dismiss when tapping outside                            |
+| `enableDrag`         | `bool`          | `true`  | Allow swipe-down to dismiss                             |
+| `shape`              | `ShapeBorder?`  | `null`  | Sheet shape (e.g. rounded top corners)                  |
+
+### Usage Example
+
+```dart
+showAppModalBottomSheet(
+  context: context,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  ),
+  builder: (ctx) => Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Choose an option'),
+        ListTile(title: const Text('Option A'), onTap: () {}),
+        ListTile(title: const Text('Option B'), onTap: () {}),
+      ],
+    ),
+  ),
+);
+```
+
+---
+
+## ResponsiveMenuGrid
+
+A responsive grid that automatically calculates the number of columns based on available width and a fixed `itemSize`. Useful for menu/icon grids that need to adapt to different screen widths.
+
+### Constructor
+
+```dart
+ResponsiveMenuGrid({
+  required List<Widget> widgets,
+  double itemSize = 80,
+  double horizontalMargin = 16,
+  double verticalSpacing = 16,
+  bool alignLeft = false,
+})
+```
+
+### Properties
+
+| Property           | Type           | Default | Description                               |
+| ------------------ | -------------- | ------- | ----------------------------------------- |
+| `widgets`          | `List<Widget>` | —       | List of child widgets (required)          |
+| `itemSize`         | `double`       | `80`    | Fixed width/height for each grid cell     |
+| `horizontalMargin` | `double`       | `16`    | Left and right margin applied to the grid |
+| `verticalSpacing`  | `double`       | `16`    | Vertical gap between rows                 |
+| `alignLeft`        | `bool`         | `false` | Force left-align (no auto-centering)      |
+
+### Usage Example
+
+```dart
+ResponsiveMenuGrid(
+  itemSize: 80,
+  horizontalMargin: 16,
+  verticalSpacing: 12,
+  widgets: [
+    MenuIconItem(icon: Icons.home, label: 'Home'),
+    MenuIconItem(icon: Icons.settings, label: 'Settings'),
+    MenuIconItem(icon: Icons.person, label: 'Profile'),
+    MenuIconItem(icon: Icons.notifications, label: 'Alerts'),
+  ],
+)
+```
+
+---
+
+## DioUtil
+
+Utility class for file upload and download via Dio with built-in error handling and logging.
+
+### Static Methods
+
+#### `safeRequest<T>(Future<T> Function() request, {String? url})`
+
+Wraps any Dio call and catches `DioException`. Returns `null` on error for non-`Response` types, or a synthetic `500` `Response` when `T == Response`.
+
+```dart
+final response = await DioUtil.safeRequest<Response>(
+  () => dio.get('https://api.example.com/data'),
+  url: 'https://api.example.com/data',
+);
+```
+
+#### `downloadFile(String url)`
+
+Downloads a file to the system temp directory and returns its local path.
+
+```dart
+final String? localPath = await DioUtil.downloadFile(
+  'https://example.com/document.pdf',
+);
+```
+
+#### `uploadFile({...})`
+
+Uploads a file as `multipart/form-data`.
+
+```dart
+final Response? response = await DioUtil.uploadFile(
+  url: 'https://api.example.com/upload',
+  filePath: '/tmp/photo.png',
+  filename: 'photo.png',
+  headers: {'Authorization': 'Bearer $token'},
+  onProgress: (progress) {
+    print('${(progress * 100).toStringAsFixed(0)}%');
+  },
+  fields: [
+    MapEntry('userId', '42'),
+  ],
+);
+```
+
+| Parameter    | Type                              | Description                                |
+| ------------ | --------------------------------- | ------------------------------------------ |
+| `url`        | `String`                          | Upload endpoint URL (required)             |
+| `filePath`   | `String`                          | Absolute path to the local file (required) |
+| `filename`   | `String?`                         | Override file name sent to server          |
+| `headers`    | `Map<String, String>?`            | Additional HTTP headers                    |
+| `onProgress` | `void Function(double)?`          | Progress callback (0.0 – 1.0)              |
+| `fields`     | `List<MapEntry<String, String>>?` | Additional form fields                     |
+
+---
+
+## AppButtonLayout
+
+Keyboard-aware layout wrapper that keeps action buttons visible above the keyboard while respecting bottom safe areas. Can be used standalone or applied automatically via `AppButton(withLayout: true)`.
+
+### Constructor
+
+```dart
+AppButtonLayout({
+  required Widget child,
+  EdgeInsetsGeometry? margin,
+  double horizontalPadding = 16,
+  double topPadding = 12,
+  bool respectSafeArea = true,
+  bool avoidKeyboard = true,
+  Duration duration = const Duration(milliseconds: 220),
+  Curve curve = Curves.easeOutCubic,
+})
+```
+
+### Properties
+
+| Property            | Type                  | Default                       | Description                                       |
+| ------------------- | --------------------- | ----------------------------- | ------------------------------------------------- |
+| `child`             | `Widget`              | —                             | Button or content to wrap (required)              |
+| `margin`            | `EdgeInsetsGeometry?` | `null`                        | Outer margin                                      |
+| `horizontalPadding` | `double`              | `16`                          | Left/right padding applied via `SafeArea.minimum` |
+| `topPadding`        | `double`              | `12`                          | Top padding for the internal `AnimatedContainer`  |
+| `respectSafeArea`   | `bool`                | `true`                        | Apply bottom safe area                            |
+| `avoidKeyboard`     | `bool`                | `true`                        | Add `viewInsets.bottom` to bottom padding         |
+| `duration`          | `Duration`            | `Duration(milliseconds: 220)` | Animation duration for keyboard avoidance         |
+| `curve`             | `Curve`               | `Curves.easeOutCubic`         | Animation curve                                   |
+
+### Usage Example
+
+```dart
+AppButtonLayout(
+  child: AppButton(
+    text: 'Submit',
+    onPressed: () {},
+  ),
+)
+```
+
+Or, use the shorthand on `AppButton` itself:
+
+```dart
+AppButton(
+  text: 'Submit',
+  withLayout: true,
+  onPressed: () {},
+)
+```
+
+---
+
+## AppButtonContent
+
+Low-level widget that renders the inner content of an `AppButton` — spinner during loading, icon, text, or child. Useful when building a custom button shell while reusing the standard loading/icon/text logic.
+
+### Constructor
+
+```dart
+AppButtonContent({
+  required AppButtonType type,
+  required AppButtonSize size,
+  bool isLoading = false,
+  Widget? icon,
+  String? text,
+  Widget? child,
+  double? customSpinnerSize,
+})
+```
+
+### Properties
+
+| Property            | Type            | Default | Description                                            |
+| ------------------- | --------------- | ------- | ------------------------------------------------------ |
+| `type`              | `AppButtonType` | —       | Button variant (controls spinner color logic)          |
+| `size`              | `AppButtonSize` | —       | Size preset (controls spinner size)                    |
+| `isLoading`         | `bool`          | `false` | Show spinner instead of content                        |
+| `icon`              | `Widget?`       | `null`  | Icon widget (used for `AppButtonType.icon`)            |
+| `text`              | `String?`       | `null`  | Label text                                             |
+| `child`             | `Widget?`       | `null`  | Fully custom content (overrides text + icon)           |
+| `customSpinnerSize` | `double?`       | `null`  | Override spinner size (active when `size` is `custom`) |
+
+---
+
+## AppButtonType & AppButtonSize Enums
+
+### AppButtonType
+
+```dart
+enum AppButtonType {
+  filled,       // Filled background (Material filled button)
+  filledTonal,  // Filled tonal variant
+  elevated,     // Elevated button with shadow
+  outlined,     // Outlined/border button
+  text,         // Text-only button
+  icon,         // Icon-only button
+  fab,          // Floating action button
+  extendedFab,  // Extended FAB with label
+}
+```
+
+### AppButtonSize
+
+```dart
+enum AppButtonSize {
+  small,   // Compact size
+  medium,  // Standard size (default)
+  large,   // Larger touch target
+  custom,  // Use customHeight / customHorizontalPadding / customIconSize
+}
+```
+
+---
+
+## Dialog Typedefs
+
+Exported from `package:form_fields/form_fields.dart`.
+
+### AppDialogErrorMapper
+
+```dart
+typedef AppDialogErrorMapper = ({
+  String message,
+  AppDialogType type,
+  Map<String, List<String>>? details,
+}) Function(Object error);
+```
+
+Maps an exception to a `(message, type, details)` record for use with `AppDialogService.guard(mapError: ...)`.
+
+### AppDialogCancelRequested
+
+```dart
+typedef AppDialogCancelRequested = FutureOr<bool> Function();
+```
+
+Called when the user attempts to cancel a loading dialog. Return `true` to allow cancellation.
+
+### AppDialogCancelled
+
+```dart
+typedef AppDialogCancelled = FutureOr<void> Function();
+```
+
+Called after a loading dialog is successfully cancelled.
+
+### Usage Example
+
+```dart
+AppDialogErrorMapper myMapper = (error) {
+  if (error is ValidationException) {
+    return (
+      message: error.message,
+      type: AppDialogType.validation,
+      details: null,
+    );
+  }
+  return (
+    message: error.toString(),
+    type: AppDialogType.server,
+    details: null,
+  );
+};
+
+await AppGlobalDialogService.guard<void>(
+  action: () async { /* async work */ },
+  mapError: myMapper,
+  onCancelRequested: () => true,
+  onCancelled: () { /* cleanup */ },
+);
+```
