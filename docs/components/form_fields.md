@@ -66,7 +66,7 @@ FormFields<String>(
 ### date
 
 ```dart
-FormFields<String>(
+FormFields<DateTime>(
   label: 'Tanggal Lahir',
   formType: FormType.date,
   currentValue: viewModel.birthDate,
@@ -77,7 +77,7 @@ FormFields<String>(
 ### time
 
 ```dart
-FormFields<String>(
+FormFields<DateTime>(
   label: 'Jam Mulai',
   formType: FormType.time,
   currentValue: viewModel.startTime,
@@ -88,7 +88,7 @@ FormFields<String>(
 ### dateTime
 
 ```dart
-FormFields<String>(
+FormFields<DateTime>(
   label: 'Jadwal',
   formType: FormType.dateTime,
   currentValue: viewModel.schedule,
@@ -99,9 +99,10 @@ FormFields<String>(
 ### dateTimeRange
 
 ```dart
-FormFields<String>(
+FormFields<DateTimeRange>(
   label: 'Periode',
   formType: FormType.dateTimeRange,
+  useDatePickerForRange: true,
   currentValue: viewModel.period,
   onChanged: viewModel.setPeriod,
 )
@@ -110,7 +111,7 @@ FormFields<String>(
 ### timeOfDay
 
 ```dart
-FormFields<String>(
+FormFields<TimeOfDay>(
   label: 'Waktu',
   formType: FormType.timeOfDay,
   currentValue: viewModel.time,
