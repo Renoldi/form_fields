@@ -54,6 +54,12 @@ const Map<String, String> enUSStrings = {
   'passwordMinLength': 'Password must be at least {value} characters',
   'verificationLength': 'Please enter a {value}-digit verification code',
 
+  // Image / Signature Pad Validation
+  'imageRequired': 'Please upload {label}',
+  'imageRequiredDefault': 'Please upload an image',
+  'signatureRequired': 'Please provide {label}',
+  'signatureRequiredDefault': 'Please provide a signature',
+
   // Signature Pad + Live Camera
   'signatureClear': 'Clear signature',
   'signatureExport': 'Export signature',

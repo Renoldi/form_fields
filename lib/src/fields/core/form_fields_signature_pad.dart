@@ -93,6 +93,33 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Ignored when [layoutBuilder] is provided.
   final Widget Function(BuildContext context, Widget camera)? liveCameraBuilder;
 
+  // ── Validation ──────────────────────────────────────────────────────────────
+
+  /// Label text shown above (or beside) the signature pad.
+  final String? label;
+
+  /// Position of the label relative to the signature pad.
+  /// Supports [LabelPosition.top], [LabelPosition.bottom],
+  /// [LabelPosition.left], [LabelPosition.right] and [LabelPosition.none].
+  final LabelPosition labelPosition;
+
+  /// Custom text style for the label.
+  final TextStyle? labelTextStyle;
+
+  /// Whether a signature must be drawn before the form is valid.
+  final bool isRequired;
+
+  /// Custom validator. Receives `true` if the pad has content, `false` if empty.
+  /// Return an error string, or null if valid.
+  final String? Function(bool hasSignature)? validator;
+
+  /// Controls when validation errors are shown (default: onUserInteraction).
+  final AutovalidateMode autovalidateMode;
+
+  /// Error text injected from external (e.g. backend validation).
+  /// Always displayed when non-null, regardless of [autovalidateMode].
+  final String? externalErrorText;
+
   const FormFieldsSignaturePad({
     super.key,
     this.height = 200,
@@ -109,6 +136,13 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.liveCameraController,
     this.layoutBuilder,
     this.liveCameraBuilder,
+    this.label,
+    this.labelPosition = LabelPosition.none,
+    this.labelTextStyle,
+    this.isRequired = false,
+    this.validator,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.externalErrorText,
   });
 
   @override
@@ -127,6 +161,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   /// Reset to false when the clear button is pressed.
   bool _hasCaptured = false;
 
+  final _formFieldKey = GlobalKey<FormFieldState<bool>>();
+  FormFieldsLocalizations? _localizations;
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +175,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           widget.exportBackgroundColor ?? widget.backgroundColor,
       onDrawStart: _onDrawStart,
     );
+    _signatureController.addListener(_onSignatureChanged);
   }
 
   void _initCameraController() {
@@ -153,6 +191,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   @override
   void didUpdateWidget(FormFieldsSignaturePad oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.externalErrorText != oldWidget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formFieldKey.currentState?.validate();
+      });
+    }
     if (widget.liveCameraController != oldWidget.liveCameraController) {
       if (_ownsCamera) _cameraController.dispose();
       _initCameraController();
@@ -161,12 +204,107 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   @override
   void dispose() {
+    _signatureController.removeListener(_onSignatureChanged);
     _signatureController.dispose();
     if (_ownsCamera) _cameraController.dispose();
     super.dispose();
   }
 
   // ── Auto-capture on draw start ─────────────────────────────────────────────
+
+  void _onSignatureChanged() {
+    _formFieldKey.currentState?.didChange(_signatureController.isNotEmpty);
+  }
+
+  Widget _buildLabel() {
+    final label = widget.label;
+    if (label == null ||
+        label.isEmpty ||
+        widget.labelPosition == LabelPosition.none) {
+      return const SizedBox.shrink();
+    }
+    const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
+    final style =
+        (widget.labelTextStyle ?? defaultStyle).copyWith(color: Colors.black87);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(text: label, style: style),
+            if (widget.isRequired)
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _wrapWithLabel(Widget content) {
+    if (widget.label == null ||
+        widget.label!.isEmpty ||
+        widget.labelPosition == LabelPosition.none) {
+      return content;
+    }
+    final labelWidget = _buildLabel();
+    const labelWidth = 120.0;
+    const spacing = 12.0;
+    switch (widget.labelPosition) {
+      case LabelPosition.top:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [labelWidget, content],
+        );
+      case LabelPosition.bottom:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [content, labelWidget],
+        );
+      case LabelPosition.left:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: labelWidth, child: labelWidget),
+            const SizedBox(width: spacing),
+            Expanded(child: content),
+          ],
+        );
+      case LabelPosition.right:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: spacing),
+            SizedBox(width: labelWidth, child: labelWidget),
+          ],
+        );
+      case LabelPosition.inBorder:
+      case LabelPosition.none:
+        return content;
+    }
+  }
+
+  String? _validateSignature(bool? hasSignature) {
+    if (widget.externalErrorText != null) return widget.externalErrorText;
+    if (widget.validator != null)
+      return widget.validator!(hasSignature ?? false);
+    if (widget.isRequired && (hasSignature != true)) {
+      final l = _localizations;
+      if (l == null) return '';
+      final label = widget.label;
+      return (label != null && label.isNotEmpty)
+          ? l.getWithLabel('signatureRequired', label)
+          : l.get('signatureRequiredDefault');
+    }
+    return null;
+  }
 
   Future<void> _onDrawStart() async {
     if (!widget.showLiveCamera) return;
@@ -294,24 +432,61 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = FormFieldsLocalizations.of(context);
+    _localizations = FormFieldsLocalizations.of(context);
+    final localizations = _localizations!;
     final pad = _buildSignaturePad(localizations);
     final cameraWidget =
         widget.showLiveCamera ? _buildCameraWidget(context) : null;
 
+    Widget content;
     if (widget.layoutBuilder != null) {
-      return widget.layoutBuilder!(context, pad, cameraWidget);
+      content = widget.layoutBuilder!(context, pad, cameraWidget);
+    } else if (cameraWidget == null) {
+      content = pad;
+    } else {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          pad,
+          const SizedBox(height: 16),
+          cameraWidget,
+        ],
+      );
     }
 
-    if (cameraWidget == null) return pad;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        pad,
-        const SizedBox(height: 16),
-        cameraWidget,
-      ],
+    return FormField<bool>(
+      key: _formFieldKey,
+      autovalidateMode: widget.autovalidateMode,
+      initialValue: false,
+      validator: _validateSignature,
+      builder: (state) {
+        final inner = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            content,
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 14),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        state.errorText!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+        return _wrapWithLabel(inner);
+      },
     );
   }
 }

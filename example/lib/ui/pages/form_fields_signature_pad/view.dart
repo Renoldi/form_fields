@@ -277,6 +277,24 @@ class View extends PresenterState {
                   ),
 
                   const SizedBox(height: 32),
+
+                  // ── 7. Validation & Label ──────────────────────────────────
+                  _ExampleCard(
+                    index: 7,
+                    title: 'Validation & Label',
+                    subtitle:
+                        'isRequired, label, labelPosition — integrates with Form.validate()',
+                    snippet: 'FormFieldsSignaturePad(\n'
+                        '  label: \'Signature\',\n'
+                        '  labelPosition: LabelPosition.top,\n'
+                        '  isRequired: true,\n'
+                        '  autovalidateMode: AutovalidateMode.onUserInteraction,\n'
+                        '  onExported: (result) { },\n'
+                        ')',
+                    child: _SignatureValidationExample(),
+                  ),
+
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -685,6 +703,138 @@ class _StandaloneLiveCapturePreview extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Validation example (self-contained stateful widget) ──────────────────────
+
+class _SignatureValidationExample extends StatefulWidget {
+  const _SignatureValidationExample();
+
+  @override
+  State<_SignatureValidationExample> createState() =>
+      _SignatureValidationExampleState();
+}
+
+class _SignatureValidationExampleState
+    extends State<_SignatureValidationExample> {
+  final _formKey = GlobalKey<FormState>();
+  bool _submitted = false;
+  MyimageResult? _exportedSignature;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Label top + isRequired ───────────────────────────────────────
+          FormFieldsSignaturePad(
+            label: 'Customer Signature',
+            labelPosition: LabelPosition.top,
+            isRequired: true,
+            autovalidateMode: _submitted
+                ? AutovalidateMode.always
+                : AutovalidateMode.onUserInteraction,
+            backgroundColor: Colors.white,
+            exportBackgroundColor: Colors.transparent,
+            onExported: (result) => setState(() => _exportedSignature = result),
+          ),
+          const SizedBox(height: 8),
+
+          // ── Label left + custom validator ────────────────────────────────
+          const Divider(height: 28),
+          const Text(
+            'With custom validator:',
+            style: TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          FormFieldsSignaturePad(
+            label: 'Witness',
+            labelPosition: LabelPosition.left,
+            labelTextStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.deepPurple),
+            validator: (hasSignature) =>
+                hasSignature ? null : 'Witness signature is required',
+            autovalidateMode: _submitted
+                ? AutovalidateMode.always
+                : AutovalidateMode.onUserInteraction,
+            backgroundColor: Colors.white,
+            height: 140,
+            onExported: (_) {},
+          ),
+          const SizedBox(height: 16),
+
+          // ── Submit button ────────────────────────────────────────────────
+          FilledButton.icon(
+            onPressed: () {
+              setState(() => _submitted = true);
+              if (_formKey.currentState?.validate() ?? false) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Form submitted successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.verified_outlined),
+            label: const Text('Submit'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+
+          // ── Export preview ───────────────────────────────────────────────
+          if (_exportedSignature != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8FF),
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: Colors.deepPurple.withValues(alpha: .2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.draw_outlined,
+                          size: 14, color: Colors.deepPurple),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Exported signature',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.deepPurple.shade700),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.memory(
+                      Uri.parse(_exportedSignature!.base64)
+                          .data!
+                          .contentAsBytes(),
+                      height: 80,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

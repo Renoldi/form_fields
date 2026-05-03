@@ -15,6 +15,15 @@ class FormFieldsMyImage extends StatefulWidget {
   /// Dipanggil setiap kali gambar dipilih atau diganti.
   final void Function(MyimageResult image)? onImageChanged;
   final String? label;
+
+  /// Position of the label relative to the image widget.
+  /// Supports [LabelPosition.top], [LabelPosition.bottom],
+  /// [LabelPosition.left], [LabelPosition.right] and [LabelPosition.none].
+  final LabelPosition labelPosition;
+
+  /// Custom text style for the label.
+  final TextStyle? labelTextStyle;
+
   final bool isDoc;
   final int? maxImages;
   final Widget Function(BuildContext context, MyimageResult image, int index)?
@@ -45,12 +54,30 @@ class FormFieldsMyImage extends StatefulWidget {
   final bool showDesc;
   final String? descriptionField;
 
+  // ── Validation ──────────────────────────────────────────────────────────────
+
+  /// Whether this field is required. Shows error when no images are present.
+  final bool isRequired;
+
+  /// Custom validator. Receives the current images list.
+  /// Return an error string, or null if valid.
+  final String? Function(List<MyimageResult>?)? validator;
+
+  /// Controls when validation errors are shown (default: onUserInteraction).
+  final AutovalidateMode autovalidateMode;
+
+  /// Error text injected from external (e.g. backend validation).
+  /// Always displayed when non-null, regardless of [autovalidateMode].
+  final String? externalErrorText;
+
   FormFieldsMyImage({
     super.key,
     this.controller,
     this.onImagesChanged,
     this.onImageChanged,
     this.label,
+    this.labelPosition = LabelPosition.none,
+    this.labelTextStyle,
     this.isDoc = false,
     this.maxImages,
     this.imageBuilder,
@@ -72,6 +99,10 @@ class FormFieldsMyImage extends StatefulWidget {
     this.showUploadResultDialog = false,
     this.showDesc = false,
     this.descriptionField,
+    this.isRequired = false,
+    this.validator,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.externalErrorText,
   }) {
     assert(
       isDirectUpload == false || (uploadUrl != null && uploadUrl!.isNotEmpty),
@@ -89,10 +120,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   int? _uploadingIndex;
   FormFieldsMyImageController? _controller;
 
+  final _formFieldKey = GlobalKey<FormFieldState<List<MyimageResult>>>();
+  FormFieldsLocalizations? _localizations;
+
   @override
   void initState() {
     super.initState();
     _provider = FormFieldsMyImageProvider();
+    _provider.addListener(_onProviderChanged);
     if (widget.controller != null) {
       _controller = widget.controller;
       _provider.setImages(_controller!.images);
@@ -111,6 +146,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   @override
   void didUpdateWidget(FormFieldsMyImage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.externalErrorText != oldWidget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formFieldKey.currentState?.validate();
+      });
+    }
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller?.unregisterPickImageHandler();
       oldWidget.controller?.removeListener(_onControllerChanged);
@@ -127,6 +167,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   @override
   void dispose() {
+    _provider.removeListener(_onProviderChanged);
     if (widget.controller != null) {
       widget.controller!.unregisterPickImageHandler();
     }
@@ -142,34 +183,163 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
   }
 
+  void _onProviderChanged() {
+    _formFieldKey.currentState
+        ?.didChange(List<MyimageResult>.from(_provider.images));
+  }
+
+  Widget _buildLabel() {
+    final label = widget.label;
+    if (label == null ||
+        label.isEmpty ||
+        widget.labelPosition == LabelPosition.none) {
+      return const SizedBox.shrink();
+    }
+    const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
+    final style =
+        (widget.labelTextStyle ?? defaultStyle).copyWith(color: Colors.black87);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(text: label, style: style),
+            if (widget.isRequired)
+              const TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _wrapWithLabel(Widget content) {
+    if (widget.label == null ||
+        widget.label!.isEmpty ||
+        widget.labelPosition == LabelPosition.none) {
+      return content;
+    }
+    final labelWidget = _buildLabel();
+    const labelWidth = 120.0;
+    const spacing = 12.0;
+    switch (widget.labelPosition) {
+      case LabelPosition.top:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [labelWidget, content],
+        );
+      case LabelPosition.bottom:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [content, labelWidget],
+        );
+      case LabelPosition.left:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: labelWidth, child: labelWidget),
+            const SizedBox(width: spacing),
+            Expanded(child: content),
+          ],
+        );
+      case LabelPosition.right:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: spacing),
+            SizedBox(width: labelWidth, child: labelWidget),
+          ],
+        );
+      case LabelPosition.inBorder:
+      case LabelPosition.none:
+        return content;
+    }
+  }
+
+  String? _validateImages(List<MyimageResult>? images) {
+    if (widget.externalErrorText != null) return widget.externalErrorText;
+    if (widget.validator != null) return widget.validator!(images);
+    if (widget.isRequired && (images == null || images.isEmpty)) {
+      final l = _localizations;
+      if (l == null) return '';
+      final label = widget.label;
+      return (label != null && label.isNotEmpty)
+          ? l.getWithLabel('imageRequired', label)
+          : l.get('imageRequiredDefault');
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    _localizations = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _provider,
-      child: Consumer<FormFieldsMyImageProvider>(
-        builder: (context, provider, _) {
-          return SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.maxImages == 1)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 32),
-                    child: _buildSingleImageWidget(context, provider),
+      child: FormField<List<MyimageResult>>(
+        key: _formFieldKey,
+        autovalidateMode: widget.autovalidateMode,
+        initialValue: _provider.images,
+        validator: _validateImages,
+        builder: (state) {
+          return Consumer<FormFieldsMyImageProvider>(
+            builder: (context, provider, _) {
+              final innerContent = Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.maxImages == 1)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 32),
+                            child: _buildSingleImageWidget(context, provider),
+                          ),
+                        if (widget.maxImages != 1)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children:
+                                    _buildMultiImageWidgets(context, provider),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
-                if (widget.maxImages != 1)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _buildMultiImageWidgets(context, provider),
+                  if (state.hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 14),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              state.errorText!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-              ],
-            ),
+                    ),
+                ],
+              );
+              return _wrapWithLabel(innerContent);
+            },
           );
         },
       ),

@@ -54,6 +54,12 @@ const Map<String, String> idIDStrings = {
   'passwordMinLength': 'Kata sandi harus terdiri dari minimal {value} karakter',
   'verificationLength': 'Masukkan kode verifikasi {value} digit',
 
+  // Image / Signature Pad Validation
+  'imageRequired': 'Silakan unggah {label}',
+  'imageRequiredDefault': 'Silakan unggah gambar',
+  'signatureRequired': 'Silakan berikan {label}',
+  'signatureRequiredDefault': 'Silakan berikan tanda tangan',
+
   // Signature Pad + Live Camera
   'signatureClear': 'Hapus tanda tangan',
   'signatureExport': 'Ekspor tanda tangan',

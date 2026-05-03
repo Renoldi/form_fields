@@ -815,6 +815,148 @@ class View extends PresenterState {
                   ),
                 ],
                 const SizedBox(height: 32),
+
+                // ── Validation & Label ─────────────────────────────────────
+                _buildSectionTitle('Validation & Label',
+                    Colors.deepPurple.shade700, Colors.deepPurple.shade400),
+
+                // Label top + isRequired
+                _buildFieldTitle(
+                    'Label Top + isRequired', Colors.deepPurple.shade600),
+                FormFieldsMyImage(
+                  label: 'Proof of Identity',
+                  labelPosition: LabelPosition.top,
+                  isRequired: true,
+                  maxImages: 1,
+                  autovalidateMode: AutovalidateMode.always,
+                  onImagesChanged: (_) {},
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      'FormFieldsMyImage(\n'
+                      '  label: \'Proof of Identity\',\n'
+                      '  labelPosition: LabelPosition.top,\n'
+                      '  isRequired: true,\n'
+                      '  maxImages: 1,\n'
+                      '  autovalidateMode: AutovalidateMode.always,\n'
+                      ')',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                // Label left + custom validator
+                _buildFieldTitle('Label Left + Custom Validator',
+                    Colors.deepPurple.shade600),
+                FormFieldsMyImage(
+                  label: 'Photo',
+                  labelPosition: LabelPosition.left,
+                  isRequired: true,
+                  maxImages: 3,
+                  validator: (images) {
+                    if (images == null || images.isEmpty)
+                      return 'Please add at least one photo';
+                    if (images.length < 2)
+                      return 'Please add at least 2 photos';
+                    return null;
+                  },
+                  autovalidateMode: AutovalidateMode.always,
+                  onImagesChanged: (_) {},
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      'FormFieldsMyImage(\n'
+                      '  label: \'Photo\',\n'
+                      '  labelPosition: LabelPosition.left,\n'
+                      '  isRequired: true,\n'
+                      '  maxImages: 3,\n'
+                      '  validator: (images) {\n'
+                      '    if (images == null || images.isEmpty)\n'
+                      '      return \'Please add at least one photo\';\n'
+                      '    if (images.length < 2)\n'
+                      '      return \'Please add at least 2 photos\';\n'
+                      '    return null;\n'
+                      '  },\n'
+                      ')',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                // External error text
+                _buildFieldTitle('externalErrorText (server-side error)',
+                    Colors.deepPurple.shade600),
+                FormFieldsMyImage(
+                  label: 'Attachment',
+                  labelPosition: LabelPosition.top,
+                  maxImages: 1,
+                  externalErrorText:
+                      'Server rejected the file. Please try again.',
+                  onImagesChanged: (_) {},
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      'FormFieldsMyImage(\n'
+                      '  label: \'Attachment\',\n'
+                      '  labelPosition: LabelPosition.top,\n'
+                      '  maxImages: 1,\n'
+                      '  externalErrorText: \'Server rejected the file.\',\n'
+                      ')',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                // Form-level validation with GlobalKey<FormState>
+                _buildFieldTitle('Form-level Validation (GlobalKey<FormState>)',
+                    Colors.deepPurple.shade600),
+                _ValidationFormExample(),
+                const SizedBox(height: 32),
               ],
             ),
           );
@@ -854,6 +996,77 @@ class View extends PresenterState {
               style: TextStyle(
                   fontWeight: FontWeight.w600, fontSize: 15, color: color)),
         ],
+      ),
+    );
+  }
+}
+
+// ── Standalone form-level validation example ──────────────────────────────────
+
+class _ValidationFormExample extends StatefulWidget {
+  const _ValidationFormExample();
+
+  @override
+  State<_ValidationFormExample> createState() => _ValidationFormExampleState();
+}
+
+class _ValidationFormExampleState extends State<_ValidationFormExample> {
+  final _formKey = GlobalKey<FormState>();
+  final _photoController = FormFieldsMyImageController();
+  bool _submitted = false;
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withValues(alpha: .04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: .15)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FormFieldsMyImage(
+              controller: _photoController,
+              label: 'Supporting Document',
+              labelPosition: LabelPosition.top,
+              isRequired: true,
+              maxImages: 2,
+              autovalidateMode: _submitted
+                  ? AutovalidateMode.always
+                  : AutovalidateMode.onUserInteraction,
+              onImagesChanged: (_) {},
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() => _submitted = true);
+                if (_formKey.currentState?.validate() ?? false) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Form submitted successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Submit Form'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  padding: const EdgeInsets.symmetric(vertical: 14)),
+            ),
+          ],
+        ),
       ),
     );
   }
