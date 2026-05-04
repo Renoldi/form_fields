@@ -332,6 +332,8 @@ class View extends PresenterState {
 
   /// Build Material Design 3 theme with custom colors
   static ThemeData _buildTheme() {
+    const baseColor = Color(0xff008BD0);
+
     return ThemeData(
       // Color & Material3
       primarySwatch: Colors.blue,
@@ -356,20 +358,26 @@ class View extends PresenterState {
       extensions: <ThemeExtension<dynamic>>[
         const AppButtonThemeData(
           filledStyle: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
+            backgroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
             foregroundColor: WidgetStatePropertyAll(Colors.white),
-            textStyle:
-                WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.bold)),
+            textStyle: WidgetStatePropertyAll(
+              TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           outlinedStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
-            side: WidgetStatePropertyAll(BorderSide(color: Color(0xFF2563EB))),
+            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
+            side: WidgetStatePropertyAll(
+              BorderSide(color: Color(0xff008BD0)),
+            ),
           ),
           textStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(Color(0xFF2563EB)),
+            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
           ),
-          iconBackgroundColor: Colors.white, // Colors.purple.shade100
-          fabBackgroundColor: Colors.yellow, // Colors.green.shade100
+          iconStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
+          ),
+          iconBackgroundColor: Colors.white,
+          fabBackgroundColor: Colors.yellow,
         ),
       ],
 
@@ -380,7 +388,7 @@ class View extends PresenterState {
         filled: true,
         fillColor: Color(0xFFF3F4F6),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: TextStyle(color: Color(0xFF2563EB)),
+        labelStyle: TextStyle(color: Color(0xff008BD0)),
         hintStyle: TextStyle(color: Colors.grey),
       ),
     );

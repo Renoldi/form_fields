@@ -869,10 +869,12 @@ class View extends PresenterState {
                   isRequired: true,
                   maxImages: 3,
                   validator: (images) {
-                    if (images == null || images.isEmpty)
+                    if (images == null || images.isEmpty) {
                       return 'Please add at least one photo';
-                    if (images.length < 2)
+                    }
+                    if (images.length < 2) {
                       return 'Please add at least 2 photos';
+                    }
                     return null;
                   },
                   autovalidateMode: AutovalidateMode.always,

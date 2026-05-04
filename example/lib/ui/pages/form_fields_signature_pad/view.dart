@@ -27,14 +27,18 @@ class View extends PresenterState {
                   _ExampleCard(
                     index: 1,
                     title: 'Basic Signature',
-                    subtitle: 'Export as MyimageResult on tap confirm',
+                    subtitle: 'Preview exported signature in the same pad area',
                     snippet: 'FormFieldsSignaturePad(\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.signature,\n'
                         '  onExported: (result) { },\n'
                         ')',
                     result: viewModel.signatureResult != null
                         ? _SignaturePreview(result: viewModel.signatureResult!)
                         : null,
                     child: FormFieldsSignaturePad(
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.signature,
                       onExported: viewModel.setSignature,
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
@@ -48,9 +52,11 @@ class View extends PresenterState {
                     index: 2,
                     title: 'Live Camera',
                     subtitle:
-                        'Front camera auto-captures the moment signing starts',
+                        'Front camera auto-captures and previews live capture on export',
                     snippet: 'FormFieldsSignaturePad(\n'
                         '  showLiveCamera: true,\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.liveCapture,\n'
                         '  onLiveCaptured: (img) { },\n'
                         '  onExportedResult: (r) {\n'
                         '    r.signature    // signature image\n'
@@ -66,6 +72,9 @@ class View extends PresenterState {
                         : null,
                     child: FormFieldsSignaturePad(
                       showLiveCamera: true,
+                      showExportPreview: true,
+                      exportPreviewSource:
+                          SignaturePadPreviewSource.liveCapture,
                       liveCameraController: viewModel.liveCameraController,
                       onLiveCaptured: viewModel.setLiveCapture,
                       onExportedResult: viewModel.setExportResult,
@@ -79,33 +88,22 @@ class View extends PresenterState {
                   // ── 3. Custom layout ───────────────────────────────────────
                   _ExampleCard(
                     index: 3,
-                    title: 'Custom Layout',
+                    title: 'Preview Both',
                     subtitle:
-                        'Signature pad and camera side-by-side via layoutBuilder',
+                        'Show signature and live capture together after export',
                     snippet: 'FormFieldsSignaturePad(\n'
                         '  showLiveCamera: true,\n'
-                        '  layoutBuilder: (ctx, pad, camera) =>\n'
-                        '    Row(children: [\n'
-                        '      Expanded(child: pad),\n'
-                        '      SizedBox(width: 140, child: camera!),\n'
-                        '    ]),\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.both,\n'
                         ')',
                     child: FormFieldsSignaturePad(
                       showLiveCamera: true,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.both,
                       height: 160,
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       onExportedResult: (_) {},
-                      layoutBuilder: (ctx, pad, camera) => Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: pad),
-                          if (camera != null) ...[
-                            const SizedBox(width: 12),
-                            SizedBox(width: 140, child: camera),
-                          ],
-                        ],
-                      ),
                     ),
                   ),
 

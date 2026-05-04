@@ -131,6 +131,8 @@ class AppButton<T> extends StatelessWidget {
       }
     }
     final mergedStyle = themedStyle?.merge(style) ?? style;
+    final iconColor = mergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
+        IconTheme.of(context).color;
 
     if (isIcon) {
       final double diameter = _heightBySize;
@@ -152,7 +154,7 @@ class AppButton<T> extends StatelessWidget {
                 ),
                 child: Center(
                   child: IconTheme(
-                    data: IconThemeData(size: iconSize),
+                    data: IconThemeData(size: iconSize, color: iconColor),
                     child: icon ?? childWidget,
                   ),
                 ),
@@ -176,7 +178,7 @@ class AppButton<T> extends StatelessWidget {
                 ),
                 child: Center(
                   child: IconTheme(
-                    data: IconThemeData(size: iconSize),
+                    data: IconThemeData(size: iconSize, color: iconColor),
                     child: icon ?? childWidget,
                   ),
                 ),

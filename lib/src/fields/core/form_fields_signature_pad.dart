@@ -20,6 +20,13 @@ class SignaturePadExportResult {
   });
 }
 
+/// Chooses which exported image should be shown as in-pad preview.
+enum SignaturePadPreviewSource {
+  signature,
+  liveCapture,
+  both,
+}
+
 /// ---------------------------------------------------------------------------
 /// FormFields SignaturePad Component (menggunakan package signature)
 /// ---------------------------------------------------------------------------
@@ -66,6 +73,19 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Called immediately after the auto-capture fires (on draw start).
   /// Useful to show a thumbnail or indicator before the user finishes signing.
   final void Function(MyimageResult captured)? onLiveCaptured;
+
+  /// When true, replace the drawing area with exported preview after confirm.
+  /// While preview is shown, export button is hidden until user clears.
+  final bool showExportPreview;
+
+  /// Which exported image(s) to render when [showExportPreview] is enabled.
+  ///
+  /// - [SignaturePadPreviewSource.signature]: preview signature image only
+  /// - [SignaturePadPreviewSource.liveCapture]: preview live camera image only
+  /// - [SignaturePadPreviewSource.both]: preview both images side-by-side
+  ///
+  /// Falls back to signature when live capture is unavailable.
+  final SignaturePadPreviewSource exportPreviewSource;
 
   // ── Live camera ────────────────────────────────────────────────────────────
 
@@ -130,6 +150,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.onExported,
     this.onExportedResult,
     this.onLiveCaptured,
+    this.showExportPreview = false,
+    this.exportPreviewSource = SignaturePadPreviewSource.signature,
     this.exportBackgroundColor,
     this.showLiveCamera = false,
     this.liveCameraHeight = 200,
@@ -160,6 +182,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   /// Guards auto-capture so it fires only once per signing session.
   /// Reset to false when the clear button is pressed.
   bool _hasCaptured = false;
+
+  /// Stored after export when [showExportPreview] is enabled.
+  MyimageResult? _previewSignatureResult;
+  MyimageResult? _previewLiveCaptureResult;
 
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;
@@ -199,6 +225,15 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     if (widget.liveCameraController != oldWidget.liveCameraController) {
       if (_ownsCamera) _cameraController.dispose();
       _initCameraController();
+    }
+    if (!widget.showExportPreview &&
+        oldWidget.showExportPreview != widget.showExportPreview &&
+        (_previewSignatureResult != null ||
+            _previewLiveCaptureResult != null)) {
+      setState(() {
+        _previewSignatureResult = null;
+        _previewLiveCaptureResult = null;
+      });
     }
   }
 
@@ -293,8 +328,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   String? _validateSignature(bool? hasSignature) {
     if (widget.externalErrorText != null) return widget.externalErrorText;
-    if (widget.validator != null)
+    if (widget.validator != null) {
       return widget.validator!(hasSignature ?? false);
+    }
     if (widget.isRequired && (hasSignature != true)) {
       final l = _localizations;
       if (l == null) return '';
@@ -317,6 +353,20 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
+  void _clearSignatureSession() {
+    _signatureController.clear();
+    // Reset capture flag so the next draw triggers a fresh photo.
+    _hasCaptured = false;
+    _liveCameraKey.currentState?.resetCapture();
+    _cameraController.clear();
+    if (_previewSignatureResult != null || _previewLiveCaptureResult != null) {
+      setState(() {
+        _previewSignatureResult = null;
+        _previewLiveCaptureResult = null;
+      });
+    }
+  }
+
   // ── Export ─────────────────────────────────────────────────────────────────
 
   Future<void> _exportSignature() async {
@@ -336,14 +386,23 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     ).create();
     await file.writeAsBytes(data);
     final signatureResult = await MyimageResult.fromFile(file);
+    final liveCapture =
+        widget.showLiveCamera && _cameraController.images.isNotEmpty
+            ? _cameraController.images.first
+            : null;
+
+    if (widget.showExportPreview) {
+      if (mounted) {
+        setState(() {
+          _previewSignatureResult = signatureResult;
+          _previewLiveCaptureResult = liveCapture;
+        });
+      }
+    }
 
     widget.onExported?.call(signatureResult);
 
     if (widget.onExportedResult != null) {
-      final liveCapture =
-          widget.showLiveCamera && _cameraController.images.isNotEmpty
-              ? _cameraController.images.first
-              : null;
       widget.onExportedResult!(
         SignaturePadExportResult(
           signature: signatureResult,
@@ -355,7 +414,98 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   // ── Build helpers ──────────────────────────────────────────────────────────
 
+  Widget _buildPreviewImage(MyimageResult result,
+      {BoxFit fit = BoxFit.contain}) {
+    if (result.path.trim().isNotEmpty) {
+      return Image.file(
+        File(result.path),
+        fit: fit,
+      );
+    }
+
+    if (result.link.trim().isNotEmpty) {
+      return Image.network(
+        result.link,
+        fit: fit,
+      );
+    }
+
+    if (result.base64.trim().isNotEmpty) {
+      final bytes = Uri.parse(result.base64).data?.contentAsBytes();
+      if (bytes != null) {
+        return Image.memory(
+          bytes,
+          fit: fit,
+        );
+      }
+    }
+
+    return Center(
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        size: 28,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  Widget _buildPreviewCanvas() {
+    final signature = _previewSignatureResult;
+    if (signature == null) {
+      return const SizedBox.shrink();
+    }
+
+    switch (widget.exportPreviewSource) {
+      case SignaturePadPreviewSource.signature:
+        return _buildPreviewImage(signature);
+      case SignaturePadPreviewSource.liveCapture:
+        final live = _previewLiveCaptureResult;
+        return _buildPreviewImage(live ?? signature);
+      case SignaturePadPreviewSource.both:
+        final live = _previewLiveCaptureResult;
+        return Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildPreviewImage(signature, fit: BoxFit.cover),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: live != null
+                      ? _buildPreviewImage(live, fit: BoxFit.cover)
+                      : Container(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: Center(
+                            child: Text(
+                              'No live capture',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+
   Widget _buildSignaturePad(FormFieldsLocalizations localizations) {
+    final isPreviewMode =
+        widget.showExportPreview && _previewSignatureResult != null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -365,10 +515,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               color: widget.backgroundColor,
               width: widget.width,
               height: widget.height,
-              child: Signature(
-                controller: _signatureController,
-                backgroundColor: widget.backgroundColor,
-              ),
+              child: isPreviewMode
+                  ? _buildPreviewCanvas()
+                  : Signature(
+                      controller: _signatureController,
+                      backgroundColor: widget.backgroundColor,
+                    ),
             ),
             Positioned(
               top: 8,
@@ -376,18 +528,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               child: Tooltip(
                 message: localizations.get('signatureClear'),
                 child: AppButton(
-                  icon: const Icon(Icons.delete_forever,
-                      color: Colors.deepPurple),
+                  icon: const Icon(Icons.delete_forever),
                   text: '',
                   size: AppButtonSize.small,
                   type: AppButtonType.icon,
-                  onPressed: () {
-                    _signatureController.clear();
-                    // Reset capture flag so the next draw triggers a fresh photo.
-                    _hasCaptured = false;
-                    _liveCameraKey.currentState?.resetCapture();
-                    _cameraController.clear();
-                  },
+                  onPressed: _clearSignatureSession,
                   customIconSize: 24,
                   customHeight: 36,
                 ),
@@ -395,22 +540,23 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Center(
-          child: Tooltip(
-            message: localizations.get('signatureExport'),
-            child: AppButton(
-              icon: const Icon(Icons.verified,
-                  color: Colors.deepPurple, size: 32),
-              text: '',
-              size: AppButtonSize.small,
-              type: AppButtonType.icon,
-              onPressed: _exportSignature,
-              customIconSize: 32,
-              customHeight: 48,
+        if (!isPreviewMode) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Tooltip(
+              message: localizations.get('signatureExport'),
+              child: AppButton(
+                icon: const Icon(Icons.verified, size: 32),
+                text: '',
+                size: AppButtonSize.small,
+                type: AppButtonType.icon,
+                onPressed: _exportSignature,
+                customIconSize: 32,
+                customHeight: 48,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -499,6 +645,7 @@ class _DefaultCameraSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = FormFieldsLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,26 +656,29 @@ class _DefaultCameraSection extends StatelessWidget {
           runSpacing: 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Icon(Icons.camera_front_outlined,
-                size: 18, color: Colors.deepPurple),
+            Icon(
+              Icons.camera_front_outlined,
+              size: 18,
+              color: colorScheme.primary,
+            ),
             Text(
               localizations.get('liveCaptureTitle'),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.deepPurple,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.deepPurple.withValues(alpha: .12),
+                color: colorScheme.primary.withValues(alpha: .12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 localizations.get('liveCaptureAutoOnSign'),
                 style: TextStyle(
                     fontSize: 10,
-                    color: Colors.deepPurple,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w500),
               ),
             ),
