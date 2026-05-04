@@ -17,14 +17,66 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final FormFieldsMyImageController? cameraController;
 
   /// Called each time [FormFieldsLiveCameraCaptureState.capture] succeeds.
+  /// When [isDirectUpload] is enabled, the result passed here will already
+  /// contain the server [MyimageResult.link] and [MyimageResult.imageId].
   final void Function(MyimageResult captured)? onCaptured;
 
-  const FormFieldsLiveCameraCapture({
+  // ── Upload ─────────────────────────────────────────────────────────────────
+
+  /// Upload otomatis saat capture selesai.
+  /// Requires [uploadUrl] to be non-empty when `true`.
+  final bool isDirectUpload;
+
+  /// Upload endpoint URL (required when [isDirectUpload] is `true`).
+  final String? uploadUrl;
+
+  /// Bearer token sent as `Authorization` header during upload.
+  final String? uploadToken;
+
+  /// Show a result dialog after upload completes (success or failure).
+  final bool showUploadResultDialog;
+
+  /// Show a loading overlay on the camera preview while uploading.
+  /// Defaults to `true`.
+  final bool showUploadLoading;
+
+  // Customizable upload messages
+  final String? uploadSuccessTitle;
+  final String? uploadFailedTitle;
+  final String? uploadErrorTitle;
+  final String? uploadSuccessMessage;
+  final String? uploadFailedMessage;
+  final String? uploadErrorMessage;
+
+  /// JSON key for the uploaded file URL in the response body.
+  final String uploadFileUrlKey;
+
+  /// JSON key for the image/file ID in the response body.
+  final String uploadImageIdKey;
+
+  FormFieldsLiveCameraCapture({
     super.key,
     this.height = 100,
     this.cameraController,
     this.onCaptured,
-  });
+    this.isDirectUpload = false,
+    this.uploadUrl,
+    this.uploadToken,
+    this.showUploadResultDialog = false,
+    this.showUploadLoading = true,
+    this.uploadSuccessTitle,
+    this.uploadFailedTitle,
+    this.uploadErrorTitle,
+    this.uploadSuccessMessage,
+    this.uploadFailedMessage,
+    this.uploadErrorMessage,
+    this.uploadFileUrlKey = 'fileUrl',
+    this.uploadImageIdKey = 'imageId',
+  }) : assert(
+          isDirectUpload == false ||
+              (uploadUrl != null && uploadUrl.isNotEmpty),
+          'For direct upload, uploadUrl must be provided and non-empty.',
+        );
 
   @override
   State<FormFieldsLiveCameraCapture> createState() =>
@@ -41,6 +93,8 @@ class FormFieldsLiveCameraCaptureState
 
   /// Non-null after capture; displays frozen image until reset.
   MyimageResult? _capturedResult;
+
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -64,6 +118,9 @@ class FormFieldsLiveCameraCaptureState
   }
 
   /// Capture current preview into a PNG file and return [MyimageResult].
+  /// When [FormFieldsLiveCameraCapture.isDirectUpload] is `true`, the image is
+  /// uploaded automatically and the returned result (and the connected
+  /// controller) will already contain the server link/imageId.
   Future<MyimageResult?> capture() async {
     if (!_cam.isReady) return null;
     try {
@@ -82,7 +139,15 @@ class FormFieldsLiveCameraCaptureState
         '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
       ).create();
       await file.writeAsBytes(bytes);
-      final result = await MyimageResult.fromFile(file);
+      MyimageResult result = await MyimageResult.fromFile(file);
+
+      if (widget.isDirectUpload && mounted) {
+        if (widget.showUploadLoading) setState(() => _isUploading = true);
+        final uploaded = await _uploadImageDio(result);
+        if (mounted && widget.showUploadLoading)
+          setState(() => _isUploading = false);
+        if (uploaded != null) result = uploaded;
+      }
 
       widget.cameraController?.images = [result];
       widget.onCaptured?.call(result);
@@ -91,6 +156,94 @@ class FormFieldsLiveCameraCaptureState
     } catch (_) {
       return null;
     }
+  }
+
+  /// Uploads [image] and returns the updated [MyimageResult] with server
+  /// link/imageId. Returns `null` on failure.
+  Future<MyimageResult?> _uploadImageDio(MyimageResult image) async {
+    if (widget.uploadUrl == null) return null;
+    final headers = <String, String>{};
+    if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
+      headers['Authorization'] = widget.uploadToken!;
+    }
+    final response = await DioUtil.uploadFile(
+      url: widget.uploadUrl!,
+      filePath: image.path,
+      filename: File(image.path).path.split('/').last,
+      headers: headers,
+    );
+    if (!mounted) return null;
+    final l = FormFieldsLocalizations.of(context);
+    final dialog = AppDialogService(context);
+    final uploadSuccessTitle =
+        widget.uploadSuccessTitle ?? l.get('uploadSuccessTitle');
+    final uploadFailedTitle =
+        widget.uploadFailedTitle ?? l.get('uploadFailedTitle');
+    final uploadErrorTitle =
+        widget.uploadErrorTitle ?? l.get('uploadErrorTitle');
+    final uploadSuccessMessage =
+        widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage');
+    final uploadFailedMessage =
+        widget.uploadFailedMessage ?? l.get('uploadFailedMessage');
+    final uploadErrorMessage =
+        widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
+    if (response == null) {
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadFailedTitle,
+          message: uploadErrorMessage,
+          dialogType: AppDialogType.network,
+        );
+      }
+      return null;
+    }
+    try {
+      if (response.statusCode == 200) {
+        String? uploadedLink;
+        String? imageId;
+        final data = response.data;
+        if (data is String) {
+          final redirectRegex = RegExp(
+            r"redirect_link\s*=\s*'([^']+)'",
+            multiLine: true,
+          );
+          final match = redirectRegex.firstMatch(data);
+          uploadedLink = match != null ? match.group(1) : data;
+        } else if (data is Map) {
+          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
+          imageId = data[widget.uploadImageIdKey]?.toString();
+        }
+        if (widget.showUploadResultDialog) {
+          await dialog.showSuccess(
+            title: uploadSuccessTitle,
+            message: uploadSuccessMessage,
+          );
+        }
+        return MyimageResult(
+          link: uploadedLink ?? image.link,
+          base64: image.base64,
+          path: image.path,
+          imageId: imageId ?? image.imageId,
+        );
+      } else {
+        if (widget.showUploadResultDialog) {
+          await dialog.showError(
+            title: uploadFailedTitle,
+            message: '$uploadFailedMessage ${response.statusMessage ?? ''}',
+            dialogType: AppDialogType.server,
+          );
+        }
+      }
+    } catch (e) {
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadErrorTitle,
+          message: '$uploadErrorMessage $e',
+          dialogType: AppDialogType.server,
+        );
+      }
+    }
+    return null;
   }
 
   /// Reset to live preview mode and clear the connected controller.
@@ -154,6 +307,19 @@ class FormFieldsLiveCameraCaptureState
             ),
             if (_capturedResult != null)
               _CapturedPhoto(result: _capturedResult!),
+            // Upload loading overlay
+            if (_isUploading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: .45),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               bottom: 8,
               right: 8,

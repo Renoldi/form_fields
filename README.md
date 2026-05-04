@@ -69,6 +69,12 @@ FormFields<String>(
 - `exportPreviewSource`: choose preview source (`signature`, `liveCapture`, `both`).
 - `layoutBuilder`: fully custom signature + camera layout.
 - `liveCameraBuilder`: custom wrapper for camera section while keeping default layout.
+- `isDirectUpload`: auto-upload signature (and live capture) after export.
+- `uploadUrl`: endpoint to POST the image file.
+- `uploadToken`: optional bearer token sent in `Authorization` header.
+- `showUploadResultDialog`: show success/error dialog after upload.
+- `showUploadLoading`: show loading overlay on the pad (and camera) during upload.
+- `uploadFileUrlKey` / `uploadImageIdKey`: response JSON keys for the server URL and ID.
 
 ### Signature + Live Camera Example
 
@@ -85,6 +91,43 @@ FormFieldsSignaturePad(
     final MyimageResult signature = result.signature;
     final MyimageResult? liveCapture = result.liveCapture;
     // Handle both results together
+  },
+)
+```
+
+### Direct Upload Example
+
+Auto-upload signature (and selfie) immediately after export. The `MyimageResult`
+returned in callbacks will contain `link` and `imageId` from the server.
+
+```dart
+FormFieldsSignaturePad(
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token',       // optional
+  showUploadResultDialog: true,
+  showUploadLoading: true,                // loading overlay while uploading
+  showExportPreview: true,
+  onExported: (result) {
+    result.link;    // server URL
+    result.imageId; // server ID
+  },
+)
+```
+
+With live camera — both signature and selfie are uploaded in one export action:
+
+```dart
+FormFieldsSignaturePad(
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  showUploadLoading: true,
+  showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
+  onExportedResult: (result) {
+    result.signature.link;    // uploaded signature URL
+    result.liveCapture?.link; // uploaded selfie URL
   },
 )
 ```
@@ -199,6 +242,12 @@ Both `cameraController` and `key` can be used together for maximum flexibility.
 - `cameraNoCamerasFound`
 - `cameraReady`
 - `cameraCaptured`
+- `uploadSuccessTitle`
+- `uploadSuccessMessage`
+- `uploadFailedTitle`
+- `uploadFailedMessage`
+- `uploadErrorTitle`
+- `uploadErrorMessage`
 
 ### Example App Updates
 
@@ -210,6 +259,8 @@ The `example` app now includes:
 - Custom camera wrapper via `liveCameraBuilder`.
 - Standalone live camera with capture/reset via `GlobalKey`.
 - Standalone live camera with capture/reset via **controller** (no `GlobalKey`).
+- **Direct upload** — signature auto-uploaded after export (Example 8).
+- **Direct upload + live camera** — both signature and selfie uploaded (Example 9).
 
 ### Technical Notes
 
@@ -275,6 +326,21 @@ FormFieldsSignaturePad(
   liveCameraController: controller,       // Optional external controller
   layoutBuilder: (ctx, pad, camera) => ..., // Custom layout
   liveCameraBuilder: (ctx, cam) => ...,     // Custom camera wrapper
+
+  // Direct upload
+  isDirectUpload: false,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token',       // optional; sent as Authorization header
+  showUploadResultDialog: false,          // show success/error dialog after upload
+  showUploadLoading: true,                // loading overlay on pad + camera while uploading
+  uploadFileUrlKey: 'url',               // JSON key for server file URL
+  uploadImageIdKey: 'id',                // JSON key for server image ID
+  uploadSuccessTitle: null,              // null = use localized default
+  uploadFailedTitle: null,
+  uploadErrorTitle: null,
+  uploadSuccessMessage: null,
+  uploadFailedMessage: null,
+  uploadErrorMessage: null,
 )
 ```
 
@@ -305,6 +371,15 @@ FormFieldsLiveCameraCapture(
   height: 200,
   cameraController: FormFieldsMyImageController(),   // optional
   onCaptured: (MyimageResult) { },
+
+  // Direct upload
+  isDirectUpload: false,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token',   // optional
+  showUploadResultDialog: false,
+  showUploadLoading: true,            // loading overlay during upload
+  uploadFileUrlKey: 'url',
+  uploadImageIdKey: 'id',
 )
 ```
 

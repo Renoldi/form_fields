@@ -332,8 +332,6 @@ class View extends PresenterState {
 
   /// Build Material Design 3 theme with custom colors
   static ThemeData _buildTheme() {
-    const baseColor = Color(0xff008BD0);
-
     return ThemeData(
       // Color & Material3
       primarySwatch: Colors.blue,

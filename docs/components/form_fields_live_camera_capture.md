@@ -51,6 +51,33 @@ Both `key` and `cameraController` can be used together.
 - `height`: Height of the camera preview area.
 - `cameraController` _(optional)_: External controller for reading captured images and triggering capture/reset programmatically.
 - `onCaptured`: Callback fired each time `capture()` succeeds with a `MyimageResult`.
+- `isDirectUpload` _(optional)_: Auto-upload the captured frame immediately. Requires `uploadUrl`.
+- `uploadUrl` _(optional)_: Upload endpoint URL (required when `isDirectUpload: true`).
+- `uploadToken` _(optional)_: Bearer token sent in `Authorization` header.
+- `showUploadResultDialog` _(optional)_: Show success/error dialog after upload.
+- `showUploadLoading` _(optional)_: Show loading overlay on the camera preview while uploading (default `true`).
+- `uploadFileUrlKey` / `uploadImageIdKey`: JSON keys for server response parsing.
+
+## Direct Upload
+
+Auto-upload each captured frame to a server. The `onCaptured` callback receives the
+updated `MyimageResult` with `link` and `imageId` populated from the server response.
+
+```dart
+FormFieldsLiveCameraCapture(
+  key: cameraKey,
+  height: 200,
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token', // optional
+  showUploadResultDialog: true,
+  showUploadLoading: true,          // loading overlay during upload
+  onCaptured: (result) {
+    result.link;    // server URL
+    result.imageId; // server ID
+  },
+)
+```
 
 ## FormFieldsLiveCameraCaptureState Methods
 
@@ -77,6 +104,9 @@ These are no-ops when no widget is linked.
 - Captured image is saved as PNG to system temp directory.
 - Front camera is used by default.
 - Camera is lazily initialized and ref-counted via a shared singleton.
+- When `isDirectUpload: true`, `uploadUrl` must be non-empty (enforced by assertion).
+- Direct upload uses `DioUtil.uploadFile` — supports both plain-text and JSON responses.
+- `showUploadLoading` displays a semi-transparent overlay with a spinner on the preview during upload.
 
 ## Permissions
 

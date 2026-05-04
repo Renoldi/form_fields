@@ -45,6 +45,20 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Direct upload examples ───────────────────────────────────────────────
+  MyimageResult? uploadedSignatureResult;
+  SignaturePadExportResult? uploadedExportResult;
+
+  void setUploadedSignature(MyimageResult? result) {
+    uploadedSignatureResult = result;
+    notifyListeners();
+  }
+
+  void setUploadedExportResult(SignaturePadExportResult result) {
+    uploadedExportResult = result;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     liveCameraController.dispose();

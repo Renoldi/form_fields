@@ -113,6 +113,39 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Ignored when [layoutBuilder] is provided.
   final Widget Function(BuildContext context, Widget camera)? liveCameraBuilder;
 
+  // ── Upload ─────────────────────────────────────────────────────────────────
+
+  /// Upload otomatis saat signature diekspor.
+  /// Requires [uploadUrl] to be non-empty when `true`.
+  final bool isDirectUpload;
+
+  /// Upload endpoint URL (required when [isDirectUpload] is `true`).
+  final String? uploadUrl;
+
+  /// Bearer token sent as `Authorization` header during upload.
+  final String? uploadToken;
+
+  /// Show a result dialog after upload completes (success or failure).
+  final bool showUploadResultDialog;
+
+  /// Show a loading overlay on the signature pad while uploading.
+  /// Defaults to `true`.
+  final bool showUploadLoading;
+
+  // Customizable upload messages
+  final String? uploadSuccessTitle;
+  final String? uploadFailedTitle;
+  final String? uploadErrorTitle;
+  final String? uploadSuccessMessage;
+  final String? uploadFailedMessage;
+  final String? uploadErrorMessage;
+
+  /// JSON key for the uploaded file URL in the response body.
+  final String uploadFileUrlKey;
+
+  /// JSON key for the image/file ID in the response body.
+  final String uploadImageIdKey;
+
   // ── Validation ──────────────────────────────────────────────────────────────
 
   /// Label text shown above (or beside) the signature pad.
@@ -140,7 +173,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Always displayed when non-null, regardless of [autovalidateMode].
   final String? externalErrorText;
 
-  const FormFieldsSignaturePad({
+  FormFieldsSignaturePad({
     super.key,
     this.height = 200,
     this.width = double.infinity,
@@ -158,6 +191,19 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.liveCameraController,
     this.layoutBuilder,
     this.liveCameraBuilder,
+    this.isDirectUpload = false,
+    this.uploadUrl,
+    this.uploadToken,
+    this.showUploadResultDialog = false,
+    this.showUploadLoading = true,
+    this.uploadSuccessTitle,
+    this.uploadFailedTitle,
+    this.uploadErrorTitle,
+    this.uploadSuccessMessage,
+    this.uploadFailedMessage,
+    this.uploadErrorMessage,
+    this.uploadFileUrlKey = 'fileUrl',
+    this.uploadImageIdKey = 'imageId',
     this.label,
     this.labelPosition = LabelPosition.none,
     this.labelTextStyle,
@@ -165,7 +211,11 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.validator,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.externalErrorText,
-  });
+  }) : assert(
+          isDirectUpload == false ||
+              (uploadUrl != null && uploadUrl.isNotEmpty),
+          "For direct upload, uploadUrl must be provided and non-empty.",
+        );
 
   @override
   State<FormFieldsSignaturePad> createState() => _FormFieldsSignaturePadState();
@@ -186,6 +236,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   /// Stored after export when [showExportPreview] is enabled.
   MyimageResult? _previewSignatureResult;
   MyimageResult? _previewLiveCaptureResult;
+
+  bool _isUploading = false;
 
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;
@@ -410,6 +462,122 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         ),
       );
     }
+
+    if (widget.isDirectUpload) {
+      if (!context.mounted) return;
+      if (widget.showUploadLoading && mounted) {
+        setState(() => _isUploading = true);
+      }
+      final updatedSignature = await _uploadImageDio(signatureResult);
+      if (!context.mounted) return;
+      if (widget.showUploadLoading && mounted) {
+        setState(() => _isUploading = false);
+      }
+      final finalSignature = updatedSignature ?? signatureResult;
+      // Live capture is already uploaded by FormFieldsLiveCameraCapture.capture()
+      // so _cameraController.images.first already has the server result.
+      final finalLiveCapture =
+          widget.showLiveCamera && _cameraController.images.isNotEmpty
+              ? _cameraController.images.first
+              : liveCapture;
+      widget.onExported?.call(finalSignature);
+      if (widget.onExportedResult != null) {
+        widget.onExportedResult!(
+          SignaturePadExportResult(
+            signature: finalSignature,
+            liveCapture: finalLiveCapture,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Uploads [image] to [uploadUrl] and returns the updated [MyimageResult]
+  /// with server link/imageId filled in. Returns `null` on failure.
+  Future<MyimageResult?> _uploadImageDio(MyimageResult image) async {
+    if (widget.uploadUrl == null) return null;
+    final headers = <String, String>{};
+    if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
+      headers['Authorization'] = widget.uploadToken!;
+    }
+    final response = await DioUtil.uploadFile(
+      url: widget.uploadUrl!,
+      filePath: image.path,
+      filename: File(image.path).path.split('/').last,
+      headers: headers,
+    );
+    if (!mounted) return null;
+    final l = FormFieldsLocalizations.of(context);
+    final dialog = AppDialogService(context);
+    final uploadSuccessTitle =
+        widget.uploadSuccessTitle ?? l.get('uploadSuccessTitle');
+    final uploadFailedTitle =
+        widget.uploadFailedTitle ?? l.get('uploadFailedTitle');
+    final uploadErrorTitle =
+        widget.uploadErrorTitle ?? l.get('uploadErrorTitle');
+    final uploadSuccessMessage =
+        widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage');
+    final uploadFailedMessage =
+        widget.uploadFailedMessage ?? l.get('uploadFailedMessage');
+    final uploadErrorMessage =
+        widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
+    if (response == null) {
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadFailedTitle,
+          message: uploadErrorMessage,
+          dialogType: AppDialogType.network,
+        );
+      }
+      return null;
+    }
+    try {
+      if (response.statusCode == 200) {
+        String? uploadedLink;
+        String? imageId;
+        final data = response.data;
+        if (data is String) {
+          final redirectRegex = RegExp(
+            r"redirect_link\s*=\s*'([^']+)'",
+            multiLine: true,
+          );
+          final match = redirectRegex.firstMatch(data);
+          uploadedLink = match != null ? match.group(1) : data;
+        } else if (data is Map) {
+          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
+          imageId = data[widget.uploadImageIdKey]?.toString();
+        }
+        if (widget.showUploadResultDialog) {
+          await dialog.showSuccess(
+            title: uploadSuccessTitle,
+            message: uploadSuccessMessage,
+          );
+        }
+        return MyimageResult(
+          link: uploadedLink ?? image.link,
+          base64: image.base64,
+          path: image.path,
+          imageId: imageId ?? image.imageId,
+        );
+      } else {
+        if (widget.showUploadResultDialog) {
+          await dialog.showError(
+            title: uploadFailedTitle,
+            message: '$uploadFailedMessage ${response.statusMessage ?? ''}',
+            dialogType: AppDialogType.server,
+          );
+        }
+      }
+    } catch (e) {
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadErrorTitle,
+          message: '$uploadErrorMessage $e',
+          dialogType: AppDialogType.server,
+        );
+      }
+    }
+    return null;
   }
 
   // ── Build helpers ──────────────────────────────────────────────────────────
@@ -522,6 +690,19 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                       backgroundColor: widget.backgroundColor,
                     ),
             ),
+            // Upload loading overlay
+            if (_isUploading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: .35),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               top: 8,
               right: 8,
@@ -532,7 +713,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   text: '',
                   size: AppButtonSize.small,
                   type: AppButtonType.icon,
-                  onPressed: _clearSignatureSession,
+                  onPressed: _isUploading ? null : _clearSignatureSession,
                   customIconSize: 24,
                   customHeight: 36,
                 ),
@@ -550,7 +731,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                 text: '',
                 size: AppButtonSize.small,
                 type: AppButtonType.icon,
-                onPressed: _exportSignature,
+                onPressed: _isUploading ? null : _exportSignature,
                 customIconSize: 32,
                 customHeight: 48,
               ),
@@ -567,6 +748,19 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       height: widget.liveCameraHeight,
       cameraController: _cameraController,
       onCaptured: widget.onLiveCaptured,
+      isDirectUpload: widget.isDirectUpload,
+      uploadUrl: widget.uploadUrl,
+      uploadToken: widget.uploadToken,
+      showUploadResultDialog: widget.showUploadResultDialog,
+      showUploadLoading: widget.showUploadLoading,
+      uploadSuccessTitle: widget.uploadSuccessTitle,
+      uploadFailedTitle: widget.uploadFailedTitle,
+      uploadErrorTitle: widget.uploadErrorTitle,
+      uploadSuccessMessage: widget.uploadSuccessMessage,
+      uploadFailedMessage: widget.uploadFailedMessage,
+      uploadErrorMessage: widget.uploadErrorMessage,
+      uploadFileUrlKey: widget.uploadFileUrlKey,
+      uploadImageIdKey: widget.uploadImageIdKey,
     );
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);

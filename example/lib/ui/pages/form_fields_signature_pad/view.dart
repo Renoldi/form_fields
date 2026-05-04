@@ -292,6 +292,83 @@ class View extends PresenterState {
                     child: _SignatureValidationExample(),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // ── 8. Direct Upload ───────────────────────────────────────
+                  _ExampleCard(
+                    index: 8,
+                    title: 'Direct Upload',
+                    subtitle:
+                        'Signature is auto-uploaded after export; callback receives server link/imageId',
+                    snippet: 'FormFieldsSignaturePad(\n'
+                        '  isDirectUpload: true,\n'
+                        '  uploadUrl: \'https://catbox.moe/user/api.php\',\n'
+                        '  showUploadResultDialog: true,\n'
+                        '  showUploadLoading: true,   // overlay while uploading\n'
+                        '  showExportPreview: true,\n'
+                        '  onExported: (result) {\n'
+                        '    result.link     // server URL after upload\n'
+                        '    result.imageId  // server ID after upload\n'
+                        '  },\n'
+                        ')',
+                    result: viewModel.uploadedSignatureResult != null
+                        ? _UploadResultPreview(
+                            label: 'Uploaded signature',
+                            result: viewModel.uploadedSignatureResult!,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      isDirectUpload: true,
+                      uploadUrl: 'https://catbox.moe/user/api.php',
+                      showUploadResultDialog: true,
+                      showUploadLoading: true,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.signature,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onExported: viewModel.setUploadedSignature,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── 9. Direct Upload + Live Camera ─────────────────────────
+                  _ExampleCard(
+                    index: 9,
+                    title: 'Direct Upload + Live Camera',
+                    subtitle:
+                        'Signature & live capture both uploaded; callbacks return server results',
+                    snippet: 'FormFieldsSignaturePad(\n'
+                        '  isDirectUpload: true,\n'
+                        '  uploadUrl: \'https://catbox.moe/user/api.php\',\n'
+                        '  showUploadLoading: true,   // overlay on pad + camera\n'
+                        '  showLiveCamera: true,\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.both,\n'
+                        '  onExportedResult: (r) {\n'
+                        '    r.signature.link     // uploaded signature URL\n'
+                        '    r.liveCapture?.link  // uploaded selfie URL\n'
+                        '  },\n'
+                        ')',
+                    result: viewModel.uploadedExportResult != null
+                        ? _LiveResultPreview(
+                            exportResult: viewModel.uploadedExportResult,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      isDirectUpload: true,
+                      uploadUrl: 'https://catbox.moe/user/api.php',
+                      showUploadResultDialog: false,
+                      showUploadLoading: true,
+                      showLiveCamera: true,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.both,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onExportedResult: viewModel.setUploadedExportResult,
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ),
@@ -651,6 +728,73 @@ class _ResultTile extends StatelessWidget {
           child: child,
         ),
       ],
+    );
+  }
+}
+
+// ── Upload result preview ─────────────────────────────────────────────────────
+
+class _UploadResultPreview extends StatelessWidget {
+  final String label;
+  final MyimageResult result;
+  const _UploadResultPreview({required this.label, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FFF8),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.green.withValues(alpha: .3)),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.cloud_done_outlined,
+                  size: 14, color: Colors.green),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (result.link.isNotEmpty)
+            Text(
+              'link: ${result.link}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          if (result.imageId.isNotEmpty)
+            Text(
+              'imageId: ${result.imageId}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+            ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: result.link.isNotEmpty
+                ? Image.network(result.link, height: 80, fit: BoxFit.contain)
+                : result.path.isNotEmpty
+                    ? Image.file(File(result.path),
+                        height: 80, fit: BoxFit.contain)
+                    : Image.memory(
+                        Uri.parse(result.base64).data!.contentAsBytes(),
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+          ),
+        ],
+      ),
     );
   }
 }
