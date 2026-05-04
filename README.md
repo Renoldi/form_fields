@@ -65,6 +65,8 @@ FormFields<String>(
 - `liveCameraController`: external `FormFieldsMyImageController` for reading captured image.
 - `onLiveCaptured`: callback fired immediately after camera capture.
 - `onExportedResult`: receive signature + optional live capture in one payload.
+- `showExportPreview`: optionally replace signature pad area with exported preview.
+- `exportPreviewSource`: choose preview source (`signature`, `liveCapture`, `both`).
 - `layoutBuilder`: fully custom signature + camera layout.
 - `liveCameraBuilder`: custom wrapper for camera section while keeping default layout.
 
@@ -73,6 +75,8 @@ FormFields<String>(
 ```dart
 FormFieldsSignaturePad(
   showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
   liveCameraController: liveCameraController,
   onLiveCaptured: (captured) {
     // Called right after first draw-start capture
@@ -81,6 +85,52 @@ FormFieldsSignaturePad(
     final MyimageResult signature = result.signature;
     final MyimageResult? liveCapture = result.liveCapture;
     // Handle both results together
+  },
+)
+```
+
+### Export Preview Modes (Optional)
+
+Use these options when you want the exported result to be shown inside the
+signature area and hide the export button until user clears.
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  showExportPreview: true,
+  // One of: signature | liveCapture | both
+  exportPreviewSource: SignaturePadPreviewSource.signature,
+)
+```
+
+### Show Export Result in Another Area
+
+If you want the result at the end of a `Column` (or any external area), keep
+`showExportPreview: false`, then render result from callback state.
+
+```dart
+SignaturePadExportResult? exported;
+
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  showExportPreview: false,
+  onExportedResult: (result) => setState(() => exported = result),
+  layoutBuilder: (ctx, pad, camera) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        pad,
+        if (camera != null) ...[
+          const SizedBox(height: 12),
+          camera,
+        ],
+        if (exported != null) ...[
+          const SizedBox(height: 12),
+          Text('Rendered outside pad area'),
+          // build your own preview widget here
+        ],
+      ],
+    );
   },
 )
 ```
@@ -215,6 +265,10 @@ FormFieldsSignaturePad(
   onExportedResult: (SignaturePadExportResult) { },  // New: both signature + live capture
   onLiveCaptured: (MyimageResult) { },    // Called right after capture
 
+  // Optional in-pad preview after export
+  showExportPreview: false,
+  exportPreviewSource: SignaturePadPreviewSource.signature,
+
   // Live camera
   showLiveCamera: false,
   liveCameraHeight: 200,
@@ -222,6 +276,16 @@ FormFieldsSignaturePad(
   layoutBuilder: (ctx, pad, camera) => ..., // Custom layout
   liveCameraBuilder: (ctx, cam) => ...,     // Custom camera wrapper
 )
+```
+
+#### SignaturePadPreviewSource
+
+```dart
+enum SignaturePadPreviewSource {
+  signature,
+  liveCapture,
+  both,
+}
 ```
 
 #### SignaturePadExportResult

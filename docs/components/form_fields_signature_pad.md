@@ -37,6 +37,47 @@ FormFieldsSignaturePad(
 )
 ```
 
+## Export Preview Modes (Optional)
+
+Show exported result directly inside the signature area and hide export button
+until user taps Clear.
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
+)
+```
+
+Available values:
+
+- `SignaturePadPreviewSource.signature`
+- `SignaturePadPreviewSource.liveCapture`
+- `SignaturePadPreviewSource.both`
+
+## Render Result Outside the Pad Area
+
+Use callback state + your own layout if you want result preview at the end of a
+`Column` (or any other place).
+
+```dart
+SignaturePadExportResult? exported;
+
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  showExportPreview: false,
+  onExportedResult: (result) => setState(() => exported = result),
+  layoutBuilder: (ctx, pad, camera) => Column(
+    children: [
+      pad,
+      if (camera != null) camera,
+      if (exported != null) Text('Render result here'),
+    ],
+  ),
+)
+```
+
 ## Custom Layout (signature + camera side-by-side)
 
 ```dart
@@ -80,6 +121,8 @@ FormFieldsSignaturePad(
 | `onExported`                  | `void Function(MyimageResult?)`           | Legacy: signature only                         |
 | `onExportedResult`            | `void Function(SignaturePadExportResult)` | Signature + optional live capture              |
 | `onLiveCaptured`              | `void Function(MyimageResult)`            | Fired immediately after camera capture         |
+| `showExportPreview`           | `bool`                                    | Show exported preview in pad area              |
+| `exportPreviewSource`         | `SignaturePadPreviewSource`               | Preview source: signature/liveCapture/both     |
 | `showLiveCamera`              | `bool`                                    | Enable live front-camera preview               |
 | `liveCameraHeight`            | `double`                                  | Camera preview height                          |
 | `liveCameraController`        | `FormFieldsMyImageController?`            | External controller for captured image         |
