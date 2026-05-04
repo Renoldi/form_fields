@@ -974,14 +974,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if ((uploadedLink ?? '').isNotEmpty) {
           downloadedPath = await DioUtil.downloadFile(uploadedLink!);
         }
+        final updatedImage = MyimageResult(
+          link: uploadedLink ?? images[index].link,
+          base64: images[index].base64,
+          path: downloadedPath ?? images[index].path,
+          imageId: imageId ?? images[index].imageId,
+        );
         provider.updateImage(
           index,
-          MyimageResult(
-            link: uploadedLink ?? images[index].link,
-            base64: images[index].base64,
-            path: downloadedPath ?? images[index].path,
-            imageId: imageId ?? images[index].imageId,
-          ),
+          updatedImage,
         );
         provider.setUploadProgress(index, 1.0);
         if (widget.controller != null) {
@@ -989,7 +990,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
         widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
         if (widget.maxImages == 1 && index == 0) {
-          widget.onImageChanged?.call(provider.images[index]);
+          final shouldEmitSingleImage = !widget.isDirectUpload ||
+              updatedImage.link.isNotEmpty ||
+              (updatedImage.imageId != null &&
+                  updatedImage.imageId.toString().isNotEmpty);
+          if (shouldEmitSingleImage) {
+            widget.onImageChanged?.call(provider.images[index]);
+          }
         }
         if (widget.showUploadResultDialog) {
           await dialog.showSuccess(
@@ -1053,6 +1060,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       'link',
       'imageUrl',
       'downloadUrl',
+      'receiverPhoto',
+      'receiver_photo',
+      'photoUrl',
+      'photo',
       'redirect_link',
     ];
     for (final key in fallbackKeys) {
