@@ -966,27 +966,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       return;
     }
     try {
-      if (response.statusCode == 200) {
-        String? uploadedLink;
-        String? downloadedPath;
-        String? imageId;
+      if (_isSuccessfulStatus(response.statusCode)) {
         final data = response.data;
-        if (data is String) {
-          final html = data;
-          final redirectRegex = RegExp(
-            r"redirect_link\s*=\s*'([^']+)'",
-            multiLine: true,
-          );
-          final match = redirectRegex.firstMatch(html);
-          if (match != null) {
-            uploadedLink = match.group(1);
-          } else {
-            uploadedLink = html;
-          }
-        } else if (data is Map) {
-          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
-          imageId = data[widget.uploadImageIdKey]?.toString();
-        }
+        final uploadedLink = _extractUploadedLink(data);
+        final imageId = _extractImageId(data);
+        String? downloadedPath;
         if ((uploadedLink ?? '').isNotEmpty) {
           downloadedPath = await DioUtil.downloadFile(uploadedLink!);
         }
@@ -1031,5 +1015,91 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         );
       }
     }
+  }
+
+  bool _isSuccessfulStatus(int? statusCode) {
+    return statusCode != null && statusCode >= 200 && statusCode < 300;
+  }
+
+  String? _extractUploadedLink(dynamic data) {
+    if (data == null) return null;
+
+    if (data is String) {
+      final raw = data.trim();
+      if (raw.isEmpty) return null;
+
+      final redirectRegex = RegExp(
+        r"redirect_link\s*=\s*'([^']+)'",
+        multiLine: true,
+      );
+      final match = redirectRegex.firstMatch(raw);
+      if (match != null) {
+        return match.group(1);
+      }
+
+      final asUri = Uri.tryParse(raw);
+      if (asUri != null && asUri.hasScheme) {
+        return raw;
+      }
+      return null;
+    }
+
+    final exact = _extractNestedValue(data, widget.uploadFileUrlKey);
+    if ((exact ?? '').isNotEmpty) return exact;
+
+    const fallbackKeys = [
+      'fileUrl',
+      'url',
+      'link',
+      'imageUrl',
+      'downloadUrl',
+      'redirect_link',
+    ];
+    for (final key in fallbackKeys) {
+      final val = _extractNestedValue(data, key);
+      if ((val ?? '').isNotEmpty) return val;
+    }
+    return null;
+  }
+
+  String? _extractImageId(dynamic data) {
+    if (data == null) return null;
+
+    final exact = _extractNestedValue(data, widget.uploadImageIdKey);
+    if ((exact ?? '').isNotEmpty) return exact;
+
+    const fallbackKeys = ['imageId', 'id'];
+    for (final key in fallbackKeys) {
+      final val = _extractNestedValue(data, key);
+      if ((val ?? '').isNotEmpty) return val;
+    }
+    return null;
+  }
+
+  String? _extractNestedValue(dynamic data, String key) {
+    if (data is Map) {
+      for (final entry in data.entries) {
+        if (entry.key.toString() == key) {
+          return entry.value?.toString();
+        }
+        final nested = _extractNestedValue(entry.value, key);
+        if (nested != null && nested.isNotEmpty) {
+          return nested;
+        }
+      }
+      return null;
+    }
+
+    if (data is List) {
+      for (final item in data) {
+        final nested = _extractNestedValue(item, key);
+        if (nested != null && nested.isNotEmpty) {
+          return nested;
+        }
+      }
+      return null;
+    }
+
+    return null;
   }
 }

@@ -19,6 +19,27 @@ FormFieldsMyImage(
 )
 ```
 
+## Contoh: Single Image Direct Upload (maxImages: 1)
+
+```dart
+FormFieldsMyImage(
+  controller: FormFieldsMyImageController(),
+  maxImages: 1,
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadFileUrlKey: 'fileUrl',
+  uploadImageIdKey: 'imageId',
+  onImageChanged: (image) {
+    // Pada direct upload, callback ini membawa hasil final.
+    // Cek image.link untuk URL file dari server.
+    debugPrint('Uploaded link: ${image.link}');
+    debugPrint('Image id: ${image.imageId}');
+  },
+)
+```
+
+> Jika `image.link` masih kosong, pastikan response upload memang mengandung key URL sesuai `uploadFileUrlKey`.
+
 ---
 
 ## Fitur Utama

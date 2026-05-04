@@ -325,6 +325,11 @@ class View extends PresenterState {
                     Colors.indigo.shade400),
                 _buildFieldTitle(
                     'Profile Image (with Upload)', Colors.indigo.shade600),
+                Text(
+                  'Contoh direct upload single image: nilai image.link dibaca dari onImageChanged.',
+                  style: TextStyle(color: Colors.indigo.shade400),
+                ),
+                const SizedBox(height: 6),
                 FormFieldsMyImage(
                   controller: profileController,
                   maxImages: 1,
@@ -337,8 +342,14 @@ class View extends PresenterState {
                   },
                   onImageChanged: (image) {
                     setState(() {
+                      final hasLink = image.link.trim().isNotEmpty;
+                      final shownValue = hasLink
+                          ? image.link
+                          : (image.path.isNotEmpty
+                              ? image.path
+                              : '(empty result)');
                       singleImageLog =
-                          'onImageChanged: ${image.path.isNotEmpty ? image.path : image.link}';
+                          'onImageChanged (${hasLink ? 'uploaded link' : 'local fallback'}): $shownValue';
                     });
                   },
                   onRemoveImage: (idx, image) {
@@ -368,7 +379,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "isDoc": true,\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => setState(() { singleImageLog = ... })",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "isDoc": true,\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadFileUrlKey": "fileUrl",\n  "uploadImageIdKey": "imageId",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -410,7 +421,9 @@ class View extends PresenterState {
                   Text(
                     'Base64: ${profileController.images[0].base64.substring(0, 20)}...',
                   ),
-                  Text('Link: ${profileController.images[0].link}...'),
+                  Text(
+                    'Link: ${profileController.images[0].link.isNotEmpty ? profileController.images[0].link : '(belum ada link dari response upload)'}',
+                  ),
                 ],
                 _buildFieldTitle('Single Image Picker (Custom Builder)',
                     Colors.indigo.shade600),
