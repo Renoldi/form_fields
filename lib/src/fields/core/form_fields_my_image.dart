@@ -851,8 +851,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           widget.controller!.images = List<MyimageResult>.from(provider.images);
         }
         // Callback khusus single image
-        widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
-        widget.onImageChanged?.call(result);
+        if (!widget.isDirectUpload) {
+          widget.onImagesChanged
+              ?.call(List<MyimageResult>.from(provider.images));
+        }
+        // Untuk direct upload, callback final (dengan link/imageId) akan
+        // dipanggil setelah upload sukses di _uploadImageDio.
+        if (!widget.isDirectUpload) {
+          widget.onImageChanged?.call(result);
+        }
       } else if (widget.maxImages == null) {
         provider.addImage(result);
         uploadIdx = provider.images.length - 1;
@@ -862,7 +869,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (widget.controller != null) {
           widget.controller!.images = List<MyimageResult>.from(provider.images);
         }
-        widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
+        if (!widget.isDirectUpload) {
+          widget.onImagesChanged
+              ?.call(List<MyimageResult>.from(provider.images));
+        }
       } else {
         if (provider.images.length < widget.maxImages!) {
           provider.addImage(result);
@@ -875,9 +885,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               provider.images,
             );
           }
-          widget.onImagesChanged?.call(
-            List<MyimageResult>.from(provider.images),
-          );
+          if (!widget.isDirectUpload) {
+            widget.onImagesChanged?.call(
+              List<MyimageResult>.from(provider.images),
+            );
+          }
         }
       }
       if (widget.isDirectUpload && uploadIdx != null) {
@@ -988,7 +1000,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           ),
         );
         provider.setUploadProgress(index, 1.0);
+        if (widget.controller != null) {
+          widget.controller!.images = List<MyimageResult>.from(provider.images);
+        }
         widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
+        if (widget.maxImages == 1 && index == 0) {
+          widget.onImageChanged?.call(provider.images[index]);
+        }
         if (widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
