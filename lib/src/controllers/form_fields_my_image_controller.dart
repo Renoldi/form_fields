@@ -2,14 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/src/utilities/myimage_result.dart';
 
 class FormFieldsMyImageController extends ChangeNotifier {
-  List<MyimageResult> _images = [];
+  FormFieldsMyImageController({List<MyimageResult>? initialImages})
+      : _images = List<MyimageResult>.from(initialImages ?? const []);
 
-  List<MyimageResult> get images => _images;
+  /// Preferred named constructor for prefilled images.
+  FormFieldsMyImageController.fromImages(List<MyimageResult> images)
+      : _images = List<MyimageResult>.from(images);
+
+  /// Backward-compatible alias (optional).
+  @Deprecated('Use FormFieldsMyImageController.fromImages instead')
+  FormFieldsMyImageController.fromNetworkUrls(List<MyimageResult> images)
+      : this.fromImages(images);
+
+  /// Backward-compatible alias (optional).
+  @Deprecated('Use FormFieldsMyImageController.fromImages instead')
+  FormFieldsMyImageController.fromLinks(List<MyimageResult> images)
+      : this.fromImages(images);
+
+  List<MyimageResult> _images;
+
+  List<MyimageResult> get images => List<MyimageResult>.unmodifiable(_images);
 
   set images(List<MyimageResult> value) {
-    _images = value;
+    _images = List<MyimageResult>.from(value);
     notifyListeners();
   }
+
+  /// Replaces all images.
+  void setImages(List<MyimageResult> images) {
+    _images = List<MyimageResult>.from(images);
+    notifyListeners();
+  }
+
+  /// Backward-compatible alias (optional).
+  @Deprecated('Use setImages instead')
+  void setNetworkUrls(List<MyimageResult> images) => setImages(images);
+
+  /// Backward-compatible alias (optional).
+  @Deprecated('Use setImages instead')
+  void setLinks(List<MyimageResult> images) => setImages(images);
 
   void addImage(MyimageResult image) {
     _images.add(image);
