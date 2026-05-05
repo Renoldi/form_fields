@@ -598,6 +598,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (response.statusCode == 200) {
         String? uploadedLink;
         String? imageId;
+        String? downloadedPath;
         final data = response.data;
         if (data is String) {
           final redirectRegex = RegExp(
@@ -610,6 +611,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           uploadedLink = data[widget.uploadFileUrlKey]?.toString();
           imageId = data[widget.uploadImageIdKey]?.toString();
         }
+        if ((uploadedLink ?? '').isNotEmpty) {
+          downloadedPath = await DioUtil.downloadFile(uploadedLink!);
+        }
         if (widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
@@ -619,7 +623,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         return MyimageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
-          path: image.path,
+          path: downloadedPath ?? image.path,
           imageId: imageId ?? image.imageId,
         );
       } else {
