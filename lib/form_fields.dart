@@ -26,10 +26,9 @@
 library;
 
 export 'src/fields/core/form_fields_signature_pad.dart'
-    show
-        FormFieldsSignaturePad,
-        SignaturePadExportResult,
-        SignaturePadPreviewSource;
+    show FormFieldsSignaturePad;
+export 'src/utilities/signature_pad_export_result.dart'
+    show SignaturePadExportResult;
 export 'src/fields/core/form_fields_live_camera_capture.dart'
     show FormFieldsLiveCameraCapture, FormFieldsLiveCameraCaptureState;
 
@@ -95,6 +94,10 @@ export 'src/controllers/form_fields_my_image_controller.dart'
     show FormFieldsMyImageController;
 export 'src/providers/form_fields_my_image_provider.dart'
     show FormFieldsMyImageProvider;
+export 'src/providers/form_fields_signature_pad_provider.dart'
+    show FormFieldsSignaturePadProvider;
+export 'src/providers/form_fields_live_camera_capture_provider.dart'
+    show FormFieldsLiveCameraCaptureProvider;
 export 'src/utilities/myimage_result.dart' show MyimageResult;
 export 'src/service/dio_service.dart' show DioUtil;
 

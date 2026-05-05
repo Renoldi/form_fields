@@ -177,9 +177,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   void _onControllerChanged() {
     if (_controller != null) {
-      setState(() {
-        _provider.setImages(_controller!.images);
-      });
+      _provider.setImages(_controller!.images);
     }
   }
 

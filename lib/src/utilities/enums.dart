@@ -82,3 +82,16 @@ enum BorderType { outlineInputBorder, underlineInputBorder, none }
 
 /// Vertical alignment for selection indicator and item content row
 enum IndicatorVerticalAlignment { top, center, bottom }
+
+/// Chooses which exported image should be shown as in-pad preview
+/// when [showExportPreview] is enabled on the signature pad.
+///
+/// - [signature]: preview signature image only
+/// - [liveCapture]: preview live camera image only (falls back to signature
+///   when no live capture is available)
+/// - [both]: preview signature and live capture images side-by-side
+enum SignaturePadPreviewSource {
+  signature,
+  liveCapture,
+  both,
+}

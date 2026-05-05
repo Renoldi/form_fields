@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:provider/provider.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -91,14 +92,12 @@ class FormFieldsLiveCameraCaptureState
   // surface-combination conflicts.
   final _previewKey = GlobalKey();
 
-  /// Non-null after capture; displays frozen image until reset.
-  MyimageResult? _capturedResult;
-
-  bool _isUploading = false;
+  late FormFieldsLiveCameraCaptureProvider _provider;
 
   @override
   void initState() {
     super.initState();
+    _provider = FormFieldsLiveCameraCaptureProvider();
     _cam.addListener(_onCameraReady);
     _cam.acquire();
     widget.cameraController?.registerCaptureHandler(capture, resetCapture);
@@ -114,7 +113,7 @@ class FormFieldsLiveCameraCaptureState
   }
 
   void _onCameraReady() {
-    if (mounted) setState(() {});
+    if (mounted) _provider.notifyCameraReady();
   }
 
   /// Capture current preview into a PNG file and return [MyimageResult].
@@ -142,16 +141,17 @@ class FormFieldsLiveCameraCaptureState
       MyimageResult result = await MyimageResult.fromFile(file);
 
       if (widget.isDirectUpload && mounted) {
-        if (widget.showUploadLoading) setState(() => _isUploading = true);
+        if (widget.showUploadLoading) _provider.setUploading(true);
         final uploaded = await _uploadImageDio(result);
-        if (mounted && widget.showUploadLoading)
-          setState(() => _isUploading = false);
+        if (mounted && widget.showUploadLoading) {
+          _provider.setUploading(false);
+        }
         if (uploaded != null) result = uploaded;
       }
 
       widget.cameraController?.images = [result];
       widget.onCaptured?.call(result);
-      if (mounted) setState(() => _capturedResult = result);
+      if (mounted) _provider.setCapturedResult(result);
       return result;
     } catch (_) {
       return null;
@@ -249,7 +249,7 @@ class FormFieldsLiveCameraCaptureState
   /// Reset to live preview mode and clear the connected controller.
   void resetCapture() {
     widget.cameraController?.clear();
-    if (mounted) setState(() => _capturedResult = null);
+    if (mounted) _provider.setCapturedResult(null);
   }
 
   @override
@@ -257,86 +257,96 @@ class FormFieldsLiveCameraCaptureState
     widget.cameraController?.unregisterCaptureHandler();
     _cam.removeListener(_onCameraReady);
     _cam.release();
+    _provider.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = FormFieldsLocalizations.of(context);
-    final errorMessage = _cam.errorMessage == 'No cameras found'
-        ? localizations.get('cameraNoCamerasFound')
-        : _cam.errorMessage;
+    return ChangeNotifierProvider.value(
+      value: _provider,
+      child: Consumer<FormFieldsLiveCameraCaptureProvider>(
+        builder: (context, provider, _) {
+          final localizations = FormFieldsLocalizations.of(context);
+          final errorMessage = _cam.errorMessage == 'No cameras found'
+              ? localizations.get('cameraNoCamerasFound')
+              : _cam.errorMessage;
 
-    if (errorMessage != null) {
-      return _CameraPlaceholder(
-        height: widget.height,
-        icon: Icons.no_photography_outlined,
-        message: errorMessage,
-      );
-    }
-    if (!_cam.isReady) {
-      return _CameraPlaceholder(
-        height: widget.height,
-        icon: Icons.camera_front,
-        message: localizations.get('cameraInitializing'),
-        showSpinner: true,
-      );
-    }
+          if (errorMessage != null) {
+            return _CameraPlaceholder(
+              height: widget.height,
+              icon: Icons.no_photography_outlined,
+              message: errorMessage,
+            );
+          }
+          if (!_cam.isReady) {
+            return _CameraPlaceholder(
+              height: widget.height,
+              icon: Icons.camera_front,
+              message: localizations.get('cameraInitializing'),
+              showSpinner: true,
+            );
+          }
 
-    return SizedBox(
-      height: widget.height,
-      width: double.infinity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Opacity(
-              opacity: _capturedResult == null ? 1.0 : 0.0,
-              child: RepaintBoundary(
-                key: _previewKey,
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _cam.controller!.value.previewSize?.height ?? 1,
-                    height: _cam.controller!.value.previewSize?.width ?? 1,
-                    child: CameraPreview(_cam.controller!),
-                  ),
-                ),
-              ),
-            ),
-            if (_capturedResult != null)
-              _CapturedPhoto(result: _capturedResult!),
-            // Upload loading overlay
-            if (_isUploading)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withValues(alpha: .45),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 3,
+          return SizedBox(
+            height: widget.height,
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Opacity(
+                    opacity: provider.capturedResult == null ? 1.0 : 0.0,
+                    child: RepaintBoundary(
+                      key: _previewKey,
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width:
+                              _cam.controller!.value.previewSize?.height ?? 1,
+                          height:
+                              _cam.controller!.value.previewSize?.width ?? 1,
+                          child: CameraPreview(_cam.controller!),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: _capturedResult == null
-                  ? _Badge(
-                      icon: Icons.camera_front,
-                      label: localizations.get('cameraReady'),
-                      color: Colors.black54,
-                    )
-                  : _Badge(
-                      icon: Icons.check_circle_outline,
-                      label: localizations.get('cameraCaptured'),
-                      color: Colors.green.shade700,
+                  if (provider.capturedResult != null)
+                    _CapturedPhoto(result: provider.capturedResult!),
+                  // Upload loading overlay
+                  if (provider.isUploading)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: .45),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                      ),
                     ),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: provider.capturedResult == null
+                        ? _Badge(
+                            icon: Icons.camera_front,
+                            label: localizations.get('cameraReady'),
+                            color: Colors.black54,
+                          )
+                        : _Badge(
+                            icon: Icons.check_circle_outline,
+                            label: localizations.get('cameraCaptured'),
+                            color: Colors.green.shade700,
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

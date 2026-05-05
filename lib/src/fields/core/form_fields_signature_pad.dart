@@ -1,31 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
 
-/// ---------------------------------------------------------------------------
-/// Result of a signature pad export, optionally including a live camera capture.
-/// ---------------------------------------------------------------------------
-class SignaturePadExportResult {
-  /// The exported signature image.
-  final MyimageResult signature;
-
-  /// The live camera capture taken at export time (null if live camera disabled
-  /// or no photo was captured).
-  final MyimageResult? liveCapture;
-
-  const SignaturePadExportResult({
-    required this.signature,
-    this.liveCapture,
-  });
-}
-
-/// Chooses which exported image should be shown as in-pad preview.
-enum SignaturePadPreviewSource {
-  signature,
-  liveCapture,
-  both,
-}
+// SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
+// SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
 
 /// ---------------------------------------------------------------------------
 /// FormFields SignaturePad Component (menggunakan package signature)
@@ -233,11 +213,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   /// Reset to false when the clear button is pressed.
   bool _hasCaptured = false;
 
-  /// Stored after export when [showExportPreview] is enabled.
-  MyimageResult? _previewSignatureResult;
-  MyimageResult? _previewLiveCaptureResult;
-
-  bool _isUploading = false;
+  late FormFieldsSignaturePadProvider _padProvider;
 
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;
@@ -245,6 +221,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   @override
   void initState() {
     super.initState();
+    _padProvider = FormFieldsSignaturePadProvider();
     _initCameraController();
     _signatureController = SignatureController(
       penStrokeWidth: widget.penStrokeWidth,
@@ -280,12 +257,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     if (!widget.showExportPreview &&
         oldWidget.showExportPreview != widget.showExportPreview &&
-        (_previewSignatureResult != null ||
-            _previewLiveCaptureResult != null)) {
-      setState(() {
-        _previewSignatureResult = null;
-        _previewLiveCaptureResult = null;
-      });
+        (_padProvider.previewSignatureResult != null ||
+            _padProvider.previewLiveCaptureResult != null)) {
+      _padProvider.clearPreviewResults();
     }
   }
 
@@ -294,6 +268,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _signatureController.removeListener(_onSignatureChanged);
     _signatureController.dispose();
     if (_ownsCamera) _cameraController.dispose();
+    _padProvider.dispose();
     super.dispose();
   }
 
@@ -411,11 +386,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _hasCaptured = false;
     _liveCameraKey.currentState?.resetCapture();
     _cameraController.clear();
-    if (_previewSignatureResult != null || _previewLiveCaptureResult != null) {
-      setState(() {
-        _previewSignatureResult = null;
-        _previewLiveCaptureResult = null;
-      });
+    if (_padProvider.previewSignatureResult != null ||
+        _padProvider.previewLiveCaptureResult != null) {
+      _padProvider.clearPreviewResults();
     }
   }
 
@@ -443,35 +416,23 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             ? _cameraController.images.first
             : null;
 
-    if (widget.showExportPreview) {
-      if (mounted) {
-        setState(() {
-          _previewSignatureResult = signatureResult;
-          _previewLiveCaptureResult = liveCapture;
-        });
-      }
-    }
-
-    widget.onExported?.call(signatureResult);
-
-    if (widget.onExportedResult != null) {
-      widget.onExportedResult!(
-        SignaturePadExportResult(
+    if (widget.isDirectUpload) {
+      // Show preview with local result immediately, but delay callbacks until
+      // upload finishes so callers always receive the server link/imageId.
+      if (widget.showExportPreview && mounted) {
+        _padProvider.setPreviewResults(
           signature: signatureResult,
           liveCapture: liveCapture,
-        ),
-      );
-    }
-
-    if (widget.isDirectUpload) {
+        );
+      }
       if (!context.mounted) return;
       if (widget.showUploadLoading && mounted) {
-        setState(() => _isUploading = true);
+        _padProvider.setUploading(true);
       }
       final updatedSignature = await _uploadImageDio(signatureResult);
       if (!context.mounted) return;
       if (widget.showUploadLoading && mounted) {
-        setState(() => _isUploading = false);
+        _padProvider.setUploading(false);
       }
       final finalSignature = updatedSignature ?? signatureResult;
       // Live capture is already uploaded by FormFieldsLiveCameraCapture.capture()
@@ -480,12 +441,35 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           widget.showLiveCamera && _cameraController.images.isNotEmpty
               ? _cameraController.images.first
               : liveCapture;
+      // Update preview with final (server) results.
+      if (widget.showExportPreview && mounted) {
+        _padProvider.setPreviewResults(
+          signature: finalSignature,
+          liveCapture: finalLiveCapture,
+        );
+      }
       widget.onExported?.call(finalSignature);
       if (widget.onExportedResult != null) {
         widget.onExportedResult!(
           SignaturePadExportResult(
             signature: finalSignature,
             liveCapture: finalLiveCapture,
+          ),
+        );
+      }
+    } else {
+      if (widget.showExportPreview && mounted) {
+        _padProvider.setPreviewResults(
+          signature: signatureResult,
+          liveCapture: liveCapture,
+        );
+      }
+      widget.onExported?.call(signatureResult);
+      if (widget.onExportedResult != null) {
+        widget.onExportedResult!(
+          SignaturePadExportResult(
+            signature: signatureResult,
+            liveCapture: liveCapture,
           ),
         );
       }
@@ -617,8 +601,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     );
   }
 
-  Widget _buildPreviewCanvas() {
-    final signature = _previewSignatureResult;
+  Widget _buildPreviewCanvas(FormFieldsSignaturePadProvider provider) {
+    final signature = provider.previewSignatureResult;
     if (signature == null) {
       return const SizedBox.shrink();
     }
@@ -627,10 +611,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       case SignaturePadPreviewSource.signature:
         return _buildPreviewImage(signature);
       case SignaturePadPreviewSource.liveCapture:
-        final live = _previewLiveCaptureResult;
+        final live = provider.previewLiveCaptureResult;
         return _buildPreviewImage(live ?? signature);
       case SignaturePadPreviewSource.both:
-        final live = _previewLiveCaptureResult;
+        final live = provider.previewLiveCaptureResult;
         return Padding(
           padding: const EdgeInsets.all(8),
           child: Row(
@@ -671,9 +655,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
-  Widget _buildSignaturePad(FormFieldsLocalizations localizations) {
+  Widget _buildSignaturePad(FormFieldsLocalizations localizations,
+      FormFieldsSignaturePadProvider provider) {
     final isPreviewMode =
-        widget.showExportPreview && _previewSignatureResult != null;
+        widget.showExportPreview && provider.previewSignatureResult != null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -684,14 +669,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               width: widget.width,
               height: widget.height,
               child: isPreviewMode
-                  ? _buildPreviewCanvas()
+                  ? _buildPreviewCanvas(provider)
                   : Signature(
                       controller: _signatureController,
                       backgroundColor: widget.backgroundColor,
                     ),
             ),
             // Upload loading overlay
-            if (_isUploading)
+            if (provider.isUploading)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withValues(alpha: .35),
@@ -713,7 +698,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   text: '',
                   size: AppButtonSize.small,
                   type: AppButtonType.icon,
-                  onPressed: _isUploading ? null : _clearSignatureSession,
+                  onPressed:
+                      provider.isUploading ? null : _clearSignatureSession,
                   customIconSize: 24,
                   customHeight: 36,
                 ),
@@ -731,7 +717,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                 text: '',
                 size: AppButtonSize.small,
                 type: AppButtonType.icon,
-                onPressed: _isUploading ? null : _exportSignature,
+                onPressed: provider.isUploading ? null : _exportSignature,
                 customIconSize: 32,
                 customHeight: 48,
               ),
@@ -773,60 +759,68 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   @override
   Widget build(BuildContext context) {
     _localizations = FormFieldsLocalizations.of(context);
-    final localizations = _localizations!;
-    final pad = _buildSignaturePad(localizations);
-    final cameraWidget =
-        widget.showLiveCamera ? _buildCameraWidget(context) : null;
+    return ChangeNotifierProvider.value(
+      value: _padProvider,
+      child: Consumer<FormFieldsSignaturePadProvider>(
+        builder: (context, provider, _) {
+          final localizations = _localizations!;
+          final pad = _buildSignaturePad(localizations, provider);
+          final cameraWidget =
+              widget.showLiveCamera ? _buildCameraWidget(context) : null;
 
-    Widget content;
-    if (widget.layoutBuilder != null) {
-      content = widget.layoutBuilder!(context, pad, cameraWidget);
-    } else if (cameraWidget == null) {
-      content = pad;
-    } else {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          pad,
-          const SizedBox(height: 16),
-          cameraWidget,
-        ],
-      );
-    }
+          Widget content;
+          if (widget.layoutBuilder != null) {
+            content = widget.layoutBuilder!(context, pad, cameraWidget);
+          } else if (cameraWidget == null) {
+            content = pad;
+          } else {
+            content = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                pad,
+                const SizedBox(height: 16),
+                cameraWidget,
+              ],
+            );
+          }
 
-    return FormField<bool>(
-      key: _formFieldKey,
-      autovalidateMode: widget.autovalidateMode,
-      initialValue: false,
-      validator: _validateSignature,
-      builder: (state) {
-        final inner = Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            content,
-            if (state.hasError)
-              Padding(
-                padding: const EdgeInsets.only(top: 6, left: 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.red, size: 14),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        state.errorText!,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
+          return FormField<bool>(
+            key: _formFieldKey,
+            autovalidateMode: widget.autovalidateMode,
+            initialValue: false,
+            validator: _validateSignature,
+            builder: (state) {
+              final inner = Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  content,
+                  if (state.hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: Colors.red, size: 14),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              state.errorText!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-          ],
-        );
-        return _wrapWithLabel(inner);
-      },
+                ],
+              );
+              return _wrapWithLabel(inner);
+            },
+          );
+        },
+      ),
     );
   }
 }
