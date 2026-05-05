@@ -9,6 +9,13 @@ class MyimageResult {
 
   MyimageResult(
       {this.link = "", this.base64 = "", this.path = "", this.imageId = ""});
+
+  /// Convenience constructor for a network-only result (e.g. prefilled image).
+  MyimageResult.network(String url)
+      : link = url,
+        base64 = "",
+        path = "",
+        imageId = "";
   @override
   String toString() {
     return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId)';

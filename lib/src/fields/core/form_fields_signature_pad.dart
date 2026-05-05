@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/controllers/form_fields_signature_pad_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
 
@@ -78,6 +79,18 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// External controller — will be updated with the auto-captured image.
   /// When null, the widget manages its own internal controller.
   final FormFieldsMyImageController? liveCameraController;
+
+  /// Optional controller that exposes the exported result and supports
+  /// pre-seeding the pad with an existing signature.
+  ///
+  /// Use [FormFieldsSignaturePadController.fromSignature] to start in preview
+  /// mode with an existing image:
+  /// ```dart
+  /// final ctrl = FormFieldsSignaturePadController.fromSignature(
+  ///   MyimageResult.network('https://example.com/sig.png'),
+  /// );
+  /// ```
+  final FormFieldsSignaturePadController? signaturePadController;
 
   /// Fully custom layout.
   /// Receives the built [signaturePad] and [cameraWidget]
@@ -169,6 +182,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.showLiveCamera = false,
     this.liveCameraHeight = 200,
     this.liveCameraController,
+    this.signaturePadController,
     this.layoutBuilder,
     this.liveCameraBuilder,
     this.isDirectUpload = false,
@@ -231,6 +245,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       onDrawStart: _onDrawStart,
     );
     _signatureController.addListener(_onSignatureChanged);
+    _bindSignaturePadController(widget.signaturePadController);
+    // Pre-seed preview from controller if it already holds a result.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncPreviewFromSignaturePadController();
+    });
   }
 
   void _initCameraController() {
@@ -241,6 +260,57 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       _cameraController = FormFieldsMyImageController();
       _ownsCamera = true;
     }
+    _cameraController.addListener(_onLiveCameraControllerChanged);
+    _syncCaptureGuardFromController();
+  }
+
+  void _disposeCameraControllerBinding() {
+    _cameraController.removeListener(_onLiveCameraControllerChanged);
+  }
+
+  // ── SignaturePadController binding ────────────────────────────────────────
+
+  void _bindSignaturePadController(
+      FormFieldsSignaturePadController? controller) {
+    controller?.registerClearHandler(_clearSignatureSession);
+    controller?.addListener(_onSignaturePadControllerChanged);
+  }
+
+  void _unbindSignaturePadController(
+      FormFieldsSignaturePadController? controller) {
+    controller?.unregisterClearHandler();
+    controller?.removeListener(_onSignaturePadControllerChanged);
+  }
+
+  void _onSignaturePadControllerChanged() {
+    _syncPreviewFromSignaturePadController();
+  }
+
+  void _syncPreviewFromSignaturePadController() {
+    if (!mounted) return;
+    final ctrl = widget.signaturePadController;
+    if (ctrl == null) return;
+    final result = ctrl.exportResult;
+    if (result != null) {
+      _padProvider.setPreviewResults(
+        signature: result.signature,
+        liveCapture: result.liveCapture,
+      );
+      // Also sync live-capture controller so camera widget shows the prefilled image.
+      if (result.liveCapture != null) {
+        _cameraController.images = [result.liveCapture!];
+      }
+    } else {
+      _padProvider.clearPreviewResults();
+    }
+  }
+
+  void _onLiveCameraControllerChanged() {
+    _syncCaptureGuardFromController();
+  }
+
+  void _syncCaptureGuardFromController() {
+    _hasCaptured = widget.showLiveCamera && _cameraController.images.isNotEmpty;
   }
 
   @override
@@ -252,8 +322,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       });
     }
     if (widget.liveCameraController != oldWidget.liveCameraController) {
+      _disposeCameraControllerBinding();
       if (_ownsCamera) _cameraController.dispose();
       _initCameraController();
+    }
+    if (widget.signaturePadController != oldWidget.signaturePadController) {
+      _unbindSignaturePadController(oldWidget.signaturePadController);
+      _bindSignaturePadController(widget.signaturePadController);
+      _syncPreviewFromSignaturePadController();
     }
     if (!widget.showExportPreview &&
         oldWidget.showExportPreview != widget.showExportPreview &&
@@ -265,6 +341,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   @override
   void dispose() {
+    _unbindSignaturePadController(widget.signaturePadController);
+    _disposeCameraControllerBinding();
     _signatureController.removeListener(_onSignatureChanged);
     _signatureController.dispose();
     if (_ownsCamera) _cameraController.dispose();
@@ -390,6 +468,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         _padProvider.previewLiveCaptureResult != null) {
       _padProvider.clearPreviewResults();
     }
+    widget.signaturePadController?.clearFromWidget();
   }
 
   // ── Export ─────────────────────────────────────────────────────────────────
@@ -449,13 +528,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         );
       }
       widget.onExported?.call(finalSignature);
+      final finalResult = SignaturePadExportResult(
+        signature: finalSignature,
+        liveCapture: finalLiveCapture,
+      );
+      widget.signaturePadController?.updateFromWidget(finalResult);
       if (widget.onExportedResult != null) {
-        widget.onExportedResult!(
-          SignaturePadExportResult(
-            signature: finalSignature,
-            liveCapture: finalLiveCapture,
-          ),
-        );
+        widget.onExportedResult!(finalResult);
       }
     } else {
       if (widget.showExportPreview && mounted) {
@@ -465,13 +544,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         );
       }
       widget.onExported?.call(signatureResult);
+      final exportedResult = SignaturePadExportResult(
+        signature: signatureResult,
+        liveCapture: liveCapture,
+      );
+      widget.signaturePadController?.updateFromWidget(exportedResult);
       if (widget.onExportedResult != null) {
-        widget.onExportedResult!(
-          SignaturePadExportResult(
-            signature: signatureResult,
-            liveCapture: liveCapture,
-          ),
-        );
+        widget.onExportedResult!(exportedResult);
       }
     }
   }
@@ -579,6 +658,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       return Image.network(
         result.link,
         fit: fit,
+        errorBuilder: (_, __, ___) => Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 28,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       );
     }
 

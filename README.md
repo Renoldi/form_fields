@@ -1,6 +1,509 @@
-# Form Fields Flutter Package
+# form_fields
 
-A reusable Flutter package for building form UIs with consistent behavior, validation, localization, Material 3-friendly components, and advanced OTP/verification field support.
+A professional Flutter package for building form UIs with consistent behavior, Material 3 design, localization, validation, image management, signature capture, and live camera integration.
+
+---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Components](#components)
+- [FormFieldsSignaturePad](#formfieldssignaturepad)
+- [FormFieldsLiveCameraCapture](#formfieldslivecameracapture)
+- [FormFieldsMyImage](#formfieldsmyimage)
+- [Controllers](#controllers)
+- [Validation & External Errors](#validation--external-errors)
+- [Localization](#localization)
+- [Testing](#testing)
+- [Additional References](#additional-references)
+
+---
+
+## Installation
+
+```yaml
+dependencies:
+  form_fields:
+    git:
+      url: https://github.com/your-org/form_fields_package.git
+```
+
+```dart
+import 'package:form_fields/form_fields.dart';
+```
+
+---
+
+## Quick Start
+
+```dart
+FormFields<String>(
+  label: 'Username',
+  currentValue: '',
+  onChanged: (value) {},
+)
+```
+
+---
+
+## Components
+
+All components are accessible from a single import. Detailed docs are in [`docs/components/`](docs/components/).
+
+| Component                                                                           | Description                             |
+| ----------------------------------------------------------------------------------- | --------------------------------------- |
+| [`FormFields`](docs/components/form_fields.md)                                      | Universal text/OTP/barcode form field   |
+| [`FormFieldsAutocomplete`](docs/components/form_fields_autocomplete.md)             | Autocomplete field                      |
+| [`FormFieldsDropdown`](docs/components/form_fields_dropdown.md)                     | Single-select dropdown                  |
+| [`FormFieldsDropdownMulti`](docs/components/form_fields_dropdown_multi.md)          | Multi-select dropdown                   |
+| [`FormFieldsRadioButton`](docs/components/form_fields_radio_button.md)              | Radio button group                      |
+| [`FormFieldsCheckbox`](docs/components/form_fields_checkbox.md)                     | Checkbox field                          |
+| [`FormFieldsSelect`](docs/components/form_fields_select.md)                         | Bottom-sheet select                     |
+| [`FormFieldsSignaturePad`](docs/components/form_fields_signature_pad.md)            | Signature pad with optional live camera |
+| [`FormFieldsMyImage`](docs/components/form_fields_my_image.md)                      | Image picker and uploader               |
+| [`FormFieldsLiveCameraCapture`](docs/components/form_fields_live_camera_capture.md) | Standalone front-camera capture         |
+| [`AppButton`](docs/components/app_button.md)                                        | Material 3 button with typed payload    |
+| [`AppButtonGroup`](docs/components/app_button_group.md)                             | Button group                            |
+| [`AppSegmentedButton`](docs/components/app_segmented_button.md)                     | Segmented button                        |
+| [`AppSplitButton`](docs/components/app_split_button.md)                             | Split button                            |
+| [`AppFabMenu`](docs/components/app_fab_menu.md)                                     | FAB speed-dial menu                     |
+| [`AppDialogService`](docs/components/app_dialog_service.md)                         | Dialog, guard, and error mapping        |
+| [`AppModalBottomSheet`](docs/components/app_modal_bottom_sheet.md)                  | Reusable bottom sheet                   |
+| [`LoadingProgress`](docs/components/loading_progress.md)                            | Loading / progress indicators           |
+
+---
+
+## FormFieldsSignaturePad
+
+A signature-drawing pad with optional live front-camera capture, in-pad preview, direct upload, controller-based prefill, and validation support.
+
+### Basic Usage
+
+```dart
+FormFieldsSignaturePad(
+  backgroundColor: Colors.white,
+  onExported: (MyimageResult? result) {
+    // result contains path, base64, link, imageId
+  },
+)
+```
+
+### With Export Preview
+
+Replace the drawing area with the exported image after confirmation:
+
+```dart
+FormFieldsSignaturePad(
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.signature,
+  onExported: (result) { },
+)
+```
+
+### With Live Camera
+
+Auto-captures a selfie on the first draw stroke. The signature and selfie are delivered together in `onExportedResult`:
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
+  onExportedResult: (SignaturePadExportResult result) {
+    result.signature;    // MyimageResult — signature drawing
+    result.liveCapture;  // MyimageResult? — auto-captured selfie
+  },
+)
+```
+
+### With Direct Upload
+
+Auto-uploads signature (and selfie) after export. Callbacks receive server `link` and `imageId`:
+
+```dart
+FormFieldsSignaturePad(
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token',   // optional
+  showUploadLoading: true,
+  showUploadResultDialog: true,
+  showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
+  onExportedResult: (result) {
+    result.signature.link;    // uploaded signature URL
+    result.liveCapture?.link; // uploaded selfie URL
+  },
+)
+```
+
+### Prefilled Signature (Controller)
+
+Seed the pad with an existing signature on first render using `FormFieldsSignaturePadController`:
+
+```dart
+// Signature only
+final ctrl = FormFieldsSignaturePadController.fromSignature(
+  MyimageResult.network('https://example.com/existing-signature.png'),
+);
+
+// Signature + live capture
+final ctrl = FormFieldsSignaturePadController.fromExportResult(
+  SignaturePadExportResult(
+    signature: MyimageResult.network('https://example.com/sig.png'),
+    liveCapture: MyimageResult.network('https://example.com/selfie.jpg'),
+  ),
+);
+
+FormFieldsSignaturePad(
+  signaturePadController: ctrl,
+  showLiveCamera: true,
+  showExportPreview: true,
+  exportPreviewSource: SignaturePadPreviewSource.both,
+  onExportedResult: (result) { },
+)
+```
+
+The pad starts directly in preview mode. When the user clears and re-signs, the controller is updated automatically. Use `ctrl.clearWidget()` to reset programmatically.
+
+### Validation
+
+```dart
+FormFieldsSignaturePad(
+  label: 'Customer Signature',
+  labelPosition: LabelPosition.top,
+  isRequired: true,
+  autovalidateMode: AutovalidateMode.onUserInteraction,
+  onExported: (result) { },
+)
+```
+
+### Custom Layout
+
+```dart
+FormFieldsSignaturePad(
+  showLiveCamera: true,
+  layoutBuilder: (ctx, signaturePad, cameraWidget) {
+    return Row(
+      children: [
+        Expanded(child: signaturePad),
+        if (cameraWidget != null) ...[
+          const SizedBox(width: 12),
+          Expanded(child: cameraWidget),
+        ],
+      ],
+    );
+  },
+)
+```
+
+### API Reference
+
+| Parameter                | Type                                       | Default              | Description                                            |
+| ------------------------ | ------------------------------------------ | -------------------- | ------------------------------------------------------ |
+| `height`                 | `double`                                   | `200`                | Signature pad height                                   |
+| `width`                  | `double`                                   | `∞`                  | Signature pad width                                    |
+| `backgroundColor`        | `Color`                                    | `white`              | Pad background                                         |
+| `penColor`               | `Color`                                    | `black`              | Pen color                                              |
+| `penStrokeWidth`         | `double`                                   | `3.0`                | Pen thickness                                          |
+| `exportBackgroundColor`  | `Color?`                                   | `null`               | Export PNG background (`null` = transparent)           |
+| `onExported`             | `void Function(MyimageResult?)?`           | —                    | Callback with signature only                           |
+| `onExportedResult`       | `void Function(SignaturePadExportResult)?` | —                    | Callback with signature + live capture                 |
+| `onLiveCaptured`         | `void Function(MyimageResult)?`            | —                    | Fired immediately after auto-capture                   |
+| `showExportPreview`      | `bool`                                     | `false`              | Replace pad with exported image preview                |
+| `exportPreviewSource`    | `SignaturePadPreviewSource`                | `.signature`         | Which image to show in preview                         |
+| `showLiveCamera`         | `bool`                                     | `false`              | Show front-camera live preview                         |
+| `liveCameraHeight`       | `double`                                   | `200`                | Camera widget height                                   |
+| `liveCameraController`   | `FormFieldsMyImageController?`             | —                    | External controller for live capture                   |
+| `signaturePadController` | `FormFieldsSignaturePadController?`        | —                    | Controller for prefill and programmatic clear          |
+| `layoutBuilder`          | `Widget Function(ctx, pad, camera?)?`      | —                    | Fully custom layout                                    |
+| `liveCameraBuilder`      | `Widget Function(ctx, camera)?`            | —                    | Custom camera section wrapper                          |
+| `isDirectUpload`         | `bool`                                     | `false`              | Auto-upload after export                               |
+| `uploadUrl`              | `String?`                                  | —                    | Upload endpoint (required when `isDirectUpload: true`) |
+| `uploadToken`            | `String?`                                  | —                    | Bearer token for `Authorization` header                |
+| `showUploadResultDialog` | `bool`                                     | `false`              | Show success/error dialog                              |
+| `showUploadLoading`      | `bool`                                     | `true`               | Loading overlay during upload                          |
+| `uploadFileUrlKey`       | `String`                                   | `'fileUrl'`          | JSON key for server URL                                |
+| `uploadImageIdKey`       | `String`                                   | `'imageId'`          | JSON key for server ID                                 |
+| `label`                  | `String?`                                  | —                    | Label text                                             |
+| `labelPosition`          | `LabelPosition`                            | `.none`              | Label placement                                        |
+| `isRequired`             | `bool`                                     | `false`              | Signature is required for form validity                |
+| `validator`              | `String? Function(bool)?`                  | —                    | Custom validator                                       |
+| `autovalidateMode`       | `AutovalidateMode`                         | `.onUserInteraction` | When to validate                                       |
+| `externalErrorText`      | `String?`                                  | —                    | Backend error shown unconditionally                    |
+
+---
+
+## FormFieldsLiveCameraCapture
+
+Standalone front-camera preview with capture and reset. Used internally by `FormFieldsSignaturePad`, but also available independently.
+
+### Option A — GlobalKey
+
+```dart
+final cameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
+
+FormFieldsLiveCameraCapture(
+  key: cameraKey,
+  height: 200,
+  onCaptured: (MyimageResult result) { },
+)
+
+// Capture
+await cameraKey.currentState?.capture();
+
+// Reset
+cameraKey.currentState?.resetCapture();
+```
+
+### Option B — Controller
+
+```dart
+final controller = FormFieldsMyImageController();
+
+FormFieldsLiveCameraCapture(
+  height: 200,
+  cameraController: controller,
+  onCaptured: (result) { },
+)
+
+// Capture from anywhere
+await controller.capture();
+
+// Reset from anywhere
+controller.resetCapture();
+```
+
+### Prefilled Image
+
+Start in captured state with an existing image:
+
+```dart
+final controller = FormFieldsMyImageController.fromImages([
+  MyimageResult.network('https://example.com/existing.jpg'),
+]);
+
+FormFieldsLiveCameraCapture(
+  height: 200,
+  cameraController: controller,
+)
+```
+
+### Permissions
+
+**Android** — `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+```
+
+**iOS** — `ios/Runner/Info.plist`:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Camera access is needed to capture a photo during signing.</string>
+```
+
+---
+
+## FormFieldsMyImage
+
+Image picker and uploader with multi-image, direct upload, and document scanner support.
+
+```dart
+FormFieldsMyImage(
+  label: 'Profile Photo',
+  maxImages: 1,
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  uploadToken: 'Bearer your_token',
+  onImageChanged: (MyimageResult image) { },
+)
+```
+
+### Prefilled Images
+
+```dart
+final controller = FormFieldsMyImageController.fromImages([
+  MyimageResult.network('https://example.com/image1.jpg'),
+  MyimageResult.network('https://example.com/image2.jpg'),
+]);
+
+FormFieldsMyImage(
+  controller: controller,
+  onImageChanged: (image) { },
+)
+```
+
+---
+
+## Controllers
+
+### FormFieldsSignaturePadController
+
+Manages signature pad state externally and supports prefilled images.
+
+```dart
+// Empty — read result after export
+final ctrl = FormFieldsSignaturePadController();
+
+// Prefill — signature only
+final ctrl = FormFieldsSignaturePadController.fromSignature(
+  MyimageResult.network('https://example.com/sig.png'),
+);
+
+// Prefill — signature + live capture
+final ctrl = FormFieldsSignaturePadController.fromExportResult(
+  SignaturePadExportResult(
+    signature: MyimageResult.network('https://example.com/sig.png'),
+    liveCapture: MyimageResult.network('https://example.com/selfie.jpg'),
+  ),
+);
+```
+
+| Member                    | Description                                     |
+| ------------------------- | ----------------------------------------------- |
+| `exportResult`            | Current `SignaturePadExportResult?`             |
+| `signature`               | Shortcut for `exportResult?.signature`          |
+| `liveCapture`             | Shortcut for `exportResult?.liveCapture`        |
+| `setExportResult(result)` | Update result programmatically                  |
+| `setSignature(image)`     | Update only the signature image                 |
+| `clear()`                 | Clear result (controller state only)            |
+| `clearWidget()`           | Clear pad + camera (resets the attached widget) |
+
+### FormFieldsMyImageController
+
+Manages image list and programmatic camera/picker actions.
+
+```dart
+// Empty
+final ctrl = FormFieldsMyImageController();
+
+// Prefilled
+final ctrl = FormFieldsMyImageController.fromImages([
+  MyimageResult.network('https://example.com/photo.jpg'),
+]);
+```
+
+| Member                | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `images`              | `List<MyimageResult>` (unmodifiable)                      |
+| `setImages(images)`   | Replace all images                                        |
+| `addImage(image)`     | Append one image                                          |
+| `clear()`             | Clear all images                                          |
+| `capture()`           | Trigger capture on attached `FormFieldsLiveCameraCapture` |
+| `resetCapture()`      | Reset attached camera widget to live preview              |
+| `pickImage({source})` | Open picker on attached `FormFieldsMyImage`               |
+
+### MyimageResult
+
+```dart
+// From file
+final result = await MyimageResult.fromFile(file);
+
+// From network URL (prefill use case)
+final result = MyimageResult.network('https://example.com/image.jpg');
+
+// Manual
+final result = MyimageResult(
+  link: 'https://example.com/image.jpg',
+  base64: 'data:image/png;base64,...',
+  path: '/tmp/image.png',
+  imageId: 'server-id-123',
+);
+```
+
+---
+
+## Validation & External Errors
+
+All fields support `externalErrorText` to display backend validation errors directly under the field:
+
+```dart
+FormFields(
+  label: 'Email',
+  currentValue: viewModel.email,
+  onChanged: viewModel.setEmail,
+  externalErrorText: viewModel.fieldErrors['email']?.join(', '),
+)
+```
+
+Typical pattern with `AppDialogService.guard`:
+
+```dart
+await AppDialogService(context).guard(
+  task: () async { /* API call */ },
+  onValidationError: (errors) {
+    // errors: Map<String, List<String>>
+    viewModel.setFieldErrors(errors);
+  },
+);
+```
+
+---
+
+## Localization
+
+Supports English and Indonesian out of the box. All UI strings (validation, camera status, upload messages) are localized.
+
+```dart
+MaterialApp(
+  localizationsDelegates: [
+    FormFieldsLocalizationsDelegate(),
+    ...GlobalMaterialLocalizations.delegates,
+  ],
+  supportedLocales: const [
+    Locale('en'),
+    Locale('id'),
+  ],
+)
+```
+
+See [LOCALIZATION.md](LOCALIZATION.md) for extending or overriding strings.
+
+---
+
+## Testing
+
+Run the fast feedback test suite:
+
+```bash
+flutter test test/feedback/app_dialog_service_fast_test.dart
+```
+
+Run all tests:
+
+```bash
+flutter test
+```
+
+Focused run by name:
+
+```bash
+flutter test --plain-name "fast unit"
+```
+
+---
+
+## Additional References
+
+| Document                                     | Description                |
+| -------------------------------------------- | -------------------------- |
+| [API.md](API.md)                             | Full API reference         |
+| [USAGE.md](USAGE.md)                         | Usage patterns and recipes |
+| [LOCALIZATION.md](LOCALIZATION.md)           | Localization guide         |
+| [QUICKSTART.md](QUICKSTART.md)               | Quickstart guide           |
+| [ARCHITECTURE.md](ARCHITECTURE.md)           | Architecture overview      |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Project structure          |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | Contribution guidelines    |
+| [CHANGELOG.md](CHANGELOG.md)                 | Changelog                  |
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## Quick Start
 

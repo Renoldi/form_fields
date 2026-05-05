@@ -369,6 +369,110 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // ── 10. Prefilled Live Camera ────────────────────────────
+                  _ExampleCard(
+                    index: 10,
+                    title: 'Prefilled Live Camera',
+                    subtitle:
+                        'Seed live camera with initial image using FormFieldsMyImageController.fromImages',
+                    snippet:
+                        'final prefilledController = FormFieldsMyImageController.fromImages(\n'
+                        '  [MyimageResult(link: \'https://picsum.photos/seed/live-prefill/800/600\')],\n'
+                        ');\n\n'
+                        'FormFieldsSignaturePad(\n'
+                        '  showLiveCamera: true,\n'
+                        '  liveCameraController: prefilledController,\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.both,\n'
+                        '  onExportedResult: (r) { ... },\n'
+                        ')',
+                    result: viewModel.prefilledExportResult != null
+                        ? _LiveResultPreview(
+                            exportResult: viewModel.prefilledExportResult,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      showLiveCamera: true,
+                      liveCameraController:
+                          viewModel.prefilledLiveCameraController,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.both,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onExportedResult: viewModel.setPrefilledExportResult,
+                    ),
+                  ),
+
+                  // ── 11: Prefilled Signature ───────────────────────────
+                  _ExampleCard(
+                    index: 11,
+                    title: 'Prefilled Signature',
+                    subtitle: 'Seed the pad with an existing signature using '
+                        'FormFieldsSignaturePadController.fromSignature',
+                    snippet: 'final ctrl = FormFieldsSignaturePadController\n'
+                        '    .fromSignature(\n'
+                        '  MyimageResult.network(\'https://...\'),\n'
+                        ');\n\n'
+                        'FormFieldsSignaturePad(\n'
+                        '  signaturePadController: ctrl,\n'
+                        '  showExportPreview: true,\n'
+                        '  onExportedResult: (r) { ... },\n'
+                        ')',
+                    result: viewModel.prefilledSignatureExportResult != null
+                        ? _LiveResultPreview(
+                            exportResult:
+                                viewModel.prefilledSignatureExportResult,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      signaturePadController:
+                          viewModel.prefilledSignatureController,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.signature,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onExportedResult:
+                          viewModel.setPrefilledSignatureExportResult,
+                    ),
+                  ),
+
+                  // ── 12: Prefilled Signature + Live Camera ─────────────────
+                  _ExampleCard(
+                    index: 12,
+                    title: 'Prefilled Signature + Live Camera -',
+                    subtitle: 'Seed both signature and live capture using '
+                        'FormFieldsSignaturePadController.fromExportResult',
+                    snippet: 'final ctrl = FormFieldsSignaturePadController\n'
+                        '    .fromExportResult(\n'
+                        '  SignaturePadExportResult(\n'
+                        '    signature: MyimageResult.network(\'https://...\'),\n'
+                        '    liveCapture: MyimageResult.network(\'https://...\'),\n'
+                        '  ),\n'
+                        ');\n\n'
+                        'FormFieldsSignaturePad(\n'
+                        '  signaturePadController: ctrl,\n'
+                        '  showLiveCamera: true,\n'
+                        '  showExportPreview: true,\n'
+                        '  exportPreviewSource: SignaturePadPreviewSource.both,\n'
+                        ')',
+                    result: viewModel.prefilledBothExportResult != null
+                        ? _LiveResultPreview(
+                            exportResult: viewModel.prefilledBothExportResult,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      signaturePadController: viewModel.prefilledBothController,
+                      showLiveCamera: true,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.both,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onExportedResult: viewModel.setPrefilledBothExportResult,
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ),
@@ -642,11 +746,14 @@ class _LiveResultPreview extends StatelessWidget {
               child: liveCapture!.path.isNotEmpty
                   ? Image.file(File(liveCapture!.path),
                       height: 80, fit: BoxFit.cover)
-                  : Image.memory(
-                      Uri.parse(liveCapture!.base64).data!.contentAsBytes(),
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
+                  : liveCapture!.link.isNotEmpty
+                      ? Image.network(liveCapture!.link,
+                          height: 80, fit: BoxFit.cover)
+                      : Image.memory(
+                          Uri.parse(liveCapture!.base64).data!.contentAsBytes(),
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
             ),
           ],
 
@@ -672,13 +779,19 @@ class _LiveResultPreview extends StatelessWidget {
                 Expanded(
                   child: _ResultTile(
                     label: 'signature',
-                    child: Image.memory(
-                      Uri.parse(exportResult!.signature.base64)
-                          .data!
-                          .contentAsBytes(),
-                      height: 70,
-                      fit: BoxFit.contain,
-                    ),
+                    child: exportResult!.signature.path.isNotEmpty
+                        ? Image.file(File(exportResult!.signature.path),
+                            height: 70, fit: BoxFit.contain)
+                        : exportResult!.signature.link.isNotEmpty
+                            ? Image.network(exportResult!.signature.link,
+                                height: 70, fit: BoxFit.contain)
+                            : Image.memory(
+                                Uri.parse(exportResult!.signature.base64)
+                                    .data!
+                                    .contentAsBytes(),
+                                height: 70,
+                                fit: BoxFit.contain,
+                              ),
                   ),
                 ),
                 if (exportResult!.liveCapture != null) ...[
@@ -692,13 +805,19 @@ class _LiveResultPreview extends StatelessWidget {
                               height: 70,
                               fit: BoxFit.cover,
                             )
-                          : Image.memory(
-                              Uri.parse(exportResult!.liveCapture!.base64)
-                                  .data!
-                                  .contentAsBytes(),
-                              height: 70,
-                              fit: BoxFit.cover,
-                            ),
+                          : exportResult!.liveCapture!.link.isNotEmpty
+                              ? Image.network(
+                                  exportResult!.liveCapture!.link,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.memory(
+                                  Uri.parse(exportResult!.liveCapture!.base64)
+                                      .data!
+                                      .contentAsBytes(),
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                ),
                     ),
                   ),
                 ],

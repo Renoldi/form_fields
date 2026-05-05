@@ -14,6 +14,10 @@ class ViewModel extends ChangeNotifier {
   /// External camera controller so the host page can read the captured photo.
   final FormFieldsMyImageController liveCameraController =
       FormFieldsMyImageController();
+  final FormFieldsMyImageController prefilledLiveCameraController =
+      FormFieldsMyImageController.fromImages([
+    MyimageResult(link: 'https://picsum.photos/seed/live-prefill/800/600'),
+  ]);
   final FormFieldsMyImageController standaloneCameraController =
       FormFieldsMyImageController();
   final FormFieldsMyImageController controllerCaptureController =
@@ -27,11 +31,17 @@ class ViewModel extends ChangeNotifier {
   }
 
   SignaturePadExportResult? exportResult;
+  SignaturePadExportResult? prefilledExportResult;
   MyimageResult? liveCaptureResult;
   MyimageResult? standaloneCaptureResult;
 
   void setExportResult(SignaturePadExportResult result) {
     exportResult = result;
+    notifyListeners();
+  }
+
+  void setPrefilledExportResult(SignaturePadExportResult result) {
+    prefilledExportResult = result;
     notifyListeners();
   }
 
@@ -42,6 +52,36 @@ class ViewModel extends ChangeNotifier {
 
   void setStandaloneCapture(MyimageResult? captured) {
     standaloneCaptureResult = captured;
+    notifyListeners();
+  }
+
+  // ── Prefilled signature example ──────────────────────────────────────────
+  final FormFieldsSignaturePadController prefilledSignatureController =
+      FormFieldsSignaturePadController.fromSignature(
+    MyimageResult.network(
+        'https://picsum.photos/seed/signature-prefill/400/160'),
+  );
+  SignaturePadExportResult? prefilledSignatureExportResult;
+
+  void setPrefilledSignatureExportResult(SignaturePadExportResult result) {
+    prefilledSignatureExportResult = result;
+    notifyListeners();
+  }
+
+  // ── Prefilled signature + live camera example ────────────────────────────
+  final FormFieldsSignaturePadController prefilledBothController =
+      FormFieldsSignaturePadController.fromExportResult(
+    SignaturePadExportResult(
+      signature:
+          MyimageResult(link: 'https://picsum.photos/seed/sig-both/400/160'),
+      liveCapture: MyimageResult.network(
+          'https://picsum.photos/seed/prefill-both/800/600'),
+    ),
+  );
+  SignaturePadExportResult? prefilledBothExportResult;
+
+  void setPrefilledBothExportResult(SignaturePadExportResult result) {
+    prefilledBothExportResult = result;
     notifyListeners();
   }
 
@@ -62,6 +102,9 @@ class ViewModel extends ChangeNotifier {
   @override
   void dispose() {
     liveCameraController.dispose();
+    prefilledLiveCameraController.dispose();
+    prefilledSignatureController.dispose();
+    prefilledBothController.dispose();
     standaloneCameraController.dispose();
     controllerCaptureController.dispose();
     super.dispose();

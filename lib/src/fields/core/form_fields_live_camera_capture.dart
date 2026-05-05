@@ -100,16 +100,38 @@ class FormFieldsLiveCameraCaptureState
     _provider = FormFieldsLiveCameraCaptureProvider();
     _cam.addListener(_onCameraReady);
     _cam.acquire();
-    widget.cameraController?.registerCaptureHandler(capture, resetCapture);
+    _bindController(widget.cameraController);
   }
 
   @override
   void didUpdateWidget(FormFieldsLiveCameraCapture oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.cameraController != oldWidget.cameraController) {
-      oldWidget.cameraController?.unregisterCaptureHandler();
-      widget.cameraController?.registerCaptureHandler(capture, resetCapture);
+      _unbindController(oldWidget.cameraController);
+      _bindController(widget.cameraController);
     }
+  }
+
+  void _bindController(FormFieldsMyImageController? controller) {
+    controller?.registerCaptureHandler(capture, resetCapture);
+    controller?.addListener(_onExternalControllerChanged);
+    _syncCapturedFromController();
+  }
+
+  void _unbindController(FormFieldsMyImageController? controller) {
+    controller?.unregisterCaptureHandler();
+    controller?.removeListener(_onExternalControllerChanged);
+  }
+
+  void _onExternalControllerChanged() {
+    _syncCapturedFromController();
+  }
+
+  void _syncCapturedFromController() {
+    final controller = widget.cameraController;
+    if (controller == null) return;
+    final images = controller.images;
+    _provider.setCapturedResult(images.isNotEmpty ? images.first : null);
   }
 
   void _onCameraReady() {
@@ -254,7 +276,7 @@ class FormFieldsLiveCameraCaptureState
 
   @override
   void dispose() {
-    widget.cameraController?.unregisterCaptureHandler();
+    _unbindController(widget.cameraController);
     _cam.removeListener(_onCameraReady);
     _cam.release();
     _provider.dispose();
@@ -432,14 +454,26 @@ class _CapturedPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return result.path.isNotEmpty
-        ? Image.file(File(result.path),
-            fit: BoxFit.cover, width: double.infinity)
-        : Image.memory(
-            Uri.parse(result.base64).data!.contentAsBytes(),
-            fit: BoxFit.cover,
-            width: double.infinity,
-          );
+    if (result.path.isNotEmpty) {
+      return Image.file(File(result.path),
+          fit: BoxFit.cover, width: double.infinity);
+    }
+    if (result.link.isNotEmpty) {
+      return Image.network(
+        result.link,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (_, __, ___) => const Center(
+          child:
+              Icon(Icons.broken_image_outlined, size: 32, color: Colors.grey),
+        ),
+      );
+    }
+    return Image.memory(
+      Uri.parse(result.base64).data!.contentAsBytes(),
+      fit: BoxFit.cover,
+      width: double.infinity,
+    );
   }
 }
 

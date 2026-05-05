@@ -92,6 +92,8 @@ export 'src/buttons/app_button_enums.dart';
 export 'src/fields/core/form_fields_my_image.dart' show FormFieldsMyImage;
 export 'src/controllers/form_fields_my_image_controller.dart'
     show FormFieldsMyImageController;
+export 'src/controllers/form_fields_signature_pad_controller.dart'
+    show FormFieldsSignaturePadController;
 export 'src/providers/form_fields_my_image_provider.dart'
     show FormFieldsMyImageProvider;
 export 'src/providers/form_fields_signature_pad_provider.dart'
