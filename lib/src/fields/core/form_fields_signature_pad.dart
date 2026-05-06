@@ -772,7 +772,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   Widget _buildSignaturePad(FormFieldsLocalizations localizations,
       FormFieldsSignaturePadProvider provider) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
+    final progressTheme = Theme.of(context).progressIndicatorTheme;
+    final progressColor = progressTheme.color ?? loadingTheme.indicatorColor;
+    final progressTrackColor =
+        progressTheme.linearTrackColor ?? loadingTheme.trackColor;
     final isPreviewMode =
         widget.showExportPreview && provider.previewSignatureResult != null;
     return Column(
@@ -795,8 +800,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             if (provider.isUploading)
               Positioned.fill(
                 child: Container(
-                  color: loadingTheme?.overlayColor ??
-                      Colors.black.withValues(alpha: .35),
+                  color: loadingTheme.overlayColor,
                   child: Align(
                     alignment: Alignment.center,
                     child: SizedBox(
@@ -810,9 +814,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                               .withValues(alpha: .94),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: (loadingTheme?.indicatorColor ??
-                                    Theme.of(context).colorScheme.primary)
-                                .withValues(alpha: .20),
+                            color: progressColor.withValues(alpha: .20),
                           ),
                           boxShadow: const [
                             BoxShadow(
@@ -829,9 +831,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                               type: AppProgressType.linear,
                               value: provider.uploadProgress,
                               minHeight: 6,
-                              color: loadingTheme?.indicatorColor ??
-                                  Theme.of(context).colorScheme.primary,
-                              trackColor: loadingTheme?.trackColor,
+                              color: progressColor,
+                              trackColor: progressTrackColor,
                             ),
                           ],
                         ),

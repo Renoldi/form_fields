@@ -37,8 +37,11 @@ class AppProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
         const AppLoadingThemeData.fallback();
-    final indicatorColor = color ?? loadingTheme.indicatorColor;
-    final bgColor = trackColor ?? loadingTheme.trackColor;
+    final progressTheme = Theme.of(context).progressIndicatorTheme;
+    final indicatorColor =
+        color ?? progressTheme.color ?? loadingTheme.indicatorColor;
+    final bgColor =
+        trackColor ?? progressTheme.linearTrackColor ?? loadingTheme.trackColor;
 
     if (type == AppProgressType.circular) {
       return SizedBox(

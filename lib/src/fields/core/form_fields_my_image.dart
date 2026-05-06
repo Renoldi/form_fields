@@ -208,8 +208,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     required double progress,
     required double cardWidth,
   }) {
+    final myImageTheme =
+        Theme.of(context).extension<FormFieldsMyImageThemeData>() ??
+            const FormFieldsMyImageThemeData.fallback();
     final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
         const AppLoadingThemeData.fallback();
+    final progressTheme = Theme.of(context).progressIndicatorTheme;
+    final progressColor = myImageTheme.addTileBorderColor;
+    final progressTrackColor =
+        progressTheme.linearTrackColor ?? progressColor.withValues(alpha: .22);
     return Container(
       color: loadingTheme.overlayColor,
       child: Align(
@@ -223,7 +230,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   Theme.of(context).colorScheme.surface.withValues(alpha: .94),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: loadingTheme.indicatorColor.withValues(alpha: .20),
+                color: progressColor.withValues(alpha: .20),
               ),
               boxShadow: const [
                 BoxShadow(
@@ -237,8 +244,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               type: AppProgressType.linear,
               value: progress,
               minHeight: 6,
-              color: loadingTheme.indicatorColor,
-              trackColor: loadingTheme.trackColor,
+              color: progressColor,
+              trackColor: progressTrackColor,
             ),
           ),
         ),
