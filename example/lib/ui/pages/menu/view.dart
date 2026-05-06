@@ -153,9 +153,9 @@ class View extends PresenterState {
                                   ],
                                 ))
                             .toList(),
-                        itemSize: 110,
+                        itemSize: 115,
                         horizontalMargin: 8,
-                        verticalSpacing: 32,
+                        verticalSpacing: 8,
                         alignLeft: true,
                       ),
                     ],
