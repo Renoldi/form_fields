@@ -190,6 +190,64 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     _controller?.images = List<MyimageResult>.from(provider.images);
   }
 
+  bool _shouldShowUploadOverlay(
+    FormFieldsMyImageProvider provider,
+    int index, {
+    bool requireActiveUploadingIndex = true,
+  }) {
+    if (!widget.isDirectUpload) return false;
+    if (index < 0 || index >= provider.uploadProgress.length) return false;
+    final progress = provider.uploadProgress[index];
+    if (progress <= 0.0 || progress >= 1.0) return false;
+    if (requireActiveUploadingIndex && _uploadingIndex != index) return false;
+    return true;
+  }
+
+  Widget _buildUploadOverlay(
+    BuildContext context, {
+    required double progress,
+    required double cardWidth,
+  }) {
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
+    return Container(
+      color: loadingTheme?.overlayColor ?? Colors.black.withValues(alpha: .35),
+      child: Align(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: cardWidth,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color:
+                  Theme.of(context).colorScheme.surface.withValues(alpha: .94),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: (loadingTheme?.indicatorColor ??
+                        Theme.of(context).colorScheme.primary)
+                    .withValues(alpha: .20),
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
+              ],
+            ),
+            child: AppProgressIndicator(
+              type: AppProgressType.linear,
+              value: progress,
+              minHeight: 6,
+              color: loadingTheme?.indicatorColor ??
+                  Theme.of(context).colorScheme.primary,
+              trackColor: loadingTheme?.trackColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabel() {
     final label = widget.label;
     if (label == null ||
@@ -352,7 +410,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     BuildContext context,
     FormFieldsMyImageProvider provider,
   ) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
     final hasImage = provider.images.isNotEmpty;
     return Stack(
       children: [
@@ -372,41 +429,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                 0,
                 isSingle: true,
               ),
-              if (hasImage &&
-                  provider.uploadProgress.isNotEmpty &&
-                  provider.uploadProgress[0] > 0.0 &&
-                  provider.uploadProgress[0] < 1.0 &&
-                  widget.isDirectUpload)
+              if (hasImage && _shouldShowUploadOverlay(provider, 0))
                 Positioned.fill(
-                  child: Center(
-                    child: Container(
-                      width: 90,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: loadingTheme?.overlayColor ??
-                            Colors.black.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: loadingTheme?.accentColor ?? Colors.deepOrange,
-                          width: 2,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black38,
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: AppProgressIndicator(
-                        type: AppProgressType.linear,
-                        value: provider.uploadProgress[0],
-                        minHeight: 12,
-                        color:
-                            loadingTheme?.indicatorColor ?? Colors.deepOrange,
-                        trackColor: loadingTheme?.trackColor,
-                      ),
-                    ),
+                  child: _buildUploadOverlay(
+                    context,
+                    progress: provider.uploadProgress[0],
+                    cardWidth: 98,
                   ),
                 ),
             ],
@@ -485,18 +513,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         child: widget.imageBuilder!(context, image, index),
       );
     }
+    final hasLocalPath =
+        image.path.trim().isNotEmpty && File(image.path).existsSync();
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: 120,
         height: 120,
-        child: image.link.isNotEmpty
-            ? Image.network(
-                image.link,
+        child: hasLocalPath
+            ? Image.file(
+                File(image.path),
                 fit: BoxFit.cover,
               )
-            : Image.file(
-                File(image.path),
+            : Image.network(
+                image.link,
                 fit: BoxFit.cover,
               ),
       ),
@@ -528,7 +558,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     BuildContext context,
     FormFieldsMyImageProvider provider,
   ) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
     final images = provider.images;
     final uploadProgress = provider.uploadProgress;
     final widgets = <Widget>[];
@@ -547,41 +576,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   child: _buildImageDisplay(context, images[idx], idx),
                 ),
               ),
-              if (images.isNotEmpty &&
-                  uploadProgress.length > idx &&
-                  uploadProgress[idx] < 1 &&
-                  widget.isDirectUpload &&
-                  _uploadingIndex == idx)
+              if (images.isNotEmpty && _shouldShowUploadOverlay(provider, idx))
                 Positioned.fill(
-                  child: Center(
-                    child: Container(
-                      width: 80,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: loadingTheme?.overlayColor ??
-                            Colors.black.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: loadingTheme?.accentColor ?? Colors.deepOrange,
-                          width: 2,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black38,
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: AppProgressIndicator(
-                        type: AppProgressType.linear,
-                        value: uploadProgress[idx],
-                        minHeight: 12,
-                        color:
-                            loadingTheme?.indicatorColor ?? Colors.deepOrange,
-                        trackColor: loadingTheme?.trackColor,
-                      ),
-                    ),
+                  child: _buildUploadOverlay(
+                    context,
+                    progress: uploadProgress[idx],
+                    cardWidth: 82,
                   ),
                 ),
               Positioned(
@@ -963,14 +963,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         final data = response.data;
         final uploadedLink = _extractUploadedLink(data);
         final imageId = _extractImageId(data);
-        String? downloadedPath;
-        if ((uploadedLink ?? '').isNotEmpty) {
-          downloadedPath = await DioUtil.downloadFile(uploadedLink!);
-        }
         final updatedImage = MyimageResult(
           link: uploadedLink ?? images[index].link,
           base64: images[index].base64,
-          path: downloadedPath ?? images[index].path,
+          // Keep local file path from picked image to avoid re-fetching
+          // the same file from server right after upload.
+          path: images[index].path,
           imageId: imageId ?? images[index].imageId,
         );
         provider.updateImage(
