@@ -347,21 +347,27 @@ class _LoadingCard extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             AppLoadingIndicator(
               variant: AppLoadingVariant.dots,
               size: 42,
               color: cs.primary,
             ),
-            const SizedBox(width: 28),
             AppLoadingIndicator(
               variant: isLoading
                   ? AppLoadingVariant.pulse
                   : AppLoadingVariant.spinner,
-              size: 70,
+              size: 52,
               color: cs.primary,
               trackColor: cs.primary.withValues(alpha: 0.25),
+            ),
+            AppLoadingIndicator(
+              variant: AppLoadingVariant.orbit,
+              size: 52,
+              color: cs.primary,
+              trackColor: cs.primary.withValues(alpha: 0.25),
+              strokeWidth: 3,
             ),
           ],
         ),

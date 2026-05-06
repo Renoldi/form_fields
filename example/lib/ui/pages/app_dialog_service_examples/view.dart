@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'presenter.dart';
@@ -128,6 +129,8 @@ class View extends PresenterState {
                       value: AppLoadingVariant.pulse, label: Text('Pulse')),
                   ButtonSegment(
                       value: AppLoadingVariant.dots, label: Text('Dots')),
+                  ButtonSegment(
+                      value: AppLoadingVariant.orbit, label: Text('Orbit')),
                 ],
                 selected: {vm.loadingVariant},
                 onSelectionChanged: (set) => vm.setLoadingVariant(set.first),
@@ -231,7 +234,75 @@ class View extends PresenterState {
                   "showLoading(message, loadingContainer, loadingVisual, loadingVariant, progressType, position, loadingBackBehavior)"
             }),
             const SizedBox(height: 16),
-            // Success
+            // Progress Circular (animated 0 → 100%)
+            AppButton(
+              type: AppButtonType.filled,
+              text: 'Progress Circular (animated)',
+              onPressed: () async {
+                final notifier = ValueNotifier<double?>(0.0);
+                final service = AppDialogService(context);
+                unawaited(
+                  service.showLoading(
+                    message: 'Uploading...',
+                    loadingContainer: vm.loadingContainer,
+                    loadingVisual: AppDialogLoadingVisual.progress,
+                    progressType: AppProgressType.circular,
+                    progressNotifier: notifier,
+                    position: vm.loadingPosition,
+                    loadingBackBehavior: AppDialogLoadingBackBehavior.block,
+                  ),
+                );
+                for (int i = 1; i <= 20; i++) {
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  notifier.value = i / 20.0;
+                }
+                await Future.delayed(const Duration(milliseconds: 300));
+                service.hideLoading();
+                notifier.dispose();
+              },
+            ),
+            const SizedBox(height: 8),
+            _buildJsonExample({
+              "type": "AppButtonType.filled",
+              "text": "Progress Circular (animated)",
+              "onPressed":
+                  "showLoading(progressNotifier, progressType: circular) → increment 0→1 → hideLoading()"
+            }),
+            const SizedBox(height: 16),
+            // Progress Linear (animated 0 → 100%)
+            AppButton(
+              type: AppButtonType.filled,
+              text: 'Progress Linear (animated)',
+              onPressed: () async {
+                final notifier = ValueNotifier<double?>(0.0);
+                final service = AppDialogService(context);
+                unawaited(
+                  service.showLoading(
+                    message: 'Processing data...',
+                    loadingContainer: vm.loadingContainer,
+                    loadingVisual: AppDialogLoadingVisual.progress,
+                    progressType: AppProgressType.linear,
+                    progressNotifier: notifier,
+                    position: vm.loadingPosition,
+                    loadingBackBehavior: AppDialogLoadingBackBehavior.block,
+                  ),
+                );
+                for (int i = 1; i <= 20; i++) {
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  notifier.value = i / 20.0;
+                }
+                await Future.delayed(const Duration(milliseconds: 300));
+                service.hideLoading();
+                notifier.dispose();
+              },
+            ),
+            const SizedBox(height: 8),
+            _buildJsonExample({
+              "type": "AppButtonType.filled",
+              "text": "Progress Linear (animated)",
+              "onPressed":
+                  "showLoading(progressNotifier, progressType: linear) → increment 0→1 → hideLoading()"
+            }),
             AppButton(
               type: AppButtonType.filled,
               text: 'Success',

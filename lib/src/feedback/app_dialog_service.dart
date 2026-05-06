@@ -29,6 +29,7 @@ class AppDialogService {
     AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
+    double? progressValue,
     AppDialogPosition position = AppDialogPosition.bottom,
     AppDialogLoadingBackBehavior loadingBackBehavior =
         AppDialogLoadingBackBehavior.allow,
@@ -46,6 +47,7 @@ class AppDialogService {
         loadingVisual: loadingVisual,
         loadingVariant: loadingVariant,
         progressType: progressType,
+        progressValue: progressValue,
       );
       final Widget dialogChild =
           loadingContainer == AppDialogLoadingContainer.card
@@ -239,6 +241,8 @@ class AppDialogService {
     AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
+    double? progressValue,
+    ValueNotifier<double?>? progressNotifier,
     AppDialogLoadingBackBehavior loadingBackBehavior =
         AppDialogLoadingBackBehavior.block,
     AppDialogCancelRequested? onCancelRequested,
@@ -262,6 +266,8 @@ class AppDialogService {
           loadingVisual: loadingVisual,
           loadingVariant: loadingVariant,
           progressType: progressType,
+          progressValue: progressValue,
+          progressNotifier: progressNotifier,
         ),
         if (message.isNotEmpty)
           Padding(
@@ -326,28 +332,48 @@ class AppDialogService {
     required AppDialogLoadingVisual loadingVisual,
     required AppLoadingVariant loadingVariant,
     required AppProgressType progressType,
+    double? progressValue,
+    ValueNotifier<double?>? progressNotifier,
   }) {
     if (loadingVisual == AppDialogLoadingVisual.progress) {
-      if (progressType == AppProgressType.linear) {
-        return const SizedBox(
-          width: 180,
-          child: AppProgressIndicator(
-            type: AppProgressType.linear,
-            value: null,
-            minHeight: 8,
+      if (progressNotifier != null) {
+        return ValueListenableBuilder<double?>(
+          valueListenable: progressNotifier,
+          builder: (_, value, __) => _buildProgressWidget(
+            progressType: progressType,
+            value: value,
           ),
         );
       }
-
-      return const AppProgressIndicator(
-        type: AppProgressType.circular,
-        value: null,
-        size: 34,
+      return _buildProgressWidget(
+        progressType: progressType,
+        value: progressValue,
       );
     }
 
     return AppLoadingIndicator(
       variant: loadingVariant,
+      size: 34,
+    );
+  }
+
+  Widget _buildProgressWidget({
+    required AppProgressType progressType,
+    double? value,
+  }) {
+    if (progressType == AppProgressType.linear) {
+      return SizedBox(
+        width: 180,
+        child: AppProgressIndicator(
+          type: AppProgressType.linear,
+          value: value,
+          minHeight: 8,
+        ),
+      );
+    }
+    return AppProgressIndicator(
+      type: AppProgressType.circular,
+      value: value,
       size: 34,
     );
   }
@@ -650,6 +676,9 @@ class AppDialogService {
     if (!_isLoadingDialogVisible || !context.mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
   }
+
+  /// Hides the currently visible loading dialog, if any.
+  void hideLoading() => _dismissLoadingIfVisible();
 
   (IconData, Color) _style(AppDialogType? type, bool isSuccess) {
     if (isSuccess) {

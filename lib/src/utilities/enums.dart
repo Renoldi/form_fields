@@ -5,6 +5,7 @@ enum AppLoadingVariant {
   spinner,
   pulse,
   dots,
+  orbit,
 }
 
 /// Supported progress presentations for [AppProgressIndicator].

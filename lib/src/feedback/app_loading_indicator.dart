@@ -29,7 +29,7 @@ class AppLoadingIndicator extends StatefulWidget {
 }
 
 class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -128,6 +128,23 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
             },
           ),
         ),
+      AppLoadingVariant.orbit => SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return CustomPaint(
+                painter: _OrbitPainter(
+                  progress: _controller.value,
+                  trackColor: bgColor,
+                  dotColor: indicatorColor,
+                  strokeWidth: widget.strokeWidth,
+                ),
+              );
+            },
+          ),
+        ),
     };
 
     return Semantics(
@@ -135,4 +152,79 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
       child: child,
     );
   }
+}
+
+class _OrbitPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color dotColor;
+  final double strokeWidth;
+
+  const _OrbitPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.dotColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Track circle
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Orbiting dot
+    const twoPi = 2 * 3.141592653589793;
+    final angle = twoPi * progress - (3.141592653589793 / 2);
+    final dotCenter = Offset(
+      center.dx + radius * _cos(angle),
+      center.dy + radius * _sin(angle),
+    );
+
+    final dotPaint = Paint()
+      ..color = dotColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(dotCenter, strokeWidth * 1.6, dotPaint);
+  }
+
+  static double _cos(double r) => _sinCos(r, cosine: true);
+  static double _sin(double r) => _sinCos(r, cosine: false);
+
+  // Inline trig without dart:math import (uses existing math)
+  static double _sinCos(double radians, {required bool cosine}) {
+    // Normalise to [0, 2π)
+    const pi = 3.141592653589793;
+    final x = radians % (2 * pi);
+    // Taylor series — accurate enough for animation at double precision
+    double result = 0;
+    double term = cosine ? 1.0 : x;
+    double sign = 1.0;
+    double factorial = 1.0;
+    final int start = cosine ? 0 : 1;
+    for (int n = start; n < 20; n += 2) {
+      result += sign * term / factorial;
+      sign = -sign;
+      final next1 = n + 1;
+      final next2 = n + 2;
+      term *= x * x;
+      factorial *= next1 * next2;
+    }
+    return result;
+  }
+
+  @override
+  bool shouldRepaint(_OrbitPainter old) =>
+      old.progress != progress ||
+      old.trackColor != trackColor ||
+      old.dotColor != dotColor ||
+      old.strokeWidth != strokeWidth;
 }
