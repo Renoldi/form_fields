@@ -198,7 +198,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (!widget.isDirectUpload) return false;
     if (index < 0 || index >= provider.uploadProgress.length) return false;
     final progress = provider.uploadProgress[index];
-    if (progress <= 0.0 || progress >= 1.0) return false;
+    if (progress <= 0.0) return false;
     if (requireActiveUploadingIndex && _uploadingIndex != index) return false;
     return true;
   }
@@ -913,7 +913,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     final images = provider.images;
     final index = idx ?? images.indexOf(image);
     if (index < 0) return;
-    provider.setUploadProgress(index, 0.0);
+    // Keep overlay visible from the beginning, even when onProgress only
+    // emits at completion on some devices/networks.
+    provider.setUploadProgress(index, 0.02);
     final headers = <String, String>{};
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
       headers['Authorization'] = widget.uploadToken!;
@@ -978,7 +980,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           index,
           updatedImage,
         );
+        // Keep a short completion transition so users can perceive progress.
+        provider.setUploadProgress(index, 0.98);
+        await Future<void>.delayed(uploadCompletionTransitionDelay);
         provider.setUploadProgress(index, 1.0);
+        await Future<void>.delayed(uploadCompletionTransitionDelay);
         _syncControllerImages(provider);
         widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
         if (widget.maxImages == 1 && index == 0) {

@@ -164,14 +164,14 @@ class FormFieldsLiveCameraCaptureState
 
       if (widget.isDirectUpload && mounted) {
         if (widget.showUploadLoading) {
-          _provider.startUpload(initialProgress: 0.0);
+          _provider.startUpload(initialProgress: 0.02);
         }
         final uploaded =
             await _uploadImageDio(result, showSuccessDialog: false);
         if (mounted && widget.showUploadLoading) {
           if (uploaded != null) {
             _provider.completeUpload();
-            await Future<void>.delayed(const Duration(milliseconds: 120));
+            await Future<void>.delayed(uploadCompletionTransitionDelay);
             if (mounted) {
               _provider.clearUpload();
             }
@@ -253,7 +253,6 @@ class FormFieldsLiveCameraCaptureState
           response.statusCode! < 300) {
         String? uploadedLink;
         String? imageId;
-        String? downloadedPath;
         final data = response.data;
         if (data is String) {
           final redirectRegex = RegExp(
@@ -266,9 +265,6 @@ class FormFieldsLiveCameraCaptureState
           uploadedLink = data[widget.uploadFileUrlKey]?.toString();
           imageId = data[widget.uploadImageIdKey]?.toString();
         }
-        if ((uploadedLink ?? '').isNotEmpty) {
-          downloadedPath = await DioUtil.downloadFile(uploadedLink!);
-        }
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
@@ -278,7 +274,8 @@ class FormFieldsLiveCameraCaptureState
         return MyimageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
-          path: downloadedPath ?? image.path,
+          // Keep local capture path to avoid extra GET right after upload.
+          path: image.path,
           imageId: imageId ?? image.imageId,
         );
       } else {

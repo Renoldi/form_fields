@@ -513,7 +513,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (widget.showUploadLoading && mounted) {
         if (updatedSignature != null) {
           _padProvider.completeUpload();
-          await Future<void>.delayed(const Duration(milliseconds: 120));
+          await Future<void>.delayed(uploadCompletionTransitionDelay);
           if (mounted) {
             _padProvider.clearUpload();
           }
@@ -626,7 +626,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           response.statusCode! < 300) {
         String? uploadedLink;
         String? imageId;
-        String? downloadedPath;
         final data = response.data;
         if (data is String) {
           final redirectRegex = RegExp(
@@ -639,9 +638,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           uploadedLink = data[widget.uploadFileUrlKey]?.toString();
           imageId = data[widget.uploadImageIdKey]?.toString();
         }
-        if ((uploadedLink ?? '').isNotEmpty) {
-          downloadedPath = await DioUtil.downloadFile(uploadedLink!);
-        }
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
@@ -651,7 +647,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         return MyimageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
-          path: downloadedPath ?? image.path,
+          // Keep local signature path to avoid extra GET right after upload.
+          path: image.path,
           imageId: imageId ?? image.imageId,
         );
       } else {
