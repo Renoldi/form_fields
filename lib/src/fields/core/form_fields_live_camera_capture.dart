@@ -163,10 +163,30 @@ class FormFieldsLiveCameraCaptureState
       MyimageResult result = await MyimageResult.fromFile(file);
 
       if (widget.isDirectUpload && mounted) {
-        if (widget.showUploadLoading) _provider.setUploading(true);
-        final uploaded = await _uploadImageDio(result);
+        if (widget.showUploadLoading) {
+          _provider.startUpload(initialProgress: 0.0);
+        }
+        final uploaded =
+            await _uploadImageDio(result, showSuccessDialog: false);
         if (mounted && widget.showUploadLoading) {
-          _provider.setUploading(false);
+          if (uploaded != null) {
+            _provider.completeUpload();
+            await Future<void>.delayed(const Duration(milliseconds: 120));
+            if (mounted) {
+              _provider.clearUpload();
+            }
+          } else {
+            _provider.clearUpload();
+          }
+        }
+        if (uploaded != null && widget.showUploadResultDialog && mounted) {
+          final l = FormFieldsLocalizations.of(context);
+          final dialog = AppDialogService(context);
+          await dialog.showSuccess(
+            title: widget.uploadSuccessTitle ?? l.get('uploadSuccessTitle'),
+            message:
+                widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage'),
+          );
         }
         if (uploaded != null) result = uploaded;
       }
@@ -182,7 +202,10 @@ class FormFieldsLiveCameraCaptureState
 
   /// Uploads [image] and returns the updated [MyimageResult] with server
   /// link/imageId. Returns `null` on failure.
-  Future<MyimageResult?> _uploadImageDio(MyimageResult image) async {
+  Future<MyimageResult?> _uploadImageDio(
+    MyimageResult image, {
+    bool showSuccessDialog = true,
+  }) async {
     if (widget.uploadUrl == null) return null;
     final headers = <String, String>{};
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
@@ -193,6 +216,11 @@ class FormFieldsLiveCameraCaptureState
       filePath: image.path,
       filename: File(image.path).path.split('/').last,
       headers: headers,
+      onProgress: (progress) {
+        if (mounted && widget.showUploadLoading) {
+          _provider.setUploadProgress(progress);
+        }
+      },
     );
     if (!mounted) return null;
     final l = FormFieldsLocalizations.of(context);
@@ -220,7 +248,9 @@ class FormFieldsLiveCameraCaptureState
       return null;
     }
     try {
-      if (response.statusCode == 200) {
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
         String? uploadedLink;
         String? imageId;
         String? downloadedPath;
@@ -239,7 +269,7 @@ class FormFieldsLiveCameraCaptureState
         if ((uploadedLink ?? '').isNotEmpty) {
           downloadedPath = await DioUtil.downloadFile(uploadedLink!);
         }
-        if (widget.showUploadResultDialog) {
+        if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
             message: uploadSuccessMessage,
@@ -293,6 +323,8 @@ class FormFieldsLiveCameraCaptureState
       value: _provider,
       child: Consumer<FormFieldsLiveCameraCaptureProvider>(
         builder: (context, provider, _) {
+          final loadingTheme =
+              Theme.of(context).extension<AppLoadingThemeData>();
           final localizations = FormFieldsLocalizations.of(context);
           final errorMessage = _cam.errorMessage == 'No cameras found'
               ? localizations.get('cameraNoCamerasFound')
@@ -344,11 +376,47 @@ class FormFieldsLiveCameraCaptureState
                   if (provider.isUploading)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withValues(alpha: .45),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                        color: loadingTheme?.overlayColor ??
+                            Colors.black.withValues(alpha: .45),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: 170,
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withValues(alpha: .94),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: (loadingTheme?.indicatorColor ??
+                                          Theme.of(context).colorScheme.primary)
+                                      .withValues(alpha: .20),
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AppProgressIndicator(
+                                    type: AppProgressType.linear,
+                                    value: provider.uploadProgress,
+                                    minHeight: 6,
+                                    color: loadingTheme?.indicatorColor ??
+                                        Theme.of(context).colorScheme.primary,
+                                    trackColor: loadingTheme?.trackColor,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),

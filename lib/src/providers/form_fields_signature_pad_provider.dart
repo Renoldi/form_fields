@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/src/utilities/myimage_result.dart';
 
 class FormFieldsSignaturePadProvider extends ChangeNotifier {
-  bool _isUploading = false;
-  bool get isUploading => _isUploading;
+  double? _uploadProgress;
+  double? get uploadProgress => _uploadProgress;
+
+  bool get isUploading => _uploadProgress != null;
 
   MyimageResult? _previewSignatureResult;
   MyimageResult? get previewSignatureResult => _previewSignatureResult;
@@ -11,8 +13,23 @@ class FormFieldsSignaturePadProvider extends ChangeNotifier {
   MyimageResult? _previewLiveCaptureResult;
   MyimageResult? get previewLiveCaptureResult => _previewLiveCaptureResult;
 
-  void setUploading(bool value) {
-    _isUploading = value;
+  void startUpload({double? initialProgress}) {
+    _uploadProgress = initialProgress;
+    notifyListeners();
+  }
+
+  void setUploadProgress(double progress) {
+    _uploadProgress = progress.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  void completeUpload() {
+    _uploadProgress = 1.0;
+    notifyListeners();
+  }
+
+  void clearUpload() {
+    _uploadProgress = null;
     notifyListeners();
   }
 

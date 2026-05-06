@@ -352,6 +352,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     BuildContext context,
     FormFieldsMyImageProvider provider,
   ) {
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
     final hasImage = provider.images.isNotEmpty;
     return Stack(
       children: [
@@ -375,32 +376,35 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   provider.uploadProgress.isNotEmpty &&
                   provider.uploadProgress[0] > 0.0 &&
                   provider.uploadProgress[0] < 1.0 &&
-                  !widget.isDirectUpload)
-                Positioned(
-                  top: 2,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    width: 96,
-                    height: 24,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: .35),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.deepOrange, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black38,
-                          blurRadius: 6,
-                          offset: Offset(0, 2),
+                  widget.isDirectUpload)
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      width: 90,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: loadingTheme?.overlayColor ??
+                            Colors.black.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: loadingTheme?.accentColor ?? Colors.deepOrange,
+                          width: 2,
                         ),
-                      ],
-                    ),
-                    child: LinearProgressIndicator(
-                      value: provider.uploadProgress[0],
-                      backgroundColor: Colors.grey.shade300,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.deepOrange,
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black38,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: AppProgressIndicator(
+                        type: AppProgressType.linear,
+                        value: provider.uploadProgress[0],
+                        minHeight: 12,
+                        color:
+                            loadingTheme?.indicatorColor ?? Colors.deepOrange,
+                        trackColor: loadingTheme?.trackColor,
                       ),
                     ),
                   ),
@@ -524,6 +528,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     BuildContext context,
     FormFieldsMyImageProvider provider,
   ) {
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
     final images = provider.images;
     final uploadProgress = provider.uploadProgress;
     final widgets = <Widget>[];
@@ -553,10 +558,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                       width: 80,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.35),
+                        color: loadingTheme?.overlayColor ??
+                            Colors.black.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.deepOrange, width: 2),
-                        boxShadow: [
+                        border: Border.all(
+                          color: loadingTheme?.accentColor ?? Colors.deepOrange,
+                          width: 2,
+                        ),
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black38,
                             blurRadius: 6,
@@ -564,12 +573,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                           ),
                         ],
                       ),
-                      child: LinearProgressIndicator(
+                      child: AppProgressIndicator(
+                        type: AppProgressType.linear,
                         value: uploadProgress[idx],
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.deepOrange,
-                        ),
+                        minHeight: 12,
+                        color:
+                            loadingTheme?.indicatorColor ?? Colors.deepOrange,
+                        trackColor: loadingTheme?.trackColor,
                       ),
                     ),
                   ),
@@ -938,6 +948,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     final uploadErrorMessage =
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
+      provider.resetUploadProgress(index);
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -984,6 +995,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           );
         }
       } else {
+        provider.resetUploadProgress(index);
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,
@@ -993,6 +1005,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
       }
     } catch (e) {
+      provider.resetUploadProgress(index);
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadErrorTitle,

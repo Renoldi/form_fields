@@ -353,7 +353,17 @@ class View extends PresenterState {
         backgroundColor: Color(0xFF1F2937),
         foregroundColor: Colors.white,
       ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: Color(0xff008BD0),
+        linearTrackColor: Color(0x33008BD0),
+      ),
       extensions: <ThemeExtension<dynamic>>[
+        const AppLoadingThemeData(
+          indicatorColor: Color(0xff008BD0),
+          trackColor: Color(0x33008BD0),
+          overlayColor: Color(0x73000000),
+          accentColor: Color(0xff008BD0),
+        ),
         const AppButtonThemeData(
           filledStyle: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),

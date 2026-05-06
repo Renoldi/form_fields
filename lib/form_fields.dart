@@ -63,6 +63,7 @@ export 'src/buttons/app_split_button.dart'
 export 'src/buttons/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
 export 'src/feedback/app_loading_indicator.dart' show AppLoadingIndicator;
 export 'src/feedback/app_progress_indicator.dart' show AppProgressIndicator;
+export 'src/feedback/app_loading_theme.dart' show AppLoadingThemeData;
 export 'src/feedback/app_dialog_service.dart' show AppDialogService;
 export 'src/feedback/app_global_dialog_service.dart'
     show AppGlobalDialogService;
