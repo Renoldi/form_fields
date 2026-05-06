@@ -4,7 +4,6 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import 'package:form_fields/src/theme/form_fields_my_image_theme.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
