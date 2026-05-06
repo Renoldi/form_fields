@@ -4,7 +4,7 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import 'package:form_fields/src/fields/core/form_fields_my_image_theme.dart';
+import 'package:form_fields/src/theme/form_fields_my_image_theme.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
@@ -209,9 +209,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     required double progress,
     required double cardWidth,
   }) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>();
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
     return Container(
-      color: loadingTheme?.overlayColor ?? Colors.black.withValues(alpha: .35),
+      color: loadingTheme.overlayColor,
       child: Align(
         alignment: Alignment.center,
         child: SizedBox(
@@ -223,9 +224,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   Theme.of(context).colorScheme.surface.withValues(alpha: .94),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: (loadingTheme?.indicatorColor ??
-                        Theme.of(context).colorScheme.primary)
-                    .withValues(alpha: .20),
+                color: loadingTheme.indicatorColor.withValues(alpha: .20),
               ),
               boxShadow: const [
                 BoxShadow(
@@ -239,9 +238,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               type: AppProgressType.linear,
               value: progress,
               minHeight: 6,
-              color: loadingTheme?.indicatorColor ??
-                  Theme.of(context).colorScheme.primary,
-              trackColor: loadingTheme?.trackColor,
+              color: loadingTheme.indicatorColor,
+              trackColor: loadingTheme.trackColor,
             ),
           ),
         ),

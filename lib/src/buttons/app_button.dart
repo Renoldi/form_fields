@@ -1,11 +1,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 
 import 'app_button_content.dart';
 import 'app_button_enums.dart';
 import 'app_button_layout.dart';
-import 'app_button_theme.dart';
+import '../theme/app_button_theme.dart';
 
 class AppButton<T> extends StatelessWidget {
   final AppButtonType type;
@@ -79,6 +80,8 @@ class AppButton<T> extends StatelessWidget {
   }
 
   Widget _buildButton(BuildContext context) {
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
     final isIcon = type == AppButtonType.icon;
     final isFab = type == AppButtonType.fab;
     final isExtendedFab = type == AppButtonType.extendedFab;
@@ -196,7 +199,8 @@ class AppButton<T> extends StatelessWidget {
               height: _iconSizeBySize,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: IconTheme.of(context).color,
+                color: loadingTheme.indicatorColor,
+                backgroundColor: loadingTheme.trackColor,
               ),
             )
           : (icon ?? const Icon(Icons.add));

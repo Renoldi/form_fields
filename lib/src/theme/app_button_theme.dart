@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+@immutable
 class AppButtonThemeData extends ThemeExtension<AppButtonThemeData> {
   final ButtonStyle? filledStyle;
   final ButtonStyle? filledTonalStyle;
@@ -24,6 +25,8 @@ class AppButtonThemeData extends ThemeExtension<AppButtonThemeData> {
     this.iconBackgroundColor,
     this.fabBackgroundColor,
   });
+
+  const AppButtonThemeData.fallback() : this();
 
   @override
   AppButtonThemeData copyWith({
@@ -77,5 +80,5 @@ class AppButtonThemeData extends ThemeExtension<AppButtonThemeData> {
 extension AppButtonThemeExtension on BuildContext {
   AppButtonThemeData get appButtonTheme =>
       Theme.of(this).extension<AppButtonThemeData>() ??
-      const AppButtonThemeData();
+      const AppButtonThemeData.fallback();
 }

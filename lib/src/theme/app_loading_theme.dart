@@ -52,3 +52,9 @@ class AppLoadingThemeData extends ThemeExtension<AppLoadingThemeData> {
     );
   }
 }
+
+extension AppLoadingThemeExtension on BuildContext {
+  AppLoadingThemeData get appLoadingTheme =>
+      Theme.of(this).extension<AppLoadingThemeData>() ??
+      const AppLoadingThemeData.fallback();
+}

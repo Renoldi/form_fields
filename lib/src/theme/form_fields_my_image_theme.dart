@@ -68,3 +68,9 @@ class FormFieldsMyImageThemeData
     );
   }
 }
+
+extension FormFieldsMyImageThemeExtension on BuildContext {
+  FormFieldsMyImageThemeData get formFieldsMyImageTheme =>
+      Theme.of(this).extension<FormFieldsMyImageThemeData>() ??
+      const FormFieldsMyImageThemeData.fallback();
+}

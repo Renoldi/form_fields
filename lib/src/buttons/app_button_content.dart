@@ -1,8 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
-
-import 'app_button_enums.dart';
+import 'package:form_fields/form_fields.dart';
 
 class AppButtonContent extends StatelessWidget {
   final AppButtonType type;
@@ -26,8 +25,8 @@ class AppButtonContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = DefaultTextStyle.of(context).style.color ??
-        Theme.of(context).textTheme.labelLarge?.color;
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
     final spinnerSize = _spinnerSize;
 
     if (type == AppButtonType.icon) {
@@ -37,7 +36,8 @@ class AppButtonContent extends StatelessWidget {
           height: spinnerSize,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: IconTheme.of(context).color,
+            color: loadingTheme.indicatorColor,
+            backgroundColor: loadingTheme.trackColor,
           ),
         );
       }
@@ -55,7 +55,8 @@ class AppButtonContent extends StatelessWidget {
             height: spinnerSize,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: textColor,
+              color: loadingTheme.indicatorColor,
+              backgroundColor: loadingTheme.trackColor,
             ),
           ),
           if (_hasLabelOrChild) const SizedBox(width: 10),

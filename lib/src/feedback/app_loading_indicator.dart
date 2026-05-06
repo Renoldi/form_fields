@@ -57,9 +57,10 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final indicatorColor = widget.color ?? cs.primary;
-    final bgColor = widget.trackColor ?? cs.primary.withValues(alpha: 0.2);
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
+    final indicatorColor = widget.color ?? loadingTheme.indicatorColor;
+    final bgColor = widget.trackColor ?? loadingTheme.trackColor;
 
     final child = switch (widget.variant) {
       AppLoadingVariant.spinner => SizedBox(

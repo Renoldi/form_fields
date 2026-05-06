@@ -63,7 +63,7 @@ export 'src/buttons/app_split_button.dart'
 export 'src/buttons/app_fab_menu.dart' show AppFabMenu, AppFabMenuItem;
 export 'src/feedback/app_loading_indicator.dart' show AppLoadingIndicator;
 export 'src/feedback/app_progress_indicator.dart' show AppProgressIndicator;
-export 'src/feedback/app_loading_theme.dart' show AppLoadingThemeData;
+export 'src/theme/app_loading_theme.dart' show AppLoadingThemeData;
 export 'src/feedback/app_dialog_service.dart' show AppDialogService;
 export 'src/feedback/app_global_dialog_service.dart'
     show AppGlobalDialogService;
@@ -91,7 +91,7 @@ export 'src/buttons/app_button_enums.dart';
 // MyImage Field & Utilities
 // -------------------
 export 'src/fields/core/form_fields_my_image.dart' show FormFieldsMyImage;
-export 'src/fields/core/form_fields_my_image_theme.dart'
+export 'src/theme/form_fields_my_image_theme.dart'
     show FormFieldsMyImageThemeData;
 export 'src/controllers/form_fields_my_image_controller.dart'
     show FormFieldsMyImageController;
@@ -116,7 +116,7 @@ export 'src/utilities/app_dialog_typedefs.dart';
 // -------------------
 // Export AppButtonThemeData secara publik agar bisa diimport dari package utama, bukan dari src.
 // -------------------
-export 'src/buttons/app_button_theme.dart' show AppButtonThemeData;
+export 'src/theme/app_button_theme.dart' show AppButtonThemeData;
 
 // -------------------
 // Localization

@@ -1,6 +1,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 
 import 'app_button_enums.dart';
 
@@ -53,6 +54,8 @@ class AppSplitButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+        const AppLoadingThemeData.fallback();
     final effectiveOnPressed = isLoading ? null : onPressed;
     final splitHeight = _resolvedHeight;
     final horizontalPadding = _resolvedMainHorizontalPadding;
@@ -67,7 +70,8 @@ class AppSplitButton<T> extends StatelessWidget {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: colorScheme.onPrimary,
+                color: loadingTheme.indicatorColor,
+                backgroundColor: loadingTheme.trackColor,
               ),
             )
           : (icon ?? const Icon(Icons.shopping_cart_outlined)),
