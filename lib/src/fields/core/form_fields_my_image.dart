@@ -4,6 +4,7 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
+import 'package:form_fields/src/fields/core/form_fields_my_image_theme.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
@@ -561,6 +562,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     BuildContext context,
     FormFieldsMyImageProvider provider,
   ) {
+    final myImageTheme =
+        Theme.of(context).extension<FormFieldsMyImageThemeData>() ??
+            const FormFieldsMyImageThemeData.fallback();
     final images = provider.images;
     final uploadProgress = provider.uploadProgress;
     final widgets = <Widget>[];
@@ -614,12 +618,21 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue, width: 2),
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey[100],
+                        border: Border.all(
+                          color: myImageTheme.addTileBorderColor,
+                          width: myImageTheme.addTileBorderWidth,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          myImageTheme.addTileBorderRadius,
+                        ),
+                        color: myImageTheme.addTileBackgroundColor,
                       ),
-                      child: const Center(
-                        child: Icon(Icons.add, color: Colors.blue, size: 32),
+                      child: Center(
+                        child: Icon(
+                          Icons.add,
+                          color: myImageTheme.addIconColor,
+                          size: 32,
+                        ),
                       ),
                     ),
             ),

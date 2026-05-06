@@ -364,6 +364,13 @@ class View extends PresenterState {
           overlayColor: Color(0x73000000),
           accentColor: Color(0xff008BD0),
         ),
+        const FormFieldsMyImageThemeData(
+          addTileBorderColor: Color(0xff008BD0),
+          addTileBorderWidth: 2,
+          addTileBorderRadius: 8,
+          addTileBackgroundColor: Color(0xFFF3F4F6),
+          addIconColor: Color(0xff008BD0),
+        ),
         const AppButtonThemeData(
           filledStyle: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
