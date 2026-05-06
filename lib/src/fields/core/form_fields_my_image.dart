@@ -186,6 +186,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         ?.didChange(List<MyimageResult>.from(_provider.images));
   }
 
+  void _syncControllerImages(FormFieldsMyImageProvider provider) {
+    _controller?.images = List<MyimageResult>.from(provider.images);
+  }
+
   Widget _buildLabel() {
     final label = widget.label;
     if (label == null ||
@@ -411,17 +415,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             child: _buildRemoveButton(context, 0, provider.images[0], () {
               final removed = provider.images[0];
               provider.removeImage(0);
-              // Panggil onRemoveImage lebih awal
-              widget.onRemoveImage?.call(0, removed);
-              // Sinkronkan controller eksternal jika ada
-              if (widget.controller != null) {
-                widget.controller!.images = List<MyimageResult>.from(
-                  provider.images,
-                );
-              }
+              _syncControllerImages(provider);
               widget.onImagesChanged?.call(
                 List<MyimageResult>.from(provider.images),
               );
+              widget.onRemoveImage?.call(0, removed);
               widget.onImageChanged?.call(MyimageResult());
             }),
           ),
@@ -582,17 +580,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                 child: _buildRemoveButton(context, idx, images[idx], () {
                   final removed = images[idx];
                   provider.removeImage(idx);
-                  // Sinkronkan controller eksternal sebelum callback
-                  if (widget.controller != null) {
-                    widget.controller!.images = List<MyimageResult>.from(
-                      provider.images,
-                    );
-                  }
-                  // Panggil onRemoveImage jika ada
-                  widget.onRemoveImage?.call(idx, removed);
+                  _syncControllerImages(provider);
                   widget.onImagesChanged?.call(
                     List<MyimageResult>.from(provider.images),
                   );
+                  widget.onRemoveImage?.call(idx, removed);
                 }),
               ),
             ],
@@ -844,10 +836,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (isNew) {
           provider.setUploadProgress(0, 0.0);
         }
-        // Pastikan controller eksternal sinkron sebelum callback
-        if (widget.controller != null) {
-          widget.controller!.images = List<MyimageResult>.from(provider.images);
-        }
+        // Pastikan controller sinkron sebelum callback.
+        _syncControllerImages(provider);
         // Callback khusus single image
         if (!widget.isDirectUpload) {
           widget.onImagesChanged
@@ -864,9 +854,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (provider.uploadProgress.length < provider.images.length) {
           provider.setUploadProgress(provider.images.length - 1, 0.0);
         }
-        if (widget.controller != null) {
-          widget.controller!.images = List<MyimageResult>.from(provider.images);
-        }
+        _syncControllerImages(provider);
         if (!widget.isDirectUpload) {
           widget.onImagesChanged
               ?.call(List<MyimageResult>.from(provider.images));
@@ -878,11 +866,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           if (provider.uploadProgress.length < provider.images.length) {
             provider.setUploadProgress(provider.images.length - 1, 0.0);
           }
-          if (widget.controller != null) {
-            widget.controller!.images = List<MyimageResult>.from(
-              provider.images,
-            );
-          }
+          _syncControllerImages(provider);
           if (!widget.isDirectUpload) {
             widget.onImagesChanged?.call(
               List<MyimageResult>.from(provider.images),
@@ -983,15 +967,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           updatedImage,
         );
         provider.setUploadProgress(index, 1.0);
-        if (widget.controller != null) {
-          widget.controller!.images = List<MyimageResult>.from(provider.images);
-        }
+        _syncControllerImages(provider);
         widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
         if (widget.maxImages == 1 && index == 0) {
           final shouldEmitSingleImage = !widget.isDirectUpload ||
               updatedImage.link.isNotEmpty ||
-              (updatedImage.imageId != null &&
-                  updatedImage.imageId.toString().isNotEmpty);
+              updatedImage.imageId.isNotEmpty;
           if (shouldEmitSingleImage) {
             widget.onImageChanged?.call(provider.images[index]);
           }

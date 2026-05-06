@@ -3,6 +3,8 @@ import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
   // ── Basic example ────────────────────────────────────────────────────────
+  final FormFieldsSignaturePadController basicSignatureController =
+      FormFieldsSignaturePadController();
   MyimageResult? signatureResult;
 
   void setSignature(MyimageResult? result) {
@@ -86,6 +88,8 @@ class ViewModel extends ChangeNotifier {
   }
 
   // ── Direct upload examples ───────────────────────────────────────────────
+  final FormFieldsSignaturePadController uploadedSignatureController =
+      FormFieldsSignaturePadController();
   MyimageResult? uploadedSignatureResult;
   SignaturePadExportResult? uploadedExportResult;
 
@@ -101,10 +105,12 @@ class ViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    basicSignatureController.dispose();
     liveCameraController.dispose();
     prefilledLiveCameraController.dispose();
     prefilledSignatureController.dispose();
     prefilledBothController.dispose();
+    uploadedSignatureController.dispose();
     standaloneCameraController.dispose();
     controllerCaptureController.dispose();
     super.dispose();

@@ -27,11 +27,15 @@ class View extends PresenterState {
                   _ExampleCard(
                     index: 1,
                     title: 'Basic Signature',
-                    subtitle: 'Preview exported signature in the same pad area',
+                    subtitle:
+                        'Preview exported signature; controller is synced before callback',
                     snippet: 'FormFieldsSignaturePad(\n'
+                        '  signaturePadController: controller,\n'
                         '  showExportPreview: true,\n'
                         '  exportPreviewSource: SignaturePadPreviewSource.signature,\n'
-                        '  onExported: (result) { },\n'
+                        '  onExported: (result) {\n'
+                        '    // controller.exportResult sudah update di sini\n'
+                        '  },\n'
                         ')',
                     result: viewModel.signatureResult != null
                         ? _SignaturePreview(result: viewModel.signatureResult!)
@@ -52,7 +56,7 @@ class View extends PresenterState {
                     index: 2,
                     title: 'Live Camera',
                     subtitle:
-                        'Front camera auto-captures and previews live capture on export',
+                        'Front camera auto-captures; camera controller is synced before onLiveCaptured',
                     snippet: 'FormFieldsSignaturePad(\n'
                         '  showLiveCamera: true,\n'
                         '  showExportPreview: true,\n'
@@ -151,9 +155,12 @@ class View extends PresenterState {
                     snippet:
                         'final key = GlobalKey<FormFieldsLiveCameraCaptureState>();\n\n'
                         'FormFieldsLiveCameraCapture(\n'
+                        '  cameraController: controller,\n'
                         '  key: key,\n'
                         '  height: 200,\n'
-                        '  onCaptured: (img) { },\n'
+                        '  onCaptured: (img) {\n'
+                        '    // controller.images.first sudah berisi img\n'
+                        '  },\n'
                         ')\n\n'
                         'await key.currentState?.capture();\n'
                         'key.currentState?.resetCapture();',
@@ -299,7 +306,7 @@ class View extends PresenterState {
                     index: 8,
                     title: 'Direct Upload',
                     subtitle:
-                        'Signature is auto-uploaded after export; callback receives server link/imageId',
+                        'Signature is auto-uploaded; callback receives server result and controller already synced',
                     snippet: 'FormFieldsSignaturePad(\n'
                         '  isDirectUpload: true,\n'
                         '  uploadUrl: \'https://catbox.moe/user/api.php\',\n'
@@ -309,6 +316,7 @@ class View extends PresenterState {
                         '  onExported: (result) {\n'
                         '    result.link     // server URL after upload\n'
                         '    result.imageId  // server ID after upload\n'
+                        '    // signaturePadController.exportResult juga sudah update\n'
                         '  },\n'
                         ')',
                     result: viewModel.uploadedSignatureResult != null
@@ -326,7 +334,11 @@ class View extends PresenterState {
                       exportPreviewSource: SignaturePadPreviewSource.signature,
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
-                      onExported: viewModel.setUploadedSignature,
+                      onExported: (val) {
+                        debugPrint(
+                            'Exported signature result: link=${val!.link}, imageId=${val.imageId}');
+                        viewModel.setUploadedSignature(val);
+                      },
                     ),
                   ),
 

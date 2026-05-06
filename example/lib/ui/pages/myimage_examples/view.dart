@@ -326,7 +326,7 @@ class View extends PresenterState {
                 _buildFieldTitle(
                     'Profile Image (with Upload)', Colors.indigo.shade600),
                 Text(
-                  'Contoh direct upload single image: nilai image.link dibaca dari onImageChanged.',
+                  'Contoh direct upload single image: controller sudah sinkron sebelum onImageChanged/onRemoveImage.',
                   style: TextStyle(color: Colors.indigo.shade400),
                 ),
                 const SizedBox(height: 6),
@@ -348,14 +348,16 @@ class View extends PresenterState {
                           : (image.path.isNotEmpty
                               ? image.path
                               : '(empty result)');
+                      final controllerCount = profileController.images.length;
                       singleImageLog =
-                          'onImageChanged (${hasLink ? 'uploaded link' : 'local fallback'}): $shownValue';
+                          'onImageChanged (${hasLink ? 'uploaded link' : 'local fallback'}): $shownValue | controller.images=$controllerCount';
                     });
                   },
                   onRemoveImage: (idx, image) {
                     setState(() {
+                      final controllerCount = profileController.images.length;
                       singleRemoveLog =
-                          'onRemoveImage: index=$idx, path=${image.path}';
+                          'onRemoveImage: index=$idx, path=${image.path} | controller.images=$controllerCount';
                     });
                   },
                   isDoc: true,

@@ -527,12 +527,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           liveCapture: finalLiveCapture,
         );
       }
-      widget.onExported?.call(finalSignature);
       final finalResult = SignaturePadExportResult(
         signature: finalSignature,
         liveCapture: finalLiveCapture,
       );
       widget.signaturePadController?.updateFromWidget(finalResult);
+      widget.onExported?.call(finalSignature);
       if (widget.onExportedResult != null) {
         widget.onExportedResult!(finalResult);
       }
@@ -543,12 +543,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           liveCapture: liveCapture,
         );
       }
-      widget.onExported?.call(signatureResult);
       final exportedResult = SignaturePadExportResult(
         signature: signatureResult,
         liveCapture: liveCapture,
       );
       widget.signaturePadController?.updateFromWidget(exportedResult);
+      widget.onExported?.call(signatureResult);
       if (widget.onExportedResult != null) {
         widget.onExportedResult!(exportedResult);
       }
