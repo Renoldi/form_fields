@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 class View extends PresenterState {
   final GlobalKey<FormFieldsLiveCameraCaptureState> _standaloneCameraKey =
       GlobalKey<FormFieldsLiveCameraCaptureState>();
+  final GlobalKey<FormFieldsLiveCameraCaptureState> _hiddenCameraKey =
+      GlobalKey<FormFieldsLiveCameraCaptureState>();
 
   @override
   Widget build(BuildContext context) {
@@ -450,6 +452,43 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // ── 13. Silent Live Capture ────────────────────────────────
+                  _ExampleCard(
+                    index: 13,
+                    title: 'Silent Live Capture',
+                    subtitle:
+                        'Camera captures silently on draw start — no preview widget shown',
+                    snippet: 'FormFieldsSignaturePad(\n'
+                        '  silentLiveCapture: true,\n'
+                        '  showExportPreview: true,\n'
+                        '  onLiveCaptured: (img) {\n'
+                        '    // foto kamera depan, tanpa preview di UI\n'
+                        '  },\n'
+                        '  onExportedResult: (r) {\n'
+                        '    r.signature    // signature image\n'
+                        '    r.liveCapture  // captured selfie (silent)\n'
+                        '  },\n'
+                        ')',
+                    result: (viewModel.silentCaptureResult != null ||
+                            viewModel.silentExportResult != null)
+                        ? _LiveResultPreview(
+                            liveCapture: viewModel.silentCaptureResult,
+                            exportResult: viewModel.silentExportResult,
+                          )
+                        : null,
+                    child: FormFieldsSignaturePad(
+                      silentLiveCapture: true,
+                      showExportPreview: true,
+                      exportPreviewSource: SignaturePadPreviewSource.signature,
+                      backgroundColor: Colors.white,
+                      exportBackgroundColor: Colors.transparent,
+                      onLiveCaptured: viewModel.setSilentCapture,
+                      onExportedResult: viewModel.setSilentExportResult,
+                    ),
+                  ),
+
                   // ── 12: Prefilled Signature + Live Camera ─────────────────
                   _ExampleCard(
                     index: 12,
@@ -482,6 +521,84 @@ class View extends PresenterState {
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       onExportedResult: viewModel.setPrefilledBothExportResult,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── 14. Hidden Live Camera (hidePreview) ──────────────────────
+                  _ExampleCard(
+                    index: 14,
+                    title: 'Hidden Live Camera',
+                    subtitle:
+                        'Camera runs in background (hidePreview: true) — capture anytime, no preview shown',
+                    snippet:
+                        'final key = GlobalKey<FormFieldsLiveCameraCaptureState>();\n\n'
+                        'FormFieldsLiveCameraCapture(\n'
+                        '  key: key,\n'
+                        '  hidePreview: true,   // invisible, camera still ready\n'
+                        '  cameraController: controller,\n'
+                        '  onCaptured: (img) { },\n'
+                        ')\n\n'
+                        'await key.currentState?.capture();\n'
+                        'key.currentState?.resetCapture();',
+                    result: viewModel.hiddenCaptureResult != null
+                        ? _StandaloneLiveCapturePreview(
+                            result: viewModel.hiddenCaptureResult!,
+                          )
+                        : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Widget ini tak terlihat, tapi kamera tetap aktif.
+                        FormFieldsLiveCameraCapture(
+                          key: _hiddenCameraKey,
+                          hidePreview: true,
+                          cameraController:
+                              viewModel.hiddenLiveCameraController,
+                          onCaptured: viewModel.setHiddenCapture,
+                        ),
+                        Text(
+                          'Camera is running in the background (no preview rendered).',
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.grey.shade600),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  _hiddenCameraKey.currentState?.resetCapture();
+
+                                  viewModel.clearHiddenCapture();
+                                },
+                                icon: const Icon(Icons.restart_alt, size: 18),
+                                label: const Text('Reset'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () async {
+                                  final result = await _hiddenCameraKey
+                                      .currentState
+                                      ?.capture();
+                                  // final result = await viewModel
+                                  //     .hiddenLiveCameraController
+                                  //     .capture();
+                                  if (result != null) {
+                                    viewModel.setHiddenCapture(result);
+                                  }
+                                },
+                                icon: const Icon(Icons.camera_alt, size: 18),
+                                label: const Text('Capture'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
 

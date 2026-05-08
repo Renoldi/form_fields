@@ -72,6 +72,12 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Show a front-camera live preview.  Auto-captures when signing starts.
   final bool showLiveCamera;
 
+  /// Capture a photo from the front camera silently (no preview widget shown).
+  /// Auto-captures when the user begins drawing, same as [showLiveCamera].
+  /// Cannot be combined with [showLiveCamera] — if both are `true`,
+  /// [showLiveCamera] takes precedence.
+  final bool silentLiveCapture;
+
   /// Height of the camera preview widget. Defaults to 200.
   final double liveCameraHeight;
 
@@ -179,6 +185,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.exportPreviewSource = SignaturePadPreviewSource.signature,
     this.exportBackgroundColor,
     this.showLiveCamera = false,
+    this.silentLiveCapture = false,
     this.liveCameraHeight = 200,
     this.liveCameraController,
     this.signaturePadController,
@@ -208,7 +215,14 @@ class FormFieldsSignaturePad extends StatefulWidget {
           isDirectUpload == false ||
               (uploadUrl != null && uploadUrl.isNotEmpty),
           "For direct upload, uploadUrl must be provided and non-empty.",
-        );
+        ) {
+    // Warn developer about the conflicting combination at construction time.
+    assert(
+      !(showLiveCamera && silentLiveCapture),
+      'showLiveCamera and silentLiveCapture cannot both be true. '
+      'When showLiveCamera is true, silentLiveCapture is ignored.',
+    );
+  }
 
   @override
   State<FormFieldsSignaturePad> createState() => _FormFieldsSignaturePadState();
@@ -245,6 +259,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     );
     _signatureController.addListener(_onSignatureChanged);
     _bindSignaturePadController(widget.signaturePadController);
+    // Acquire camera for silent background capture.
+    if (widget.silentLiveCapture && !widget.showLiveCamera) {
+      SharedCameraManager.instance.acquire();
+    }
     // Pre-seed preview from controller if it already holds a result.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncPreviewFromSignaturePadController();
@@ -345,6 +363,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _signatureController.removeListener(_onSignatureChanged);
     _signatureController.dispose();
     if (_ownsCamera) _cameraController.dispose();
+    if (widget.silentLiveCapture && !widget.showLiveCamera) {
+      SharedCameraManager.instance.release();
+    }
     _padProvider.dispose();
     super.dispose();
   }
@@ -447,9 +468,29 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   }
 
   Future<void> _onDrawStart() async {
-    if (!widget.showLiveCamera) return;
+    if (!widget.showLiveCamera && !widget.silentLiveCapture) return;
     if (_hasCaptured) return; // already captured this session
     _hasCaptured = true;
+
+    // Silent capture: use CameraController.takePicture() directly.
+    if (widget.silentLiveCapture && !widget.showLiveCamera) {
+      final ctrl = SharedCameraManager.instance.controller;
+      if (ctrl == null || !ctrl.value.isInitialized) {
+        _hasCaptured = false;
+        return;
+      }
+      try {
+        final xfile = await ctrl.takePicture();
+        final result = await MyimageResult.fromFile(File(xfile.path));
+        _cameraController.images = [result];
+        widget.onLiveCaptured?.call(result);
+      } catch (_) {
+        _hasCaptured = false;
+      }
+      return;
+    }
+
+    // Visible camera: screenshot-based capture via FormFieldsLiveCameraCapture.
     final result = await _liveCameraKey.currentState?.capture();
     if (result == null) {
       // Allow retry if capture failed during draw start.
@@ -461,7 +502,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _signatureController.clear();
     // Reset capture flag so the next draw triggers a fresh photo.
     _hasCaptured = false;
-    _liveCameraKey.currentState?.resetCapture();
+    if (widget.showLiveCamera) {
+      _liveCameraKey.currentState?.resetCapture();
+    }
     _cameraController.clear();
     if (_padProvider.previewSignatureResult != null ||
         _padProvider.previewLiveCaptureResult != null) {

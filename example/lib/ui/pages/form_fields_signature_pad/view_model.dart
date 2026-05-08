@@ -103,6 +103,35 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Silent live capture example ──────────────────────────────────────────
+  MyimageResult? silentCaptureResult;
+  SignaturePadExportResult? silentExportResult;
+
+  void setSilentCapture(MyimageResult captured) {
+    silentCaptureResult = captured;
+    notifyListeners();
+  }
+
+  void setSilentExportResult(SignaturePadExportResult result) {
+    silentExportResult = result;
+    notifyListeners();
+  }
+
+  // ── Hidden live camera (FormFieldsLiveCameraCapture hidePreview) ────────
+  final FormFieldsMyImageController hiddenLiveCameraController =
+      FormFieldsMyImageController();
+  MyimageResult? hiddenCaptureResult;
+
+  void setHiddenCapture(MyimageResult captured) {
+    hiddenCaptureResult = captured;
+    notifyListeners();
+  }
+
+  void clearHiddenCapture() {
+    hiddenCaptureResult = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     basicSignatureController.dispose();
@@ -113,6 +142,7 @@ class ViewModel extends ChangeNotifier {
     uploadedSignatureController.dispose();
     standaloneCameraController.dispose();
     controllerCaptureController.dispose();
+    hiddenLiveCameraController.dispose();
     super.dispose();
   }
 }

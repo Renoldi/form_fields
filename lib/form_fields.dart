@@ -30,7 +30,10 @@ export 'src/fields/core/form_fields_signature_pad.dart'
 export 'src/utilities/signature_pad_export_result.dart'
     show SignaturePadExportResult;
 export 'src/fields/core/form_fields_live_camera_capture.dart'
-    show FormFieldsLiveCameraCapture, FormFieldsLiveCameraCaptureState;
+    show
+        FormFieldsLiveCameraCapture,
+        FormFieldsLiveCameraCaptureState,
+        SharedCameraManager;
 
 // ...existing code...
 // -------------------

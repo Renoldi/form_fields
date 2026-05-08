@@ -55,6 +55,14 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// JSON key for the image/file ID in the response body.
   final String uploadImageIdKey;
 
+  /// When `true`, the camera preview is hidden (renders as a zero-size widget)
+  /// but the camera is still initialised in the background, allowing
+  /// [FormFieldsLiveCameraCaptureState.capture] to fire silently.
+  ///
+  /// In silent mode [capture] uses [CameraController.takePicture] instead of
+  /// the screenshot path, so no rendered widget is required.
+  final bool hidePreview;
+
   FormFieldsLiveCameraCapture({
     super.key,
     this.height = 100,
@@ -73,6 +81,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadErrorMessage,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
+    this.hidePreview = false,
   }) : assert(
           isDirectUpload == false ||
               (uploadUrl != null && uploadUrl.isNotEmpty),
@@ -86,7 +95,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
 
 class FormFieldsLiveCameraCaptureState
     extends State<FormFieldsLiveCameraCapture> {
-  final _cam = _SharedCameraManager.instance;
+  final _cam = SharedCameraManager.instance;
 
   // Screenshot-based capture avoids ImageCapture use case, reducing CameraX
   // surface-combination conflicts.
@@ -145,22 +154,30 @@ class FormFieldsLiveCameraCaptureState
   Future<MyimageResult?> capture() async {
     if (!_cam.isReady) return null;
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 80));
-      final boundary = _previewKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return null;
+      MyimageResult result;
 
-      final image = await boundary.toImage(pixelRatio: 1.5);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return null;
+      if (widget.hidePreview) {
+        // Silent mode: use CameraController.takePicture() — no widget needed.
+        final xfile = await _cam.controller!.takePicture();
+        result = await MyimageResult.fromFile(File(xfile.path));
+      } else {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        final boundary = _previewKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary == null) return null;
 
-      final bytes = byteData.buffer.asUint8List();
-      final tempDir = Directory.systemTemp;
-      final file = await File(
-        '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
-      ).create();
-      await file.writeAsBytes(bytes);
-      MyimageResult result = await MyimageResult.fromFile(file);
+        final image = await boundary.toImage(pixelRatio: 1.5);
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData == null) return null;
+
+        final bytes = byteData.buffer.asUint8List();
+        final tempDir = Directory.systemTemp;
+        final file = await File(
+          '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
+        ).create();
+        await file.writeAsBytes(bytes);
+        result = await MyimageResult.fromFile(file);
+      }
 
       if (widget.isDirectUpload && mounted) {
         if (widget.showUploadLoading) {
@@ -316,6 +333,10 @@ class FormFieldsLiveCameraCaptureState
 
   @override
   Widget build(BuildContext context) {
+    // In silent/hidden mode the camera is initialised in the background but
+    // nothing is rendered on screen.
+    if (widget.hidePreview) return const SizedBox.shrink();
+
     return ChangeNotifierProvider.value(
       value: _provider,
       child: Consumer<FormFieldsLiveCameraCaptureProvider>(
@@ -445,9 +466,9 @@ class FormFieldsLiveCameraCaptureState
   }
 }
 
-class _SharedCameraManager {
-  _SharedCameraManager._();
-  static final _SharedCameraManager instance = _SharedCameraManager._();
+class SharedCameraManager {
+  SharedCameraManager._();
+  static final SharedCameraManager instance = SharedCameraManager._();
 
   CameraController? _controller;
   int _refCount = 0;
