@@ -115,7 +115,7 @@ class FormFields<T> extends StatefulWidget {
   final ValueChanged<T> onChanged;
 
   /// Current value
-  final T currentValue;
+  final T? currentValue;
 
   // -------------------------------------------------------------------------
   // VALIDATION
@@ -265,7 +265,7 @@ class FormFields<T> extends StatefulWidget {
     super.key,
     required this.onChanged,
     required this.label,
-    required this.currentValue,
+    this.currentValue,
     // Validation
     this.validator,
     this.isRequired = false,
