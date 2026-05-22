@@ -11,6 +11,9 @@ class ResponsiveMenuGrid extends StatelessWidget {
   /// Jika true, grid akan selalu rata kiri (tanpa auto-center)
   final bool alignLeft;
 
+  /// Jika true, grid akan allow scrolling. Default false preserves previous behaviour.
+  final bool allowScroll;
+
   const ResponsiveMenuGrid({
     super.key,
     required this.widgets,
@@ -19,6 +22,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
     this.verticalSpacing = 20,
     this.minHorizontalSpacing = 8,
     this.alignLeft = false,
+    this.allowScroll = false,
   });
 
   @override
@@ -43,7 +47,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
           child: GridView.count(
-            physics: const NeverScrollableScrollPhysics(),
+            physics: allowScroll ? null : const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             crossAxisCount: countPerRow,
             mainAxisSpacing: verticalSpacing,

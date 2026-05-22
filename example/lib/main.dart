@@ -338,15 +338,7 @@ class View extends PresenterState {
       useMaterial3: true,
 
       // Page Transitions
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-        },
-      ),
+      pageTransitionsTheme: const PageTransitionsTheme(),
 
       // AppBar Theme
       appBarTheme: const AppBarTheme(
