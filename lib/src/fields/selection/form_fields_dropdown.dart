@@ -14,10 +14,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final String Function(T item)? itemLabelBuilder;
   final LabelPosition labelPosition;
   final BorderType borderType;
-  final double radius;
-  final Color borderColor;
-  final Color focusedBorderColor;
-  final Color errorBorderColor;
+  // visual styling controlled by `borderType` and theme
   final InputDecoration? decoration;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
@@ -38,10 +35,6 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.itemLabelBuilder,
     this.labelPosition = LabelPosition.top,
     this.borderType = BorderType.outlineInputBorder,
-    this.radius = 10,
-    this.borderColor = const Color(0xFFC7C7C7),
-    this.focusedBorderColor = Colors.blue,
-    this.errorBorderColor = Colors.red,
     this.decoration,
     this.prefixIcon,
     this.suffixIcon,
@@ -220,17 +213,16 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   suffixIcon: widget.suffixIcon,
                 ))
             .copyWith(
-          errorText: state.errorText,
-          border: _buildBorder(
-              widget.borderType, widget.borderColor, widget.radius),
-          enabledBorder: _buildBorder(
-              widget.borderType, widget.borderColor, widget.radius),
-          focusedBorder: _buildBorder(
-              widget.borderType, widget.focusedBorderColor, widget.radius),
-          errorBorder: _buildBorder(
-              widget.borderType, widget.errorBorderColor, widget.radius),
-          focusedErrorBorder: _buildBorder(
-              widget.borderType, widget.errorBorderColor, widget.radius),
+          errorText: (state.errorText != null && state.errorText!.isNotEmpty)
+              ? state.errorText
+              : (state.hasError ? l10n.select(widget.label) : null),
+          border: _buildBorder(context, widget.borderType),
+          enabledBorder: _buildBorder(context, widget.borderType),
+          focusedBorder:
+              _buildBorder(context, widget.borderType, isFocused: true),
+          errorBorder: _buildBorder(context, widget.borderType, isError: true),
+          focusedErrorBorder: _buildBorder(context, widget.borderType,
+              isError: true, isFocused: true),
         );
 
         // When filter is enabled, use dialog instead of dropdown
@@ -258,35 +250,37 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                           : currentValueText,
                       style: TextStyle(
                         color: currentValueText.isEmpty
-                            ? Colors.grey.shade600
-                            : Colors.black87,
+                            ? Theme.of(context).disabledColor
+                            : (Theme.of(context).textTheme.bodyMedium?.color ??
+                                Colors.black87),
                       ),
                     ),
                   ),
-                  Icon(Icons.arrow_drop_down, color: Colors.grey.shade700),
+                  Icon(Icons.arrow_drop_down,
+                      color: Theme.of(context).iconTheme.color),
                 ],
               ),
             ),
           );
-
+          final theme = Theme.of(context);
           Widget labelWidget = RichText(
             text: TextSpan(
               children: [
                 TextSpan(
                   text: widget.label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
                   ),
                 ),
                 if (widget.isRequired)
-                  const TextSpan(
+                  TextSpan(
                     text: ' *',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      color: theme.colorScheme.error,
                     ),
                   ),
               ],
@@ -356,24 +350,25 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           decoration: effectiveDecoration,
         );
 
+        final theme = Theme.of(context);
         Widget labelWidget = RichText(
           text: TextSpan(
             children: [
               TextSpan(
                 text: widget.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
                 ),
               ),
               if (widget.isRequired)
-                const TextSpan(
+                TextSpan(
                   text: ' *',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.red,
+                    color: theme.colorScheme.error,
                   ),
                 ),
             ],
@@ -419,11 +414,15 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
     );
   }
 
-  static InputBorder _buildBorder(
-    BorderType type,
-    Color color,
-    double radius,
-  ) {
+  static InputBorder _buildBorder(BuildContext context, BorderType type,
+      {bool isError = false, bool isFocused = false}) {
+    final theme = Theme.of(context);
+    final normalColor = theme.dividerColor;
+    final focusColor = theme.colorScheme.primary;
+    final errorColor = theme.colorScheme.error;
+    final color = isError ? errorColor : (isFocused ? focusColor : normalColor);
+    const radius = 8.0;
+
     switch (type) {
       case BorderType.none:
         return InputBorder.none;
@@ -434,7 +433,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
       case BorderType.outlineInputBorder:
         return OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: color, width: 1.5),
+          borderSide: BorderSide(color: color, width: isFocused ? 1.8 : 1.5),
         );
     }
   }

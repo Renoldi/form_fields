@@ -21,6 +21,11 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
   String usernameCustom = '';
   String? emailCustom;
   int ageCustom = 0;
+  // Selection widget state
+  List<String> checkboxSelected = [];
+  List<String> dropdownMultiSelected = [];
+  String? dropdownSelected;
+  String? radioSelected;
 
   void setStringNonNullRequired(String value) {
     stringNonNullRequired = value;
@@ -94,6 +99,26 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
 
   void setAgeCustom(int value) {
     ageCustom = value;
+    notifyListeners();
+  }
+
+  void setCheckboxSelected(List<String> values) {
+    checkboxSelected = values;
+    notifyListeners();
+  }
+
+  void setDropdownMultiSelected(List<String> values) {
+    dropdownMultiSelected = values;
+    notifyListeners();
+  }
+
+  void setDropdownSelected(String? value) {
+    dropdownSelected = value;
+    notifyListeners();
+  }
+
+  void setRadioSelected(String? value) {
+    radioSelected = value;
     notifyListeners();
   }
 }

@@ -26,21 +26,23 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
     final currentLocale = Localizations.localeOf(context);
     final l10n = FormFieldsLocalizations.of(context);
 
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blue.shade50,
-            Colors.indigo.shade50,
+            theme.colorScheme.primary.withValues(alpha: 0.06),
+            theme.colorScheme.secondary.withValues(alpha: 0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        border:
+            Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.1),
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -54,12 +56,12 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.language,
-                  color: Colors.blue.shade700,
+                  color: theme.colorScheme.primary,
                   size: 24,
                 ),
               ),
@@ -73,7 +75,8 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade900,
+                        color: theme.textTheme.titleLarge?.color ??
+                            theme.colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -83,7 +86,7 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
                           : l10n.get('langActiveEn'),
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.blue.shade700,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                   ],
@@ -95,9 +98,10 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade100),
+              border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +113,8 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
+                    color: theme.textTheme.bodyMedium?.color ??
+                        Colors.grey.shade700,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -131,7 +136,7 @@ class LanguageIndicatorView extends LanguageIndicatorPresenterState {
                 : l10n.get('langHintEn'),
             style: TextStyle(
               fontSize: 11,
-              color: Colors.blue.shade600,
+              color: theme.colorScheme.primary,
               fontStyle: FontStyle.italic,
             ),
           ),

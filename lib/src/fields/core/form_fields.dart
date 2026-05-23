@@ -67,17 +67,22 @@ class FormFields<T> extends StatefulWidget {
     final isEnabled = onResend != null;
     return Builder(
       builder: (context) {
+        final theme = Theme.of(context);
         return Text.rich(
           TextSpan(
             text: resendPrefix,
-            style:
-                style ?? const TextStyle(color: Colors.black87, fontSize: 14),
+            style: style ??
+                TextStyle(
+                    color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+                    fontSize: 14),
             children: [
               TextSpan(
                 text: resendLink,
                 style: linkStyle ??
                     TextStyle(
-                      color: isEnabled ? Colors.blue : Colors.grey,
+                      color: isEnabled
+                          ? theme.colorScheme.primary
+                          : theme.disabledColor,
                       fontWeight: FontWeight.normal,
                       fontSize: 14,
                       decoration: TextDecoration.none,
@@ -188,12 +193,6 @@ class FormFields<T> extends StatefulWidget {
   /// Border type
   final BorderType borderType;
 
-  /// Border color for normal state
-  final Color borderColor;
-
-  /// Border color for error state
-  final Color errorBorderColor;
-
   /// Custom text style for label
   final TextStyle? labelTextStyle;
 
@@ -294,8 +293,6 @@ class FormFields<T> extends StatefulWidget {
     // Appearance & Styling
     this.radius = 10,
     this.borderType = BorderType.outlineInputBorder,
-    this.borderColor = const Color(0xFFC7C7C7),
-    this.errorBorderColor = Colors.red,
     this.labelTextStyle,
     this.inputDecoration,
     // Decorative Elements
@@ -1031,11 +1028,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       _selectedCountryCode = selected;
     }
 
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.only(left: 4, right: 4),
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Colors.grey.shade300, width: 1),
+          right: BorderSide(color: theme.dividerColor, width: 1),
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -1043,7 +1041,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           value: selected,
           isDense: true,
           icon: const Icon(Icons.arrow_drop_down, size: 18),
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          style: TextStyle(
+              fontSize: 14,
+              color: theme.textTheme.bodyMedium?.color ?? Colors.black87),
           onChanged: widget.readOnly
               ? null
               : (value) {
@@ -1700,8 +1700,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       fontWeight: FontWeight.w500,
     );
 
+    final theme = Theme.of(context);
     final labelStyle = (widget.labelTextStyle ?? defaultLabelStyle)
-        .copyWith(color: Colors.black87);
+        .copyWith(color: theme.textTheme.bodyMedium?.color ?? Colors.black87);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1710,12 +1711,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           children: [
             TextSpan(text: vm.label, style: labelStyle),
             if (widget.isRequired)
-              const TextSpan(
+              TextSpan(
                 text: ' *',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.red,
+                  color: theme.colorScheme.error,
                 ),
               ),
           ],
@@ -1767,46 +1768,31 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
   }
 
-  /// Creates a consistent border style for OTP input boxes
-  InputBorder _buildOtpBorder(Color color,
-      {double width = 1, bool isActive = false}) {
-    if (widget.otpBorderType == OtpBorderType.underline) {
-      return UnderlineInputBorder(
-        borderSide: BorderSide(color: color, width: width),
-      );
-    } else {
-      // If active (focused/has input/error), show outline, else show thin border
-      return OutlineInputBorder(
-        borderRadius: BorderRadius.circular(widget.radius),
-        borderSide: BorderSide(color: color, width: isActive ? width : 0.8),
-      );
-    }
-  }
-
   /// Builds the input decoration for OTP boxes with proper error states
   InputDecoration _buildOtpInputDecoration({required bool hasError}) {
     final base = widget.inputDecoration;
 
     // Default style: no background
-    final defaultDecoration = const InputDecoration(
+    final theme = Theme.of(context);
+    final defaultDecoration = InputDecoration(
       filled: false,
       fillColor: Colors.transparent,
-      contentPadding: EdgeInsets.symmetric(vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: theme.dividerColor, width: 1.2),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFF84CC16), width: 1.6),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Colors.red, width: 1.2),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: theme.colorScheme.error, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Colors.red, width: 1.6),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: theme.colorScheme.error, width: 1.6),
       ),
     );
 
@@ -1827,6 +1813,32 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     );
   }
 
+  Color _effectiveBorderColor(BuildContext context,
+      {bool isError = false, bool isFocused = false}) {
+    final theme = Theme.of(context);
+    final normal = theme.dividerColor;
+    final focus = theme.colorScheme.primary;
+    final error = theme.colorScheme.error;
+    return isError ? error : (isFocused ? focus : normal);
+  }
+
+  InputBorder _buildBorderFromType(BuildContext context, BorderType type,
+      {double radius = 8.0, bool isError = false, bool isFocused = false}) {
+    final color =
+        _effectiveBorderColor(context, isError: isError, isFocused: isFocused);
+    switch (type) {
+      case BorderType.none:
+        return InputBorder.none;
+      case BorderType.underlineInputBorder:
+        return UnderlineInputBorder(borderSide: BorderSide(color: color));
+      case BorderType.outlineInputBorder:
+        return OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: color, width: isFocused ? 1.8 : 1.5),
+        );
+    }
+  }
+
   /// Builds a single OTP digit input box
   Widget _buildOtpDigitBox({
     required int index,
@@ -1836,66 +1848,70 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }) {
     final isLastDigit = index == widget.verificationLength - 1;
     final isFocused = _verificationFocusNodes[index].hasFocus;
-    final hasInput = _verificationControllers[index].text.isNotEmpty;
     final hasError = state.hasError;
 
     // Border style sesuai otpBorderType
-    InputBorder border;
-    if (widget.otpBorderType == OtpBorderType.underline) {
-      border = _buildOtpBorder(
-        hasError
-            ? widget.errorBorderColor
-            : (isFocused ? Colors.blue : widget.borderColor),
-        width: hasError ? 2 : (isFocused ? 2 : 1),
-        isActive: isFocused || hasInput || hasError,
-      );
-    } else {
-      // Selalu gunakan OutlineInputBorder (box) untuk semua kondisi
-      border = _buildOtpBorder(
-        hasError
-            ? widget.errorBorderColor
-            : (isFocused ? Colors.blue : widget.borderColor),
-        width: hasError ? 2 : (isFocused ? 2 : 1.2),
-        isActive: isFocused || hasInput || hasError,
-      );
-    }
+    final color =
+        _effectiveBorderColor(context, isError: hasError, isFocused: isFocused);
+
+    // Draw the border with a parent Container instead of relying on the
+    // TextField's InputBorder. This avoids stroke clipping caused by the
+    // TextField internals or parent layout clipping on some devices.
+    final double borderWidth = hasError ? 2 : (isFocused ? 2 : 1.2);
+    final borderRadius = BorderRadius.circular(widget.radius);
 
     return SizedBox(
       width: widget.otpBoxWidth,
-      child: TextField(
-        controller: _verificationControllers[index],
-        focusNode: _verificationFocusNodes[index],
-        readOnly: widget.readOnly,
-        keyboardType: widget.verificationOtpAlphanumeric
-            ? TextInputType.visiblePassword // agar keyboard qwerty muncul
-            : TextInputType.number,
-        obscureText: widget.verificationHidden && vm.obscure,
-        obscuringCharacter: '•',
-        textInputAction:
-            isLastDigit ? TextInputAction.done : TextInputAction.next,
-        textAlign: TextAlign.center,
-        style: widget.otpTextStyle ??
-            const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        inputFormatters: widget.otpInputFormatters ??
-            (widget.verificationOtpAlphanumeric
-                ? [
-                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                    LengthLimitingTextInputFormatter(widget.verificationLength)
-                  ]
-                : [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(widget.verificationLength)
-                  ]),
-        onTap: () => _selectVerificationDigit(index),
-        onChanged: (value) =>
-            _handleVerificationDigitChanged(index, value, state),
-        decoration: decoration.copyWith(
-          border: border,
-          enabledBorder: border,
-          focusedBorder: border,
-          errorBorder: border,
-          focusedErrorBorder: border,
-          disabledBorder: border,
+      height: widget.otpBoxWidth,
+      child: Container(
+        decoration: BoxDecoration(
+          color: decoration.fillColor ?? Colors.transparent,
+          borderRadius: borderRadius,
+          border: Border.all(color: color, width: borderWidth),
+        ),
+        padding: EdgeInsets.zero,
+        child: Center(
+          child: TextField(
+            controller: _verificationControllers[index],
+            focusNode: _verificationFocusNodes[index],
+            readOnly: widget.readOnly,
+            keyboardType: widget.verificationOtpAlphanumeric
+                ? TextInputType.visiblePassword
+                : TextInputType.number,
+            obscureText: widget.verificationHidden && vm.obscure,
+            obscuringCharacter: '•',
+            textInputAction:
+                isLastDigit ? TextInputAction.done : TextInputAction.next,
+            textAlign: TextAlign.center,
+            style: widget.otpTextStyle ??
+                const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            inputFormatters: widget.otpInputFormatters ??
+                (widget.verificationOtpAlphanumeric
+                    ? [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[A-Za-z0-9]')),
+                        LengthLimitingTextInputFormatter(
+                            widget.verificationLength)
+                      ]
+                    : [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(
+                            widget.verificationLength)
+                      ]),
+            onTap: () => _selectVerificationDigit(index),
+            onChanged: (value) =>
+                _handleVerificationDigitChanged(index, value, state),
+            decoration: decoration.copyWith(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
         ),
       ),
     );
@@ -1920,38 +1936,47 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         final hasError = state.hasError;
         final boxDecoration = _buildOtpInputDecoration(hasError: hasError);
 
-        final otpBoxes = Center(
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: widget.otpBoxSpacing,
-            runSpacing: widget.otpBoxSpacing,
-            children: [
-              for (var i = 0; i < widget.verificationLength; i++)
-                _buildOtpDigitBox(
-                  index: i,
-                  decoration: boxDecoration,
-                  state: state,
-                  vm: vm,
-                ),
-              if (widget.verificationHidden)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    visualDensity: VisualDensity.compact,
-                    splashRadius: 18,
-                    iconSize: 18,
-                    icon: Icon(
-                      vm.obscure
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-                    ),
-                    onPressed: widget.readOnly
-                        ? null
-                        : () => _handleVisibilityToggleTap(vm),
+        // Add small horizontal padding so outline borders of the first
+        // and last OTP boxes are not clipped by parent layouts or pixel
+        // rounding when rendered at the screen edge.
+        final otpBoxes = Padding(
+          // Increase horizontal + vertical padding so the outline stroke of the
+          // first/last boxes isn't clipped by parent bounds or pixel
+          // rounding on different devices.
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: widget.otpBoxSpacing,
+              runSpacing: widget.otpBoxSpacing,
+              children: [
+                for (var i = 0; i < widget.verificationLength; i++)
+                  _buildOtpDigitBox(
+                    index: i,
+                    decoration: boxDecoration,
+                    state: state,
+                    vm: vm,
                   ),
-                ),
-            ],
+                if (widget.verificationHidden)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      splashRadius: 18,
+                      iconSize: 18,
+                      icon: Icon(
+                        vm.obscure
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
+                      ),
+                      onPressed: widget.readOnly
+                          ? null
+                          : () => _handleVisibilityToggleTap(vm),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
 
@@ -2000,7 +2025,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 child: Text(
                   state.errorText!,
                   style: TextStyle(
-                    color: widget.errorBorderColor,
+                    color: _effectiveBorderColor(context, isError: true),
                     fontSize: 12,
                   ),
                 ),
@@ -2300,71 +2325,22 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                 LabelPosition.inBorder
                             ? '${_getLocalizations(context).enterPrefix}${vm.label}${widget.isRequired ? ' *' : ''}'
                             : null,
-                        focusedErrorBorder: widget.borderType == BorderType.none
-                            ? InputBorder.none
-                            : widget.borderType ==
-                                    BorderType.underlineInputBorder
-                                ? const UnderlineInputBorder()
-                                : OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(widget.radius),
-                                    borderSide: BorderSide(
-                                      width: 1,
-                                      color: widget.errorBorderColor,
-                                    ),
-                                  ),
-                        focusedBorder: widget.borderType == BorderType.none
-                            ? InputBorder.none
-                            : widget.borderType ==
-                                    BorderType.underlineInputBorder
-                                ? const UnderlineInputBorder()
-                                : OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(widget.radius),
-                                    borderSide: BorderSide(
-                                      width: 1,
-                                      color: widget.borderColor,
-                                    ),
-                                  ),
-                        enabledBorder: widget.borderType == BorderType.none
-                            ? InputBorder.none
-                            : widget.borderType ==
-                                    BorderType.underlineInputBorder
-                                ? const UnderlineInputBorder()
-                                : OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(widget.radius),
-                                    borderSide: BorderSide(
-                                      width: 1,
-                                      color: widget.borderColor,
-                                    ),
-                                  ),
-                        border: widget.borderType == BorderType.none
-                            ? InputBorder.none
-                            : widget.borderType ==
-                                    BorderType.underlineInputBorder
-                                ? const UnderlineInputBorder()
-                                : OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(widget.radius),
-                                    borderSide: BorderSide(
-                                      width: 1,
-                                      color: widget.borderColor,
-                                    ),
-                                  ),
-                        disabledBorder: widget.borderType == BorderType.none
-                            ? InputBorder.none
-                            : widget.borderType ==
-                                    BorderType.underlineInputBorder
-                                ? const UnderlineInputBorder()
-                                : OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(widget.radius),
-                                    borderSide: BorderSide(
-                                      width: 1,
-                                      color: widget.borderColor,
-                                    ),
-                                  ),
+                        focusedErrorBorder: _buildBorderFromType(
+                            ctx, widget.borderType,
+                            radius: widget.radius,
+                            isError: true,
+                            isFocused: true),
+                        focusedBorder: _buildBorderFromType(
+                            ctx, widget.borderType,
+                            radius: widget.radius, isFocused: true),
+                        enabledBorder: _buildBorderFromType(
+                            ctx, widget.borderType,
+                            radius: widget.radius),
+                        border: _buildBorderFromType(ctx, widget.borderType,
+                            radius: widget.radius),
+                        disabledBorder: _buildBorderFromType(
+                            ctx, widget.borderType,
+                            radius: widget.radius),
                       ),
                 );
 

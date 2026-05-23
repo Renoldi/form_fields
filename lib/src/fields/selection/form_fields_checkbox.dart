@@ -2,78 +2,118 @@ import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 
-class FormFieldsCheckbox<T> extends FormField<List<T>> {
+class FormFieldsCheckbox<T> extends StatefulWidget {
   final String? externalErrorText;
-  FormFieldsCheckbox({
+  final String label;
+  final List<T> items;
+  final ValueChanged<List<T>> onChanged;
+  final List<T>? initialValue;
+  final bool isRequired;
+  final Axis direction;
+  final BorderType borderType;
+  final Color activeColor;
+  final EdgeInsets itemPadding;
+  final double itemMarginTop;
+  final double itemMarginBottom;
+  final double itemMarginHorizontal;
+  final IndicatorVerticalAlignment indicatorVerticalAlignment;
+  final bool horizontalSideBySide;
+  final double textRightPadding;
+  final Color? itemBorderColor;
+  final double itemBorderWidth;
+  final double itemBorderRadius;
+  final String Function(T item)? itemLabelBuilder;
+  final Widget Function(T item, bool selected)? itemBuilder;
+  final FormFieldValidator<List<T>>? validator;
+  final LabelPosition labelPosition;
+  final double containerGap;
+
+  const FormFieldsCheckbox({
     super.key,
-    required String label,
-    required List<T> items,
-    required ValueChanged<List<T>> onChanged,
-    List<T>? initialValue,
-    bool isRequired = false,
-    Axis direction = Axis.vertical,
-    double radius = 10,
-    Color borderColor = const Color(0xFFC7C7C7),
-    Color errorBorderColor = Colors.red,
-    Color activeColor = Colors.blue,
-    EdgeInsets itemPadding = const EdgeInsets.symmetric(vertical: 6),
-    double itemMarginTop = 4,
-    double itemMarginBottom = 4,
-    double itemMarginHorizontal = 0,
-    IndicatorVerticalAlignment indicatorVerticalAlignment =
-        IndicatorVerticalAlignment.center,
-    bool horizontalSideBySide = false,
-    double textRightPadding = 0,
-    Color? itemBorderColor,
-    double itemBorderWidth = 1.0,
-    double itemBorderRadius = 8,
-    String Function(T item)? itemLabelBuilder,
-    Widget Function(T item, bool selected)? itemBuilder,
-    FormFieldValidator<List<T>>? validator,
-    LabelPosition labelPosition = LabelPosition.top,
-    double containerGap = 8,
+    required this.label,
+    required this.items,
+    required this.onChanged,
+    this.initialValue,
+    this.isRequired = false,
+    this.direction = Axis.vertical,
+    this.borderType = BorderType.outlineInputBorder,
+    this.activeColor = Colors.blue,
+    this.itemPadding = const EdgeInsets.symmetric(vertical: 6),
+    this.itemMarginTop = 4,
+    this.itemMarginBottom = 4,
+    this.itemMarginHorizontal = 0,
+    this.indicatorVerticalAlignment = IndicatorVerticalAlignment.center,
+    this.horizontalSideBySide = false,
+    this.textRightPadding = 0,
+    this.itemBorderColor,
+    this.itemBorderWidth = 1.0,
+    this.itemBorderRadius = 8,
+    this.itemLabelBuilder,
+    this.itemBuilder,
+    this.validator,
+    this.labelPosition = LabelPosition.top,
+    this.containerGap = 8,
     this.externalErrorText,
-  }) : super(
-          initialValue: initialValue ?? [],
-          validator: (value) {
-            if (externalErrorText != null && externalErrorText.isNotEmpty) {
-              return externalErrorText;
-            }
-            if (isRequired && (value == null || value.isEmpty)) {
-              // Localization handled in build method
-              return "";
-            }
-            return validator?.call(value ?? []);
-          },
-          builder: (FormFieldState<List<T>> state) {
-            return _FormFieldsCheckboxBody<T>(
-              label: label,
-              state: state,
-              items: items,
-              onChanged: onChanged,
-              direction: direction,
-              radius: radius,
-              borderColor: borderColor,
-              errorBorderColor: errorBorderColor,
-              activeColor: activeColor,
-              itemPadding: itemPadding,
-              itemMarginTop: itemMarginTop,
-              itemMarginBottom: itemMarginBottom,
-              itemMarginHorizontal: itemMarginHorizontal,
-              indicatorVerticalAlignment: indicatorVerticalAlignment,
-              horizontalSideBySide: horizontalSideBySide,
-              textRightPadding: textRightPadding,
-              itemBorderColor: itemBorderColor,
-              itemBorderWidth: itemBorderWidth,
-              itemBorderRadius: itemBorderRadius,
-              itemLabelBuilder: itemLabelBuilder,
-              itemBuilder: itemBuilder,
-              isRequired: isRequired,
-              labelPosition: labelPosition,
-              containerGap: containerGap,
-            );
-          },
+  });
+
+  @override
+  State<FormFieldsCheckbox<T>> createState() => _FormFieldsCheckboxState<T>();
+}
+
+class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
+  late final GlobalKey<FormFieldState<List<T>>> _formKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormFieldState<List<T>>>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
+    return FormField<List<T>>(
+      key: _formKey,
+      initialValue: widget.initialValue ?? [],
+      validator: (value) {
+        if (widget.externalErrorText != null &&
+            widget.externalErrorText!.isNotEmpty) {
+          return widget.externalErrorText;
+        }
+        if (widget.isRequired && (value == null || value.isEmpty)) {
+          return l.selectAtLeastOne(widget.label);
+        }
+        if (widget.validator != null) return widget.validator!(value ?? []);
+        return null;
+      },
+      builder: (FormFieldState<List<T>> state) {
+        return _FormFieldsCheckboxBody<T>(
+          label: widget.label,
+          state: state,
+          items: widget.items,
+          onChanged: widget.onChanged,
+          direction: widget.direction,
+          borderType: widget.borderType,
+          activeColor: widget.activeColor,
+          itemPadding: widget.itemPadding,
+          itemMarginTop: widget.itemMarginTop,
+          itemMarginBottom: widget.itemMarginBottom,
+          itemMarginHorizontal: widget.itemMarginHorizontal,
+          indicatorVerticalAlignment: widget.indicatorVerticalAlignment,
+          horizontalSideBySide: widget.horizontalSideBySide,
+          textRightPadding: widget.textRightPadding,
+          itemBorderColor: widget.itemBorderColor,
+          itemBorderWidth: widget.itemBorderWidth,
+          itemBorderRadius: widget.itemBorderRadius,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
+          isRequired: widget.isRequired,
+          labelPosition: widget.labelPosition,
+          containerGap: widget.containerGap,
         );
+      },
+    );
+  }
 }
 
 class _FormFieldsCheckboxBody<T> extends StatefulWidget {
@@ -82,9 +122,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final List<T> items;
   final ValueChanged<List<T>> onChanged;
   final Axis direction;
-  final double radius;
-  final Color borderColor;
-  final Color errorBorderColor;
+  final BorderType borderType;
   final Color activeColor;
   final EdgeInsets itemPadding;
   final double itemMarginTop;
@@ -108,9 +146,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     required this.items,
     required this.onChanged,
     required this.direction,
-    required this.radius,
-    required this.borderColor,
-    required this.errorBorderColor,
+    required this.borderType,
     required this.activeColor,
     required this.itemPadding,
     required this.itemMarginTop,
@@ -164,6 +200,7 @@ class _FormFieldsCheckboxBodyView<T>
     final selectedValues = widget.state.value ?? [];
     final hasError = widget.state.hasError;
 
+    final theme = Theme.of(context);
     // Build label widget
     final labelWidget = RichText(
       text: TextSpan(
@@ -173,32 +210,38 @@ class _FormFieldsCheckboxBodyView<T>
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: hasError ? const Color(0xFFB71C1C) : Colors.black87,
+              color: hasError
+                  ? theme.colorScheme.error
+                  : (theme.textTheme.bodyMedium?.color ?? Colors.black87),
             ),
           ),
           if (widget.isRequired)
-            const TextSpan(
+            TextSpan(
               text: ' *',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.red,
+                color: theme.colorScheme.error,
               ),
             ),
         ],
       ),
     );
 
-    // Build checkbox container
+    // Build checkbox container using borderType and theme colors
+    final normalColor = theme.dividerColor;
+    final errorColor = theme.colorScheme.error;
+    final containerBorder = widget.itemBorderColor == null
+        ? (widget.borderType == BorderType.none
+            ? null
+            : Border.all(
+                color: hasError ? errorColor : normalColor, width: 1.5))
+        : null;
+
     final checkboxContainer = Container(
       decoration: BoxDecoration(
-        border: widget.itemBorderColor == null
-            ? Border.all(
-                color: hasError ? widget.errorBorderColor : widget.borderColor,
-                width: 1.5,
-              )
-            : null,
-        borderRadius: BorderRadius.circular(widget.radius),
+        border: containerBorder,
+        borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child:
@@ -224,7 +267,7 @@ class _FormFieldsCheckboxBodyView<T>
                   ? l.selectAtLeastOne(widget.label)
                   : widget.state.errorText!,
               style: TextStyle(
-                color: widget.errorBorderColor,
+                color: errorColor,
                 fontSize: 12,
               ),
             ),

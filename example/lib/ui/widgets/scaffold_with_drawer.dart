@@ -36,7 +36,7 @@ class ScaffoldWithDrawerView extends ScaffoldWithDrawerPresenterState {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.language, color: Colors.blue),
+            Icon(Icons.language, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Text(context.tr('selectLanguage')),
           ],
@@ -90,7 +90,7 @@ class ScaffoldWithDrawerView extends ScaffoldWithDrawerPresenterState {
         ),
         title: Text(context.tr('indonesian')),
         backgroundColor: const Color(0xFF1F2937),
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         actions: [
           // Language indicator button
           Padding(
@@ -103,13 +103,16 @@ class ScaffoldWithDrawerView extends ScaffoldWithDrawerPresenterState {
               ),
               label: Text(
                 currentLocale.languageCode == 'id' ? 'ID' : 'EN',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .onPrimary
+                    .withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),

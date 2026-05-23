@@ -332,71 +332,108 @@ class View extends PresenterState {
 
   /// Build Material Design 3 theme with custom colors
   static ThemeData _buildTheme() {
+    // Central seed color for the example app; controls primary color scheme.
+    const seedColor = Color(0xff008BD0);
+    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor);
+
     return ThemeData(
-      // Color & Material3
-      primarySwatch: Colors.blue,
+      colorScheme: colorScheme,
       useMaterial3: true,
 
       // Page Transitions
       pageTransitionsTheme: const PageTransitionsTheme(),
 
-      // AppBar Theme
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1F2937),
-        foregroundColor: Colors.white,
+      // AppBar Theme - keep the dark appbar background used in examples,
+      // but derive the foreground color from the color scheme.
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFF1F2937),
+        foregroundColor: colorScheme.onPrimary,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Color(0xff008BD0),
-        linearTrackColor: Color(0x33008BD0),
+
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colorScheme.primary,
+        linearTrackColor: colorScheme.primary.withValues(alpha: 0.2),
       ),
+
       extensions: <ThemeExtension<dynamic>>[
-        const AppLoadingThemeData(
-          indicatorColor: Color(0xff008BD0),
-          trackColor: Color(0x33008BD0),
-          overlayColor: Color(0x73000000),
-          accentColor: Color(0xff008BD0),
+        AppLoadingThemeData(
+          indicatorColor: colorScheme.primary,
+          trackColor: colorScheme.primary.withValues(alpha: 0.2),
+          overlayColor: const Color(0x73000000),
+          accentColor: colorScheme.primary,
         ),
-        const FormFieldsMyImageThemeData(
-          addTileBorderColor: Color(0xff008BD0),
+        FormFieldsMyImageThemeData(
+          addTileBorderColor: colorScheme.primary,
           addTileBorderWidth: 2,
           addTileBorderRadius: 8,
-          addTileBackgroundColor: Color(0xFFF3F4F6),
-          addIconColor: Color(0xff008BD0),
+          addTileBackgroundColor: const Color(0xFFF3F4F6),
+          addIconColor: colorScheme.primary,
         ),
-        const AppButtonThemeData(
+        AppButtonThemeData(
           filledStyle: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
-            foregroundColor: WidgetStatePropertyAll(Colors.white),
+            backgroundColor: WidgetStatePropertyAll(colorScheme.primary),
+            foregroundColor: WidgetStatePropertyAll(colorScheme.onPrimary),
             textStyle: WidgetStatePropertyAll(
-              TextStyle(fontWeight: FontWeight.bold),
+              const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           outlinedStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
+            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
             side: WidgetStatePropertyAll(
-              BorderSide(color: Color(0xff008BD0)),
+              BorderSide(color: colorScheme.primary),
             ),
           ),
           textStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
+            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
           ),
           iconStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(Color(0xff008BD0)),
+            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
           ),
-          iconBackgroundColor: Colors.white,
+          iconBackgroundColor: colorScheme.onSurface,
           fabBackgroundColor: Colors.yellow,
         ),
       ],
 
       // InputDecoration Theme for all TextFields (including FormFieldsAutocomplete)
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(
+      inputDecorationTheme: InputDecorationTheme(
+        border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(8))),
         filled: true,
-        fillColor: Color(0xFFF3F4F6),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: TextStyle(color: Color(0xff008BD0)),
-        hintStyle: TextStyle(color: Colors.grey),
+        fillColor: const Color(0xFFF3F4F6),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        labelStyle: TextStyle(color: colorScheme.primary),
+        hintStyle:
+            TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
+        // Error / validation styles explicitly follow the colorScheme
+        errorStyle: TextStyle(color: colorScheme.error, fontSize: 12),
+        errorBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.6),
+        ),
+      ),
+      // Theme settings for Checkbox and Radio so selection widgets follow
+      // the central `colorScheme` rather than hard-coded colors.
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return colorScheme.primary;
+          }
+          return colorScheme.onSurface.withValues(alpha: 0.6);
+        }),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return colorScheme.primary;
+          }
+          return colorScheme.onSurface.withValues(alpha: 0.6);
+        }),
       ),
     );
   }

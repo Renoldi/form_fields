@@ -14,10 +14,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final int? maxSelections;
   final LabelPosition labelPosition;
   final BorderType borderType;
-  final double radius;
-  final Color borderColor;
-  final Color focusedBorderColor;
-  final Color errorBorderColor;
+  // visual styling controlled by `borderType` and theme
   final String? hintText;
   final bool showItemCount;
   final Color? chipBackgroundColor;
@@ -40,10 +37,6 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     this.maxSelections,
     this.labelPosition = LabelPosition.top,
     this.borderType = BorderType.outlineInputBorder,
-    this.radius = 10,
-    this.borderColor = const Color(0xFFC7C7C7),
-    this.focusedBorderColor = Colors.blue,
-    this.errorBorderColor = Colors.red,
     this.hintText,
     this.showItemCount = false,
     this.chipBackgroundColor,
@@ -216,25 +209,24 @@ class _FormFieldsDropdownMultiState<T>
           );
         }
 
-        final border = _buildBorder(
-          widget.borderType,
-          state.hasError ? widget.errorBorderColor : widget.borderColor,
-          widget.radius,
-        );
+        final border =
+            _buildBorder(context, widget.borderType, isError: state.hasError);
 
         final field = InkWell(
           onTap: () => openDialog(state.context),
           child: InputDecorator(
             decoration: InputDecoration(
               hintText: widget.hintText ?? l10n.select(widget.label),
-              errorText: state.errorText,
+              errorText:
+                  (state.errorText != null && state.errorText!.isNotEmpty)
+                      ? state.errorText
+                      : (state.hasError
+                          ? l10n.selectAtLeastOne(widget.label)
+                          : null),
               border: border,
               enabledBorder: border,
-              focusedBorder: _buildBorder(
-                widget.borderType,
-                widget.focusedBorderColor,
-                widget.radius,
-              ),
+              focusedBorder:
+                  _buildBorder(context, widget.borderType, isFocused: true),
             ),
             child: selectedItems.isEmpty
                 ? Text(
@@ -273,22 +265,23 @@ class _FormFieldsDropdownMultiState<T>
           ),
         );
 
+        final theme = Theme.of(context);
         final labelWidget = RichText(
           text: TextSpan(
             children: [
               TextSpan(
                 text: widget.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
                 ),
               ),
               if (widget.isRequired)
-                const TextSpan(
+                TextSpan(
                   text: ' *',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.red,
+                    color: theme.colorScheme.error,
                   ),
                 ),
             ],
@@ -372,11 +365,15 @@ class _FormFieldsDropdownMultiState<T>
     );
   }
 
-  InputBorder _buildBorder(
-    BorderType type,
-    Color color,
-    double radius,
-  ) {
+  InputBorder _buildBorder(BuildContext context, BorderType type,
+      {bool isError = false, bool isFocused = false}) {
+    final theme = Theme.of(context);
+    final normalColor = theme.dividerColor;
+    final focusColor = theme.colorScheme.primary;
+    final errorColor = theme.colorScheme.error;
+    final color = isError ? errorColor : (isFocused ? focusColor : normalColor);
+    const radius = 8.0;
+
     switch (type) {
       case BorderType.none:
         return InputBorder.none;
@@ -387,7 +384,7 @@ class _FormFieldsDropdownMultiState<T>
       case BorderType.outlineInputBorder:
         return OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: color, width: 1.5),
+          borderSide: BorderSide(color: color, width: isFocused ? 1.8 : 1.5),
         );
     }
   }

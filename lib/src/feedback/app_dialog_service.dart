@@ -51,7 +51,7 @@ class AppDialogService {
       );
       final Widget dialogChild =
           loadingContainer == AppDialogLoadingContainer.card
-              ? _defaultDialogCard(child: visual)
+              ? _defaultDialogCard(context, child: visual)
               : visual;
       _showProtectedDialog(
         alignment: _alignment(position),
@@ -282,7 +282,7 @@ class AppDialogService {
     );
     final Widget dialogChild =
         loadingContainer == AppDialogLoadingContainer.card
-            ? _defaultDialogCard(child: visual)
+            ? _defaultDialogCard(context, child: visual)
             : visual;
     return _showProtectedDialog(
       alignment: _alignment(position),
@@ -420,14 +420,16 @@ class AppDialogService {
     String okLabel = 'OK',
     VoidCallback? onComplete,
   }) {
-    final (icon, color) = _style(dialogType, isSuccess);
-    final buttonColor = _buttonColor(dialogType, isSuccess);
+    final (icon, color) = _style(context, dialogType, isSuccess);
+    final buttonColor = _buttonColor(context, dialogType, isSuccess);
     final isWarning = dialogType == AppDialogType.validation && !isSuccess;
 
+    final theme = Theme.of(context);
     return _showProtectedDialog(
       alignment: _alignment(position),
       insetPadding: _inset(position),
       child: _defaultDialogCard(
+        context,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -449,7 +451,9 @@ class AppDialogService {
             const SizedBox(height: 16),
             Text(
               message,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              style: TextStyle(
+                  fontSize: 14,
+                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -493,13 +497,16 @@ class AppDialogService {
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.exit_to_app, color: Colors.redAccent),
-              const SizedBox(width: 8),
-              Text(title),
-            ],
-          ),
+          title: Builder(builder: (titleContext) {
+            final theme = Theme.of(titleContext);
+            return Row(
+              children: [
+                Icon(Icons.exit_to_app, color: theme.colorScheme.error),
+                const SizedBox(width: 8),
+                Text(title),
+              ],
+            );
+          }),
           content: Text(message),
           actions: [
             TextButton(
@@ -576,12 +583,11 @@ class AppDialogService {
     );
   }
 
-  Widget _defaultDialogCard({
-    required Widget child,
-  }) {
+  Widget _defaultDialogCard(BuildContext context, {required Widget child}) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       constraints: const BoxConstraints(maxWidth: 400),
@@ -680,33 +686,37 @@ class AppDialogService {
   /// Hides the currently visible loading dialog, if any.
   void hideLoading() => _dismissLoadingIfVisible();
 
-  (IconData, Color) _style(AppDialogType? type, bool isSuccess) {
+  (IconData, Color) _style(
+      BuildContext context, AppDialogType? type, bool isSuccess) {
+    final theme = Theme.of(context);
     if (isSuccess) {
-      return (Icons.check_circle, Colors.green.shade600);
+      return (Icons.check_circle, theme.colorScheme.primary);
     }
 
     if (type == null) {
-      return (Icons.error, Colors.red.shade600);
+      return (Icons.error, theme.colorScheme.error);
     }
 
     switch (type) {
       case AppDialogType.validation:
         return (Icons.warning_outlined, Colors.orange.shade600);
       case AppDialogType.network:
-        return (Icons.cloud_off, Colors.blue.shade600);
+        return (Icons.cloud_off, theme.colorScheme.primary);
       case AppDialogType.authentication:
-        return (Icons.lock_outline, Colors.red.shade700);
+        return (Icons.lock_outline, theme.colorScheme.error);
       case AppDialogType.server:
-        return (Icons.error_outline, Colors.red.shade600);
+        return (Icons.error_outline, theme.colorScheme.error);
     }
   }
 
-  Color _buttonColor(AppDialogType? type, bool isSuccess) {
-    if (isSuccess) return Colors.green.shade600;
+  Color _buttonColor(
+      BuildContext context, AppDialogType? type, bool isSuccess) {
+    final theme = Theme.of(context);
+    if (isSuccess) return theme.colorScheme.primary;
     if (type == AppDialogType.validation) return Colors.orange.shade600;
-    if (type == AppDialogType.network) return Colors.blue.shade600;
-    if (type == AppDialogType.authentication) return Colors.red.shade700;
-    return Colors.red.shade600;
+    if (type == AppDialogType.network) return theme.colorScheme.primary;
+    if (type == AppDialogType.authentication) return theme.colorScheme.error;
+    return theme.colorScheme.error;
   }
 
   Alignment _alignment(AppDialogPosition position) {

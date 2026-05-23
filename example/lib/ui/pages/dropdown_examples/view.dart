@@ -335,10 +335,7 @@ class View extends PresenterState {
                     initialValue: viewModel.dropdown3,
                     items: viewModel.colors,
                     isRequired: true,
-                    borderColor: Colors.purple,
-                    focusedBorderColor: Colors.deepPurple,
-                    errorBorderColor: Colors.red.shade700,
-                    radius: 15,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: (value) => viewModel.setDropdown3(value),
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedColor'),
@@ -377,7 +374,7 @@ class View extends PresenterState {
                     initialValue: viewModel.dropdown4,
                     items: viewModel.sizes,
                     isRequired: true,
-                    borderColor: Colors.teal,
+                    borderType: BorderType.outlineInputBorder,
                     prefixIcon:
                         const Icon(Icons.shopping_bag, color: Colors.teal),
                     suffixIcon:
@@ -431,7 +428,7 @@ class View extends PresenterState {
                       'International'
                     ],
                     isRequired: true,
-                    borderColor: Colors.orange,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: (value) => viewModel.setDropdown5(value),
                   ),
                   buildResultDisplay(context, context.tr('ddSelectedShipping'),
@@ -756,9 +753,7 @@ class View extends PresenterState {
                     enableFilter: true,
                     filterHintText:
                         FormFieldsLocalizations.of(context).searchHint,
-                    borderColor: Colors.teal,
-                    focusedBorderColor: Colors.teal.shade700,
-                    radius: 12,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: (value) => viewModel.setDropdown10(value),
                   ),
                   buildResultDisplay(

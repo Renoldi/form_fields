@@ -405,8 +405,7 @@ class View extends PresenterState {
                     filterHintText: context.tr('ccSearchCountriesHint'),
                     itemLabelBuilder: (country) =>
                         '${country.flag} ${country.name}',
-                    borderColor: Colors.orange,
-                    focusedBorderColor: Colors.orange.shade700,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setSelectedCountryWithFilter,
                   ),
                   buildResultDisplay(

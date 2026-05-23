@@ -27,12 +27,20 @@ Widget buildResultDisplay<T>(dynamic a, dynamic b, [dynamic c]) {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: hasValue
-            ? Colors.green.withValues(alpha: 0.1)
-            : Colors.grey.withValues(alpha: 0.1),
+            ? (context != null
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+                : Colors.green.withValues(alpha: 0.1))
+            : (context != null
+                ? Theme.of(context).dividerColor.withValues(alpha: 0.08)
+                : Colors.grey.withValues(alpha: 0.1)),
         border: Border.all(
           color: hasValue
-              ? Colors.green.withValues(alpha: 0.5)
-              : Colors.grey.withValues(alpha: 0.3),
+              ? (context != null
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                  : Colors.green.withValues(alpha: 0.5))
+              : (context != null
+                  ? Theme.of(context).dividerColor.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.3)),
           width: 1,
         ),
         borderRadius: BorderRadius.circular(8),
@@ -64,7 +72,14 @@ Widget buildResultDisplay<T>(dynamic a, dynamic b, [dynamic c]) {
                 fontSize: 13,
                 fontFamily: 'Courier',
                 fontWeight: FontWeight.w500,
-                color: hasValue ? Colors.green.shade700 : Colors.grey.shade600,
+                color: hasValue
+                    ? (context != null
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.green.shade700)
+                    : (context != null
+                        ? Theme.of(context).textTheme.bodyMedium?.color ??
+                            Colors.grey.shade600
+                        : Colors.grey.shade600),
               ),
             ),
           ),

@@ -80,7 +80,7 @@ class View extends PresenterState {
                       isRequired: false,
                       direction: Axis.horizontal,
                       horizontalSideBySide: true,
-                      borderColor: Colors.blue,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.blue,
                       onChanged: viewModel.setCheckbox2,
                     ),
@@ -223,7 +223,7 @@ class View extends PresenterState {
                       isRequired: true,
                       direction: Axis.horizontal,
                       horizontalSideBySide: true,
-                      borderColor: Colors.teal,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.teal,
                       onChanged: viewModel.setCheckbox4,
                     ),
@@ -298,10 +298,8 @@ class View extends PresenterState {
                       ],
                       isRequired: true,
                       direction: Axis.vertical,
-                      borderColor: Colors.purple,
-                      errorBorderColor: Colors.red.shade700,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.purple,
-                      radius: 15,
                       itemBorderColor: Colors.purple.shade300,
                       itemBorderWidth: 1.5,
                       itemBorderRadius: 10,
@@ -351,7 +349,7 @@ class View extends PresenterState {
                       items: const ['Email', 'Phone', 'SMS', 'WhatsApp'],
                       isRequired: false,
                       direction: Axis.vertical,
-                      borderColor: Colors.orange,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.orange,
                       itemBorderColor: Colors.orange.shade300,
                       itemBorderWidth: 1.25,
@@ -414,7 +412,7 @@ class View extends PresenterState {
                       isRequired: true,
                       direction: Axis.horizontal,
                       horizontalSideBySide: true,
-                      borderColor: Colors.indigo,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.indigo,
                       itemBorderColor: Colors.indigo.shade300,
                       itemBorderWidth: 1.25,
@@ -467,7 +465,7 @@ class View extends PresenterState {
                       items: const ['WiFi', 'Parking', 'Gym', 'Pool'],
                       isRequired: false,
                       direction: Axis.vertical,
-                      borderColor: Colors.cyan,
+                      borderType: BorderType.outlineInputBorder,
                       activeColor: Colors.cyan,
                       indicatorVerticalAlignment:
                           IndicatorVerticalAlignment.bottom,
@@ -515,7 +513,7 @@ class View extends PresenterState {
                   items: const ['Option A', 'Option B', 'Option C', 'Option D'],
                   isRequired: true,
                   direction: Axis.vertical,
-                  borderColor: Colors.red,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.red,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -540,8 +538,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -551,7 +549,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Pilihan Minimal 2 Opsi",\n  "initialValue": [],\n  "items": ["Option A", "Option B", "Option C", "Option D"],\n  "isRequired": true,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.red",\n  "activeColor": "Colors.red",\n  "validator": "(value) => min 2 selections",\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -595,7 +592,7 @@ class View extends PresenterState {
                   ],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.green,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.green,
                   itemPadding:
                       const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
@@ -611,8 +608,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -622,7 +619,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Dietary Restrictions",\n  "initialValue": [],\n  "items": ["Vegetarian", "Vegan", "Gluten-Free", ...],\n  "isRequired": false,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.green",\n  "activeColor": "Colors.green",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 10, horizontal: 4)",\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -641,7 +637,7 @@ class View extends PresenterState {
                   isRequired: false,
                   direction: Axis.horizontal,
                   horizontalSideBySide: true,
-                  borderColor: Colors.deepPurple,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.deepPurple,
                   itemBorderColor: Colors.deepPurple.shade300,
                   itemBorderWidth: 1.25,
@@ -661,8 +657,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -672,7 +668,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Notifications",\n  "initialValue": [],\n  "items": ["Push", "Email", "SMS", "In-App"],\n  "isRequired": false,\n  "direction": "Axis.horizontal",\n  "horizontalSideBySide": true,\n  "borderColor": "Colors.deepPurple",\n  "activeColor": "Colors.deepPurple",\n  "itemBorderColor": "Colors.deepPurple.shade300",\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -721,7 +716,7 @@ class View extends PresenterState {
                   ],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.amber,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.amber,
                   itemPadding:
                       const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
@@ -739,8 +734,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -750,7 +745,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Countries Visited",\n  "initialValue": [],\n  "items": ["United States", "United Kingdom", ...],\n  "isRequired": false,\n  "direction": "Axis.vertical",\n  "borderColor": "Colors.amber",\n  "activeColor": "Colors.amber",\n  "itemPadding": "EdgeInsets.symmetric(vertical: 6, horizontal: 4)",\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -771,7 +765,7 @@ class View extends PresenterState {
                   items: const ['Dark Mode', 'Notifications', 'Analytics'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.blue,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.blue,
                   labelPosition: LabelPosition.bottom,
                   containerGap: 12,
@@ -787,8 +781,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -798,7 +792,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Preferences",\n  "initialValue": [],\n  "items": ["Dark Mode", "Notifications", "Analytics"],\n  "labelPosition": "LabelPosition.bottom",\n  "containerGap": 12,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -816,7 +809,7 @@ class View extends PresenterState {
                   items: const ['Read', 'Write', 'Delete', 'Admin'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.green,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.green,
                   labelPosition: LabelPosition.left,
                   containerGap: 16,
@@ -832,8 +825,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -843,7 +836,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Permissions",\n  "initialValue": [],\n  "items": ["Read", "Write", "Delete", "Admin"],\n  "labelPosition": "LabelPosition.left",\n  "containerGap": 16,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -864,7 +856,7 @@ class View extends PresenterState {
                   items: const ['Email', 'SMS', 'Push'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.purple,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.purple,
                   labelPosition: LabelPosition.top,
                   containerGap: 8,
@@ -880,8 +872,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -891,7 +883,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Notifications",\n  "initialValue": [],\n  "items": ["Email", "SMS", "Push"],\n  "labelPosition": "LabelPosition.top",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -909,7 +900,7 @@ class View extends PresenterState {
                   items: const ['Light', 'Dark', 'Auto'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.orange,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.orange,
                   labelPosition: LabelPosition.right,
                   containerGap: 16,
@@ -925,8 +916,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -936,7 +927,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Themes",\n  "initialValue": [],\n  "items": ["Light", "Dark", "Auto"],\n  "labelPosition": "LabelPosition.right",\n  "containerGap": 16,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -954,7 +944,7 @@ class View extends PresenterState {
                   items: const ['Feature A', 'Feature B', 'Feature C'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.red,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.red,
                   labelPosition: LabelPosition.inBorder,
                   containerGap: 8,
@@ -970,8 +960,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -981,7 +971,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Features",\n  "initialValue": [],\n  "items": ["Feature A", "Feature B", "Feature C"],\n  "labelPosition": "LabelPosition.inBorder",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -999,7 +988,7 @@ class View extends PresenterState {
                   items: const ['Option 1', 'Option 2', 'Option 3'],
                   isRequired: false,
                   direction: Axis.vertical,
-                  borderColor: Colors.teal,
+                  borderType: BorderType.outlineInputBorder,
                   activeColor: Colors.teal,
                   labelPosition: LabelPosition.none,
                   containerGap: 8,
@@ -1015,8 +1004,8 @@ class View extends PresenterState {
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(10),
@@ -1026,7 +1015,6 @@ class View extends PresenterState {
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
                       '{\n  "label": "Options",\n  "initialValue": [],\n  "items": ["Option 1", "Option 2", "Option 3"],\n  "labelPosition": "LabelPosition.none",\n  "containerGap": 8,\n  "onChanged": "(value) => ..."\n}',
-
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,

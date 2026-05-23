@@ -37,10 +37,6 @@ class FormFieldsSelect<T> extends StatefulWidget {
   // ============================================================================
   final LabelPosition labelPosition;
   final BorderType borderType;
-  final double radius;
-  final Color borderColor;
-  final Color focusedBorderColor;
-  final Color errorBorderColor;
   final Color? itemBorderColor;
   final double itemBorderWidth;
   final double itemBorderRadius;
@@ -78,10 +74,6 @@ class FormFieldsSelect<T> extends StatefulWidget {
     // UI
     this.labelPosition = LabelPosition.top,
     this.borderType = BorderType.outlineInputBorder,
-    this.radius = 10,
-    this.borderColor = const Color(0xFFC7C7C7),
-    this.focusedBorderColor = Colors.blue,
-    this.errorBorderColor = Colors.red,
     this.itemBorderColor,
     this.itemBorderWidth = 1.0,
     this.itemBorderRadius = 8,
@@ -123,10 +115,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.validator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-          radius: widget.radius,
-          borderColor: widget.borderColor,
-          focusedBorderColor: widget.focusedBorderColor,
-          errorBorderColor: widget.errorBorderColor,
+
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,
@@ -143,10 +132,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.multiValidator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-          radius: widget.radius,
-          borderColor: widget.borderColor,
-          focusedBorderColor: widget.focusedBorderColor,
-          errorBorderColor: widget.errorBorderColor,
+
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,
@@ -162,10 +148,8 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           onChanged: widget.onChanged ?? (_) {},
           validator: widget.validator,
           labelPosition: widget.labelPosition,
-          radius: widget.radius,
-          borderColor: widget.borderColor,
-          errorBorderColor: widget.errorBorderColor,
-          activeColor: widget.focusedBorderColor,
+          borderType: widget.borderType,
+          activeColor: Colors.blue,
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemBorderColor: widget.itemBorderColor,
@@ -185,10 +169,8 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.multiValidator != null
               ? (List<T>? values) => widget.multiValidator!(values)
               : null,
-          radius: widget.radius,
-          borderColor: widget.borderColor,
-          errorBorderColor: widget.errorBorderColor,
-          activeColor: widget.focusedBorderColor,
+          borderType: widget.borderType,
+          activeColor: Colors.blue,
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemMarginHorizontal: widget.itemMarginHorizontal,

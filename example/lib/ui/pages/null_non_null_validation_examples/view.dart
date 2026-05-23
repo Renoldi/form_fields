@@ -44,7 +44,7 @@ class View extends PresenterState {
                     label: context.tr('ffFullName'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.green,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setStringNonNullRequired,
                     currentValue: viewModel.stringNonNullRequired,
                   ),
@@ -88,7 +88,7 @@ class View extends PresenterState {
                     label: context.tr('ffMiddleName'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.orange,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setStringNonNullOptional,
                     currentValue: viewModel.stringNonNullOptional,
                   ),
@@ -133,7 +133,7 @@ class View extends PresenterState {
                     label: context.tr('ffLastName'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.red,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setStringNullRequired,
                     currentValue: viewModel.stringNullRequired,
                   ),
@@ -177,7 +177,7 @@ class View extends PresenterState {
                     label: context.tr('valNickname'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.purple,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setStringNullOptional,
                     currentValue: viewModel.stringNullOptional,
                   ),
@@ -226,7 +226,7 @@ class View extends PresenterState {
                     label: context.tr('ffAge'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.green,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setIntNonNullRequired,
                     currentValue: viewModel.intNonNullRequired,
                   ),
@@ -270,7 +270,7 @@ class View extends PresenterState {
                     label: context.tr('valPhoneExtension'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.orange,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setIntNonNullOptional,
                     currentValue: viewModel.intNonNullOptional,
                   ),
@@ -315,7 +315,7 @@ class View extends PresenterState {
                     label: context.tr('ffQuantity'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.red,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setIntNullRequired,
                     currentValue: viewModel.intNullRequired,
                   ),
@@ -359,7 +359,7 @@ class View extends PresenterState {
                     label: context.tr('valEmployeeId'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.purple,
+                    borderType: BorderType.outlineInputBorder,
                     onChanged: viewModel.setIntNullOptional,
                     currentValue: viewModel.intNullOptional,
                   ),
@@ -408,7 +408,7 @@ class View extends PresenterState {
                     label: context.tr('ffProductPrice'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.green,
+                    borderType: BorderType.outlineInputBorder,
                     prefix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('\$', style: TextStyle(fontSize: 16)),
@@ -456,7 +456,7 @@ class View extends PresenterState {
                     label: context.tr('valShippingCost'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.orange,
+                    borderType: BorderType.outlineInputBorder,
                     prefix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('\$', style: TextStyle(fontSize: 16)),
@@ -505,7 +505,7 @@ class View extends PresenterState {
                     label: context.tr('valDiscountRate'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.red,
+                    borderType: BorderType.outlineInputBorder,
                     suffix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('%', style: TextStyle(fontSize: 16)),
@@ -553,7 +553,7 @@ class View extends PresenterState {
                     label: context.tr('valCommissionAmount'),
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.purple,
+                    borderType: BorderType.outlineInputBorder,
                     prefix: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('\$', style: TextStyle(fontSize: 16)),
@@ -605,7 +605,7 @@ class View extends PresenterState {
                     label: context.tr('valUsername'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.teal,
+                    borderType: BorderType.outlineInputBorder,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return context.tr('valUsernameRequired');
@@ -664,7 +664,7 @@ class View extends PresenterState {
                     formType: FormType.email,
                     labelPosition: LabelPosition.top,
                     isRequired: false,
-                    borderColor: Colors.cyan,
+                    borderType: BorderType.outlineInputBorder,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return null; // Optional field
@@ -724,7 +724,7 @@ class View extends PresenterState {
                     label: context.tr('valAge'),
                     labelPosition: LabelPosition.top,
                     isRequired: true,
-                    borderColor: Colors.indigo,
+                    borderType: BorderType.outlineInputBorder,
                     validator: (value) {
                       if (value == null) {
                         return context.tr('valAgeRequired');
@@ -767,6 +767,86 @@ class View extends PresenterState {
                     ),
                   ),
                   const SizedBox(height: 32),
+
+                  // ===== SELECTION WIDGETS VALIDATION =====
+                  buildSectionTitle(context.tr('valSelectionWidgets'),
+                      Colors.pink.shade700, Colors.pink.shade400),
+
+                  buildFieldTitle(context.tr('valCheckboxValidation'),
+                      Colors.pink.shade600),
+                  buildDescriptionBox(
+                    context.tr('valCheckboxValidationDesc'),
+                    Colors.pink,
+                  ),
+                  FormFieldsCheckbox<String>(
+                    label: context.tr('valInterests'),
+                    items: const ['Music', 'Sports', 'Travel'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setCheckboxSelected,
+                    initialValue: viewModel.checkboxSelected,
+                  ),
+                  buildResultDisplay(context.tr('valInterests'),
+                      viewModel.checkboxSelected.join(', ')),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle(context.tr('valDropdownMultiValidation'),
+                      Colors.pink.shade600),
+                  buildDescriptionBox(
+                    context.tr('valDropdownMultiValidationDesc'),
+                    Colors.pink,
+                  ),
+                  FormFieldsDropdownMulti<String>(
+                    label: context.tr('valSelectTags'),
+                    items: const ['New', 'Featured', 'Sale'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDropdownMultiSelected,
+                    initialValues: viewModel.dropdownMultiSelected,
+                  ),
+                  buildResultDisplay(context.tr('valSelectTags'),
+                      viewModel.dropdownMultiSelected.join(', ')),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle(context.tr('valDropdownValidation'),
+                      Colors.pink.shade600),
+                  buildDescriptionBox(
+                    context.tr('valDropdownValidationDesc'),
+                    Colors.pink,
+                  ),
+                  FormFieldsDropdown<String>(
+                    label: context.tr('valCountry'),
+                    items: const ['USA', 'Canada', 'Indonesia'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDropdownSelected,
+                    initialValue: viewModel.dropdownSelected,
+                  ),
+                  buildResultDisplay(
+                      context.tr('valCountry'), viewModel.dropdownSelected),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle(
+                      context.tr('valRadioValidation'), Colors.pink.shade600),
+                  buildDescriptionBox(
+                    context.tr('valRadioValidationDesc'),
+                    Colors.pink,
+                  ),
+                  FormFieldsRadioButton<String>(
+                    label: context.tr('valPreferredContact'),
+                    items: const ['Email', 'Phone', 'SMS'],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setRadioSelected,
+                    initialValue: viewModel.radioSelected,
+                  ),
+                  buildResultDisplay(context.tr('valPreferredContact'),
+                      viewModel.radioSelected),
+                  const SizedBox(height: 24),
 
                   // ===== VALIDATION RULES SUMMARY =====
                   buildSectionTitle(context.tr('valRulesSummaryTitle'),

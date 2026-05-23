@@ -11,7 +11,7 @@ class View extends PresenterState {
     return Consumer<ViewModel>(
       builder: (context, viewModel, _) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F5F5),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Stack(
             children: [
               Center(
@@ -50,11 +50,11 @@ class View extends PresenterState {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Theme.of(context).shadowColor.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -86,14 +86,15 @@ class View extends PresenterState {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.lock, size: 48, color: Color(0xFF1F2937)),
+        Icon(Icons.lock,
+            size: 48, color: Theme.of(context).textTheme.headlineSmall?.color),
         const SizedBox(height: 12),
         Text(
           context.tr('login'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: Theme.of(context).textTheme.headlineSmall?.color,
           ),
         ),
       ],
@@ -123,7 +124,7 @@ class View extends PresenterState {
   Widget _buildErrorMessage(String message) {
     return Text(
       message,
-      style: const TextStyle(color: Colors.red),
+      style: TextStyle(color: Theme.of(context).colorScheme.error),
     );
   }
 
@@ -137,17 +138,18 @@ class View extends PresenterState {
           ? null
           : () => handleLogin(viewModel),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1F2937),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
     );
   }
 
   Widget _buildHintText() {
-    return const Text(
+    return Text(
       'Use username: emilys | password: emilyspass',
-      style: TextStyle(fontSize: 12, color: Colors.black54),
+      style: TextStyle(
+          fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
     );
   }
 }

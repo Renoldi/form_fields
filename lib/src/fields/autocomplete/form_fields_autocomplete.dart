@@ -119,18 +119,26 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             }
           : null,
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        final theme = Theme.of(context);
+        final normalColor = theme.dividerColor;
+        final focusColor = theme.colorScheme.primary;
+        final color = focusNode.hasFocus ? focusColor : normalColor;
+
         InputBorder border;
         switch (borderStyle) {
           case BorderType.underlineInputBorder:
-            border = const UnderlineInputBorder();
+            border = UnderlineInputBorder(borderSide: BorderSide(color: color));
             break;
           case BorderType.none:
             border = InputBorder.none;
             break;
           case BorderType.outlineInputBorder:
-            border = OutlineInputBorder(borderRadius: BorderRadius.circular(8));
+            border = OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: color));
             break;
         }
+
         final baseDecoration =
             (inputDecoration ?? InputDecoration(hintText: fieldLabel)).copyWith(
           border: border,

@@ -383,9 +383,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         widget.labelPosition == LabelPosition.none) {
       return const SizedBox.shrink();
     }
+    final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
-    final style =
-        (widget.labelTextStyle ?? defaultStyle).copyWith(color: Colors.black87);
+    final style = (widget.labelTextStyle ?? defaultStyle)
+        .copyWith(color: theme.textTheme.bodyMedium?.color ?? Colors.black87);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
@@ -393,12 +394,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           children: [
             TextSpan(text: label, style: style),
             if (widget.isRequired)
-              const TextSpan(
+              TextSpan(
                 text: ' *',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.red,
+                  color: theme.colorScheme.error,
                 ),
               ),
           ],
@@ -997,14 +998,16 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                       padding: const EdgeInsets.only(top: 6, left: 12),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.red, size: 14),
+                          Icon(Icons.error_outline,
+                              color: Theme.of(context).colorScheme.error,
+                              size: 14),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               state.errorText!,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 12),
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                  fontSize: 12),
                             ),
                           ),
                         ],

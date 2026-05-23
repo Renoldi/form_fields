@@ -2,95 +2,141 @@ import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 
-class FormFieldsRadioButton<T> extends FormField<T> {
+class FormFieldsRadioButton<T> extends StatefulWidget {
   final String? externalErrorText;
-  FormFieldsRadioButton({
+  final String label;
+  final List<T>? items;
+  final Map<String, List<T>>? sections;
+  final ValueChanged<T?> onChanged;
+  final String Function(T item)? itemLabelBuilder;
+  final Widget Function(T item, bool selected)? itemBuilder;
+  final T? initialValue;
+  final bool isRequired;
+  final Axis direction;
+  final BorderType borderType;
+  final Color activeColor;
+  final EdgeInsets itemPadding;
+  final double sectionSpacing;
+  final Color? itemBorderColor;
+  final double itemBorderWidth;
+  final double itemBorderRadius;
+  final double textRightPadding;
+  final double itemTextMarginRight;
+  final Color? selectedItemBackgroundColor;
+  final Color? selectedItemTextColor;
+  final Color? hoverBackgroundColor;
+  final bool itemShadow;
+  final LabelPosition labelPosition;
+  final double containerPadding;
+  final double containerGap;
+  final double itemMarginTop;
+  final double itemMarginBottom;
+  final IndicatorVerticalAlignment indicatorVerticalAlignment;
+  final bool horizontalSideBySide;
+  final FormFieldValidator<T>? validator;
+
+  const FormFieldsRadioButton({
     super.key,
-    required String label,
-    List<T>? items,
-    Map<String, List<T>>? sections,
-    required ValueChanged<T?> onChanged,
-    String Function(T item)? itemLabelBuilder,
-    Widget Function(T item, bool selected)? itemBuilder,
-    super.initialValue,
-    bool isRequired = false,
-    Axis direction = Axis.vertical,
-    double radius = 10,
-    Color borderColor = const Color(0xFFC7C7C7),
-    Color errorBorderColor = Colors.red,
-    Color activeColor = Colors.blue,
-    EdgeInsets itemPadding =
-        const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-    double sectionSpacing = 12,
-    Color? itemBorderColor,
-    double itemBorderWidth = 1.0,
-    double itemBorderRadius = 8,
-    double textRightPadding = 0,
-    double itemTextMarginRight = 0,
-    Color? selectedItemBackgroundColor,
-    Color? selectedItemTextColor,
-    Color? hoverBackgroundColor,
-    bool itemShadow = false,
-    LabelPosition labelPosition = LabelPosition.top,
-    double containerPadding = 12,
-    double containerGap = 8,
-    double itemMarginTop = 4,
-    double itemMarginBottom = 4,
-    IndicatorVerticalAlignment indicatorVerticalAlignment =
-        IndicatorVerticalAlignment.center,
-    bool horizontalSideBySide = false,
-    FormFieldValidator<T>? validator,
+    required this.label,
+    this.items,
+    this.sections,
+    required this.onChanged,
+    this.itemLabelBuilder,
+    this.itemBuilder,
+    this.initialValue,
+    this.isRequired = false,
+    this.direction = Axis.vertical,
+    this.borderType = BorderType.outlineInputBorder,
+    this.activeColor = Colors.blue,
+    this.itemPadding = const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+    this.sectionSpacing = 12,
+    this.itemBorderColor,
+    this.itemBorderWidth = 1.0,
+    this.itemBorderRadius = 8,
+    this.textRightPadding = 0,
+    this.itemTextMarginRight = 0,
+    this.selectedItemBackgroundColor,
+    this.selectedItemTextColor,
+    this.hoverBackgroundColor,
+    this.itemShadow = false,
+    this.labelPosition = LabelPosition.top,
+    this.containerPadding = 12,
+    this.containerGap = 8,
+    this.itemMarginTop = 4,
+    this.itemMarginBottom = 4,
+    this.indicatorVerticalAlignment = IndicatorVerticalAlignment.center,
+    this.horizontalSideBySide = false,
+    this.validator,
     this.externalErrorText,
-  })  : assert(items != null || sections != null,
-            'Either items or sections must be provided'),
-        super(
-          validator: (value) {
-            if (externalErrorText != null &&
-                externalErrorText.isEmpty == false) {
-              return externalErrorText;
-            }
-            if (isRequired && value == null) {
-              // Localization handled in build method
-              return '';
-            }
-            return validator?.call(value);
-          },
-          builder: (FormFieldState<T> state) {
-            return _FormFieldsRadioButtonBody<T>(
-              label: label,
-              state: state,
-              items: items ?? [],
-              sections: sections ?? {},
-              onChanged: onChanged,
-              itemLabelBuilder: itemLabelBuilder,
-              itemBuilder: itemBuilder,
-              direction: direction,
-              radius: radius,
-              borderColor: borderColor,
-              errorBorderColor: errorBorderColor,
-              activeColor: activeColor,
-              itemPadding: itemPadding,
-              isRequired: isRequired,
-              sectionSpacing: sectionSpacing,
-              itemBorderColor: itemBorderColor,
-              itemBorderWidth: itemBorderWidth,
-              itemBorderRadius: itemBorderRadius,
-              textRightPadding: textRightPadding,
-              itemTextMarginRight: itemTextMarginRight,
-              selectedItemBackgroundColor: selectedItemBackgroundColor,
-              selectedItemTextColor: selectedItemTextColor,
-              hoverBackgroundColor: hoverBackgroundColor,
-              itemShadow: itemShadow,
-              labelPosition: labelPosition,
-              containerPadding: containerPadding,
-              containerGap: containerGap,
-              itemMarginTop: itemMarginTop,
-              itemMarginBottom: itemMarginBottom,
-              indicatorVerticalAlignment: indicatorVerticalAlignment,
-              horizontalSideBySide: horizontalSideBySide,
-            );
-          },
+  }) : assert(items != null || sections != null,
+            'Either items or sections must be provided');
+
+  @override
+  State<FormFieldsRadioButton<T>> createState() =>
+      _FormFieldsRadioButtonState<T>();
+}
+
+class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
+  late final GlobalKey<FormFieldState<T>> _formKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormFieldState<T>>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = FormFieldsLocalizations.of(context);
+    return FormField<T>(
+      key: _formKey,
+      initialValue: widget.initialValue,
+      validator: (value) {
+        if (widget.externalErrorText != null &&
+            widget.externalErrorText!.isNotEmpty) {
+          return widget.externalErrorText;
+        }
+        if (widget.isRequired && value == null) {
+          return l.getWithLabel('selectRequired', widget.label);
+        }
+        if (widget.validator != null) return widget.validator!(value);
+        return null;
+      },
+      builder: (FormFieldState<T> state) {
+        return _FormFieldsRadioButtonBody<T>(
+          label: widget.label,
+          state: state,
+          items: widget.items ?? [],
+          sections: widget.sections ?? {},
+          onChanged: widget.onChanged,
+          itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
+          direction: widget.direction,
+          borderType: widget.borderType,
+          activeColor: widget.activeColor,
+          itemPadding: widget.itemPadding,
+          isRequired: widget.isRequired,
+          sectionSpacing: widget.sectionSpacing,
+          itemBorderColor: widget.itemBorderColor,
+          itemBorderWidth: widget.itemBorderWidth,
+          itemBorderRadius: widget.itemBorderRadius,
+          textRightPadding: widget.textRightPadding,
+          itemTextMarginRight: widget.itemTextMarginRight,
+          selectedItemBackgroundColor: widget.selectedItemBackgroundColor,
+          selectedItemTextColor: widget.selectedItemTextColor,
+          hoverBackgroundColor: widget.hoverBackgroundColor,
+          itemShadow: widget.itemShadow,
+          labelPosition: widget.labelPosition,
+          containerPadding: widget.containerPadding,
+          containerGap: widget.containerGap,
+          itemMarginTop: widget.itemMarginTop,
+          itemMarginBottom: widget.itemMarginBottom,
+          indicatorVerticalAlignment: widget.indicatorVerticalAlignment,
+          horizontalSideBySide: widget.horizontalSideBySide,
         );
+      },
+    );
+  }
 }
 
 class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
@@ -102,9 +148,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
   final Axis direction;
-  final double radius;
-  final Color borderColor;
-  final Color errorBorderColor;
+  final BorderType borderType;
   final Color activeColor;
   final EdgeInsets itemPadding;
   final double sectionSpacing;
@@ -135,9 +179,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
     this.itemLabelBuilder,
     this.itemBuilder,
     required this.direction,
-    required this.radius,
-    required this.borderColor,
-    required this.errorBorderColor,
+    required this.borderType,
     required this.activeColor,
     required this.itemPadding,
     required this.sectionSpacing,
@@ -196,6 +238,7 @@ class _FormFieldsRadioButtonBodyView<T>
     final hasSections = widget.sections.isNotEmpty;
 
     // Build label widget
+    final theme = Theme.of(context);
     final labelWidget = RichText(
       text: TextSpan(
         children: [
@@ -204,34 +247,40 @@ class _FormFieldsRadioButtonBodyView<T>
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: hasError ? const Color(0xFFB71C1C) : Colors.black87,
+              color: hasError
+                  ? theme.colorScheme.error
+                  : (theme.textTheme.bodyMedium?.color ?? Colors.black87),
             ),
           ),
           if (widget.isRequired)
-            const TextSpan(
+            TextSpan(
               text: ' *',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.red,
+                color: theme.colorScheme.error,
               ),
             ),
         ],
       ),
     );
 
-    // Build radio container
+    // Build radio container using borderType and theme colors
+    // theme already defined above
+    final normalColor = theme.dividerColor;
+    final errorColor = theme.colorScheme.error;
+    final containerBorder = widget.itemBorderColor == null
+        ? (widget.borderType == BorderType.none
+            ? null
+            : Border.all(
+                color: hasError ? errorColor : normalColor, width: 1.5))
+        : null;
+
     final radioContainer = Container(
       decoration: BoxDecoration(
-        border: widget.itemBorderColor == null
-            ? Border.all(
-                color: hasError ? const Color(0xFFB71C1C) : widget.borderColor,
-                width: 1.5,
-              )
-            : null,
-        borderRadius: widget.itemBorderColor == null
-            ? BorderRadius.circular(widget.radius)
-            : null,
+        border: containerBorder,
+        borderRadius:
+            widget.itemBorderColor == null ? BorderRadius.circular(10) : null,
         boxShadow: widget.itemShadow && !hasError
             ? [
                 BoxShadow(
@@ -251,8 +300,10 @@ class _FormFieldsRadioButtonBodyView<T>
         ? Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              widget.state.errorText ??
-                  l.getWithLabel('selectRequired', widget.label),
+              (widget.state.errorText != null &&
+                      widget.state.errorText!.isNotEmpty)
+                  ? widget.state.errorText!
+                  : l.getWithLabel('selectRequired', widget.label),
               style: const TextStyle(
                 color: Color(0xFFB71C1C),
                 fontSize: 12,
@@ -406,7 +457,9 @@ class _FormFieldsRadioButtonBodyView<T>
             child: DefaultTextStyle(
               style: TextStyle(
                 color: selected
-                    ? (widget.selectedItemTextColor ?? Colors.black87)
+                    ? (widget.selectedItemTextColor ??
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87)
                     : Colors.black54,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -423,7 +476,9 @@ class _FormFieldsRadioButtonBodyView<T>
                   : item.toString(),
               style: TextStyle(
                 color: selected
-                    ? (widget.selectedItemTextColor ?? Colors.black87)
+                    ? (widget.selectedItemTextColor ??
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87)
                     : Colors.black54,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: selected ? 14 : 13.5,
