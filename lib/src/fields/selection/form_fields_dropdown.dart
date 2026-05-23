@@ -73,6 +73,16 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant FormFieldsDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Rebuild when locale changes to update localized strings
@@ -179,8 +189,10 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                               selected: isSelected,
                               onTap: () {
                                 tempSelected = item;
-                                state.didChange(item);
                                 widget.onChanged?.call(item);
+                                state.didChange(item);
+                                // Re-validate after user interaction so external errors clear
+                                state.validate();
                                 Navigator.pop(context);
                               },
                             );
@@ -343,8 +355,10 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
               .toList(),
           onChanged: widget.enabled
               ? (value) {
-                  state.didChange(value);
                   widget.onChanged?.call(value);
+                  state.didChange(value);
+                  // Validate immediately so externalErrorText is cleared when valid
+                  state.validate();
                 }
               : null,
           decoration: effectiveDecoration,

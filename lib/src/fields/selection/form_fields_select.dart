@@ -98,6 +98,18 @@ abstract class _FormFieldsSelectPresenterState<T>
     super.initState();
     viewModel = _FormFieldsSelectViewModel();
   }
+
+  @override
+  void didUpdateWidget(covariant FormFieldsSelect<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      // Force rebuild so child selection widgets receive the updated
+      // externalErrorText and can validate themselves.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 }
 
 class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
@@ -115,7 +127,6 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.validator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,
@@ -132,7 +143,6 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.multiValidator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,

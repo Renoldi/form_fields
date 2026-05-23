@@ -324,6 +324,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   void _onLiveCameraControllerChanged() {
     _syncCaptureGuardFromController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final hasSignature = _signatureController.isNotEmpty || _hasCaptured;
+      _formFieldKey.currentState?.didChange(hasSignature);
+      _formFieldKey.currentState?.validate();
+    });
   }
 
   void _syncCaptureGuardFromController() {
@@ -374,6 +380,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   void _onSignatureChanged() {
     _formFieldKey.currentState?.didChange(_signatureController.isNotEmpty);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _formFieldKey.currentState?.validate();
+    });
   }
 
   Widget _buildLabel() {

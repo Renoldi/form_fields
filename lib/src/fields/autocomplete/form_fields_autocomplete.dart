@@ -92,7 +92,12 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
       optionsBuilder: (TextEditingValue textEditingValue) async {
         return await _fetchOptions(textEditingValue.text);
       },
-      onSelected: onItemSelected,
+      onSelected: (item) {
+        onItemSelected(item);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Form.of(context)?.validate();
+        });
+      },
       displayStringForOption:
           itemSelectedBuilder ?? (option) => option.toString(),
       optionsViewBuilder: itemBuilder != null

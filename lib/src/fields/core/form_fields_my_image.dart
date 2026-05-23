@@ -184,6 +184,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   void _onProviderChanged() {
     _formFieldKey.currentState
         ?.didChange(List<MyimageResult>.from(_provider.images));
+    // After images change due to user action or controller updates, re-validate
+    // so externalErrorText is cleared when valid.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _formFieldKey.currentState?.validate();
+    });
   }
 
   void _syncControllerImages(FormFieldsMyImageProvider provider) {

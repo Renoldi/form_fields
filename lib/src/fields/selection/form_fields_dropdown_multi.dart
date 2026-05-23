@@ -65,6 +65,16 @@ class _FormFieldsDropdownMultiState<T>
   }
 
   @override
+  void didUpdateWidget(covariant FormFieldsDropdownMulti<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = FormFieldsLocalizations.of(context);
     return FormField<List<T>>(
@@ -195,8 +205,10 @@ class _FormFieldsDropdownMultiState<T>
                       ElevatedButton(
                         onPressed: () {
                           final updated = tempSelected.toList();
-                          state.didChange(updated);
                           widget.onChanged(updated);
+                          state.didChange(updated);
+                          // Re-validate so externalErrorText clears when selection is valid
+                          state.validate();
                           Navigator.pop(context);
                         },
                         child: Text(dialogL10n.get('ok')),
@@ -256,8 +268,10 @@ class _FormFieldsDropdownMultiState<T>
                         onDeleted: () {
                           final updated = List<T>.from(selectedItems)
                             ..remove(item);
-                          state.didChange(updated);
                           widget.onChanged(updated);
+                          state.didChange(updated);
+                          // Validate after deletion
+                          state.validate();
                         },
                       );
                     }).toList(),

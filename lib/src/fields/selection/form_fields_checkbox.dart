@@ -70,6 +70,16 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant FormFieldsCheckbox<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
     return FormField<List<T>>(
@@ -396,8 +406,10 @@ class _FormFieldsCheckboxBodyView<T>
               updated.add(item);
             }
 
-            widget.state.didChange(updated);
             widget.onChanged(updated);
+            widget.state.didChange(updated);
+            // Validate after user toggles an option so external errors clear
+            widget.state.validate();
           },
           child: Padding(
             padding: widget.itemPadding,
@@ -418,8 +430,10 @@ class _FormFieldsCheckboxBodyView<T>
                       updated.remove(item);
                     }
 
-                    widget.state.didChange(updated);
                     widget.onChanged(updated);
+                    widget.state.didChange(updated);
+                    // Validate when checkbox changes
+                    widget.state.validate();
                   },
                 ),
                 const SizedBox(width: 8),

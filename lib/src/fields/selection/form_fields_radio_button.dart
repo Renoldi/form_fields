@@ -86,6 +86,16 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant FormFieldsRadioButton<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = FormFieldsLocalizations.of(context);
     return FormField<T>(
@@ -534,8 +544,10 @@ class _FormFieldsRadioButtonBodyView<T>
                   ),
                   child: InkWell(
                     onTap: () {
-                      widget.state.didChange(item);
                       widget.onChanged(item);
+                      widget.state.didChange(item);
+                      // Re-validate so externalErrorText clears when user selects
+                      widget.state.validate();
                     },
                     hoverColor:
                         (widget.hoverBackgroundColor ?? widget.activeColor)
