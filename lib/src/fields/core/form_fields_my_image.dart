@@ -670,8 +670,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
     File? file;
     String? source;
-    // If isDoc, call CunningDocumentScanner directly
+    // If isDoc, ensure camera/gallery permission first, then call scanner
     if (widget.isDoc) {
+      final ok = await PermissionGate.ensurePickerPermission(context,
+          source: 'camera');
+      if (!ok) return;
       final scanned = await CunningDocumentScanner.getPictures(
         isGalleryImportAllowed: true,
         noOfPages: 1,

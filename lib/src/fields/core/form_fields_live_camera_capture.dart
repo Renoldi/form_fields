@@ -112,6 +112,8 @@ class FormFieldsLiveCameraCaptureState
     _bindController(widget.cameraController);
   }
 
+  bool _cameraInitDone = false;
+
   @override
   void didUpdateWidget(FormFieldsLiveCameraCapture oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -466,12 +468,35 @@ class FormFieldsLiveCameraCaptureState
             ),
           );
 
+          // Only reveal the live preview widget after camera acquire() has
+          // completed. This avoids showing the camera card while acquisition is
+          // still in progress (spinner inside the preview). PermissionGate
+          // still handles permission requests; onPermissionGranted we trigger
+          // acquire and wait, then flip `_cameraInitDone` so the child becomes
+          // the actual preview.
+          final childToShow = _cameraInitDone
+              ? previewWidget
+              : _CameraPlaceholder(
+                  height: widget.height,
+                  icon: Icons.camera_front,
+                  message: FormFieldsLocalizations.of(context)
+                      .get('cameraInitializing'),
+                  showSpinner: true,
+                );
+
           return PermissionGate(
-            onPermissionGranted: () {
+            onPermissionGranted: () async {
               _cam.addListener(_onCameraReady);
-              _cam.acquire();
+              try {
+                await _cam.acquire();
+              } catch (_) {}
+              if (mounted) {
+                setState(() {
+                  _cameraInitDone = true;
+                });
+              }
             },
-            child: previewWidget,
+            child: childToShow,
           );
         },
       ),
