@@ -333,108 +333,172 @@ class View extends PresenterState {
   /// Build Material Design 3 theme with custom colors
   static ThemeData _buildTheme() {
     // Central seed color for the example app; controls primary color scheme.
-    const seedColor = Color(0xff008BD0);
-    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor);
+    const seedColor = Color(0xFFA1C300);
 
-    return ThemeData(
-      colorScheme: colorScheme,
-      useMaterial3: true,
-
-      // Page Transitions
-      pageTransitionsTheme: const PageTransitionsTheme(),
-
-      // AppBar Theme - keep the dark appbar background used in examples,
-      // but derive the foreground color from the color scheme.
+    return ThemeData.light(useMaterial3: true).copyWith(
+      primaryColor: seedColor,
+      colorScheme: ThemeData.light(useMaterial3: true).colorScheme.copyWith(
+            primary: seedColor,
+            secondary: seedColor,
+          ),
+      textTheme: ThemeData.light(
+        useMaterial3: true,
+      ).textTheme.apply(fontFamily: 'Roboto'),
+      primaryTextTheme: ThemeData.light(
+        useMaterial3: true,
+      ).primaryTextTheme.apply(fontFamily: 'Roboto'),
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF1F2937),
-        foregroundColor: colorScheme.onPrimary,
+        backgroundColor: seedColor,
+        elevation: 0,
+        centerTitle: true,
+        // titleTextStyle: TextStyles().labelMedium.copyWith(
+        //   color: Colors.white,
+        //   fontWeight: FontWeight.bold,
+        // ),
+        iconTheme: IconThemeData(color: Colors.white),
+        surfaceTintColor: Colors.transparent,
       ),
-
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: colorScheme.primary,
-        linearTrackColor: colorScheme.primary.withValues(alpha: 0.2),
-      ),
-
-      extensions: <ThemeExtension<dynamic>>[
-        AppLoadingThemeData(
-          indicatorColor: colorScheme.primary,
-          trackColor: colorScheme.primary.withValues(alpha: 0.2),
-          overlayColor: const Color(0x73000000),
-          accentColor: colorScheme.primary,
-        ),
-        FormFieldsMyImageThemeData(
-          addTileBorderColor: colorScheme.primary,
-          addTileBorderWidth: 2,
-          addTileBorderRadius: 8,
-          addTileBackgroundColor: const Color(0xFFF3F4F6),
-          addIconColor: colorScheme.primary,
-        ),
-        AppButtonThemeData(
-          filledStyle: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(colorScheme.primary),
-            foregroundColor: WidgetStatePropertyAll(colorScheme.onPrimary),
-            textStyle: WidgetStatePropertyAll(
-              const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          outlinedStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
-            side: WidgetStatePropertyAll(
-              BorderSide(color: colorScheme.primary),
-            ),
-          ),
-          textStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
-          ),
-          iconStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
-          ),
-          iconBackgroundColor: colorScheme.onSurface,
-          fabBackgroundColor: Colors.yellow,
-        ),
-      ],
-
-      // InputDecoration Theme for all TextFields (including FormFieldsAutocomplete)
-      inputDecorationTheme: InputDecorationTheme(
-        border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8))),
-        filled: true,
-        fillColor: const Color(0xFFF3F4F6),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: TextStyle(color: colorScheme.primary),
-        hintStyle:
-            TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
-        // Error / validation styles explicitly follow the colorScheme
-        errorStyle: TextStyle(color: colorScheme.error, fontSize: 12),
-        errorBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.2),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.6),
-        ),
-      ),
-      // Theme settings for Checkbox and Radio so selection widgets follow
-      // the central `colorScheme` rather than hard-coded colors.
+      scaffoldBackgroundColor: Colors.white,
       checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return null;
+        }),
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.primary;
+            return seedColor;
           }
-          return colorScheme.onSurface.withValues(alpha: 0.6);
+          return null;
         }),
-        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.12)),
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return seedColor;
+          }
+          return null;
+        }),
+        side: BorderSide(color: seedColor, width: 2),
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.primary;
+            return seedColor;
           }
-          return colorScheme.onSurface.withValues(alpha: 0.6);
+          return null;
+        }),
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return seedColor;
+          }
+          return null;
         }),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: seedColor,
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+          alignment: Alignment.center,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            side: BorderSide(color: seedColor, width: 1),
+          ),
+          // textStyle: TextStyles().labelMedium,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: Colors.redAccent),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: Colors.redAccent),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: seedColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: seedColor),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: seedColor),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(5)),
+          borderSide: BorderSide(color: Colors.grey),
+        ),
+      ),
+      extensions: <ThemeExtension<dynamic>>[
+        FormFieldsMyImageThemeData(
+          addTileBorderColor: seedColor,
+          addTileBorderWidth: 2,
+          addTileBorderRadius: 8,
+          addTileBackgroundColor: Color(0xFFF3F4F6),
+          addIconColor: seedColor,
+        ),
+        AppButtonThemeData(
+          elevatedStyle: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(
+              seedColor,
+            ),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+            textStyle: WidgetStatePropertyAll(
+              TextStyle(fontWeight: FontWeight.bold),
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          filledStyle: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(
+              seedColor,
+            ),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+            textStyle: WidgetStatePropertyAll(
+              TextStyle(fontWeight: FontWeight.bold),
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          outlinedStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(
+              seedColor,
+            ),
+            side: WidgetStatePropertyAll(
+              BorderSide(color: seedColor),
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          textStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(
+              seedColor,
+            ),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          iconBackgroundColor: Colors.white,
+          fabBackgroundColor: Colors.white,
+          iconStyle: ButtonStyle(
+            foregroundColor: WidgetStatePropertyAll(
+              seedColor,
+            ),
+            backgroundColor: WidgetStatePropertyAll(Colors.white),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
