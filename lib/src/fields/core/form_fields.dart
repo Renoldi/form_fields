@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:form_fields/src/utilities/phone_country_codes.dart'
     as phone_codes;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../service/permission_gate.dart';
 import '../../utilities/theme_helpers.dart';
 
 /// ---------------------------------------------------------------------------
@@ -395,17 +396,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           backgroundColor: theme.colorScheme.surface,
           body: Stack(
             children: [
-              MobileScanner(
-                // Updated for latest mobile_scanner API
-                onDetect: (capture) {
-                  final barcodes = capture.barcodes;
-                  if (barcodes.isNotEmpty) {
-                    final code = barcodes.first.rawValue;
-                    if (code != null) {
-                      Navigator.of(context).pop(code);
+              PermissionGate(
+                child: MobileScanner(
+                  // Updated for latest mobile_scanner API
+                  onDetect: (capture) {
+                    final barcodes = capture.barcodes;
+                    if (barcodes.isNotEmpty) {
+                      final code = barcodes.first.rawValue;
+                      if (code != null) {
+                        Navigator.of(context).pop(code);
+                      }
                     }
-                  }
-                },
+                  },
+                ),
               ),
               _ScannerOverlay(
                 overlayColor: resolvedOverlay,

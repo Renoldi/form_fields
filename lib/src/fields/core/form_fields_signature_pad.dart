@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:signature/signature.dart';
 import '../../utilities/theme_helpers.dart';
 
@@ -260,9 +261,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     );
     _signatureController.addListener(_onSignatureChanged);
     _bindSignaturePadController(widget.signaturePadController);
-    // Acquire camera for silent background capture.
+    // Acquire camera for silent background capture, but only after permission.
     if (widget.silentLiveCapture && !widget.showLiveCamera) {
-      SharedCameraManager.instance.acquire();
+      _ensureCameraPermissionAndAcquire();
     }
     // Pre-seed preview from controller if it already holds a result.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -280,6 +281,22 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     _cameraController.addListener(_onLiveCameraControllerChanged);
     _syncCaptureGuardFromController();
+  }
+
+  Future<void> _ensureCameraPermissionAndAcquire() async {
+    try {
+      final status = await Permission.camera.status;
+      if (!status.isGranted) {
+        final result = await Permission.camera.request();
+        if (!result.isGranted) return;
+      }
+      SharedCameraManager.instance.acquire();
+    } catch (_) {
+      // If permission handler is unavailable, attempt to acquire anyway.
+      try {
+        SharedCameraManager.instance.acquire();
+      } catch (_) {}
+    }
   }
 
   void _disposeCameraControllerBinding() {

@@ -5,8 +5,19 @@ import 'package:permission_handler/permission_handler.dart';
 class PermissionGate extends StatefulWidget {
   final Widget child;
   final Widget? deniedWidget;
+  final VoidCallback? onPermissionGranted;
 
-  const PermissionGate({super.key, required this.child, this.deniedWidget});
+  /// Optional callback to open the app's custom settings page.
+  /// If not provided, falls back to [openAppSettings()].
+  final VoidCallback? onOpenSettings;
+
+  const PermissionGate({
+    super.key,
+    required this.child,
+    this.deniedWidget,
+    this.onPermissionGranted,
+    this.onOpenSettings,
+  });
 
   @override
   State<PermissionGate> createState() => _PermissionGateState();
@@ -36,19 +47,68 @@ class _PermissionGateState extends State<PermissionGate> {
       perms.addAll([Permission.photos, Permission.videos, Permission.audio]);
     }
     bool granted = false;
+    bool permanentlyDenied = false;
     try {
       final statuses = await perms.request().timeout(
-        const Duration(seconds: 8),
-      );
+            const Duration(seconds: 8),
+          );
       granted = statuses.values.any((s) => s.isGranted);
+      permanentlyDenied = statuses.values.any((s) => s.isPermanentlyDenied);
     } catch (_) {
       // Timeout or error: fallback to checking current status
       final statuses = await Future.wait(perms.map((p) => p.status));
       granted = statuses.any((s) => s.isGranted);
+      permanentlyDenied = statuses.any((s) => s.isPermanentlyDenied);
     }
     setState(() {
+      final wasGranted = _granted;
       _granted = granted;
       _checking = false;
+      if (permanentlyDenied && !_granted) {
+        // Show a dialog explaining how to enable permissions from Settings.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Permission required'),
+              content: const Text(
+                  'This feature requires permission. Please enable it in the app settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    if (widget.onOpenSettings != null) {
+                      try {
+                        widget.onOpenSettings!.call();
+                      } catch (_) {}
+                    } else {
+                      await openAppSettings();
+                    }
+                    // After returning from settings (or navigation), re-check permissions.
+                    if (mounted) {
+                      setState(() {
+                        _checking = true;
+                      });
+                      _checkPermissions();
+                    }
+                  },
+                  child: const Text('Buka Pengaturan'),
+                ),
+              ],
+            ),
+          );
+        });
+      }
+      if (_granted && !wasGranted) {
+        try {
+          widget.onPermissionGranted?.call();
+        } catch (_) {}
+      }
     });
   }
 

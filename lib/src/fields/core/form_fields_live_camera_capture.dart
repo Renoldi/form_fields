@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import '../../utilities/theme_helpers.dart';
+import '../../service/permission_gate.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -108,8 +109,6 @@ class FormFieldsLiveCameraCaptureState
   void initState() {
     super.initState();
     _provider = FormFieldsLiveCameraCaptureProvider();
-    _cam.addListener(_onCameraReady);
-    _cam.acquire();
     _bindController(widget.cameraController);
   }
 
@@ -372,7 +371,7 @@ class FormFieldsLiveCameraCaptureState
             );
           }
 
-          return SizedBox(
+          final previewWidget = SizedBox(
             height: widget.height,
             width: double.infinity,
             child: ClipRRect(
@@ -465,6 +464,14 @@ class FormFieldsLiveCameraCaptureState
                 ],
               ),
             ),
+          );
+
+          return PermissionGate(
+            onPermissionGranted: () {
+              _cam.addListener(_onCameraReady);
+              _cam.acquire();
+            },
+            child: previewWidget,
           );
         },
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import '../../utilities/theme_helpers.dart';
 
@@ -663,6 +664,27 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     FormFieldsMyImageProvider provider, {
     String? initialSource,
   }) async {
+    Future<bool> _ensurePermissionForSource(String src) async {
+      try {
+        if (src == 'camera') {
+          final s = await Permission.camera.request();
+          return s.isGranted;
+        }
+        // gallery
+        if (Theme.of(context).platform == TargetPlatform.iOS) {
+          final s = await Permission.photos.request();
+          return s.isGranted;
+        }
+        // Android/other: try storage first, then photos
+        final s1 = await Permission.storage.request();
+        if (s1.isGranted) return true;
+        final s2 = await Permission.photos.request();
+        return s2.isGranted;
+      } catch (_) {
+        return true;
+      }
+    }
+
     File? file;
     String? source;
     // If isDoc, call CunningDocumentScanner directly
@@ -746,6 +768,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (source == null) return;
       }
       if (source == 'camera' || source == 'gallery') {
+        final ok = await _ensurePermissionForSource(source);
+        if (!ok) return;
         final picker = ImagePicker();
         final picked = await picker.pickImage(
           source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
