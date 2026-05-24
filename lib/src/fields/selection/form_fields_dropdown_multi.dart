@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/enums.dart';
+import '../../utilities/theme_helpers.dart';
 
 class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String label;
@@ -244,7 +245,7 @@ class _FormFieldsDropdownMultiState<T>
                 ? Text(
                     widget.hintText ?? l10n.select(widget.label),
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: resolveTextColor(context, muted: true),
                     ),
                   )
                 : Wrap(
@@ -257,14 +258,15 @@ class _FormFieldsDropdownMultiState<T>
                               ? widget.itemLabelBuilder!(item)
                               : item.toString(),
                           style: TextStyle(
-                            color: widget.chipTextColor ?? Colors.white,
+                            color: widget.chipTextColor ??
+                                Theme.of(context).colorScheme.onPrimary,
                             fontSize: 12,
                           ),
                         ),
-                        backgroundColor:
-                            widget.chipBackgroundColor ?? Colors.blue,
-                        deleteIconColor:
-                            widget.chipDeleteIconColor ?? Colors.white,
+                        backgroundColor: widget.chipBackgroundColor ??
+                            resolveActiveColor(context, null),
+                        deleteIconColor: widget.chipDeleteIconColor ??
+                            Theme.of(context).colorScheme.onPrimary,
                         onDeleted: () {
                           final updated = List<T>.from(selectedItems)
                             ..remove(item);

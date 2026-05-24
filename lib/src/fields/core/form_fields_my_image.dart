@@ -4,6 +4,7 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
+import '../../utilities/theme_helpers.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
@@ -515,9 +516,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.person, size: 60, color: Colors.grey),
-            Icon(Icons.camera_alt, size: 24, color: Colors.black54),
+          children: [
+            Icon(Icons.person,
+                size: 60, color: resolveTextColor(context, muted: true)),
+            Icon(Icons.camera_alt,
+                size: 24, color: resolveTextColor(context, muted: true)),
           ],
         ),
       );
@@ -698,16 +701,18 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                     AppButton(
                       type: AppButtonType.icon,
                       onPressed: () => Navigator.pop(dialogContext, 'camera'),
-                      icon: const Icon(Icons.camera_alt,
-                          size: 32, color: Colors.blue),
+                      icon: Icon(Icons.camera_alt,
+                          size: 32,
+                          color: resolveActiveColor(dialogContext, null)),
                       margin: const EdgeInsets.only(right: 24),
                     ),
                     SizedBox(width: 16),
                     AppButton(
                       type: AppButtonType.icon,
                       onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-                      icon: const Icon(Icons.photo_library,
-                          size: 32, color: Colors.green),
+                      icon: Icon(Icons.photo_library,
+                          size: 32,
+                          color: Theme.of(dialogContext).colorScheme.secondary),
                       margin: const EdgeInsets.only(left: 24),
                     ),
                   ],

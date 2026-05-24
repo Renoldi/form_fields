@@ -5,6 +5,7 @@ import 'form_fields_checkbox.dart';
 import 'form_fields_dropdown.dart';
 import 'form_fields_dropdown_multi.dart';
 import 'form_fields_radio_button.dart';
+import '../../utilities/theme_helpers.dart';
 
 class FormFieldsSelect<T> extends StatefulWidget {
   // ============================================================================
@@ -159,7 +160,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           validator: widget.validator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-          activeColor: Colors.blue,
+          activeColor: resolveActiveColor(context, null),
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemBorderColor: widget.itemBorderColor,
@@ -180,7 +181,7 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
               ? (List<T>? values) => widget.multiValidator!(values)
               : null,
           borderType: widget.borderType,
-          activeColor: Colors.blue,
+          activeColor: resolveActiveColor(context, null),
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemMarginHorizontal: widget.itemMarginHorizontal,

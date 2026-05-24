@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
+import '../../utilities/theme_helpers.dart';
 
 class FormFieldsRadioButton<T> extends StatefulWidget {
   final String? externalErrorText;
@@ -259,7 +260,7 @@ class _FormFieldsRadioButtonBodyView<T>
               fontWeight: FontWeight.w600,
               color: hasError
                   ? theme.colorScheme.error
-                  : (theme.textTheme.bodyMedium?.color ?? Colors.black87),
+                  : resolveTextColor(context),
             ),
           ),
           if (widget.isRequired)
@@ -397,6 +398,13 @@ class _FormFieldsRadioButtonBodyView<T>
     }
   }
 
+  Color _effectiveActiveColor(BuildContext context) {
+    final theme = Theme.of(context);
+    return (widget.activeColor == Colors.blue)
+        ? theme.colorScheme.primary
+        : widget.activeColor;
+  }
+
   /// Build sections layout with horizontal items in each section
   Widget _buildSections() {
     return Column(
@@ -417,10 +425,10 @@ class _FormFieldsRadioButtonBodyView<T>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
                   sectionName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black54,
+                    color: resolveTextColor(context, muted: true),
                   ),
                 ),
               ),
@@ -512,7 +520,7 @@ class _FormFieldsRadioButtonBodyView<T>
               builder: (context) {
                 final containerColor = selected
                     ? (widget.selectedItemBackgroundColor ??
-                        widget.activeColor.withValues(alpha: 0.1))
+                        _effectiveActiveColor(context).withValues(alpha: 0.12))
                     : Colors.transparent;
 
                 final itemBox = AnimatedContainer(
@@ -523,7 +531,7 @@ class _FormFieldsRadioButtonBodyView<T>
                     border: widget.itemBorderColor != null
                         ? Border.all(
                             color: selected
-                                ? widget.activeColor
+                                ? _effectiveActiveColor(context)
                                 : widget.itemBorderColor!,
                             width: selected
                                 ? widget.itemBorderWidth + 0.5
@@ -535,7 +543,8 @@ class _FormFieldsRadioButtonBodyView<T>
                     boxShadow: widget.itemShadow && selected
                         ? [
                             BoxShadow(
-                              color: widget.activeColor.withValues(alpha: 0.15),
+                              color: _effectiveActiveColor(context)
+                                  .withValues(alpha: 0.15),
                               blurRadius: 12,
                               offset: const Offset(0, 3),
                             ),
@@ -549,9 +558,9 @@ class _FormFieldsRadioButtonBodyView<T>
                       // Re-validate so externalErrorText clears when user selects
                       widget.state.validate();
                     },
-                    hoverColor:
-                        (widget.hoverBackgroundColor ?? widget.activeColor)
-                            .withValues(alpha: 0.08),
+                    hoverColor: (widget.hoverBackgroundColor ??
+                            _effectiveActiveColor(context))
+                        .withValues(alpha: 0.08),
                     borderRadius:
                         BorderRadius.circular(widget.itemBorderRadius),
                     child: Padding(
@@ -562,15 +571,15 @@ class _FormFieldsRadioButtonBodyView<T>
                             ? MainAxisSize.min
                             : MainAxisSize.max,
                         children: [
-                          // Custom radio button indicator (replaces Radio widget)
                           Container(
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color:
-                                    selected ? widget.activeColor : Colors.grey,
+                                color: selected
+                                    ? _effectiveActiveColor(context)
+                                    : Colors.grey,
                                 width: 2,
                               ),
                             ),
@@ -581,7 +590,7 @@ class _FormFieldsRadioButtonBodyView<T>
                                       height: 12,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: widget.activeColor,
+                                        color: _effectiveActiveColor(context),
                                       ),
                                     ),
                                   )

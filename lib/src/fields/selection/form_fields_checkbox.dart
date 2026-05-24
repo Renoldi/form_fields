@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
+import '../../utilities/theme_helpers.dart';
 
 class FormFieldsCheckbox<T> extends StatefulWidget {
   final String? externalErrorText;
@@ -222,7 +223,7 @@ class _FormFieldsCheckboxBodyView<T>
               fontWeight: FontWeight.w600,
               color: hasError
                   ? theme.colorScheme.error
-                  : (theme.textTheme.bodyMedium?.color ?? Colors.black87),
+                  : resolveTextColor(context),
             ),
           ),
           if (widget.isRequired)
@@ -380,6 +381,11 @@ class _FormFieldsCheckboxBodyView<T>
               widget.itemLabelBuilder != null
                   ? widget.itemLabelBuilder!(item)
                   : item.toString(),
+              style: TextStyle(
+                color: isSelected
+                    ? resolveTextColor(context)
+                    : resolveTextColor(context, muted: true),
+              ),
             ),
           );
 
@@ -420,7 +426,7 @@ class _FormFieldsCheckboxBodyView<T>
               children: [
                 Checkbox(
                   value: isSelected,
-                  activeColor: widget.activeColor,
+                  activeColor: resolveActiveColor(context, widget.activeColor),
                   onChanged: (checked) {
                     final updated = List<T>.from(selectedValues);
 

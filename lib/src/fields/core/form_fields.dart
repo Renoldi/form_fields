@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:form_fields/src/utilities/phone_country_codes.dart'
     as phone_codes;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../utilities/theme_helpers.dart';
 
 /// ---------------------------------------------------------------------------
 /// FormFields Widget
@@ -2007,9 +2008,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         (widget.otpCountdownTextBuilder ??
                                 FormFields._defaultOtpCountdownTextBuilder)(
                             context, _otpCountdownRemaining),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.blue,
+                          color: resolveActiveColor(context, null),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
