@@ -19,6 +19,54 @@ class PermissionGate extends StatefulWidget {
     this.onOpenSettings,
   });
 
+  /// Convenience helper to request camera permission immediately from code
+  /// (for example in a page's `initState`) so permission flow runs before
+  /// building widgets that depend on it.
+  static Future<bool> ensureCameraPermission(BuildContext context,
+      {VoidCallback? onOpenSettings}) async {
+    try {
+      final status = await Permission.camera.status;
+      if (status.isGranted) return true;
+      final result = await Permission.camera.request();
+      if (result.isGranted) return true;
+      if (result.isPermanentlyDenied) {
+        // Show dialog directing user to settings.
+        if (context.mounted) {
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Permission required'),
+              content: const Text(
+                  'This feature requires camera permission. Please enable it in the app settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    if (onOpenSettings != null) {
+                      try {
+                        onOpenSettings.call();
+                      } catch (_) {}
+                    } else {
+                      await openAppSettings();
+                    }
+                  },
+                  child: const Text('Buka Pengaturan'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   State<PermissionGate> createState() => _PermissionGateState();
 }

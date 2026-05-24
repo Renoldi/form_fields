@@ -664,7 +664,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     FormFieldsMyImageProvider provider, {
     String? initialSource,
   }) async {
-    Future<bool> _ensurePermissionForSource(String src) async {
+    Future<bool> ensurePermissionForSource(String src) async {
       try {
         if (src == 'camera') {
           final s = await Permission.camera.request();
@@ -768,7 +768,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (source == null) return;
       }
       if (source == 'camera' || source == 'gallery') {
-        final ok = await _ensurePermissionForSource(source);
+        final ok = await ensurePermissionForSource(source);
         if (!ok) return;
         final picker = ImagePicker();
         final picked = await picker.pickImage(

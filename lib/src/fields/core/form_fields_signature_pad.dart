@@ -294,7 +294,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     } catch (_) {
       // If permission handler is unavailable, attempt to acquire anyway.
       try {
-        SharedCameraManager.instance.acquire();
+        await SharedCameraManager.instance.acquire();
       } catch (_) {}
     }
   }
