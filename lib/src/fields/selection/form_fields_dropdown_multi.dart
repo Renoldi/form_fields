@@ -289,7 +289,7 @@ class _FormFieldsDropdownMultiState<T>
                 text: widget.label,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+                  color: resolveTextColor(context),
                 ),
               ),
               if (widget.isRequired)
@@ -311,7 +311,7 @@ class _FormFieldsDropdownMultiState<T>
                   '${selectedItems.length} of ${widget.items.length} selected',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey.shade600,
+                    color: resolveTextColor(context, muted: true),
                   ),
                 ),
               )

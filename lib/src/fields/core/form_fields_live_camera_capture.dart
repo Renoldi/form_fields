@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import '../../utilities/theme_helpers.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -352,6 +353,7 @@ class FormFieldsLiveCameraCaptureState
           final localizations = FormFieldsLocalizations.of(context);
           final errorMessage = _cam.errorMessage == 'No cameras found'
               ? localizations.get('cameraNoCamerasFound')
+              // import moved to top
               : _cam.errorMessage;
 
           if (errorMessage != null) {
@@ -416,9 +418,11 @@ class FormFieldsLiveCameraCaptureState
                                 border: Border.all(
                                   color: progressColor.withValues(alpha: .20),
                                 ),
-                                boxShadow: const [
+                                boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black26,
+                                    color: Theme.of(context)
+                                        .shadowColor
+                                        .withValues(alpha: 0.25),
                                     blurRadius: 8,
                                     offset: Offset(0, 3),
                                   ),
@@ -448,12 +452,14 @@ class FormFieldsLiveCameraCaptureState
                         ? _Badge(
                             icon: Icons.camera_front,
                             label: localizations.get('cameraReady'),
-                            color: Colors.black54,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
                           )
                         : _Badge(
                             icon: Icons.check_circle_outline,
                             label: localizations.get('cameraCaptured'),
-                            color: Colors.green.shade700,
+                            color: resolveActiveColor(context, null),
                           ),
                   ),
                 ],
@@ -555,9 +561,9 @@ class _CapturedPhoto extends StatelessWidget {
         result.link,
         fit: BoxFit.cover,
         width: double.infinity,
-        errorBuilder: (_, __, ___) => const Center(
-          child:
-              Icon(Icons.broken_image_outlined, size: 32, color: Colors.grey),
+        errorBuilder: (_, __, ___) => Center(
+          child: Icon(Icons.broken_image_outlined,
+              size: 32, color: resolveTextColor(context, muted: true)),
         ),
       );
     }
@@ -586,12 +592,12 @@ class _Badge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onPrimary),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -621,7 +627,7 @@ class _CameraPlaceholder extends StatelessWidget {
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey.shade900,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(
@@ -629,13 +635,27 @@ class _CameraPlaceholder extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showSpinner)
-              const CircularProgressIndicator(color: Colors.white54)
+              CircularProgressIndicator(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onPrimary
+                      .withValues(alpha: 0.54))
             else
-              Icon(icon, color: Colors.white54, size: 40),
+              Icon(icon,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onPrimary
+                      .withValues(alpha: 0.54),
+                  size: 40),
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onPrimary
+                      .withValues(alpha: 0.54),
+                  fontSize: 12),
             ),
           ],
         ),

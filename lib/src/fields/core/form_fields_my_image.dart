@@ -238,9 +238,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               border: Border.all(
                 color: progressColor.withValues(alpha: .20),
               ),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: Theme.of(context).shadowColor.withValues(alpha: .25),
                   blurRadius: 8,
                   offset: Offset(0, 3),
                 ),
@@ -269,7 +269,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
     final style = (widget.labelTextStyle ?? defaultStyle)
-        .copyWith(color: theme.textTheme.bodyMedium?.color ?? Colors.black87);
+        .copyWith(color: resolveTextColor(context));
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
@@ -495,14 +495,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
             child: Icon(
               Icons.image_not_supported,
               size: 48,
-              color: Colors.grey,
+              color: resolveTextColor(context, muted: true),
             ),
           ),
         );
@@ -511,7 +511,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.grey.shade300,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -810,9 +810,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                                         Navigator.pop(dialogContext, null),
                                     style: ButtonStyle(
                                       backgroundColor: WidgetStatePropertyAll(
-                                          Colors.grey.shade200),
+                                          Theme.of(dialogContext)
+                                              .colorScheme
+                                              .surfaceContainerHighest),
                                       foregroundColor: WidgetStatePropertyAll(
-                                          Colors.black87),
+                                          resolveTextColor(dialogContext)),
                                       shape: WidgetStatePropertyAll(
                                           RoundedRectangleBorder(
                                               borderRadius:
@@ -838,9 +840,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                                     },
                                     style: ButtonStyle(
                                       backgroundColor: WidgetStatePropertyAll(
-                                          Colors.deepPurple),
-                                      foregroundColor:
-                                          WidgetStatePropertyAll(Colors.white),
+                                          resolveActiveColor(
+                                              dialogContext, null)),
+                                      foregroundColor: WidgetStatePropertyAll(
+                                          Theme.of(dialogContext)
+                                              .colorScheme
+                                              .onPrimary),
                                       shape: WidgetStatePropertyAll(
                                           RoundedRectangleBorder(
                                               borderRadius:

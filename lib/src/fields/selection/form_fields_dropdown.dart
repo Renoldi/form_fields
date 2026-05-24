@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/enums.dart';
+import '../../utilities/theme_helpers.dart';
 import '../../providers/form_fields_dropdown_notifier.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
@@ -263,8 +264,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                       style: TextStyle(
                         color: currentValueText.isEmpty
                             ? Theme.of(context).disabledColor
-                            : (Theme.of(context).textTheme.bodyMedium?.color ??
-                                Colors.black87),
+                            : resolveTextColor(context),
                       ),
                     ),
                   ),
@@ -283,7 +283,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+                    color: resolveTextColor(context),
                   ),
                 ),
                 if (widget.isRequired)
@@ -373,7 +373,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+                  color: resolveTextColor(context),
                 ),
               ),
               if (widget.isRequired)

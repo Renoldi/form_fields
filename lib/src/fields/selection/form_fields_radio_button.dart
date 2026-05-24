@@ -295,7 +295,7 @@ class _FormFieldsRadioButtonBodyView<T>
         boxShadow: widget.itemShadow && !hasError
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -476,9 +476,8 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87)
-                    : Colors.black54,
+                        resolveTextColor(context))
+                    : resolveTextColor(context, muted: true),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
               child: widget.itemBuilder!(item, selected),
@@ -495,9 +494,8 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87)
-                    : Colors.black54,
+                        resolveTextColor(context))
+                    : resolveTextColor(context, muted: true),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: selected ? 14 : 13.5,
               ),
@@ -579,7 +577,7 @@ class _FormFieldsRadioButtonBodyView<T>
                               border: Border.all(
                                 color: selected
                                     ? _effectiveActiveColor(context)
-                                    : Colors.grey,
+                                    : resolveBorderColor(context),
                                 width: 2,
                               ),
                             ),

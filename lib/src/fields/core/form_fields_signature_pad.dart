@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
+import '../../utilities/theme_helpers.dart';
 
 // SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
 // SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
@@ -395,7 +396,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
     final style = (widget.labelTextStyle ?? defaultStyle)
-        .copyWith(color: theme.textTheme.bodyMedium?.color ?? Colors.black87);
+        .copyWith(color: resolveTextColor(context));
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
@@ -869,11 +870,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                           border: Border.all(
                             color: progressColor.withValues(alpha: .20),
                           ),
-                          boxShadow: const [
+                          boxShadow: [
                             BoxShadow(
-                              color: Colors.black26,
+                              color: Theme.of(context)
+                                  .shadowColor
+                                  .withValues(alpha: .26),
                               blurRadius: 8,
-                              offset: Offset(0, 3),
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),

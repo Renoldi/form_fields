@@ -73,9 +73,7 @@ class FormFields<T> extends StatefulWidget {
           TextSpan(
             text: resendPrefix,
             style: style ??
-                TextStyle(
-                    color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
-                    fontSize: 14),
+                TextStyle(color: resolveTextColor(context), fontSize: 14),
             children: [
               TextSpan(
                 text: resendLink,
@@ -328,14 +326,14 @@ class FormFields<T> extends StatefulWidget {
 
 class _ScannerOverlay extends StatelessWidget {
   const _ScannerOverlay({
-    this.overlayColor = Colors.black54,
-    this.borderColor = Colors.white,
+    this.overlayColor,
+    this.borderColor,
     this.borderWidth = 3.0,
     this.borderRadius = 16.0,
   });
 
-  final Color overlayColor;
-  final Color borderColor;
+  final Color? overlayColor;
+  final Color? borderColor;
   final double borderWidth;
   final double borderRadius;
 
@@ -345,10 +343,14 @@ class _ScannerOverlay extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth * 0.8;
         final height = constraints.maxHeight * 0.4;
+        final theme = Theme.of(context);
+        final resolvedOverlay =
+            overlayColor ?? theme.colorScheme.surface.withValues(alpha: 0.5);
+        final resolvedBorder = borderColor ?? theme.colorScheme.onSurface;
         return Stack(
           children: [
             Container(
-              color: overlayColor.withValues(alpha: 0.5),
+              color: resolvedOverlay,
             ),
             Center(
               child: Container(
@@ -356,7 +358,7 @@ class _ScannerOverlay extends StatelessWidget {
                 height: height,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: borderColor,
+                    color: resolvedBorder,
                     width: borderWidth,
                   ),
                   borderRadius: BorderRadius.circular(borderRadius),
@@ -376,47 +378,55 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   Future<void> _showBarcodeScannerDialog({
     required ValueChanged<String> onScanned,
     String cancelButtonLabel = 'Cancel',
-    Color overlayColor = Colors.black54,
-    Color overlayBorderColor = Colors.white,
+    Color? overlayColor,
+    Color? overlayBorderColor,
     double overlayBorderWidth = 3.0,
     double overlayBorderRadius = 16.0,
   }) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            MobileScanner(
-              // Updated for latest mobile_scanner API
-              onDetect: (capture) {
-                final barcodes = capture.barcodes;
-                if (barcodes.isNotEmpty) {
-                  final code = barcodes.first.rawValue;
-                  if (code != null) {
-                    Navigator.of(context).pop(code);
+      builder: (context) {
+        final theme = Theme.of(context);
+        final resolvedOverlay =
+            overlayColor ?? theme.colorScheme.surface.withValues(alpha: 0.54);
+        final resolvedBorder =
+            overlayBorderColor ?? theme.colorScheme.onSurface;
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          body: Stack(
+            children: [
+              MobileScanner(
+                // Updated for latest mobile_scanner API
+                onDetect: (capture) {
+                  final barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final code = barcodes.first.rawValue;
+                    if (code != null) {
+                      Navigator.of(context).pop(code);
+                    }
                   }
-                }
-              },
-            ),
-            _ScannerOverlay(
-              overlayColor: overlayColor,
-              borderColor: overlayBorderColor,
-              borderWidth: overlayBorderWidth,
-              borderRadius: overlayBorderRadius,
-            ),
-            Positioned(
-              top: 48,
-              right: 24,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                onPressed: () => Navigator.of(context).pop(),
-                tooltip: cancelButtonLabel,
+                },
               ),
-            ),
-          ],
-        ),
-      ),
+              _ScannerOverlay(
+                overlayColor: resolvedOverlay,
+                borderColor: resolvedBorder,
+                borderWidth: overlayBorderWidth,
+                borderRadius: overlayBorderRadius,
+              ),
+              Positioned(
+                top: 48,
+                right: 24,
+                child: IconButton(
+                  icon: Icon(Icons.close,
+                      color: Theme.of(context).colorScheme.onSurface, size: 32),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: cancelButtonLabel,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (result != null) {
       onScanned(result);
@@ -431,8 +441,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final scanIcon = const Icon(Icons.qr_code_scanner);
     // final scanButtonLabel = 'Scan';
     final cancelButtonLabel = 'Cancel';
-    final overlayColor = Colors.black54;
-    final overlayBorderColor = Colors.white;
+    final overlayColor =
+        resolveTextColor(context, muted: true).withValues(alpha: 0.5);
+    final overlayBorderColor = Theme.of(context).colorScheme.onSurface;
     final overlayBorderWidth = 3.0;
     final overlayBorderRadius = 16.0;
 
@@ -1042,9 +1053,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           value: selected,
           isDense: true,
           icon: const Icon(Icons.arrow_drop_down, size: 18),
-          style: TextStyle(
-              fontSize: 14,
-              color: theme.textTheme.bodyMedium?.color ?? Colors.black87),
+          style: TextStyle(fontSize: 14, color: resolveTextColor(context)),
           onChanged: widget.readOnly
               ? null
               : (value) {
@@ -1718,7 +1727,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     final theme = Theme.of(context);
     final labelStyle = (widget.labelTextStyle ?? defaultLabelStyle)
-        .copyWith(color: theme.textTheme.bodyMedium?.color ?? Colors.black87);
+        .copyWith(color: resolveTextColor(context));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
