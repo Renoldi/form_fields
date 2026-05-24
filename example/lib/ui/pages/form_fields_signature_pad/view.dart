@@ -6,6 +6,28 @@ import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 
+Widget _buildImageFrom(MyimageResult r, BuildContext context,
+    {double? height, BoxFit fit = BoxFit.cover}) {
+  if (r.path.isNotEmpty) {
+    return Image.file(File(r.path), height: height, fit: fit);
+  }
+  if (r.link.isNotEmpty) {
+    return Image.network(r.link, height: height, fit: fit);
+  }
+  final bytes = Uri.tryParse(r.base64)?.data?.contentAsBytes();
+  if (bytes != null && bytes.isNotEmpty) {
+    return Image.memory(bytes, height: height, fit: fit);
+  }
+  return Container(
+    height: height ?? 80,
+    color: Colors.grey.shade200,
+    child: Center(
+      child: Icon(Icons.image_not_supported_outlined,
+          color: Theme.of(context).colorScheme.onSurfaceVariant),
+    ),
+  );
+}
+
 class View extends PresenterState {
   final GlobalKey<FormFieldsLiveCameraCaptureState> _standaloneCameraKey =
       GlobalKey<FormFieldsLiveCameraCaptureState>();
@@ -103,13 +125,14 @@ class View extends PresenterState {
                         '  exportPreviewSource: SignaturePadPreviewSource.both,\n'
                         ')',
                     child: FormFieldsSignaturePad(
-                      showLiveCamera: true,
+                      // showLiveCamera: true,
                       showExportPreview: true,
                       exportPreviewSource: SignaturePadPreviewSource.both,
                       height: 160,
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       onExportedResult: (_) {},
+                      silentLiveCapture: true,
                     ),
                   ),
 
@@ -872,17 +895,8 @@ class _LiveResultPreview extends StatelessWidget {
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: liveCapture!.path.isNotEmpty
-                  ? Image.file(File(liveCapture!.path),
-                      height: 80, fit: BoxFit.cover)
-                  : liveCapture!.link.isNotEmpty
-                      ? Image.network(liveCapture!.link,
-                          height: 80, fit: BoxFit.cover)
-                      : Image.memory(
-                          Uri.parse(liveCapture!.base64).data!.contentAsBytes(),
-                          height: 80,
-                          fit: BoxFit.cover,
-                        ),
+              child: _buildImageFrom(liveCapture!, context,
+                  height: 80, fit: BoxFit.cover),
             ),
           ],
 
@@ -908,45 +922,17 @@ class _LiveResultPreview extends StatelessWidget {
                 Expanded(
                   child: _ResultTile(
                     label: 'signature',
-                    child: exportResult!.signature.path.isNotEmpty
-                        ? Image.file(File(exportResult!.signature.path),
-                            height: 70, fit: BoxFit.contain)
-                        : exportResult!.signature.link.isNotEmpty
-                            ? Image.network(exportResult!.signature.link,
-                                height: 70, fit: BoxFit.contain)
-                            : Image.memory(
-                                Uri.parse(exportResult!.signature.base64)
-                                    .data!
-                                    .contentAsBytes(),
-                                height: 70,
-                                fit: BoxFit.contain,
-                              ),
+                    child: _buildImageFrom(exportResult!.signature, context,
+                        height: 70, fit: BoxFit.contain),
                   ),
                 ),
-                if (exportResult!.liveCapture != null) ...[
+                ...[
                   const SizedBox(width: 8),
                   Expanded(
                     child: _ResultTile(
                       label: 'liveCapture',
-                      child: exportResult!.liveCapture!.path.isNotEmpty
-                          ? Image.file(
-                              File(exportResult!.liveCapture!.path),
-                              height: 70,
-                              fit: BoxFit.cover,
-                            )
-                          : exportResult!.liveCapture!.link.isNotEmpty
-                              ? Image.network(
-                                  exportResult!.liveCapture!.link,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.memory(
-                                  Uri.parse(exportResult!.liveCapture!.base64)
-                                      .data!
-                                      .contentAsBytes(),
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                ),
+                      child: _buildImageFrom(exportResult!.liveCapture, context,
+                          height: 70, fit: BoxFit.cover),
                     ),
                   ),
                 ],

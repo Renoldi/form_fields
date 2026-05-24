@@ -934,6 +934,13 @@ enum AppButtonType {
   fab,          // Floating action button
   extendedFab,  // FAB with label
 }
+
+Permission helper
+-----------------
+
+Use `PermissionGate.ensurePickerPermission(context, source: 'camera')` or
+`source: 'gallery'` to request appropriate permissions before opening
+pickers. This central helper is used internally by `FormFieldsMyImage`.
 ```
 
 ### AppButtonSize Enum

@@ -7,10 +7,11 @@ class SignaturePadExportResult {
 
   /// The live camera capture taken at export time (null if live camera disabled
   /// or no photo was captured).
-  final MyimageResult? liveCapture;
+  /// This is required and always present when exporting.
+  final MyimageResult liveCapture;
 
   const SignaturePadExportResult({
     required this.signature,
-    this.liveCapture,
+    required this.liveCapture,
   });
 }

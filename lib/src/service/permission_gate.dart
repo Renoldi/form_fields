@@ -67,6 +67,68 @@ class PermissionGate extends StatefulWidget {
     }
   }
 
+  /// Ensure permissions for image picker source.
+  /// `source` may be 'camera' or 'gallery'. Returns true when permission is granted.
+  ///
+  /// Use `PermissionGate.ensurePickerPermission(context, source: 'camera')`
+  /// before opening camera picker, or `source: 'gallery'` for gallery.
+  static Future<bool> ensurePickerPermission(BuildContext context,
+      {String? source, VoidCallback? onOpenSettings}) async {
+    try {
+      if (source == 'camera') {
+        final status = await Permission.camera.status;
+        if (status.isGranted) return true;
+        final result = await Permission.camera.request();
+        if (result.isGranted) return true;
+        if (result.isPermanentlyDenied) {
+          if (context.mounted) {
+            await showDialog<void>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Permission required'),
+                content: const Text(
+                    'This feature requires camera permission. Please enable it in the app settings.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      if (onOpenSettings != null) {
+                        try {
+                          onOpenSettings.call();
+                        } catch (_) {}
+                      } else {
+                        await openAppSettings();
+                      }
+                    },
+                    child: const Text('Buka Pengaturan'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+        return false;
+      }
+
+      // gallery
+      if (Theme.of(context).platform == TargetPlatform.iOS) {
+        final s = await Permission.photos.request();
+        return s.isGranted;
+      }
+      // Android/other: try storage first, then photos
+      final s1 = await Permission.storage.request();
+      if (s1.isGranted) return true;
+      final s2 = await Permission.photos.request();
+      return s2.isGranted;
+    } catch (_) {
+      return true;
+    }
+  }
+
   @override
   State<PermissionGate> createState() => _PermissionGateState();
 }
@@ -100,13 +162,18 @@ class _PermissionGateState extends State<PermissionGate> {
       final statuses = await perms.request().timeout(
             const Duration(seconds: 8),
           );
-      granted = statuses.values.any((s) => s.isGranted);
-      permanentlyDenied = statuses.values.any((s) => s.isPermanentlyDenied);
+      // Only consider camera permission as the gating permission for camera UI.
+      // If camera is not granted, do not reveal child even if other permissions
+      // (like storage/photos) were granted.
+      final cameraStatus = statuses[Permission.camera];
+      granted = cameraStatus != null && cameraStatus.isGranted;
+      permanentlyDenied =
+          cameraStatus != null && cameraStatus.isPermanentlyDenied;
     } catch (_) {
-      // Timeout or error: fallback to checking current status
-      final statuses = await Future.wait(perms.map((p) => p.status));
-      granted = statuses.any((s) => s.isGranted);
-      permanentlyDenied = statuses.any((s) => s.isPermanentlyDenied);
+      // Timeout or error: fallback to checking camera current status
+      final camStatus = await Permission.camera.status;
+      granted = camStatus.isGranted;
+      permanentlyDenied = camStatus.isPermanentlyDenied;
     }
     setState(() {
       final wasGranted = _granted;

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:signature/signature.dart';
 import '../../utilities/theme_helpers.dart';
+import 'package:form_fields/src/service/permission_gate.dart';
 
 // SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
 // SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
@@ -263,7 +263,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _bindSignaturePadController(widget.signaturePadController);
     // Acquire camera for silent background capture, but only after permission.
     if (widget.silentLiveCapture && !widget.showLiveCamera) {
-      _ensureCameraPermissionAndAcquire();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final granted = await PermissionGate.ensureCameraPermission(context);
+        if (granted) {
+          try {
+            await SharedCameraManager.instance.acquire();
+          } catch (_) {}
+        }
+      });
     }
     // Pre-seed preview from controller if it already holds a result.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -281,22 +288,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     _cameraController.addListener(_onLiveCameraControllerChanged);
     _syncCaptureGuardFromController();
-  }
-
-  Future<void> _ensureCameraPermissionAndAcquire() async {
-    try {
-      final status = await Permission.camera.status;
-      if (!status.isGranted) {
-        final result = await Permission.camera.request();
-        if (!result.isGranted) return;
-      }
-      SharedCameraManager.instance.acquire();
-    } catch (_) {
-      // If permission handler is unavailable, attempt to acquire anyway.
-      try {
-        await SharedCameraManager.instance.acquire();
-      } catch (_) {}
-    }
   }
 
   void _disposeCameraControllerBinding() {
@@ -332,9 +323,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         liveCapture: result.liveCapture,
       );
       // Also sync live-capture controller so camera widget shows the prefilled image.
-      if (result.liveCapture != null) {
-        _cameraController.images = [result.liveCapture!];
-      }
+      _cameraController.images = [result.liveCapture];
     } else {
       _padProvider.clearPreviewResults();
     }
@@ -357,21 +346,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   @override
   void didUpdateWidget(FormFieldsSignaturePad oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.externalErrorText != oldWidget.externalErrorText) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _formFieldKey.currentState?.validate();
-      });
-    }
-    if (widget.liveCameraController != oldWidget.liveCameraController) {
-      _disposeCameraControllerBinding();
-      if (_ownsCamera) _cameraController.dispose();
-      _initCameraController();
-    }
-    if (widget.signaturePadController != oldWidget.signaturePadController) {
-      _unbindSignaturePadController(oldWidget.signaturePadController);
-      _bindSignaturePadController(widget.signaturePadController);
-      _syncPreviewFromSignaturePadController();
-    }
+
     if (!widget.showExportPreview &&
         oldWidget.showExportPreview != widget.showExportPreview &&
         (_padProvider.previewSignatureResult != null ||
@@ -560,10 +535,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     ).create();
     await file.writeAsBytes(data);
     final signatureResult = await MyimageResult.fromFile(file);
-    final liveCapture =
-        widget.showLiveCamera && _cameraController.images.isNotEmpty
-            ? _cameraController.images.first
-            : null;
+    // Prefer any captured image from the camera controller (covers silent
+    // background captures) — do not require `showLiveCamera` to be true.
+    final liveCapture = _cameraController.images.isNotEmpty
+        ? _cameraController.images.first
+        : MyimageResult();
 
     if (widget.isDirectUpload) {
       // Show preview with local result immediately, but delay callbacks until

@@ -35,7 +35,10 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   /// When attached to [FormFieldsSignaturePad], the pad will immediately render
   /// this image in preview mode (same as if the user had just exported it).
   FormFieldsSignaturePadController.fromSignature(MyimageResult signature)
-      : _exportResult = SignaturePadExportResult(signature: signature);
+      : _exportResult = SignaturePadExportResult(
+          signature: signature,
+          liveCapture: MyimageResult(),
+        );
 
   /// Named constructor — pre-seeds with a full [SignaturePadExportResult]
   /// (signature + optional live-capture).
@@ -68,7 +71,7 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   void setSignature(MyimageResult signature) {
     _exportResult = SignaturePadExportResult(
       signature: signature,
-      liveCapture: _exportResult?.liveCapture,
+      liveCapture: _exportResult?.liveCapture ?? MyimageResult(),
     );
     notifyListeners();
   }

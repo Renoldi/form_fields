@@ -509,34 +509,47 @@ class SharedCameraManager {
       });
       return;
     }
-
     _initializing = true;
     _errorMessage = null;
     try {
-      final cameras = await availableCameras();
+      debugPrint('[SharedCameraManager] acquiring cameras...');
+      // Give the camera init a reasonable timeout to avoid indefinite spinner.
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {
+          throw Exception('availableCameras() timeout');
+        },
+      );
       if (cameras.isEmpty) {
         _errorMessage = 'No cameras found';
-        _initializing = false;
-        _notify();
         return;
       }
       final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
+      debugPrint(
+          '[SharedCameraManager] initializing controller for ${front.name}');
       final ctrl = CameraController(
         front,
         ResolutionPreset.medium,
         enableAudio: false,
       );
-      await ctrl.initialize();
+      await ctrl.initialize().timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {
+          throw Exception('CameraController.initialize() timeout');
+        },
+      );
       _controller = ctrl;
-    } catch (e) {
+      debugPrint('[SharedCameraManager] camera initialized');
+    } catch (e, st) {
       _errorMessage = e.toString();
+      debugPrint('[SharedCameraManager] acquire failed: $e\n$st');
+    } finally {
+      _initializing = false;
+      _notify();
     }
-
-    _initializing = false;
-    _notify();
   }
 
   void release() {

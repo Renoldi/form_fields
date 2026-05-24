@@ -164,8 +164,7 @@ class _AppFabMenuState extends State<AppFabMenu>
           elevation: 2,
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -189,8 +188,7 @@ class _AppFabMenuState extends State<AppFabMenu>
       ),
       child: _isOpen
           ? const Icon(Icons.close, key: ValueKey('close'))
-          : (widget.mainIcon ??
-              const Icon(Icons.add, key: ValueKey('open'))),
+          : (widget.mainIcon ?? const Icon(Icons.add, key: ValueKey('open'))),
     );
 
     return switch (widget.size) {
