@@ -95,7 +95,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
       onSelected: (item) {
         onItemSelected(item);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Form.of(context)?.validate();
+          Form.of(context).validate();
         });
       },
       displayStringForOption:

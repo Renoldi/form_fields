@@ -848,6 +848,84 @@ class View extends PresenterState {
                       viewModel.radioSelected),
                   const SizedBox(height: 24),
 
+                  // ===== DATE / DATETIME / DATERANGE / OTP EXAMPLES =====
+                  buildSectionTitle('Date & OTP Validation Examples',
+                      Colors.blueGrey.shade700, Colors.blueGrey.shade400),
+
+                  buildFieldTitle(
+                      'Birth Date (required)', Colors.blue.shade600),
+                  buildDescriptionBox(
+                    'Tanggal wajib diisi menggunakan picker.',
+                    Colors.blue,
+                  ),
+                  FormFields<DateTime?>(
+                    label: 'Birth Date',
+                    formType: FormType.date,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDateRequired,
+                    currentValue: viewModel.dateRequired,
+                  ),
+                  buildResultDisplay('Birth Date', viewModel.dateRequired),
+                  const SizedBox(height: 12),
+
+                  buildFieldTitle(
+                      'Event DateTime (required)', Colors.teal.shade600),
+                  buildDescriptionBox(
+                    'Pilih tanggal dan waktu (dateTime).',
+                    Colors.teal,
+                  ),
+                  FormFields<DateTime?>(
+                    label: 'Event DateTime',
+                    formType: FormType.dateTime,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDateTimeRequired,
+                    currentValue: viewModel.dateTimeRequired,
+                  ),
+                  buildResultDisplay(
+                      'Event DateTime', viewModel.dateTimeRequired),
+                  const SizedBox(height: 12),
+
+                  buildFieldTitle(
+                      'Date Range (required)', Colors.indigo.shade600),
+                  buildDescriptionBox(
+                    'Pilih rentang tanggal (date range).',
+                    Colors.indigo,
+                  ),
+                  FormFields<DateTimeRange?>(
+                    label: 'Date Range',
+                    formType: FormType.dateTimeRange,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setRangeRequired,
+                    currentValue: viewModel.rangeRequired,
+                  ),
+                  buildResultDisplay('Date Range', viewModel.rangeRequired),
+                  const SizedBox(height: 12),
+
+                  buildFieldTitle('Verification (OTP)', Colors.green.shade600),
+                  buildDescriptionBox(
+                    'Masukkan kode verifikasi (OTP).',
+                    Colors.green,
+                  ),
+                  FormFields<String>(
+                    label: 'OTP Code',
+                    formType: FormType.verification,
+                    labelPosition: LabelPosition.top,
+                    isRequired: true,
+                    verificationAsOtp: true,
+                    verificationLength: 6,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setVerificationOtp,
+                    currentValue: viewModel.verificationOtp,
+                  ),
+                  buildResultDisplay('OTP Code', viewModel.verificationOtp),
+                  const SizedBox(height: 24),
+
                   // ===== VALIDATION RULES SUMMARY =====
                   buildSectionTitle(context.tr('valRulesSummaryTitle'),
                       Colors.grey.shade700, Colors.grey.shade400),

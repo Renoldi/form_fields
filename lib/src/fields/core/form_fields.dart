@@ -1603,37 +1603,52 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       if (customError != null) return customError;
     }
 
-    // 2. Check required field constraint
-    final isBlankString = value is String && value.trim().isEmpty;
+    // If the widget is uncontrolled (parent didn't update `currentValue`)
+    // but the internal controller has text (e.g. after a picker selection),
+    // treat that as a non-empty value for validation purposes. This fixes
+    // cases where date/time pickers update the controller but the parent
+    // doesn't immediately pass the new `currentValue` back in.
+    T? effectiveValue = value;
+    if (effectiveValue == null) {
+      final ctrlText = vm.controller.text.trim();
+      if (ctrlText.isNotEmpty) {
+        effectiveValue = ctrlText as T?;
+      }
+    }
 
-    if (isRequired && (value == null || isBlankString)) {
+    // 2. Check required field constraint
+    final isBlankString =
+        effectiveValue is String && effectiveValue.trim().isEmpty;
+
+    if (isRequired && (effectiveValue == null || isBlankString)) {
       return l.getWithLabel('required', label);
     }
 
     // 3. Skip validation for optional empty fields
-    if (!isRequired && (value == null || isBlankString)) {
+    if (!isRequired && (effectiveValue == null || isBlankString)) {
       return null;
     }
 
     // 4. Type-specific validation
     switch (vm.formType) {
       case FormType.phone:
-        if (value is String) {
-          final localDigits = _extractLocalPhoneDigits(value);
+        if (effectiveValue is String) {
+          final localDigits = _extractLocalPhoneDigits(effectiveValue);
           final fullPhone = '$_selectedCountryCode$localDigits';
           return FormFieldValidators.phone(vm.label, l)(fullPhone);
         }
         break;
       case FormType.email:
-        if (value is String) {
-          return FormFieldValidators.email(vm.label, l)(value);
+        if (effectiveValue is String) {
+          return FormFieldValidators.email(vm.label, l)(effectiveValue);
         }
         break;
       case FormType.password:
         if (widget.customPasswordValidator != null) {
-          return widget.customPasswordValidator!(value);
+          return widget.customPasswordValidator!(effectiveValue);
         }
-        if (value is String && value.length < widget.minLengthPassword) {
+        if (effectiveValue is String &&
+            effectiveValue.length < widget.minLengthPassword) {
           return widget.minLengthPasswordErrorText ??
               l.getWithValue(
                 'passwordMinLength',
@@ -1642,8 +1657,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         }
         break;
       case FormType.verification:
-        if (value is String) {
-          if (value.length != widget.verificationLength) {
+        if (effectiveValue is String) {
+          if (effectiveValue.length != widget.verificationLength) {
             return l.getWithValue(
               'verificationLength',
               widget.verificationLength,
@@ -1651,7 +1666,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           }
           // Validasi karakter jika verificationOtpAlphanumeric false (hanya angka)
           if (!widget.verificationOtpAlphanumeric &&
-              !RegExp(r'^\d+$').hasMatch(value)) {
+              !RegExp(r'^\d+$').hasMatch(effectiveValue)) {
             return l.getWithLabel('enterValidInteger', vm.label);
           }
           // Jika verificationOtpAlphanumeric true, boleh angka/alfabet, tidak perlu validasi khusus

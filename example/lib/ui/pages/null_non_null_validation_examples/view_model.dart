@@ -26,6 +26,11 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
   List<String> dropdownMultiSelected = [];
   String? dropdownSelected;
   String? radioSelected;
+  // Date/time and OTP examples
+  DateTime? dateRequired;
+  DateTime? dateTimeRequired;
+  DateTimeRange? rangeRequired;
+  String verificationOtp = '';
 
   void setStringNonNullRequired(String value) {
     stringNonNullRequired = value;
@@ -119,6 +124,26 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
 
   void setRadioSelected(String? value) {
     radioSelected = value;
+    notifyListeners();
+  }
+
+  void setDateRequired(DateTime? value) {
+    dateRequired = value;
+    notifyListeners();
+  }
+
+  void setDateTimeRequired(DateTime? value) {
+    dateTimeRequired = value;
+    notifyListeners();
+  }
+
+  void setRangeRequired(DateTimeRange? value) {
+    rangeRequired = value;
+    notifyListeners();
+  }
+
+  void setVerificationOtp(String value) {
+    verificationOtp = value;
     notifyListeners();
   }
 }
