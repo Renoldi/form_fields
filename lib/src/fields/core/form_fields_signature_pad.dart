@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
@@ -132,6 +133,13 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Defaults to `true`.
   final bool showUploadLoading;
 
+  /// When true, automatically export the signature shortly after the user
+  /// stops drawing. Defaults to `true` so auto-export is the default behaviour.
+  ///
+  /// Auto-export is debounced to avoid exporting between quick multi-stroke
+  /// draws — the export fires only after the user has paused drawing.
+  final bool autoExportOnFinish;
+
   // Customizable upload messages
   final String? uploadSuccessTitle;
   final String? uploadFailedTitle;
@@ -206,6 +214,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadErrorMessage,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
+    this.autoExportOnFinish = true,
     this.label,
     this.labelPosition = LabelPosition.none,
     this.labelTextStyle,
@@ -234,6 +243,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   late SignatureController _signatureController;
   late FormFieldsMyImageController _cameraController;
   bool _ownsCamera = false;
+
+  // Debounce timer used to detect end-of-drawing and trigger auto-export.
+  Timer? _autoExportTimer;
+  static const Duration _autoExportDebounce = Duration(milliseconds: 1200);
+
+  // Guard to avoid overlapping auto-export runs.
+  bool _autoExportInProgress = false;
 
   /// Key used to trigger capture/reset on the separated live-camera widget.
   final _liveCameraKey = GlobalKey<FormFieldsLiveCameraCaptureState>();
@@ -357,6 +373,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   @override
   void dispose() {
+    _autoExportTimer?.cancel();
     _unbindSignaturePadController(widget.signaturePadController);
     _disposeCameraControllerBinding();
     _signatureController.removeListener(_onSignatureChanged);
@@ -376,6 +393,31 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _formFieldKey.currentState?.validate();
     });
+
+    // Schedule auto-export when the user pauses drawing.
+    if (widget.autoExportOnFinish) {
+      _autoExportTimer?.cancel();
+      if (_signatureController.isNotEmpty) {
+        _autoExportTimer = Timer(_autoExportDebounce, () {
+          if (!mounted) return;
+          if (_signatureController.isNotEmpty) {
+            _triggerAutoExport();
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _triggerAutoExport() async {
+    if (_autoExportInProgress) return;
+    _autoExportInProgress = true;
+    try {
+      // Do not auto-export while upload is in progress.
+      if (_padProvider.isUploading) return;
+      await _exportSignature();
+    } finally {
+      _autoExportInProgress = false;
+    }
   }
 
   Widget _buildLabel() {
@@ -909,7 +951,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             ),
           ],
         ),
-        if (!isPreviewMode) ...[
+        if (!isPreviewMode && !widget.autoExportOnFinish) ...[
           const SizedBox(height: 12),
           Center(
             child: Tooltip(
