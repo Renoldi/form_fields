@@ -384,6 +384,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     double overlayBorderWidth = 3.0,
     double overlayBorderRadius = 16.0,
   }) async {
+    // Use an explicit controller configured for maximum detection speed.
+    final controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.unrestricted,
+    );
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -398,7 +403,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             children: [
               PermissionGate(
                 child: MobileScanner(
-                  // Updated for latest mobile_scanner API
+                  controller: controller,
+                  // Run in unrestricted detection mode for fastest scanning.
                   onDetect: (capture) {
                     final barcodes = capture.barcodes;
                     if (barcodes.isNotEmpty) {
@@ -431,6 +437,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         );
       },
     );
+
+    // Ensure controller is disposed after the dialog closes.
+    try {
+      controller.dispose();
+    } catch (_) {}
     if (result != null) {
       onScanned(result);
     }
