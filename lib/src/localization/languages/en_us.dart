@@ -65,10 +65,22 @@ const Map<String, String> enUSStrings = {
   'signatureExport': 'Export signature',
   'liveCaptureTitle': 'Live Capture',
   'liveCaptureAutoOnSign': 'auto on sign',
+  'noLiveCapture': 'No live capture',
   'cameraInitializing': 'Initializing camera...',
   'cameraNoCamerasFound': 'No cameras found',
+  'cameraAvailableTimeout':
+      'Camera initialization timed out (no cameras found)',
+  'cameraInitializeTimeout': 'Camera failed to initialize in time',
   'cameraReady': 'Ready',
   'cameraCaptured': 'Captured',
+  'permissionRequiredTitle': 'Permission required',
+  'permissionCameraContent':
+      'This feature requires camera permission. Please enable it in the app settings.',
+  'permissionGenericContent':
+      'This feature requires permission. Please enable it in the app settings.',
+  'openSettings': 'Open Settings',
+  'permissionsRequiredShort': 'Permissions are required to use this feature.',
+  'requestAgain': 'Request Again',
 
   // Optional/Labels
   'optional': '(optional)',

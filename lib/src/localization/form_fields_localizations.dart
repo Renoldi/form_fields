@@ -54,15 +54,29 @@ class FormFieldsLocalizations {
 
   /// Check if locale is supported
   static bool isSupported(Locale locale) {
-    return _supportedLanguages
-        .containsKey('${locale.languageCode}_${locale.countryCode}');
+    final keyWithCountry = '${locale.languageCode}_${locale.countryCode}';
+    if (_supportedLanguages.containsKey(keyWithCountry)) return true;
+    // Fallback: support language-only locales (e.g. 'id') by checking
+    // if any supported entry shares the same language code.
+    return _supportedLanguages.keys
+        .any((k) => k.split('_').first == locale.languageCode);
   }
 
   /// Load localization for specific locale
   static FormFieldsLocalizations load(Locale locale) {
-    final key = '${locale.languageCode}_${locale.countryCode}';
-    final strings = _supportedLanguages[key] ?? enUSStrings;
-    return FormFieldsLocalizations(locale, strings);
+    final keyWithCountry = '${locale.languageCode}_${locale.countryCode}';
+    if (_supportedLanguages.containsKey(keyWithCountry)) {
+      return FormFieldsLocalizations(
+          locale, _supportedLanguages[keyWithCountry]!);
+    }
+    // Try language-only fallback (e.g. Locale('id') -> 'id_ID')
+    final byLanguage = _supportedLanguages.entries
+        .firstWhere(
+          (e) => e.key.split('_').first == locale.languageCode,
+          orElse: () => MapEntry('en_US', enUSStrings),
+        )
+        .value;
+    return FormFieldsLocalizations(locale, byLanguage);
   }
 
   /// Map of supported languages

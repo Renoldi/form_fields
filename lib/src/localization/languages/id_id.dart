@@ -65,10 +65,22 @@ const Map<String, String> idIDStrings = {
   'signatureExport': 'Ekspor tanda tangan',
   'liveCaptureTitle': 'Tangkap Langsung',
   'liveCaptureAutoOnSign': 'otomatis saat tanda tangan',
+  'noLiveCapture': 'Tidak ada tangkapan langsung',
   'cameraInitializing': 'Menginisialisasi kamera...',
   'cameraNoCamerasFound': 'Kamera tidak ditemukan',
+  'cameraAvailableTimeout':
+      'Inisialisasi kamera melebihi waktu tunggu (tidak ada kamera)',
+  'cameraInitializeTimeout': 'Kamera gagal diinisialisasi tepat waktu',
   'cameraReady': 'Siap',
   'cameraCaptured': 'Tertangkap',
+  'permissionRequiredTitle': 'Izin diperlukan',
+  'permissionCameraContent':
+      'Fitur ini membutuhkan izin kamera. Silakan aktifkan di pengaturan aplikasi.',
+  'permissionGenericContent':
+      'Fitur ini membutuhkan izin. Silakan aktifkan di pengaturan aplikasi.',
+  'openSettings': 'Buka Pengaturan',
+  'permissionsRequiredShort': 'Izin diperlukan untuk menggunakan fitur ini.',
+  'requestAgain': 'Minta Lagi',
 
   // Optional/Labels
   'optional': '(opsional)',

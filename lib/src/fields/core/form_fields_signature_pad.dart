@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:camera/camera.dart';
 import 'package:signature/signature.dart';
 import '../../utilities/theme_helpers.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
@@ -283,7 +284,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         final granted = await PermissionGate.ensureCameraPermission(context);
         if (granted) {
           try {
-            await SharedCameraManager.instance.acquire();
+            // Use a lower resolution for background/silent capture to speed
+            // up camera initialization.
+            await SharedCameraManager.instance.acquire(ResolutionPreset.low);
           } catch (_) {}
         }
       });
@@ -806,6 +809,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   }
 
   Widget _buildPreviewCanvas(FormFieldsSignaturePadProvider provider) {
+    final localizations = FormFieldsLocalizations.of(context);
     final signature = provider.previewSignatureResult;
     if (signature == null) {
       return const SizedBox.shrink();
@@ -841,7 +845,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                               .surfaceContainerHighest,
                           child: Center(
                             child: Text(
-                              'No live capture',
+                              localizations.get('noLiveCapture'),
                               style: TextStyle(
                                 color: Theme.of(context)
                                     .colorScheme
@@ -976,6 +980,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final preview = FormFieldsLiveCameraCapture(
       key: _liveCameraKey,
       height: widget.liveCameraHeight,
+      preAcquire: true,
       cameraController: _cameraController,
       onCaptured: widget.onLiveCaptured,
       isDirectUpload: widget.isDirectUpload,

@@ -14,6 +14,10 @@ import '../../service/permission_gate.dart';
 class FormFieldsLiveCameraCapture extends StatefulWidget {
   final double height;
 
+  /// Resolution preset used when creating the camera controller.
+  /// Lower presets initialize faster but have lower preview/capture quality.
+  final ResolutionPreset resolutionPreset;
+
   /// Controller that will be updated with the latest captured image.
   /// Optional — only needed when you want to read captured images or trigger
   /// capture/reset programmatically without a [GlobalKey].
@@ -65,9 +69,15 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// the screenshot path, so no rendered widget is required.
   final bool hidePreview;
 
+  /// When `true`, attempt to acquire the camera as soon as the widget is
+  /// mounted (after the first frame) so the preview is ready faster.
+  /// Permission will be requested if needed.
+  final bool preAcquire;
+
   FormFieldsLiveCameraCapture({
     super.key,
     this.height = 100,
+    this.resolutionPreset = ResolutionPreset.low,
     this.cameraController,
     this.onCaptured,
     this.isDirectUpload = false,
@@ -84,6 +94,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.hidePreview = false,
+    this.preAcquire = false,
   }) : assert(
           isDirectUpload == false ||
               (uploadUrl != null && uploadUrl.isNotEmpty),
@@ -110,6 +121,19 @@ class FormFieldsLiveCameraCaptureState
     super.initState();
     _provider = FormFieldsLiveCameraCaptureProvider();
     _bindController(widget.cameraController);
+    // Listen for SharedCameraManager state changes so pre-acquire can flip
+    // the UI to the live preview once the controller is ready.
+    _cam.addListener(_onCameraReady);
+    if (widget.preAcquire) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final granted = await PermissionGate.ensureCameraPermission(context);
+        if (granted) {
+          try {
+            await _cam.acquire(widget.resolutionPreset);
+          } catch (_) {}
+        }
+      });
+    }
   }
 
   bool _cameraInitDone = false;
@@ -146,7 +170,14 @@ class FormFieldsLiveCameraCaptureState
   }
 
   void _onCameraReady() {
-    if (mounted) _provider.notifyCameraReady();
+    if (!mounted) return;
+    _provider.notifyCameraReady();
+    final ready = _cam.isReady;
+    if (_cameraInitDone != ready) {
+      setState(() {
+        _cameraInitDone = ready;
+      });
+    }
   }
 
   /// Capture current preview into a PNG file and return [MyimageResult].
@@ -352,10 +383,16 @@ class FormFieldsLiveCameraCaptureState
           final progressTrackColor =
               progressTheme.linearTrackColor ?? loadingTheme.trackColor;
           final localizations = FormFieldsLocalizations.of(context);
-          final errorMessage = _cam.errorMessage == 'No cameras found'
-              ? localizations.get('cameraNoCamerasFound')
-              // import moved to top
-              : _cam.errorMessage;
+          String? errorMessage;
+          if (_cam.errorMessage == 'cameraNoCamerasFound') {
+            errorMessage = localizations.get('cameraNoCamerasFound');
+          } else if (_cam.errorMessage == 'cameraAvailableTimeout') {
+            errorMessage = localizations.get('cameraAvailableTimeout');
+          } else if (_cam.errorMessage == 'cameraInitializeTimeout') {
+            errorMessage = localizations.get('cameraInitializeTimeout');
+          } else {
+            errorMessage = _cam.errorMessage;
+          }
 
           if (errorMessage != null) {
             return _CameraPlaceholder(
@@ -486,15 +523,9 @@ class FormFieldsLiveCameraCaptureState
 
           return PermissionGate(
             onPermissionGranted: () async {
-              _cam.addListener(_onCameraReady);
               try {
-                await _cam.acquire();
+                await _cam.acquire(widget.resolutionPreset);
               } catch (_) {}
-              if (mounted) {
-                setState(() {
-                  _cameraInitDone = true;
-                });
-              }
             },
             child: childToShow,
           );
@@ -524,7 +555,8 @@ class SharedCameraManager {
     }
   }
 
-  Future<void> acquire() async {
+  Future<void> acquire(
+      [ResolutionPreset preset = ResolutionPreset.medium]) async {
     _refCount++;
     if (_controller != null && _controller!.value.isInitialized) return;
     if (_initializing) {
@@ -540,13 +572,13 @@ class SharedCameraManager {
       debugPrint('[SharedCameraManager] acquiring cameras...');
       // Give the camera init a reasonable timeout to avoid indefinite spinner.
       final cameras = await availableCameras().timeout(
-        const Duration(seconds: 8),
+        const Duration(seconds: 2),
         onTimeout: () {
           throw Exception('availableCameras() timeout');
         },
       );
       if (cameras.isEmpty) {
-        _errorMessage = 'No cameras found';
+        _errorMessage = 'cameraNoCamerasFound';
         return;
       }
       final front = cameras.firstWhere(
@@ -557,11 +589,11 @@ class SharedCameraManager {
           '[SharedCameraManager] initializing controller for ${front.name}');
       final ctrl = CameraController(
         front,
-        ResolutionPreset.medium,
+        preset,
         enableAudio: false,
       );
       await ctrl.initialize().timeout(
-        const Duration(seconds: 8),
+        const Duration(seconds: 2),
         onTimeout: () {
           throw Exception('CameraController.initialize() timeout');
         },
@@ -569,7 +601,14 @@ class SharedCameraManager {
       _controller = ctrl;
       debugPrint('[SharedCameraManager] camera initialized');
     } catch (e, st) {
-      _errorMessage = e.toString();
+      final msg = e.toString();
+      if (msg.contains('availableCameras() timeout')) {
+        _errorMessage = 'cameraAvailableTimeout';
+      } else if (msg.contains('CameraController.initialize() timeout')) {
+        _errorMessage = 'cameraInitializeTimeout';
+      } else {
+        _errorMessage = msg;
+      }
       debugPrint('[SharedCameraManager] acquire failed: $e\n$st');
     } finally {
       _initializing = false;

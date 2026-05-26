@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Widget that checks and requests camera, gallery, and internet permissions before showing [child].
@@ -34,30 +35,32 @@ class PermissionGate extends StatefulWidget {
         if (context.mounted) {
           await showDialog<void>(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Permission required'),
-              content: const Text(
-                  'This feature requires camera permission. Please enable it in the app settings.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    if (onOpenSettings != null) {
-                      try {
-                        onOpenSettings.call();
-                      } catch (_) {}
-                    } else {
-                      await openAppSettings();
-                    }
-                  },
-                  child: const Text('Buka Pengaturan'),
-                ),
-              ],
-            ),
+            builder: (context) {
+              final l = FormFieldsLocalizations.of(context);
+              return AlertDialog(
+                title: Text(l.get('permissionRequiredTitle')),
+                content: Text(l.get('permissionCameraContent')),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(l.get('cancel')),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      if (onOpenSettings != null) {
+                        try {
+                          onOpenSettings.call();
+                        } catch (_) {}
+                      } else {
+                        await openAppSettings();
+                      }
+                    },
+                    child: Text(l.get('openSettings')),
+                  ),
+                ],
+              );
+            },
           );
         }
       }
@@ -84,30 +87,32 @@ class PermissionGate extends StatefulWidget {
           if (context.mounted) {
             await showDialog<void>(
               context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Permission required'),
-                content: const Text(
-                    'This feature requires camera permission. Please enable it in the app settings.'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      if (onOpenSettings != null) {
-                        try {
-                          onOpenSettings.call();
-                        } catch (_) {}
-                      } else {
-                        await openAppSettings();
-                      }
-                    },
-                    child: const Text('Buka Pengaturan'),
-                  ),
-                ],
-              ),
+              builder: (context) {
+                final l = FormFieldsLocalizations.of(context);
+                return AlertDialog(
+                  title: Text(l.get('permissionRequiredTitle')),
+                  content: Text(l.get('permissionCameraContent')),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l.get('cancel')),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        if (onOpenSettings != null) {
+                          try {
+                            onOpenSettings.call();
+                          } catch (_) {}
+                        } else {
+                          await openAppSettings();
+                        }
+                      },
+                      child: Text(l.get('openSettings')),
+                    ),
+                  ],
+                );
+              },
             );
           }
         }
@@ -185,37 +190,39 @@ class _PermissionGateState extends State<PermissionGate> {
           if (!mounted) return;
           showDialog<void>(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Permission required'),
-              content: const Text(
-                  'This feature requires permission. Please enable it in the app settings.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    if (widget.onOpenSettings != null) {
-                      try {
-                        widget.onOpenSettings!.call();
-                      } catch (_) {}
-                    } else {
-                      await openAppSettings();
-                    }
-                    // After returning from settings (or navigation), re-check permissions.
-                    if (mounted) {
-                      setState(() {
-                        _checking = true;
-                      });
-                      _checkPermissions();
-                    }
-                  },
-                  child: const Text('Buka Pengaturan'),
-                ),
-              ],
-            ),
+            builder: (context) {
+              final l = FormFieldsLocalizations.of(context);
+              return AlertDialog(
+                title: Text(l.get('permissionRequiredTitle')),
+                content: Text(l.get('permissionGenericContent')),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(l.get('cancel')),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      if (widget.onOpenSettings != null) {
+                        try {
+                          widget.onOpenSettings!.call();
+                        } catch (_) {}
+                      } else {
+                        await openAppSettings();
+                      }
+                      // After returning from settings (or navigation), re-check permissions.
+                      if (mounted) {
+                        setState(() {
+                          _checking = true;
+                        });
+                        _checkPermissions();
+                      }
+                    },
+                    child: Text(l.get('openSettings')),
+                  ),
+                ],
+              );
+            },
           );
         });
       }
@@ -240,11 +247,13 @@ class _PermissionGateState extends State<PermissionGate> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Permissions are required to use this feature.'),
+              Text(FormFieldsLocalizations.of(context)
+                  .get('permissionsRequiredShort')),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _checkPermissions,
-                child: const Text('Request Again'),
+                child: Text(
+                    FormFieldsLocalizations.of(context).get('requestAgain')),
               ),
             ],
           ),
