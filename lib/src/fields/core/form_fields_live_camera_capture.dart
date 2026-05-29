@@ -25,8 +25,8 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
 
   /// Called each time [FormFieldsLiveCameraCaptureState.capture] succeeds.
   /// When [isDirectUpload] is enabled, the result passed here will already
-  /// contain the server [MyimageResult.link] and [MyimageResult.imageId].
-  final void Function(MyimageResult captured)? onCaptured;
+  /// contain the server [MyImageResult.link] and [MyImageResult.imageId].
+  final void Function(MyImageResult captured)? onCaptured;
 
   // ── Upload ─────────────────────────────────────────────────────────────────
 
@@ -180,19 +180,19 @@ class FormFieldsLiveCameraCaptureState
     }
   }
 
-  /// Capture current preview into a PNG file and return [MyimageResult].
+  /// Capture current preview into a PNG file and return [MyImageResult].
   /// When [FormFieldsLiveCameraCapture.isDirectUpload] is `true`, the image is
   /// uploaded automatically and the returned result (and the connected
   /// controller) will already contain the server link/imageId.
-  Future<MyimageResult?> capture() async {
+  Future<MyImageResult?> capture() async {
     if (!_cam.isReady) return null;
     try {
-      MyimageResult result;
+      MyImageResult result;
 
       if (widget.hidePreview) {
         // Silent mode: use CameraController.takePicture() — no widget needed.
         final xfile = await _cam.controller!.takePicture();
-        result = await MyimageResult.fromFile(File(xfile.path));
+        result = await MyImageResult.fromFile(File(xfile.path));
       } else {
         await Future<void>.delayed(const Duration(milliseconds: 80));
         final boundary = _previewKey.currentContext?.findRenderObject()
@@ -209,7 +209,7 @@ class FormFieldsLiveCameraCaptureState
           '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
         ).create();
         await file.writeAsBytes(bytes);
-        result = await MyimageResult.fromFile(file);
+        result = await MyImageResult.fromFile(file);
       }
 
       if (widget.isDirectUpload && mounted) {
@@ -250,10 +250,10 @@ class FormFieldsLiveCameraCaptureState
     }
   }
 
-  /// Uploads [image] and returns the updated [MyimageResult] with server
+  /// Uploads [image] and returns the updated [MyImageResult] with server
   /// link/imageId. Returns `null` on failure.
-  Future<MyimageResult?> _uploadImageDio(
-    MyimageResult image, {
+  Future<MyImageResult?> _uploadImageDio(
+    MyImageResult image, {
     bool showSuccessDialog = true,
   }) async {
     if (widget.uploadUrl == null) return null;
@@ -321,7 +321,7 @@ class FormFieldsLiveCameraCaptureState
             message: uploadSuccessMessage,
           );
         }
-        return MyimageResult(
+        return MyImageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
           // Keep local capture path to avoid extra GET right after upload.
@@ -631,7 +631,7 @@ class SharedCameraManager {
 }
 
 class _CapturedPhoto extends StatelessWidget {
-  final MyimageResult result;
+  final MyImageResult result;
   const _CapturedPhoto({required this.result});
 
   @override

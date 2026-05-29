@@ -48,7 +48,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
   // ── Callbacks ──────────────────────────────────────────────────────────────
 
   /// Called with the signature only (backward-compatible).
-  final void Function(MyimageResult?)? onExported;
+  final void Function(MyImageResult?)? onExported;
 
   /// Called with signature + optional live capture.
   /// Preferred over [onExported] when [showLiveCamera] is enabled.
@@ -56,7 +56,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
 
   /// Called immediately after the auto-capture fires (on draw start).
   /// Useful to show a thumbnail or indicator before the user finishes signing.
-  final void Function(MyimageResult captured)? onLiveCaptured;
+  final void Function(MyImageResult captured)? onLiveCaptured;
 
   /// When true, replace the drawing area with exported preview after confirm.
   /// While preview is shown, export button is hidden until user clears.
@@ -529,7 +529,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       }
       try {
         final xfile = await ctrl.takePicture();
-        final result = await MyimageResult.fromFile(File(xfile.path));
+        final result = await MyImageResult.fromFile(File(xfile.path));
         _cameraController.images = [result];
         widget.onLiveCaptured?.call(result);
       } catch (_) {
@@ -579,12 +579,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       '${tempDir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png',
     ).create();
     await file.writeAsBytes(data);
-    final signatureResult = await MyimageResult.fromFile(file);
+    final signatureResult = await MyImageResult.fromFile(file);
     // Prefer any captured image from the camera controller (covers silent
     // background captures) — do not require `showLiveCamera` to be true.
     final liveCapture = _cameraController.images.isNotEmpty
         ? _cameraController.images.first
-        : MyimageResult();
+        : MyImageResult();
 
     if (widget.isDirectUpload) {
       // Show preview with local result immediately, but delay callbacks until
@@ -665,10 +665,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
-  /// Uploads [image] to [uploadUrl] and returns the updated [MyimageResult]
+  /// Uploads [image] to [uploadUrl] and returns the updated [MyImageResult]
   /// with server link/imageId filled in. Returns `null` on failure.
-  Future<MyimageResult?> _uploadImageDio(
-    MyimageResult image, {
+  Future<MyImageResult?> _uploadImageDio(
+    MyImageResult image, {
     bool showSuccessDialog = true,
   }) async {
     if (widget.uploadUrl == null) return null;
@@ -736,7 +736,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             message: uploadSuccessMessage,
           );
         }
-        return MyimageResult(
+        return MyImageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
           // Keep local signature path to avoid extra GET right after upload.
@@ -766,7 +766,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   // ── Build helpers ──────────────────────────────────────────────────────────
 
-  Widget _buildPreviewImage(MyimageResult result,
+  Widget _buildPreviewImage(MyImageResult result,
       {BoxFit fit = BoxFit.contain}) {
     if (result.path.trim().isNotEmpty) {
       return Image.file(

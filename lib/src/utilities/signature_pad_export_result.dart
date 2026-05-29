@@ -3,12 +3,12 @@ import 'package:form_fields/src/utilities/myimage_result.dart';
 /// Result of a signature pad export, optionally including a live camera capture.
 class SignaturePadExportResult {
   /// The exported signature image.
-  final MyimageResult signature;
+  final MyImageResult signature;
 
   /// The live camera capture taken at export time (null if live camera disabled
   /// or no photo was captured).
   /// This is required and always present when exporting.
-  final MyimageResult liveCapture;
+  final MyImageResult liveCapture;
 
   const SignaturePadExportResult({
     required this.signature,

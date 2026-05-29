@@ -106,7 +106,7 @@ export 'src/providers/form_fields_signature_pad_provider.dart'
     show FormFieldsSignaturePadProvider;
 export 'src/providers/form_fields_live_camera_capture_provider.dart'
     show FormFieldsLiveCameraCaptureProvider;
-export 'src/utilities/myimage_result.dart' show MyimageResult;
+export 'src/utilities/myimage_result.dart' show MyImageResult;
 export 'src/service/dio_service.dart' show DioUtil;
 
 export 'src/controllers/form_fields_controller.dart';

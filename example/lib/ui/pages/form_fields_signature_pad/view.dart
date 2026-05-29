@@ -6,7 +6,7 @@ import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 
-Widget _buildImageFrom(MyimageResult r, BuildContext context,
+Widget _buildImageFrom(MyImageResult r, BuildContext context,
     {double? height, BoxFit fit = BoxFit.cover}) {
   if (r.path.isNotEmpty) {
     return Image.file(File(r.path), height: height, fit: fit);
@@ -813,7 +813,7 @@ class _ExampleCardState extends State<_ExampleCard> {
 // ── Result widgets ───────────────────────────────────────────────────────────
 
 class _SignaturePreview extends StatelessWidget {
-  final MyimageResult result;
+  final MyImageResult result;
   const _SignaturePreview({required this.result});
 
   @override
@@ -856,7 +856,7 @@ class _SignaturePreview extends StatelessWidget {
 }
 
 class _LiveResultPreview extends StatelessWidget {
-  final MyimageResult? liveCapture;
+  final MyImageResult? liveCapture;
   final SignaturePadExportResult? exportResult;
   const _LiveResultPreview({this.liveCapture, this.exportResult});
 
@@ -970,7 +970,7 @@ class _ResultTile extends StatelessWidget {
 
 class _UploadResultPreview extends StatelessWidget {
   final String label;
-  final MyimageResult result;
+  final MyImageResult result;
   const _UploadResultPreview({required this.label, required this.result});
 
   @override
@@ -1034,7 +1034,7 @@ class _UploadResultPreview extends StatelessWidget {
 }
 
 class _StandaloneLiveCapturePreview extends StatelessWidget {
-  final MyimageResult result;
+  final MyImageResult result;
   const _StandaloneLiveCapturePreview({required this.result});
 
   @override
@@ -1099,7 +1099,7 @@ class _SignatureValidationExampleState
     extends State<_SignatureValidationExample> {
   final _formKey = GlobalKey<FormState>();
   bool _submitted = false;
-  MyimageResult? _exportedSignature;
+  MyImageResult? _exportedSignature;
 
   @override
   Widget build(BuildContext context) {

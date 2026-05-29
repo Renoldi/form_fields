@@ -5,9 +5,9 @@ class ViewModel extends ChangeNotifier {
   // ── Basic example ────────────────────────────────────────────────────────
   final FormFieldsSignaturePadController basicSignatureController =
       FormFieldsSignaturePadController();
-  MyimageResult? signatureResult;
+  MyImageResult? signatureResult;
 
-  void setSignature(MyimageResult? result) {
+  void setSignature(MyImageResult? result) {
     signatureResult = result;
     notifyListeners();
   }
@@ -18,24 +18,24 @@ class ViewModel extends ChangeNotifier {
       FormFieldsMyImageController();
   final FormFieldsMyImageController prefilledLiveCameraController =
       FormFieldsMyImageController.fromImages([
-    MyimageResult(link: 'https://picsum.photos/seed/live-prefill/800/600'),
+    MyImageResult(link: 'https://picsum.photos/seed/live-prefill/800/600'),
   ]);
   final FormFieldsMyImageController standaloneCameraController =
       FormFieldsMyImageController();
   final FormFieldsMyImageController controllerCaptureController =
       FormFieldsMyImageController();
 
-  MyimageResult? controllerCaptureResult;
+  MyImageResult? controllerCaptureResult;
 
-  void setControllerCapture(MyimageResult? captured) {
+  void setControllerCapture(MyImageResult? captured) {
     controllerCaptureResult = captured;
     notifyListeners();
   }
 
   SignaturePadExportResult? exportResult;
   SignaturePadExportResult? prefilledExportResult;
-  MyimageResult? liveCaptureResult;
-  MyimageResult? standaloneCaptureResult;
+  MyImageResult? liveCaptureResult;
+  MyImageResult? standaloneCaptureResult;
 
   void setExportResult(SignaturePadExportResult result) {
     exportResult = result;
@@ -47,12 +47,12 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setLiveCapture(MyimageResult captured) {
+  void setLiveCapture(MyImageResult captured) {
     liveCaptureResult = captured;
     notifyListeners();
   }
 
-  void setStandaloneCapture(MyimageResult? captured) {
+  void setStandaloneCapture(MyImageResult? captured) {
     standaloneCaptureResult = captured;
     notifyListeners();
   }
@@ -60,7 +60,7 @@ class ViewModel extends ChangeNotifier {
   // ── Prefilled signature example ──────────────────────────────────────────
   final FormFieldsSignaturePadController prefilledSignatureController =
       FormFieldsSignaturePadController.fromSignature(
-    MyimageResult.network(
+    MyImageResult.network(
         'https://picsum.photos/seed/signature-prefill/400/160'),
   );
   SignaturePadExportResult? prefilledSignatureExportResult;
@@ -75,8 +75,8 @@ class ViewModel extends ChangeNotifier {
       FormFieldsSignaturePadController.fromExportResult(
     SignaturePadExportResult(
       signature:
-          MyimageResult(link: 'https://picsum.photos/seed/sig-both/400/160'),
-      liveCapture: MyimageResult.network(
+          MyImageResult(link: 'https://picsum.photos/seed/sig-both/400/160'),
+      liveCapture: MyImageResult.network(
           'https://picsum.photos/seed/prefill-both/800/600'),
     ),
   );
@@ -90,10 +90,10 @@ class ViewModel extends ChangeNotifier {
   // ── Direct upload examples ───────────────────────────────────────────────
   final FormFieldsSignaturePadController uploadedSignatureController =
       FormFieldsSignaturePadController();
-  MyimageResult? uploadedSignatureResult;
+  MyImageResult? uploadedSignatureResult;
   SignaturePadExportResult? uploadedExportResult;
 
-  void setUploadedSignature(MyimageResult? result) {
+  void setUploadedSignature(MyImageResult? result) {
     uploadedSignatureResult = result;
     notifyListeners();
   }
@@ -104,10 +104,10 @@ class ViewModel extends ChangeNotifier {
   }
 
   // ── Silent live capture example ──────────────────────────────────────────
-  MyimageResult? silentCaptureResult;
+  MyImageResult? silentCaptureResult;
   SignaturePadExportResult? silentExportResult;
 
-  void setSilentCapture(MyimageResult captured) {
+  void setSilentCapture(MyImageResult captured) {
     silentCaptureResult = captured;
     notifyListeners();
   }
@@ -120,9 +120,9 @@ class ViewModel extends ChangeNotifier {
   // ── Hidden live camera (FormFieldsLiveCameraCapture hidePreview) ────────
   final FormFieldsMyImageController hiddenLiveCameraController =
       FormFieldsMyImageController();
-  MyimageResult? hiddenCaptureResult;
+  MyImageResult? hiddenCaptureResult;
 
-  void setHiddenCapture(MyimageResult captured) {
+  void setHiddenCapture(MyImageResult captured) {
     hiddenCaptureResult = captured;
     notifyListeners();
   }

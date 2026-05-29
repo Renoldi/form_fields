@@ -13,17 +13,17 @@ abstract class PresenterState extends State<Presenter> {
   // Business logic goes here
   final FormFieldsMyImageController networkImagesController =
       FormFieldsMyImageController.fromImages([
-    MyimageResult(link: 'https://picsum.photos/150'),
-    MyimageResult(link: 'https://picsum.photos/200'),
+    MyImageResult(link: 'https://picsum.photos/150'),
+    MyImageResult(link: 'https://picsum.photos/200'),
   ]);
   // Controller for asset image demo (now using network links)
   final FormFieldsMyImageController assetImagesController =
       FormFieldsMyImageController.fromImages([
-    MyimageResult(
+    MyImageResult(
       link:
           'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
     ),
-    MyimageResult(
+    MyImageResult(
       link:
           'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80',
     ),

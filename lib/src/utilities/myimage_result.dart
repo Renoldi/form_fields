@@ -1,17 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-class MyimageResult {
+class MyImageResult {
   final String link;
   final String base64;
   final String path;
   final String imageId;
 
-  MyimageResult(
+  MyImageResult(
       {this.link = "", this.base64 = "", this.path = "", this.imageId = ""});
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
-  MyimageResult.network(String url)
+  MyImageResult.network(String url)
       : link = url,
         base64 = "",
         path = "",
@@ -21,12 +21,12 @@ class MyimageResult {
     return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId)';
   }
 
-  static Future<MyimageResult> fromFile(File file, {String? link}) async {
+  static Future<MyImageResult> fromFile(File file, {String? link}) async {
     final bytes = await file.readAsBytes();
     final base64Raw = base64Encode(bytes);
     final mime = getMimeType(file.path);
     final base64Str = 'data:$mime;base64,$base64Raw';
-    return MyimageResult(link: link ?? "", base64: base64Str, path: file.path);
+    return MyImageResult(link: link ?? "", base64: base64Str, path: file.path);
   }
 
   /// Returns the MIME type based on file extension.

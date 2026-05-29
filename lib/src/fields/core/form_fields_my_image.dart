@@ -11,11 +11,11 @@ class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
 
   /// Callback untuk perubahan daftar gambar (multi-image, kompatibilitas lama)
-  final void Function(List<MyimageResult> results)? onImagesChanged;
+  final void Function(List<MyImageResult> results)? onImagesChanged;
 
   /// Callback untuk perubahan gambar pada mode single image (maxImages == 1)
   /// Dipanggil setiap kali gambar dipilih atau diganti.
-  final void Function(MyimageResult image)? onImageChanged;
+  final void Function(MyImageResult image)? onImageChanged;
   final String? label;
 
   /// Position of the label relative to the image widget.
@@ -28,14 +28,14 @@ class FormFieldsMyImage extends StatefulWidget {
 
   final bool isDoc;
   final int? maxImages;
-  final Widget Function(BuildContext context, MyimageResult image, int index)?
+  final Widget Function(BuildContext context, MyImageResult image, int index)?
       imageBuilder;
-  final Widget Function(BuildContext context, int index, MyimageResult image)?
+  final Widget Function(BuildContext context, int index, MyImageResult image)?
       removeIconBuilder;
 
   /// Callback saat gambar dihapus.
   /// Pada mode single image, index selalu 0.
-  final void Function(int index, MyimageResult image)? onRemoveImage;
+  final void Function(int index, MyImageResult image)? onRemoveImage;
   final Widget Function(BuildContext context)? plusBuilder;
   final String? uploadUrl;
   final String? uploadToken;
@@ -63,7 +63,7 @@ class FormFieldsMyImage extends StatefulWidget {
 
   /// Custom validator. Receives the current images list.
   /// Return an error string, or null if valid.
-  final String? Function(List<MyimageResult>?)? validator;
+  final String? Function(List<MyImageResult>?)? validator;
 
   /// Controls when validation errors are shown (default: onUserInteraction).
   final AutovalidateMode autovalidateMode;
@@ -122,7 +122,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   int? _uploadingIndex;
   FormFieldsMyImageController? _controller;
 
-  final _formFieldKey = GlobalKey<FormFieldState<List<MyimageResult>>>();
+  final _formFieldKey = GlobalKey<FormFieldState<List<MyImageResult>>>();
   FormFieldsLocalizations? _localizations;
 
   @override
@@ -185,7 +185,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   void _onProviderChanged() {
     _formFieldKey.currentState
-        ?.didChange(List<MyimageResult>.from(_provider.images));
+        ?.didChange(List<MyImageResult>.from(_provider.images));
     // After images change due to user action or controller updates, re-validate
     // so externalErrorText is cleared when valid.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -194,7 +194,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   void _syncControllerImages(FormFieldsMyImageProvider provider) {
-    _controller?.images = List<MyimageResult>.from(provider.images);
+    _controller?.images = List<MyImageResult>.from(provider.images);
   }
 
   bool _shouldShowUploadOverlay(
@@ -336,7 +336,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
   }
 
-  String? _validateImages(List<MyimageResult>? images) {
+  String? _validateImages(List<MyImageResult>? images) {
     if (widget.externalErrorText != null) return widget.externalErrorText;
     if (widget.validator != null) return widget.validator!(images);
     if (widget.isRequired && (images == null || images.isEmpty)) {
@@ -355,7 +355,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     _localizations = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _provider,
-      child: FormField<List<MyimageResult>>(
+      child: FormField<List<MyImageResult>>(
         key: _formFieldKey,
         autovalidateMode: widget.autovalidateMode,
         initialValue: _provider.images,
@@ -467,10 +467,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               provider.removeImage(0);
               _syncControllerImages(provider);
               widget.onImagesChanged?.call(
-                List<MyimageResult>.from(provider.images),
+                List<MyImageResult>.from(provider.images),
               );
               widget.onRemoveImage?.call(0, removed);
-              widget.onImageChanged?.call(MyimageResult());
+              widget.onImageChanged?.call(MyImageResult());
             }),
           ),
       ],
@@ -479,7 +479,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Widget _buildImageDisplay(
     BuildContext context,
-    MyimageResult? image,
+    MyImageResult? image,
     int index, {
     bool isSingle = false,
   }) {
@@ -488,7 +488,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         return SizedBox(
           width: 120,
           height: 120,
-          child: widget.imageBuilder!(context, MyimageResult(), index),
+          child: widget.imageBuilder!(context, MyImageResult(), index),
         );
       }
       if (!widget.isDirectUpload) {
@@ -556,7 +556,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   Widget _buildRemoveButton(
     BuildContext context,
     int index,
-    MyimageResult image,
+    MyImageResult image,
     VoidCallback onRemove,
   ) {
     if (!widget.allow) {
@@ -615,7 +615,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   provider.removeImage(idx);
                   _syncControllerImages(provider);
                   widget.onImagesChanged?.call(
-                    List<MyimageResult>.from(provider.images),
+                    List<MyImageResult>.from(provider.images),
                   );
                   widget.onRemoveImage?.call(idx, removed);
                 }),
@@ -768,7 +768,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
     if (!context.mounted) return;
     if (file != null) {
-      final result = await MyimageResult.fromFile(file);
+      final result = await MyImageResult.fromFile(file);
       if (!context.mounted) return;
       int? uploadIdx;
       String? description;
@@ -899,7 +899,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         // Callback khusus single image
         if (!widget.isDirectUpload) {
           widget.onImagesChanged
-              ?.call(List<MyimageResult>.from(provider.images));
+              ?.call(List<MyImageResult>.from(provider.images));
         }
         // Untuk direct upload, callback final (dengan link/imageId) akan
         // dipanggil setelah upload sukses di _uploadImageDio.
@@ -915,7 +915,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         _syncControllerImages(provider);
         if (!widget.isDirectUpload) {
           widget.onImagesChanged
-              ?.call(List<MyimageResult>.from(provider.images));
+              ?.call(List<MyImageResult>.from(provider.images));
         }
       } else {
         if (provider.images.length < widget.maxImages!) {
@@ -927,7 +927,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           _syncControllerImages(provider);
           if (!widget.isDirectUpload) {
             widget.onImagesChanged?.call(
-              List<MyimageResult>.from(provider.images),
+              List<MyImageResult>.from(provider.images),
             );
           }
         }
@@ -950,7 +950,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Future<void> _uploadImageDio(
     FormFieldsMyImageProvider provider,
-    MyimageResult image,
+    MyImageResult image,
     int? idx, {
     String? description,
   }) async {
@@ -1013,7 +1013,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         final data = response.data;
         final uploadedLink = _extractUploadedLink(data);
         final imageId = _extractImageId(data);
-        final updatedImage = MyimageResult(
+        final updatedImage = MyImageResult(
           link: uploadedLink ?? images[index].link,
           base64: images[index].base64,
           // Keep local file path from picked image to avoid re-fetching
@@ -1031,7 +1031,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         provider.setUploadProgress(index, 1.0);
         await Future<void>.delayed(uploadCompletionTransitionDelay);
         _syncControllerImages(provider);
-        widget.onImagesChanged?.call(List<MyimageResult>.from(provider.images));
+        widget.onImagesChanged?.call(List<MyImageResult>.from(provider.images));
         if (widget.maxImages == 1 && index == 0) {
           final shouldEmitSingleImage = !widget.isDirectUpload ||
               updatedImage.link.isNotEmpty ||

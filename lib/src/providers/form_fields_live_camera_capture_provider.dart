@@ -7,8 +7,8 @@ class FormFieldsLiveCameraCaptureProvider extends ChangeNotifier {
 
   bool get isUploading => _uploadProgress != null;
 
-  MyimageResult? _capturedResult;
-  MyimageResult? get capturedResult => _capturedResult;
+  MyImageResult? _capturedResult;
+  MyImageResult? get capturedResult => _capturedResult;
 
   void startUpload({double? initialProgress}) {
     _uploadProgress = initialProgress;
@@ -30,7 +30,7 @@ class FormFieldsLiveCameraCaptureProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCapturedResult(MyimageResult? result) {
+  void setCapturedResult(MyImageResult? result) {
     _capturedResult = result;
     notifyListeners();
   }

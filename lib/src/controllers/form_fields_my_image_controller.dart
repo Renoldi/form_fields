@@ -2,47 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/src/utilities/myimage_result.dart';
 
 class FormFieldsMyImageController extends ChangeNotifier {
-  FormFieldsMyImageController({List<MyimageResult>? initialImages})
-      : _images = List<MyimageResult>.from(initialImages ?? const []);
+  FormFieldsMyImageController({List<MyImageResult>? initialImages})
+      : _images = List<MyImageResult>.from(initialImages ?? const []);
 
   /// Preferred named constructor for prefilled images.
-  FormFieldsMyImageController.fromImages(List<MyimageResult> images)
-      : _images = List<MyimageResult>.from(images);
+  FormFieldsMyImageController.fromImages(List<MyImageResult> images)
+      : _images = List<MyImageResult>.from(images);
 
   /// Backward-compatible alias (optional).
   @Deprecated('Use FormFieldsMyImageController.fromImages instead')
-  FormFieldsMyImageController.fromNetworkUrls(List<MyimageResult> images)
+  FormFieldsMyImageController.fromNetworkUrls(List<MyImageResult> images)
       : this.fromImages(images);
 
   /// Backward-compatible alias (optional).
   @Deprecated('Use FormFieldsMyImageController.fromImages instead')
-  FormFieldsMyImageController.fromLinks(List<MyimageResult> images)
+  FormFieldsMyImageController.fromLinks(List<MyImageResult> images)
       : this.fromImages(images);
 
-  List<MyimageResult> _images;
+  List<MyImageResult> _images;
 
-  List<MyimageResult> get images => List<MyimageResult>.unmodifiable(_images);
+  List<MyImageResult> get images => List<MyImageResult>.unmodifiable(_images);
 
-  set images(List<MyimageResult> value) {
-    _images = List<MyimageResult>.from(value);
+  set images(List<MyImageResult> value) {
+    _images = List<MyImageResult>.from(value);
     notifyListeners();
   }
 
   /// Replaces all images.
-  void setImages(List<MyimageResult> images) {
-    _images = List<MyimageResult>.from(images);
+  void setImages(List<MyImageResult> images) {
+    _images = List<MyImageResult>.from(images);
     notifyListeners();
   }
 
   /// Backward-compatible alias (optional).
   @Deprecated('Use setImages instead')
-  void setNetworkUrls(List<MyimageResult> images) => setImages(images);
+  void setNetworkUrls(List<MyImageResult> images) => setImages(images);
 
   /// Backward-compatible alias (optional).
   @Deprecated('Use setImages instead')
-  void setLinks(List<MyimageResult> images) => setImages(images);
+  void setLinks(List<MyImageResult> images) => setImages(images);
 
-  void addImage(MyimageResult image) {
+  void addImage(MyImageResult image) {
     _images.add(image);
     notifyListeners();
   }
@@ -55,13 +55,13 @@ class FormFieldsMyImageController extends ChangeNotifier {
   // ── Capture integration ──────────────────────────────────────────────────
 
   /// Registered by [FormFieldsLiveCameraCapture] when it mounts.
-  Future<MyimageResult?> Function()? _captureHandler;
+  Future<MyImageResult?> Function()? _captureHandler;
   VoidCallback? _resetHandler;
 
   /// @internal — called by [FormFieldsLiveCameraCapture].
   // ignore: use_setters_to_change_properties
   void registerCaptureHandler(
-    Future<MyimageResult?> Function() onCapture,
+    Future<MyImageResult?> Function() onCapture,
     VoidCallback onReset,
   ) {
     _captureHandler = onCapture;
@@ -77,9 +77,9 @@ class FormFieldsMyImageController extends ChangeNotifier {
   /// Programmatically trigger a capture from the linked
   /// [FormFieldsLiveCameraCapture] widget.
   ///
-  /// Returns [MyimageResult] on success, or `null` if no widget is attached
+  /// Returns [MyImageResult] on success, or `null` if no widget is attached
   /// or the camera is not ready.
-  Future<MyimageResult?> capture() =>
+  Future<MyImageResult?> capture() =>
       _captureHandler?.call() ?? Future.value(null);
 
   /// Programmatically reset the linked [FormFieldsLiveCameraCapture] widget

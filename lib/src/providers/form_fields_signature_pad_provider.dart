@@ -7,11 +7,11 @@ class FormFieldsSignaturePadProvider extends ChangeNotifier {
 
   bool get isUploading => _uploadProgress != null;
 
-  MyimageResult? _previewSignatureResult;
-  MyimageResult? get previewSignatureResult => _previewSignatureResult;
+  MyImageResult? _previewSignatureResult;
+  MyImageResult? get previewSignatureResult => _previewSignatureResult;
 
-  MyimageResult? _previewLiveCaptureResult;
-  MyimageResult? get previewLiveCaptureResult => _previewLiveCaptureResult;
+  MyImageResult? _previewLiveCaptureResult;
+  MyImageResult? get previewLiveCaptureResult => _previewLiveCaptureResult;
 
   void startUpload({double? initialProgress}) {
     _uploadProgress = initialProgress;
@@ -34,8 +34,8 @@ class FormFieldsSignaturePadProvider extends ChangeNotifier {
   }
 
   void setPreviewResults({
-    required MyimageResult? signature,
-    required MyimageResult? liveCapture,
+    required MyImageResult? signature,
+    required MyImageResult? liveCapture,
   }) {
     _previewSignatureResult = signature;
     _previewLiveCaptureResult = liveCapture;
