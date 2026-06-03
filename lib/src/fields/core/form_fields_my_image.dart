@@ -678,10 +678,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       final scanned = await CunningDocumentScanner.getPictures(
         isGalleryImportAllowed: true,
         noOfPages: 1,
-        iosScannerOptions: IosScannerOptions(
-          imageFormat: IosImageFormat.jpg,
-          jpgCompressionQuality: 0.5,
-        ),
       );
       if (!context.mounted) return;
       if (scanned != null && scanned.isNotEmpty) {
