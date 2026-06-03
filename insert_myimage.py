@@ -13,9 +13,9 @@ jsons = [
     # 3: MyImage with 2 Default Asset Images
     '{\n  "controller": "assetImagesController",\n  "maxImages": 5,\n  "onRemoveImage": "(index, image) => logger.i(...)",\n  "onImagesChanged": "(images) => { setState(() {}); logger.i(...) }"\n}',
     # 4: Single Profile Image
-    '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "isDoc": true,\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => setState(() { singleImageLog = ... })",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+    '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "imageSource": "doc",\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => setState(() { singleImageLog = ... })",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
     # 5: Single Image Picker (Custom Builder)
-    '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "isDoc": true,\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
+    '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "imageSource": "doc",\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
     # 6: Multi Image Picker
     '{\n  "controller": "multiController",\n  "onImagesChanged": "(results) => setState(() {})",\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadToken": ""\n}',
     # 7: Multi Image Picker (Custom Builder)

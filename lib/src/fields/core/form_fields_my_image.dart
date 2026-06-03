@@ -26,7 +26,14 @@ class FormFieldsMyImage extends StatefulWidget {
   /// Custom text style for the label.
   final TextStyle? labelTextStyle;
 
-  final bool isDoc;
+  /// If provided, restricts the chooser and programmatic picks to this list
+  /// (order matters when a fallback is required). `null` means allow all.
+  final List<MyImageSource>? allowedImageSources;
+
+  /// Note: use `allowedImageSources` only. If `null`, default chooser
+  /// will present camera + gallery. To force a single source, pass a
+  /// single-item list. To allow document scanning include `MyImageSource.doc`.
+
   final int? maxImages;
   final Widget Function(BuildContext context, MyImageResult image, int index)?
       imageBuilder;
@@ -80,7 +87,10 @@ class FormFieldsMyImage extends StatefulWidget {
     this.label,
     this.labelPosition = LabelPosition.none,
     this.labelTextStyle,
-    this.isDoc = false,
+    this.allowedImageSources = const [
+      MyImageSource.camera,
+      MyImageSource.gallery,
+    ],
     this.maxImages,
     this.imageBuilder,
     this.onRemoveImage,
@@ -134,9 +144,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       _controller = widget.controller;
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
-      widget.controller!.registerPickImageHandler(
-        (source) => _pickImage(context, _provider, initialSource: source),
-      );
+      widget.controller!.registerPickImageHandler((source) async {
+        if (!mounted) return;
+        await _pickImage(context, _provider, initialSource: source);
+      });
     } else {
       _controller = FormFieldsMyImageController();
       _provider.setImages(_controller!.images);
@@ -160,9 +171,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         _controller = widget.controller;
         _provider.setImages(_controller!.images);
         _controller!.addListener(_onControllerChanged);
-        widget.controller!.registerPickImageHandler(
-          (source) => _pickImage(context, _provider, initialSource: source),
-        );
+        widget.controller!.registerPickImageHandler((source) async {
+          if (!mounted) return;
+          await _pickImage(context, _provider, initialSource: source);
+        });
       }
     }
   }
@@ -665,29 +677,102 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     String? initialSource,
   }) async {
     Future<bool> ensurePermissionForSource(String src) async {
-      return await PermissionGate.ensurePickerPermission(context, source: src);
+      final ok = await PermissionGate.ensurePickerPermission(context,
+          source: src);
+      if (!mounted) return false;
+      return ok;
     }
 
     File? file;
-    String? source;
-    // If isDoc, ensure camera/gallery permission first, then call scanner
-    if (widget.isDoc) {
-      final ok = await PermissionGate.ensurePickerPermission(context,
-          source: 'camera');
+
+    // Allowed sources (null = allow all). Use order of list as fallback order.
+    final allowed = widget.allowedImageSources;
+
+    MyImageSource? mapStringToSource(String s) {
+      switch (s) {
+        case 'camera':
+          return MyImageSource.camera;
+        case 'gallery':
+          return MyImageSource.gallery;
+        case 'doc':
+          return MyImageSource.doc;
+        default:
+          return null;
+      }
+    }
+
+    Future<MyImageSource?> normalize(MyImageSource src) async {
+      if (allowed == null) return src;
+      if (allowed.isEmpty) return null;
+      if (allowed.contains(src)) return src;
+      return allowed.first;
+    }
+
+    Future<void> doDocScan() async {
+      final ok = await ensurePermissionForSource('camera');
       if (!ok) return;
       final scanned = await CunningDocumentScanner.getPictures(
         isGalleryImportAllowed: true,
         noOfPages: 1,
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (scanned != null && scanned.isNotEmpty) {
         file = File(scanned.first);
       }
-    } else {
-      if (initialSource != null) {
-        source = initialSource;
+    }
+
+    Future<void> doPickImage(MyImageSource src) async {
+      final pickSource = src == MyImageSource.camera ? 'camera' : 'gallery';
+      final ok = await ensurePermissionForSource(pickSource);
+      if (!ok) return;
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: src == MyImageSource.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
+      );
+      if (!mounted) return;
+      if (picked != null) {
+        file = File(picked.path);
+      }
+    }
+
+    // 1) If caller requested a specific source programmatically
+    if (initialSource != null) {
+      final requested = mapStringToSource(initialSource);
+      if (requested != null) {
+        final chosen = await normalize(requested);
+        if (chosen == null) return;
+        if (chosen == MyImageSource.doc) {
+          await doDocScan();
+        } else {
+          await doPickImage(chosen);
+        }
       } else {
-        source = await showAppModalBottomSheet<String>(
+        // unknown string -> fall back to chooser behavior below
+      }
+    }
+
+    // 2) If nothing picked yet, determine source from `allowedImageSources`
+    if (file == null) {
+      // Build effective options: `null` => default camera+gallery.
+      final options = <MyImageSource>[];
+      if (allowed == null) {
+        options.addAll([MyImageSource.camera, MyImageSource.gallery]);
+      } else {
+        for (final s in allowed) {
+          if (!options.contains(s)) {
+            options.add(s);
+          }
+        }
+      }
+      if (options.isEmpty) return;
+
+      MyImageSource effective;
+      if (options.length == 1) {
+        effective = options.first;
+      } else {
+        final selection = await showAppModalBottomSheet<MyImageSource>(
           context: context,
           backgroundColor: Colors.transparent,
           useSafeArea: true,
@@ -702,70 +787,62 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AppButton(
-                      type: AppButtonType.icon,
-                      onPressed: () => Navigator.pop(dialogContext, 'camera'),
-                      icon: Icon(Icons.camera_alt,
-                          size: 32,
-                          color: resolveActiveColor(dialogContext, null)),
-                      margin: const EdgeInsets.only(right: 24),
-                    ),
-                    SizedBox(width: 16),
-                    AppButton(
-                      type: AppButtonType.icon,
-                      onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-                      icon: Icon(Icons.photo_library,
-                          size: 32,
-                          color: Theme.of(dialogContext).colorScheme.secondary),
-                      margin: const EdgeInsets.only(left: 24),
-                    ),
+                    if (options.contains(MyImageSource.camera))
+                      AppButton(
+                        type: AppButtonType.icon,
+                        onPressed: () =>
+                            Navigator.pop(dialogContext, MyImageSource.camera),
+                        icon: Icon(Icons.camera_alt,
+                            size: 32,
+                            color: resolveActiveColor(dialogContext, null)),
+                        margin: const EdgeInsets.only(right: 24),
+                      ),
+                    if (options.contains(MyImageSource.gallery)) ...[
+                      SizedBox(width: 16),
+                      AppButton(
+                        type: AppButtonType.icon,
+                        onPressed: () =>
+                            Navigator.pop(dialogContext, MyImageSource.gallery),
+                        icon: Icon(Icons.photo_library,
+                            size: 32,
+                            color:
+                                Theme.of(dialogContext).colorScheme.secondary),
+                        margin: const EdgeInsets.only(left: 24),
+                      ),
+                    ],
+                    if (options.contains(MyImageSource.doc)) ...[
+                      SizedBox(width: 16),
+                      AppButton(
+                        type: AppButtonType.icon,
+                        onPressed: () =>
+                            Navigator.pop(dialogContext, MyImageSource.doc),
+                        icon: Icon(Icons.sticky_note_2,
+                            size: 32,
+                            color: Theme.of(dialogContext).colorScheme.primary),
+                        margin: const EdgeInsets.only(left: 24),
+                      ),
+                    ],
                   ],
                 ),
               ),
             );
-            // return Material(
-            //   color: Colors.transparent,
-            //   child: Row(
-            //     mainAxisAlignment: MainAxisAlignment.center,
-            //     children: [
-            //       AppButton(
-            //         type: AppButtonType.fab,
-            //         onPressed: () => Navigator.pop(dialogContext, 'camera'),
-            //         icon: const Icon(Icons.camera_alt, size: 32, color: Colors.blue),
-            //         margin: const EdgeInsets.only(right: 24),
-            //       ),
-            //       SizedBox(width: 16),
-            //       AppButton(
-            //         type: AppButtonType.fab,
-            //         onPressed: () => Navigator.pop(dialogContext, 'gallery'),
-            //         icon: const Icon(Icons.photo_library, size: 32, color: Colors.green),
-            //         margin: const EdgeInsets.only(left: 24),
-            //       ),
-            //     ],
-            //   ),
-            // );
           },
         );
-        if (!context.mounted) return;
-        if (source == null) return;
+        if (!mounted) return;
+        if (selection == null) return;
+        effective = selection;
       }
-      if (source == 'camera' || source == 'gallery') {
-        final ok = await ensurePermissionForSource(source);
-        if (!ok) return;
-        final picker = ImagePicker();
-        final picked = await picker.pickImage(
-          source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
-        );
-        if (!context.mounted) return;
-        if (picked != null) {
-          file = File(picked.path);
-        }
+
+      if (effective == MyImageSource.doc) {
+        await doDocScan();
+      } else {
+        await doPickImage(effective);
       }
     }
-    if (!context.mounted) return;
+    if (!mounted) return;
     if (file != null) {
-      MyImageResult result = await MyImageResult.fromFile(file);
-      if (!context.mounted) return;
+      MyImageResult result = await MyImageResult.fromFile(file!);
+      if (!mounted) return;
       int? uploadIdx;
       String? description;
 
@@ -875,7 +952,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             );
           },
         );
-        if (!context.mounted) return;
+        if (!mounted) return;
         if (description != null && description.isNotEmpty) {
           _lastDescription = description;
         }
@@ -949,7 +1026,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           uploadIdx,
           description: description,
         );
-        if (!context.mounted) return;
+        if (!mounted) return;
         _uploadingIndex = null;
         provider.commit();
       }

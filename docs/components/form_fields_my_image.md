@@ -59,12 +59,12 @@ FormFieldsMyImage(
 
 ### Core
 
-| Properti     | Tipe                           | Default            | Deskripsi                                        |
-| ------------ | ------------------------------ | ------------------ | ------------------------------------------------ |
-| `controller` | `FormFieldsMyImageController?` | `null`             | Kontrol eksternal untuk daftar gambar            |
-| `maxImages`  | `int?`                         | `null` (unlimited) | Batas jumlah gambar; `1` untuk mode single image |
-| `isDoc`      | `bool`                         | `false`            | Aktifkan mode scanner dokumen                    |
-| `allow`      | `bool`                         | `true`             | Nonaktifkan interaksi (read-only)                |
+| Properti              | Tipe                           | Default                                               | Deskripsi                                                                                                                                   |
+| --------------------- | ------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `controller`          | `FormFieldsMyImageController?` | `null`                                                | Kontrol eksternal untuk daftar gambar                                                                                                       |
+| `maxImages`           | `int?`                         | `null` (unlimited)                                    | Batas jumlah gambar; `1` untuk mode single image                                                                                            |
+| `allowedImageSources` | `List<MyImageSource>?`         | `const [MyImageSource.camera, MyImageSource.gallery]` | Batasi opsi picker yang tersedia; urutan menentukan fallback jika sumber yang diminta tidak diizinkan. Default menampilkan Kamera + Galeri. |
+| `allow`               | `bool`                         | `true`                                                | Nonaktifkan interaksi (read-only)                                                                                                           |
 
 ### Label
 

@@ -71,6 +71,7 @@ class View extends PresenterState {
                     );
                   },
                   isDirectUpload: true,
+                  allowedImageSources: [MyImageSource.camera],
                   uploadUrl: 'https://catbox.moe/user/api.php',
                   onImagesChanged: (results) {
                     logger.i('Image with desc changed:');
@@ -360,7 +361,7 @@ class View extends PresenterState {
                           'onRemoveImage: index=$idx, path=${image.path} | controller.images=$controllerCount';
                     });
                   },
-                  isDoc: true,
+                  allowedImageSources: [MyImageSource.doc],
                   isDirectUpload: true,
                   uploadUrl: 'https://catbox.moe/user/api.php',
                 ),
@@ -381,7 +382,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "isDoc": true,\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadFileUrlKey": "fileUrl",\n  "uploadImageIdKey": "imageId",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadFileUrlKey": "fileUrl",\n  "uploadImageIdKey": "imageId",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -446,7 +447,7 @@ class View extends PresenterState {
                           'onRemoveImage: index=$idx, path=${image.path}';
                     });
                   },
-                  isDoc: true,
+                  allowedImageSources: [MyImageSource.doc],
                   maxImages: 1,
                   plusBuilder: (context) => Container(
                     width: 100,
@@ -529,7 +530,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "isDoc": true,\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
+                      '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -757,6 +758,138 @@ class View extends PresenterState {
                   ),
                 ],
                 const SizedBox(height: 32),
+
+                // ── Allowed Sources Examples ───────────────────────────────
+                _buildSectionTitle('Allowed Sources', Colors.green.shade700,
+                    Colors.green.shade400),
+                _buildFieldTitle(
+                    'Camera + Gallery (explicit)', Colors.green.shade600),
+                FormFieldsMyImage(
+                  controller: FormFieldsMyImageController(),
+                  maxImages: 1,
+                  allowedImageSources: [
+                    MyImageSource.camera,
+                    MyImageSource.gallery,
+                  ],
+                  onImageChanged: (image) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "allowedImageSources": ["camera", "gallery"]\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                _buildFieldTitle(
+                    'Camera + Gallery + Doc', Colors.green.shade600),
+                FormFieldsMyImage(
+                  controller: FormFieldsMyImageController(),
+                  maxImages: 1,
+                  allowedImageSources: [
+                    MyImageSource.camera,
+                    MyImageSource.gallery,
+                    MyImageSource.doc,
+                  ],
+                  onImageChanged: (image) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "allowedImageSources": ["camera", "gallery", "doc"]\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                _buildFieldTitle('Camera Only', Colors.green.shade600),
+                FormFieldsMyImage(
+                  controller: FormFieldsMyImageController(),
+                  maxImages: 1,
+                  allowedImageSources: [MyImageSource.camera],
+                  onImageChanged: (image) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "allowedImageSources": ["camera"]\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
+
+                _buildFieldTitle('Gallery Only', Colors.green.shade600),
+                FormFieldsMyImage(
+                  controller: FormFieldsMyImageController(),
+                  maxImages: 1,
+                  allowedImageSources: [MyImageSource.gallery],
+                  onImageChanged: (image) => setState(() {}),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Color(0xFFE0E0E0)),
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      '{\n  "allowedImageSources": ["gallery"]\n}',
+                      style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Color(0xFF333333)),
+                    ),
+                  ),
+                ),
 
                 // ── Controller.pickImage() ─────────────────────────────────
                 _buildSectionTitle('Controller.pickImage()',

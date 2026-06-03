@@ -554,7 +554,7 @@ FormFieldsMyImage({
   void Function(List<MyimageResult>)? onImagesChanged,
   void Function(MyimageResult)? onImageChanged,
   String? label,
-  bool isDoc = false,
+  List<MyImageSource>? allowedImageSources = const [MyImageSource.camera, MyImageSource.gallery],
   int? maxImages,
   Widget Function(BuildContext, MyimageResult, int)? imageBuilder,
   Widget Function(BuildContext, int index, MyimageResult)? removeIconBuilder,
@@ -604,9 +604,9 @@ FormFieldsMyImage({
 
 #### Document Scanner
 
-| Property | Type   | Default | Description                                                            |
-| -------- | ------ | ------- | ---------------------------------------------------------------------- |
-| `isDoc`  | `bool` | `false` | Open `CunningDocumentScanner` directly, skipping camera/gallery picker |
+| Property              | Type                   | Default                                               | Description                                                                                                                           |
+| --------------------- | ---------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowedImageSources` | `List<MyImageSource>?` | `const [MyImageSource.camera, MyImageSource.gallery]` | Optional allow-list to restrict which picker sources are presented/usable; order is used as fallback. Default shows camera + gallery. |
 
 #### Direct Upload
 
@@ -688,7 +688,7 @@ FormFieldsMyImage(
 
 // Document scanner
 FormFieldsMyImage(
-  isDoc: true,
+  imageSource: MyImageSource.doc,
   maxImages: 1,
   onImageChanged: (image) => setState(() => scannedDoc = image),
 )

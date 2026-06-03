@@ -96,3 +96,6 @@ enum SignaturePadPreviewSource {
   liveCapture,
   both,
 }
+
+/// Options for selecting where the image will be picked from.
+enum MyImageSource { camera, gallery, doc }
