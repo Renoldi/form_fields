@@ -315,6 +315,7 @@ class FormFieldsLiveCameraCaptureState
           uploadedLink = data[widget.uploadFileUrlKey]?.toString();
           imageId = data[widget.uploadImageIdKey]?.toString();
         }
+        final uploadedDescription = _extractDescription(data);
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
@@ -327,6 +328,7 @@ class FormFieldsLiveCameraCaptureState
           // Keep local capture path to avoid extra GET right after upload.
           path: image.path,
           imageId: imageId ?? image.imageId,
+          description: uploadedDescription ?? image.description,
         );
       } else {
         if (widget.showUploadResultDialog) {
@@ -346,6 +348,54 @@ class FormFieldsLiveCameraCaptureState
         );
       }
     }
+    return null;
+  }
+
+  String? _extractDescription(dynamic data) {
+    if (data == null) return null;
+
+    final exact = _extractNestedValue(data, 'description');
+    if ((exact ?? '').isNotEmpty) return exact;
+
+    const fallbackKeys = [
+      'description',
+      'desc',
+      'note',
+      'caption',
+      'alt',
+      'title'
+    ];
+    for (final key in fallbackKeys) {
+      final val = _extractNestedValue(data, key);
+      if ((val ?? '').isNotEmpty) return val;
+    }
+    return null;
+  }
+
+  String? _extractNestedValue(dynamic data, String key) {
+    if (data is Map) {
+      for (final entry in data.entries) {
+        if (entry.key.toString() == key) {
+          return entry.value?.toString();
+        }
+        final nested = _extractNestedValue(entry.value, key);
+        if (nested != null && nested.isNotEmpty) {
+          return nested;
+        }
+      }
+      return null;
+    }
+
+    if (data is List) {
+      for (final item in data) {
+        final nested = _extractNestedValue(item, key);
+        if (nested != null && nested.isNotEmpty) {
+          return nested;
+        }
+      }
+      return null;
+    }
+
     return null;
   }
 

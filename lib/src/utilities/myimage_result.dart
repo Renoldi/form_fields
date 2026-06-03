@@ -6,27 +6,38 @@ class MyImageResult {
   final String base64;
   final String path;
   final String imageId;
+  final String description;
 
   MyImageResult(
-      {this.link = "", this.base64 = "", this.path = "", this.imageId = ""});
+      {this.link = "",
+      this.base64 = "",
+      this.path = "",
+      this.imageId = "",
+      this.description = ""});
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
       : link = url,
         base64 = "",
         path = "",
-        imageId = "";
+        imageId = "",
+        description = "";
   @override
   String toString() {
-    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId)';
+    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description)';
   }
 
-  static Future<MyImageResult> fromFile(File file, {String? link}) async {
+  static Future<MyImageResult> fromFile(File file,
+      {String? link, String? description}) async {
     final bytes = await file.readAsBytes();
     final base64Raw = base64Encode(bytes);
     final mime = getMimeType(file.path);
     final base64Str = 'data:$mime;base64,$base64Raw';
-    return MyImageResult(link: link ?? "", base64: base64Str, path: file.path);
+    return MyImageResult(
+        link: link ?? "",
+        base64: base64Str,
+        path: file.path,
+        description: description ?? "");
   }
 
   /// Returns the MIME type based on file extension.

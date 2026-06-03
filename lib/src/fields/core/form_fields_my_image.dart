@@ -768,7 +768,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
     if (!context.mounted) return;
     if (file != null) {
-      final result = await MyImageResult.fromFile(file);
+      MyImageResult result = await MyImageResult.fromFile(file);
       if (!context.mounted) return;
       int? uploadIdx;
       String? description;
@@ -883,6 +883,18 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         if (description != null && description.isNotEmpty) {
           _lastDescription = description;
         }
+      }
+
+      // Jika description sudah diisi, masukkan ke dalam `result` sehingga
+      // UI menampilkan deskripsi segera sebelum upload berlangsung.
+      if (description != null && description.isNotEmpty) {
+        result = MyImageResult(
+          link: result.link,
+          base64: result.base64,
+          path: result.path,
+          imageId: result.imageId,
+          description: description,
+        );
       }
 
       if (widget.maxImages == 1) {
@@ -1013,6 +1025,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         final data = response.data;
         final uploadedLink = _extractUploadedLink(data);
         final imageId = _extractImageId(data);
+        final uploadedDescription = _extractDescription(data);
         final updatedImage = MyImageResult(
           link: uploadedLink ?? images[index].link,
           base64: images[index].base64,
@@ -1020,6 +1033,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           // the same file from server right after upload.
           path: images[index].path,
           imageId: imageId ?? images[index].imageId,
+          description:
+              uploadedDescription ?? description ?? images[index].description,
         );
         provider.updateImage(
           index,
@@ -1124,6 +1139,28 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if ((exact ?? '').isNotEmpty) return exact;
 
     const fallbackKeys = ['imageId', 'id'];
+    for (final key in fallbackKeys) {
+      final val = _extractNestedValue(data, key);
+      if ((val ?? '').isNotEmpty) return val;
+    }
+    return null;
+  }
+
+  String? _extractDescription(dynamic data) {
+    if (data == null) return null;
+
+    final exact =
+        _extractNestedValue(data, widget.descriptionField ?? 'description');
+    if ((exact ?? '').isNotEmpty) return exact;
+
+    const fallbackKeys = [
+      'description',
+      'desc',
+      'note',
+      'caption',
+      'alt',
+      'title'
+    ];
     for (final key in fallbackKeys) {
       final val = _extractNestedValue(data, key);
       if ((val ?? '').isNotEmpty) return val;
