@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-enum MyImageStatus { idle, queued, uploading, uploaded, failed }
+import 'enums.dart';
 
 class MyImageResult {
   final String link;
@@ -48,6 +48,18 @@ class MyImageResult {
         description: description ?? "",
         payload: const <String, dynamic>{},
         status: MyImageStatus.idle);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'link': link,
+      'base64': base64,
+      'path': path,
+      'imageId': imageId,
+      'description': description,
+      'payload': payload,
+      'status': status.toString().split('.').last,
+    };
   }
 
   /// Returns the MIME type based on file extension.
