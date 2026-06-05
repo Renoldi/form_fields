@@ -154,6 +154,22 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final String? uploadFailedMessage;
   final String? uploadErrorMessage;
 
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// Receives a single `MyImageResult` (with `payload`) for each queued item
+  /// so the caller can persist and retry uploads later.
+  final void Function(MyImageResult result)? onFailDirectUpload;
+
+  /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
+  /// Invoked when one or both uploads (signature, live capture) fail on server
+  /// so the caller can render a combined error UI. Receives the combined
+  /// `SignaturePadExportResult` containing the final signature and liveCapture
+  /// results.
+  final void Function(SignaturePadExportResult result)? onError;
+
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// (removed) Combined queued-export callback was deprecated.
+
   /// JSON key for the uploaded file URL in the response body.
   final String uploadFileUrlKey;
 
@@ -218,6 +234,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadSuccessMessage,
     this.uploadFailedMessage,
     this.uploadErrorMessage,
+    this.onFailDirectUpload,
+    this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.autoExportOnFinish = true,
@@ -619,7 +637,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           await _uploadImageDio(signatureResult, showSuccessDialog: false);
       if (!mounted) return;
       if (widget.showUploadLoading && mounted) {
-        if (updatedSignature != null) {
+        if (updatedSignature != null &&
+            updatedSignature.status == MyImageStatus.uploaded) {
           _padProvider.completeUpload();
           await Future<void>.delayed(uploadCompletionTransitionDelay);
           if (mounted) {
@@ -630,6 +649,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         }
       }
       if (updatedSignature != null &&
+          updatedSignature.status == MyImageStatus.uploaded &&
           widget.showUploadResultDialog &&
           mounted) {
         final l = FormFieldsLocalizations.of(context);
@@ -657,6 +677,48 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         signature: finalSignature,
         liveCapture: finalLiveCapture,
       );
+      // If any of the final results were queued (offline), notify caller so
+      // they can persist payloads. Provide both the legacy list callback and
+      // the new `SignaturePadExportResult` variant similar to
+      // `onExportedResult`.
+      if (finalSignature.status == MyImageStatus.queued ||
+          finalLiveCapture.status == MyImageStatus.queued) {
+        if (finalSignature.status == MyImageStatus.queued) {
+          try {
+            widget.onFailDirectUpload?.call(finalSignature);
+          } catch (_) {}
+        }
+        if (finalLiveCapture.status == MyImageStatus.queued) {
+          try {
+            widget.onFailDirectUpload?.call(finalLiveCapture);
+          } catch (_) {}
+        }
+      }
+
+      // If preview shows both images and this is a direct upload, notify
+      // callers via `onError` when either final signature or final live
+      // capture are not successfully uploaded. This detects server failures
+      // even when the live-capture controller wasn't updated to `failed` by
+      // checking the final status (uploaded vs non-uploaded) and whether a
+      // live capture was actually present.
+      if (widget.exportPreviewSource == SignaturePadPreviewSource.both &&
+          widget.isDirectUpload) {
+        // Determine if a live capture was present either before or after upload.
+        final liveWasCaptured = widget.showLiveCamera &&
+            (liveCapture.path.trim().isNotEmpty ||
+                liveCapture.link.trim().isNotEmpty ||
+                _cameraController.images.isNotEmpty);
+        final finalLive = finalLiveCapture;
+        final bool signatureFailed =
+            finalSignature.status != MyImageStatus.uploaded;
+        final bool liveFailed =
+            liveWasCaptured && finalLive.status != MyImageStatus.uploaded;
+        if (signatureFailed || liveFailed) {
+          try {
+            widget.onError?.call(finalResult);
+          } catch (_) {}
+        }
+      }
       widget.signaturePadController?.updateFromWidget(finalResult);
       widget.onExported?.call(finalSignature);
       if (widget.onExportedResult != null) {
@@ -733,6 +795,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         imageId: image.imageId,
         description: image.description,
         payload: payload,
+        status: MyImageStatus.queued,
       );
       return updatedImage;
     }
@@ -806,6 +869,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           path: image.path,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
+          status: MyImageStatus.uploaded,
         );
       } else {
         if (widget.showUploadResultDialog) {
@@ -880,15 +944,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   Widget _buildPreviewImage(MyImageResult result,
       {BoxFit fit = BoxFit.contain}) {
+    Widget imageWidget;
     if (result.path.trim().isNotEmpty) {
-      return Image.file(
+      imageWidget = Image.file(
         File(result.path),
         fit: fit,
       );
-    }
-
-    if (result.link.trim().isNotEmpty) {
-      return Image.network(
+    } else if (result.link.trim().isNotEmpty) {
+      imageWidget = Image.network(
         result.link,
         fit: fit,
         errorBuilder: (_, __, ___) => Center(
@@ -899,24 +962,69 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           ),
         ),
       );
-    }
-
-    if (result.base64.trim().isNotEmpty) {
+    } else if (result.base64.trim().isNotEmpty) {
       final bytes = Uri.parse(result.base64).data?.contentAsBytes();
       if (bytes != null) {
-        return Image.memory(
+        imageWidget = Image.memory(
           bytes,
           fit: fit,
         );
+      } else {
+        imageWidget = Center(
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            size: 28,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        );
       }
+    } else {
+      imageWidget = Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          size: 28,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
     }
 
-    return Center(
-      child: Icon(
-        Icons.image_not_supported_outlined,
-        size: 28,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(child: imageWidget),
+        if (result.status != MyImageStatus.idle)
+          Positioned(
+            top: 6,
+            left: 6,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor.withValues(alpha: .18),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                result.status == MyImageStatus.uploading
+                    ? Icons.cloud_upload
+                    : result.status == MyImageStatus.queued
+                        ? Icons.schedule
+                        : result.status == MyImageStatus.failed
+                            ? Icons.error_outline
+                            : Icons.check_circle,
+                size: 14,
+                color: result.status == MyImageStatus.failed
+                    ? Theme.of(context).colorScheme.error
+                    : resolveTextColor(context),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1108,6 +1216,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       uploadErrorMessage: widget.uploadErrorMessage,
       uploadFileUrlKey: widget.uploadFileUrlKey,
       uploadImageIdKey: widget.uploadImageIdKey,
+      onFailDirectUpload: widget.onFailDirectUpload,
     );
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);

@@ -93,6 +93,22 @@ class View extends PresenterState {
                     for (var img in failedImages) {
                       logger.w(img.toString());
                     }
+                    // Persist queued payloads via the view model so the example
+                    // app can show offline previews and retry later.
+                    try {
+                      final payloads = failedImages
+                          .map((img) => img.payload)
+                          .where((p) => p.isNotEmpty)
+                          .map((p) => Map<String, dynamic>.from(p))
+                          .toList();
+                      if (payloads.isNotEmpty) {
+                        viewModel.handleDirectUploadPayload(payloads);
+                      } else {
+                        logger.w('No payloads attached to failed images');
+                      }
+                    } catch (e) {
+                      logger.e('Failed to enqueue offline payloads: $e');
+                    }
                   },
                 ),
                 const SizedBox(height: 8),

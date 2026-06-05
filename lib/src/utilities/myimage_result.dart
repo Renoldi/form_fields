@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+enum MyImageStatus { idle, queued, uploading, uploaded, failed }
+
 class MyImageResult {
   final String link;
   final String base64;
@@ -8,6 +10,7 @@ class MyImageResult {
   final String imageId;
   final String description;
   final Map<String, dynamic> payload;
+  final MyImageStatus status;
 
   MyImageResult(
       {this.link = "",
@@ -15,7 +18,8 @@ class MyImageResult {
       this.path = "",
       this.imageId = "",
       this.description = "",
-      this.payload = const <String, dynamic>{}});
+      this.payload = const <String, dynamic>{},
+      this.status = MyImageStatus.idle});
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
@@ -24,10 +28,11 @@ class MyImageResult {
         path = "",
         imageId = "",
         description = "",
-        payload = const <String, dynamic>{};
+        payload = const <String, dynamic>{},
+        status = MyImageStatus.idle;
   @override
   String toString() {
-    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description, payload: ${payload.toString()})';
+    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description, status: $status, payload: ${payload.toString()})';
   }
 
   static Future<MyImageResult> fromFile(File file,
@@ -41,7 +46,8 @@ class MyImageResult {
         base64: base64Str,
         path: file.path,
         description: description ?? "",
-        payload: const <String, dynamic>{});
+        payload: const <String, dynamic>{},
+        status: MyImageStatus.idle);
   }
 
   /// Returns the MIME type based on file extension.

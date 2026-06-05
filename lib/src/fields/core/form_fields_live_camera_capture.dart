@@ -60,6 +60,14 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final String? uploadFailedMessage;
   final String? uploadErrorMessage;
 
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// Receives a single `MyImageResult` (with `payload`) so the caller
+  /// can persist and retry uploads later.
+  final void Function(MyImageResult result)? onFailDirectUpload;
+
+  // `onFailDirectUploadResult` removed — live camera reports single results
+  // via `onFailDirectUpload` only.
+
   /// JSON key for the uploaded file URL in the response body.
   final String uploadFileUrlKey;
 
@@ -96,6 +104,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadSuccessMessage,
     this.uploadFailedMessage,
     this.uploadErrorMessage,
+    this.onFailDirectUpload,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.hidePreview = false,
@@ -235,7 +244,7 @@ class FormFieldsLiveCameraCaptureState
         final uploaded =
             await _uploadImageDio(result, showSuccessDialog: false);
         if (mounted && widget.showUploadLoading) {
-          if (uploaded != null) {
+          if (uploaded != null && uploaded.status == MyImageStatus.uploaded) {
             _provider.completeUpload();
             await Future<void>.delayed(uploadCompletionTransitionDelay);
             if (mounted) {
@@ -245,7 +254,10 @@ class FormFieldsLiveCameraCaptureState
             _provider.clearUpload();
           }
         }
-        if (uploaded != null && widget.showUploadResultDialog && mounted) {
+        if (uploaded != null &&
+            uploaded.status == MyImageStatus.uploaded &&
+            widget.showUploadResultDialog &&
+            mounted) {
           final l = FormFieldsLocalizations.of(context);
           final dialog = AppDialogService(context);
           await dialog.showSuccess(
@@ -317,8 +329,30 @@ class FormFieldsLiveCameraCaptureState
         imageId: image.imageId,
         description: image.description,
         payload: payload,
+        status: MyImageStatus.queued,
       );
+      // Notify caller so they can persist queued payloads for later retry.
+      try {
+        widget.onFailDirectUpload?.call(updatedImage);
+      } catch (_) {}
+      // combined export callback removed; callers receive single-item
+      // `onFailDirectUpload` for persisting queued payloads.
       return updatedImage;
+    }
+
+    // Mark controller preview as uploading so UI can reflect progress.
+    if (widget.cameraController != null) {
+      final img = MyImageResult(
+        link: image.link,
+        base64: image.base64,
+        path: image.path,
+        imageId: image.imageId,
+        description: image.description,
+        payload: image.payload,
+        status: MyImageStatus.uploading,
+      );
+      widget.cameraController!.images = [img];
+      _syncCapturedFromController();
     }
 
     final response = await DioUtil.uploadFile(
@@ -390,6 +424,7 @@ class FormFieldsLiveCameraCaptureState
           path: image.path,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
+          status: MyImageStatus.uploaded,
         );
       } else {
         if (widget.showUploadResultDialog) {
@@ -605,11 +640,43 @@ class FormFieldsLiveCameraCaptureState
                                 .colorScheme
                                 .surfaceContainerHighest,
                           )
-                        : _Badge(
-                            icon: Icons.check_circle_outline,
-                            label: localizations.get('cameraCaptured'),
-                            color: resolveActiveColor(context, null),
-                          ),
+                        : Builder(builder: (ctx) {
+                            final st = provider.capturedResult!.status;
+                            switch (st) {
+                              case MyImageStatus.queued:
+                                return _Badge(
+                                  icon: Icons.schedule,
+                                  label: localizations.get('cameraQueued'),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                );
+                              case MyImageStatus.uploading:
+                                return _Badge(
+                                  icon: Icons.cloud_upload,
+                                  label: localizations.get('cameraUploading'),
+                                  color: resolveActiveColor(ctx, null),
+                                );
+                              case MyImageStatus.uploaded:
+                                return _Badge(
+                                  icon: Icons.check_circle_outline,
+                                  label: localizations.get('cameraCaptured'),
+                                  color: resolveActiveColor(ctx, null),
+                                );
+                              case MyImageStatus.failed:
+                                return _Badge(
+                                  icon: Icons.error_outline,
+                                  label: localizations.get('cameraFailed'),
+                                  color: Theme.of(context).colorScheme.error,
+                                );
+                              case MyImageStatus.idle:
+                                return _Badge(
+                                  icon: Icons.check_circle_outline,
+                                  label: localizations.get('cameraCaptured'),
+                                  color: resolveActiveColor(ctx, null),
+                                );
+                            }
+                          }),
                   ),
                 ],
               ),

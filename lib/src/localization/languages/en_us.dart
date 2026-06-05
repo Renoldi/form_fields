@@ -73,6 +73,9 @@ const Map<String, String> enUSStrings = {
   'cameraInitializeTimeout': 'Camera failed to initialize in time',
   'cameraReady': 'Ready',
   'cameraCaptured': 'Captured',
+  'cameraQueued': 'Queued',
+  'cameraUploading': 'Uploading',
+  'cameraFailed': 'Failed',
   'permissionRequiredTitle': 'Permission required',
   'permissionCameraContent':
       'This feature requires camera permission. Please enable it in the app settings.',

@@ -403,6 +403,11 @@ class View extends PresenterState {
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       onExportedResult: viewModel.setUploadedExportResult,
+                      onError: (val) {
+                        debugPrint(
+                            'Direct upload error: signature upload ${val.signature.link.isEmpty ? 'failed' : 'succeeded'}, live capture upload ${val.liveCapture?.link.isEmpty == true ? 'failed' : 'succeeded'}');
+                        // viewModel.setUploadError(val);
+                      },
                     ),
                   ),
 

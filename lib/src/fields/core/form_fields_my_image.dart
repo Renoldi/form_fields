@@ -732,6 +732,41 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: displayed),
+            // Small status indicator (top-left)
+            if (image.status != MyImageStatus.idle)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context)
+                            .shadowColor
+                            .withValues(alpha: .18),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    image.status == MyImageStatus.uploading
+                        ? Icons.cloud_upload
+                        : image.status == MyImageStatus.queued
+                            ? Icons.schedule
+                            : image.status == MyImageStatus.failed
+                                ? Icons.error_outline
+                                : Icons.check_circle,
+                    size: 14,
+                    color: image.status == MyImageStatus.failed
+                        ? Theme.of(context).colorScheme.error
+                        : resolveTextColor(context),
+                  ),
+                ),
+              ),
             if (image.description.trim().isNotEmpty)
               Positioned(
                 left: 0,
@@ -1214,6 +1249,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             ? effDesc
             : images[index].description,
         payload: payload,
+        status: MyImageStatus.queued,
       );
       provider.updateImage(index, updatedImage);
       _syncControllerImages(provider);
@@ -1221,6 +1257,22 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       // they can persist the payloads for later retry.
       widget.onFailDirectUpload
           ?.call(List<MyImageResult>.from(provider.images));
+    }
+
+    // If we have network, mark the image as uploading before starting the request.
+    if (hasNet) {
+      final img = images[index];
+      final uploadingImage = MyImageResult(
+        link: img.link,
+        base64: img.base64,
+        path: img.path,
+        imageId: img.imageId,
+        description: img.description,
+        payload: img.payload,
+        status: MyImageStatus.uploading,
+      );
+      provider.updateImage(index, uploadingImage);
+      _syncControllerImages(provider);
     }
 
     final response = await DioUtil.uploadFile(
@@ -1276,6 +1328,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           imageId: imageId ?? images[index].imageId,
           description:
               uploadedDescription ?? description ?? images[index].description,
+          status: MyImageStatus.uploaded,
         );
         provider.updateImage(
           index,
@@ -1303,6 +1356,17 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           );
         }
       } else {
+        // mark as failed
+        final failedImage = MyImageResult(
+          link: images[index].link,
+          base64: images[index].base64,
+          path: images[index].path,
+          imageId: images[index].imageId,
+          description: images[index].description,
+          payload: images[index].payload,
+          status: MyImageStatus.failed,
+        );
+        provider.updateImage(index, failedImage);
         provider.resetUploadProgress(index);
         if (widget.showUploadResultDialog) {
           await dialog.showError(
@@ -1313,6 +1377,17 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
       }
     } catch (e) {
+      // mark as failed on exception
+      final failedImage = MyImageResult(
+        link: images[index].link,
+        base64: images[index].base64,
+        path: images[index].path,
+        imageId: images[index].imageId,
+        description: images[index].description,
+        payload: images[index].payload,
+        status: MyImageStatus.failed,
+      );
+      provider.updateImage(index, failedImage);
       provider.resetUploadProgress(index);
       if (widget.showUploadResultDialog) {
         await dialog.showError(

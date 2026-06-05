@@ -73,6 +73,9 @@ const Map<String, String> idIDStrings = {
   'cameraInitializeTimeout': 'Kamera gagal diinisialisasi tepat waktu',
   'cameraReady': 'Siap',
   'cameraCaptured': 'Tertangkap',
+  'cameraQueued': 'Menunggu',
+  'cameraUploading': 'Mengunggah',
+  'cameraFailed': 'Gagal',
   'permissionRequiredTitle': 'Izin diperlukan',
   'permissionCameraContent':
       'Fitur ini membutuhkan izin kamera. Silakan aktifkan di pengaturan aplikasi.',
