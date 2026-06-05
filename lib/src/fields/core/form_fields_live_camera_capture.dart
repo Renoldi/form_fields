@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../utilities/theme_helpers.dart';
 import '../../service/permission_gate.dart';
 
@@ -155,8 +156,8 @@ class FormFieldsLiveCameraCaptureState
 
   Future<bool> _hasNetwork() async {
     try {
-      final result = await InternetAddress.lookup('example.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      final conn = await Connectivity().checkConnectivity();
+      return conn.contains(ConnectivityResult.none) ? false : true;
     } catch (_) {
       return false;
     }

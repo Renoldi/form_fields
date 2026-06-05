@@ -2,11 +2,12 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/service/permission_gate.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
-import '../../utilities/theme_helpers.dart';
-import '../../service/permission_gate.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
@@ -132,6 +133,118 @@ class FormFieldsMyImage extends StatefulWidget {
   State<FormFieldsMyImage> createState() => _FormFieldsMyImageState();
 }
 
+class _ImageDescriptionSheet extends StatefulWidget {
+  final String? initialDescription;
+
+  const _ImageDescriptionSheet({this.initialDescription});
+
+  @override
+  State<_ImageDescriptionSheet> createState() => _ImageDescriptionSheetState();
+}
+
+class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
+  late final TextEditingController _descController;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _descController =
+        TextEditingController(text: widget.initialDescription ?? '');
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dl = FormFieldsLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _descController,
+                decoration: InputDecoration(labelText: dl.get('description')),
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return dl.getWithLabel('required', dl.get('description'));
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      child: AppButton(
+                        text: dl.cancel,
+                        onPressed: () {
+                          if (!context.mounted) return;
+                          Navigator.pop(context, null);
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                              Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest),
+                          foregroundColor:
+                              WidgetStatePropertyAll(resolveTextColor(context)),
+                          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24))),
+                          elevation: WidgetStatePropertyAll(2),
+                          padding: WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(vertical: 14)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.only(left: 12),
+                      child: AppButton(
+                        text: dl.yes,
+                        onPressed: () {
+                          if (_formKey.currentState?.validate() ?? true) {
+                            if (!context.mounted) return;
+                            Navigator.pop(context, _descController.text.trim());
+                          }
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                              resolveActiveColor(context, null)),
+                          foregroundColor: WidgetStatePropertyAll(
+                              Theme.of(context).colorScheme.onPrimary),
+                          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24))),
+                          elevation: WidgetStatePropertyAll(4),
+                          padding: WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(vertical: 14)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   String? _lastDescription;
   late FormFieldsMyImageProvider _provider;
@@ -202,12 +315,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   void _onProviderChanged() {
-    _formFieldKey.currentState
-        ?.didChange(List<MyImageResult>.from(_provider.images));
-    // After images change due to user action or controller updates, re-validate
-    // so externalErrorText is cleared when valid.
+    // Schedule FormField updates after the current frame to avoid
+    // rebuilding widgets in the wrong build scope when provider
+    // notifies listeners during build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _formFieldKey.currentState?.validate();
+      if (!mounted) return;
+      _formFieldKey.currentState
+          ?.didChange(List<MyImageResult>.from(_provider.images));
+      _formFieldKey.currentState?.validate();
     });
   }
 
@@ -897,7 +1012,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
       // Jika showDesc true, tampilkan modal bottom sheet untuk input deskripsi
       if (widget.showDesc) {
-        final formKey = GlobalKey<FormState>();
         if (!context.mounted) return;
         description = await showAppModalBottomSheet<String>(
           context: context,
@@ -906,103 +1020,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          builder: (dialogContext) {
-            // StatefulBuilder agar descValue tersimpan saat keyboard muncul
-            // dan builder sheet dipanggil ulang oleh MediaQuery viewInsets.
-            return StatefulBuilder(
-              builder: (sbContext, setSheetState) {
-                final dl = FormFieldsLocalizations.of(dialogContext);
-                String descValue = _lastDescription ?? '';
-                return SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FormFields<String>(
-                            label: dl.get('description'),
-                            currentValue: descValue,
-                            onChanged: (v) {
-                              setSheetState(() => descValue = v);
-                            },
-                            autovalidateMode:
-                                AutovalidateMode.onUserInteraction,
-                            isRequired: true,
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 12),
-                                  child: AppButton(
-                                    text: dl.cancel,
-                                    onPressed: () {
-                                      if (!dialogContext.mounted) return;
-                                      Navigator.pop(dialogContext, null);
-                                    },
-                                    style: ButtonStyle(
-                                      backgroundColor: WidgetStatePropertyAll(
-                                          Theme.of(dialogContext)
-                                              .colorScheme
-                                              .surfaceContainerHighest),
-                                      foregroundColor: WidgetStatePropertyAll(
-                                          resolveTextColor(dialogContext)),
-                                      shape: WidgetStatePropertyAll(
-                                          RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(24))),
-                                      elevation: WidgetStatePropertyAll(2),
-                                      padding: WidgetStatePropertyAll(
-                                          EdgeInsets.symmetric(vertical: 14)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.only(left: 12),
-                                  child: AppButton(
-                                    text: dl.yes,
-                                    onPressed: () {
-                                      if (formKey.currentState?.validate() ??
-                                          true) {
-                                        if (!dialogContext.mounted) return;
-                                        Navigator.pop(
-                                            dialogContext, descValue.trim());
-                                      }
-                                    },
-                                    style: ButtonStyle(
-                                      backgroundColor: WidgetStatePropertyAll(
-                                          resolveActiveColor(
-                                              dialogContext, null)),
-                                      foregroundColor: WidgetStatePropertyAll(
-                                          Theme.of(dialogContext)
-                                              .colorScheme
-                                              .onPrimary),
-                                      shape: WidgetStatePropertyAll(
-                                          RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(24))),
-                                      elevation: WidgetStatePropertyAll(4),
-                                      padding: WidgetStatePropertyAll(
-                                          EdgeInsets.symmetric(vertical: 14)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
+          builder: (dialogContext) => _ImageDescriptionSheet(
+            initialDescription: _lastDescription,
+          ),
         );
         if (!mounted) return;
         if (description != null && description.isNotEmpty) {
@@ -1087,8 +1107,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
   Future<bool> _hasNetwork() async {
     try {
-      final result = await InternetAddress.lookup('example.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      final connectivityResult = await Connectivity().checkConnectivity();
+      return connectivityResult.contains(ConnectivityResult.none)
+          ? false
+          : true;
     } catch (_) {
       return false;
     }

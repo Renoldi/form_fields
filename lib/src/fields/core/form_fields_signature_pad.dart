@@ -5,6 +5,7 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:signature/signature.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../utilities/theme_helpers.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 
@@ -382,8 +383,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   Future<bool> _hasNetwork() async {
     try {
-      final result = await InternetAddress.lookup('example.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      final conn = await Connectivity().checkConnectivity();
+      return conn.contains(ConnectivityResult.none) ? false : true;
     } catch (_) {
       return false;
     }

@@ -74,6 +74,9 @@ class View extends PresenterState {
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl: 'https://catbox.moe/user/api.php',
+                  onImageChanged: (image) {
+                    logger.i('Image changed: ${image.toString()}');
+                  },
                   onImagesChanged: (results) {
                     logger.i('Image with desc changed:');
                     for (var r in results) {

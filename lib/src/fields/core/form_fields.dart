@@ -467,8 +467,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       }
     }
 
+    // Ensure the shared controller reflects the current value without
+    // creating a new controller each build (which can cause lifecycle
+    // and disposal issues).
+    final current = value ?? '';
+    if (model.controller.text != current) {
+      model.setControllerSilent(current);
+    }
+
     return TextFormField(
-      controller: TextEditingController(text: value ?? ''),
+      controller: model.controller,
       readOnly: widget.readOnly,
       decoration: (widget.inputDecoration ?? const InputDecoration()).copyWith(
         labelText:
