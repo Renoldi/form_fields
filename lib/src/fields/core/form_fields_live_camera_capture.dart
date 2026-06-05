@@ -40,6 +40,13 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// Bearer token sent as `Authorization` header during upload.
   final String? uploadToken;
 
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// Receives a payload Map containing URL, headers, fields and file data
+  /// so the caller can store and send it later when online.
+  final void Function(
+          Map<String, dynamic> payload, MyImageResult image, int index)?
+      onDirectUploadPayload;
+
   /// Show a result dialog after upload completes (success or failure).
   final bool showUploadResultDialog;
 
@@ -83,6 +90,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.isDirectUpload = false,
     this.uploadUrl,
     this.uploadToken,
+    this.onDirectUploadPayload,
     this.showUploadResultDialog = false,
     this.showUploadLoading = true,
     this.uploadSuccessTitle,
@@ -144,6 +152,15 @@ class FormFieldsLiveCameraCaptureState
     if (widget.cameraController != oldWidget.cameraController) {
       _unbindController(oldWidget.cameraController);
       _bindController(widget.cameraController);
+    }
+  }
+
+  Future<bool> _hasNetwork() async {
+    try {
+      final result = await InternetAddress.lookup('example.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -261,6 +278,41 @@ class FormFieldsLiveCameraCaptureState
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
       headers['Authorization'] = widget.uploadToken!;
     }
+
+    // Prepare payload for offline enqueueing
+    final fileName = image.path.trim().isNotEmpty
+        ? image.path.split(Platform.pathSeparator).last
+        : (image.link.isNotEmpty ? image.link.split('/').last : 'image');
+    final imgDesc = (image.description ?? '').trim();
+    final effDesc = imgDesc.isNotEmpty ? imgDesc : null;
+    final extraFields = <MapEntry<String, String>>[];
+    if (effDesc != null && effDesc.isNotEmpty) {
+      extraFields.add(MapEntry('description', effDesc));
+    }
+    final payload = <String, dynamic>{
+      'url': widget.uploadUrl,
+      'headers': headers,
+      'fields': Map<String, String>.fromEntries(extraFields),
+      'file': {
+        'fileName': fileName,
+        'base64': image.base64,
+        'path': image.path,
+      },
+      'uploadFileUrlKey': widget.uploadFileUrlKey,
+      'uploadImageIdKey': widget.uploadImageIdKey,
+      'description': effDesc,
+      'index': 0,
+    };
+
+    final hasNet = await _hasNetwork();
+    if (!hasNet) {
+      if (mounted && widget.showUploadLoading) {
+        _provider.setUploadProgress(0.0);
+      }
+      widget.onDirectUploadPayload?.call(payload, image, 0);
+      return null;
+    }
+
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,
@@ -271,6 +323,7 @@ class FormFieldsLiveCameraCaptureState
           _provider.setUploadProgress(progress);
         }
       },
+      fields: extraFields.isNotEmpty ? extraFields : null,
     );
     if (!mounted) return null;
     final l = FormFieldsLocalizations.of(context);

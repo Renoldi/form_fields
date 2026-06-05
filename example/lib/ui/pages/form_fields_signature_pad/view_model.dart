@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
@@ -144,5 +147,36 @@ class ViewModel extends ChangeNotifier {
     controllerCaptureController.dispose();
     hiddenLiveCameraController.dispose();
     super.dispose();
+  }
+
+  // ── Offline upload queue (example implementation) ────────────────
+  int _offlineQueueCount = 0;
+
+  int get offlineQueueCount => _offlineQueueCount;
+
+  Future<void> handleDirectUploadPayload(
+      Map<String, dynamic> payload, MyImageResult image, int index) async {
+    try {
+      final file = File(
+          '${Directory.systemTemp.path}/form_fields_offline_payloads.json');
+      List<dynamic> arr = [];
+      if (await file.exists()) {
+        final s = await file.readAsString();
+        if (s.trim().isNotEmpty) {
+          try {
+            arr = jsonDecode(s);
+          } catch (_) {
+            arr = [];
+          }
+        }
+      }
+      arr.add(payload);
+      await file.writeAsString(jsonEncode(arr));
+      _offlineQueueCount = arr.length;
+      notifyListeners();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Failed to enqueue offline payload: $e');
+    }
   }
 }

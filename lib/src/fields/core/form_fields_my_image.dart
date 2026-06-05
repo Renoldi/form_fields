@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
@@ -47,6 +48,13 @@ class FormFieldsMyImage extends StatefulWidget {
   final String? uploadUrl;
   final String? uploadToken;
   final bool isDirectUpload;
+
+  /// Called when `isDirectUpload == true` but the device has no internet.
+  /// Receives a payload Map containing URL, headers, fields and file data
+  /// so the caller can store and send it later when online.
+  final void Function(
+          Map<String, dynamic> payload, MyImageResult image, int index)?
+      onDirectUploadPayload;
   // Customizable upload messages
   final String? uploadSuccessTitle;
   final String? uploadFailedTitle;
@@ -99,6 +107,7 @@ class FormFieldsMyImage extends StatefulWidget {
     this.uploadUrl,
     this.uploadToken,
     this.isDirectUpload = false,
+    this.onDirectUploadPayload,
     this.uploadSuccessTitle,
     this.uploadFailedTitle,
     this.uploadErrorTitle,
@@ -547,20 +556,55 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
     final hasLocalPath =
         image.path.trim().isNotEmpty && File(image.path).existsSync();
+    final hasBase64 = image.base64.trim().isNotEmpty;
+    Widget displayed;
+    if (hasLocalPath) {
+      displayed = Image.file(
+        File(image.path),
+        fit: BoxFit.cover,
+      );
+    } else if (hasBase64) {
+      try {
+        var b64 = image.base64;
+        if (b64.startsWith('data:')) {
+          final comma = b64.indexOf(',');
+          if (comma >= 0) b64 = b64.substring(comma + 1);
+        }
+        final bytes = base64Decode(b64);
+        displayed = Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+        );
+      } catch (_) {
+        displayed = Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      }
+    } else if (image.link.trim().isNotEmpty) {
+      displayed = Image.network(
+        image.link,
+        fit: BoxFit.cover,
+      );
+    } else {
+      displayed = Container(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Center(
+          child: Icon(
+            Icons.image_not_supported,
+            size: 48,
+            color: resolveTextColor(context, muted: true),
+          ),
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: 120,
         height: 120,
-        child: hasLocalPath
-            ? Image.file(
-                File(image.path),
-                fit: BoxFit.cover,
-              )
-            : Image.network(
-                image.link,
-                fit: BoxFit.cover,
-              ),
+        child: displayed,
       ),
     );
   }
@@ -677,8 +721,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     String? initialSource,
   }) async {
     Future<bool> ensurePermissionForSource(String src) async {
-      final ok = await PermissionGate.ensurePickerPermission(context,
-          source: src);
+      final ok =
+          await PermissionGate.ensurePickerPermission(context, source: src);
       if (!mounted) return false;
       return ok;
     }
@@ -1033,6 +1077,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
   }
 
+  Future<bool> _hasNetwork() async {
+    try {
+      final result = await InternetAddress.lookup('example.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _uploadImageDio(
     FormFieldsMyImageProvider provider,
     MyImageResult image,
@@ -1050,13 +1103,45 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
       headers['Authorization'] = widget.uploadToken!;
     }
+    // Determine effective description (prefer explicit param, fallback to image.description)
+    final imgDesc = (image.description ?? '').trim();
+    final effDesc = (description != null && description.trim().isNotEmpty)
+        ? description.trim()
+        : (imgDesc.isNotEmpty ? imgDesc : null);
     // Siapkan formData.fields jika ada description
     final extraFields = <MapEntry<String, String>>[];
-    if (description != null && description.isNotEmpty) {
-      extraFields.add(
-        MapEntry(widget.descriptionField ?? 'description', description),
-      );
+    if (effDesc != null && effDesc.isNotEmpty) {
+      extraFields
+          .add(MapEntry(widget.descriptionField ?? 'description', effDesc));
     }
+
+    // Prepare a payload so callers can enqueue and send it later when offline.
+    final fileName = image.path.trim().isNotEmpty
+        ? image.path.split(Platform.pathSeparator).last
+        : (image.link.isNotEmpty ? image.link.split('/').last : 'image');
+    final payload = <String, dynamic>{
+      'url': widget.uploadUrl,
+      'headers': headers,
+      'fields': Map<String, String>.fromEntries(extraFields),
+      'file': {
+        'fileName': fileName,
+        'base64': image.base64,
+        'path': image.path,
+      },
+      'uploadFileUrlKey': widget.uploadFileUrlKey,
+      'uploadImageIdKey': widget.uploadImageIdKey,
+      'description': effDesc,
+      'index': index,
+    };
+
+    final hasNet = await _hasNetwork();
+    if (!hasNet) {
+      // Keep overlay visible to indicate pending upload.
+      provider.setUploadProgress(index, 0.0);
+      widget.onDirectUploadPayload?.call(payload, image, index);
+      return;
+    }
+
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,

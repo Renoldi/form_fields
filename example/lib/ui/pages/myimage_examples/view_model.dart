@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:convert';
+
 import 'package:form_fields_example/data/models/product.dart';
+import 'package:form_fields/form_fields.dart';
 
 class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteCustomQueryParamResult = '';
@@ -269,4 +273,69 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
     focusNode2.dispose();
     super.dispose();
   }
+
+  // ── Offline upload queue (example implementation) ────────────────
+  int _offlineQueueCount = 0;
+
+  int get offlineQueueCount => _offlineQueueCount;
+
+  // Simple in-memory preview store for queued offline payloads.
+  final List<OfflinePreview> _offlinePreviews = [];
+  List<OfflinePreview> get offlinePreviews =>
+      List.unmodifiable(_offlinePreviews);
+
+  Future<void> handleDirectUploadPayload(
+      Map<String, dynamic> payload, MyImageResult image, int index) async {
+    try {
+      final file = File(
+          '${Directory.systemTemp.path}/form_fields_offline_payloads.json');
+      List<dynamic> arr = [];
+      if (await file.exists()) {
+        final s = await file.readAsString();
+        if (s.trim().isNotEmpty) {
+          try {
+            arr = jsonDecode(s);
+          } catch (_) {
+            arr = [];
+          }
+        }
+      }
+      arr.add(payload);
+      await file.writeAsString(jsonEncode(arr));
+      _offlineQueueCount = arr.length;
+
+      // Also keep a lightweight preview (path/base64) in memory so the UI
+      // can immediately show the image that couldn't be uploaded.
+      try {
+        final fileMap = (payload['file'] is Map)
+            ? Map<String, dynamic>.from(payload['file'])
+            : <String, dynamic>{};
+        final pPath = (fileMap['path'] is String &&
+                (fileMap['path'] as String).trim().isNotEmpty)
+            ? fileMap['path'] as String
+            : null;
+        final pBase64 = (fileMap['base64'] is String &&
+                (fileMap['base64'] as String).trim().isNotEmpty)
+            ? fileMap['base64'] as String
+            : null;
+        _offlinePreviews.add(OfflinePreview(path: pPath, base64: pBase64));
+      } catch (_) {
+        // ignore
+      }
+
+      notifyListeners();
+    } catch (e) {
+      // Best-effort for example: log only
+      // ignore: avoid_print
+      print('Failed to enqueue offline payload: $e');
+    }
+  }
+}
+
+class OfflinePreview {
+  final String? path;
+  final String? base64;
+  final DateTime createdAt;
+
+  OfflinePreview({this.path, this.base64}) : createdAt = DateTime.now();
 }

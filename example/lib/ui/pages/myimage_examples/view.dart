@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
@@ -73,6 +74,7 @@ class View extends PresenterState {
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl: 'https://catbox.moe/user/api.php',
+                  onDirectUploadPayload: viewModel.handleDirectUploadPayload,
                   onImagesChanged: (results) {
                     logger.i('Image with desc changed:');
                     for (var r in results) {
@@ -80,6 +82,67 @@ class View extends PresenterState {
                     }
                   },
                 ),
+                const SizedBox(height: 8),
+                if (viewModel.offlineQueueCount > 0) ...[
+                  Text('Offline Queue (${viewModel.offlineQueueCount})',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: viewModel.offlinePreviews.length,
+                      itemBuilder: (context, idx) {
+                        final p = viewModel.offlinePreviews[idx];
+                        if (p.path != null &&
+                            p.path!.isNotEmpty &&
+                            File(p.path!).existsSync()) {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(p.path!),
+                                height: 100,
+                                width: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        }
+                        if (p.base64 != null && p.base64!.isNotEmpty) {
+                          try {
+                            final bytes = base64Decode(p.base64!);
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  bytes,
+                                  height: 100,
+                                  width: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            );
+                          } catch (_) {
+                            // fallthrough to placeholder
+                          }
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.broken_image,
+                                color: Colors.grey),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text('Contoh Pengisian (JSON):',
                     style: TextStyle(fontWeight: FontWeight.w600)),
@@ -364,6 +427,7 @@ class View extends PresenterState {
                   allowedImageSources: [MyImageSource.doc],
                   isDirectUpload: true,
                   uploadUrl: 'https://catbox.moe/user/api.php',
+                  onDirectUploadPayload: viewModel.handleDirectUploadPayload,
                 ),
                 const SizedBox(height: 8),
                 Text('Contoh Pengisian (JSON):',
@@ -598,7 +662,7 @@ class View extends PresenterState {
                   onImagesChanged: (results) {
                     setState(() {});
                   },
-                  uploadUrl: 'https://catbox.moe/user/api.php',
+                  // uploadUrl: 'https://catbox.moe/user/api.php',
                   uploadToken: '',
                 ),
                 const SizedBox(height: 8),
@@ -618,7 +682,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "multiController",\n  "onImagesChanged": "(results) => setState(() {})",\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadToken": ""\n}',
+                      '{\n  "controller": "multiController",\n  "onImagesChanged": "(results) => setState(() {})",\n  "uploadToken": ""\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
