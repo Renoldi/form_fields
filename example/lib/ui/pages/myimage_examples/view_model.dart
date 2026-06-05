@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:form_fields_example/data/models/product.dart';
-import 'package:form_fields/form_fields.dart';
 
 class FormFieldsExamplesViewModel extends ChangeNotifier {
   String autocompleteCustomQueryParamResult = '';
@@ -285,7 +284,7 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
       List.unmodifiable(_offlinePreviews);
 
   Future<void> handleDirectUploadPayload(
-      Map<String, dynamic> payload, MyImageResult image, int index) async {
+      List<Map<String, dynamic>> payloads) async {
     try {
       final file = File(
           '${Directory.systemTemp.path}/form_fields_offline_payloads.json');
@@ -300,29 +299,32 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
           }
         }
       }
-      arr.add(payload);
-      await file.writeAsString(jsonEncode(arr));
-      _offlineQueueCount = arr.length;
 
-      // Also keep a lightweight preview (path/base64) in memory so the UI
-      // can immediately show the image that couldn't be uploaded.
-      try {
-        final fileMap = (payload['file'] is Map)
-            ? Map<String, dynamic>.from(payload['file'])
-            : <String, dynamic>{};
-        final pPath = (fileMap['path'] is String &&
-                (fileMap['path'] as String).trim().isNotEmpty)
-            ? fileMap['path'] as String
-            : null;
-        final pBase64 = (fileMap['base64'] is String &&
-                (fileMap['base64'] as String).trim().isNotEmpty)
-            ? fileMap['base64'] as String
-            : null;
-        _offlinePreviews.add(OfflinePreview(path: pPath, base64: pBase64));
-      } catch (_) {
-        // ignore
+      for (final payload in payloads) {
+        arr.add(payload);
+
+        // Also keep a lightweight preview (path/base64) in memory so the UI
+        // can immediately show the image that couldn't be uploaded.
+        try {
+          final fileMap = (payload['file'] is Map)
+              ? Map<String, dynamic>.from(payload['file'])
+              : <String, dynamic>{};
+          final pPath = (fileMap['path'] is String &&
+                  (fileMap['path'] as String).trim().isNotEmpty)
+              ? fileMap['path'] as String
+              : null;
+          final pBase64 = (fileMap['base64'] is String &&
+                  (fileMap['base64'] as String).trim().isNotEmpty)
+              ? fileMap['base64'] as String
+              : null;
+          _offlinePreviews.add(OfflinePreview(path: pPath, base64: pBase64));
+        } catch (_) {
+          // ignore
+        }
       }
 
+      await file.writeAsString(jsonEncode(arr));
+      _offlineQueueCount = arr.length;
       notifyListeners();
     } catch (e) {
       // Best-effort for example: log only

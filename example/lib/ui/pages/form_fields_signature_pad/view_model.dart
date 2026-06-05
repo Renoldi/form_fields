@@ -155,7 +155,7 @@ class ViewModel extends ChangeNotifier {
   int get offlineQueueCount => _offlineQueueCount;
 
   Future<void> handleDirectUploadPayload(
-      Map<String, dynamic> payload, MyImageResult image, int index) async {
+      List<Map<String, dynamic>> payloads) async {
     try {
       final file = File(
           '${Directory.systemTemp.path}/form_fields_offline_payloads.json');
@@ -170,7 +170,11 @@ class ViewModel extends ChangeNotifier {
           }
         }
       }
-      arr.add(payload);
+
+      for (final payload in payloads) {
+        arr.add(payload);
+      }
+
       await file.writeAsString(jsonEncode(arr));
       _offlineQueueCount = arr.length;
       notifyListeners();

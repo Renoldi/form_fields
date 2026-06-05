@@ -41,10 +41,9 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final String? uploadToken;
 
   /// Called when `isDirectUpload == true` but the device has no internet.
-  /// Receives a payload Map containing URL, headers, fields and file data
-  /// so the caller can store and send it later when online.
-  final void Function(
-          Map<String, dynamic> payload, MyImageResult image, int index)?
+  /// Receives a list of payload Maps (each containing URL, headers, fields
+  /// and file data) so the caller can store and send them later when online.
+  final void Function(List<Map<String, dynamic>> payloads)?
       onDirectUploadPayload;
 
   /// Show a result dialog after upload completes (success or failure).
@@ -134,7 +133,9 @@ class FormFieldsLiveCameraCaptureState
     _cam.addListener(_onCameraReady);
     if (widget.preAcquire) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
         final granted = await PermissionGate.ensureCameraPermission(context);
+        if (!mounted) return;
         if (granted) {
           try {
             await _cam.acquire(widget.resolutionPreset);
@@ -283,7 +284,7 @@ class FormFieldsLiveCameraCaptureState
     final fileName = image.path.trim().isNotEmpty
         ? image.path.split(Platform.pathSeparator).last
         : (image.link.isNotEmpty ? image.link.split('/').last : 'image');
-    final imgDesc = (image.description ?? '').trim();
+    final imgDesc = (image.description).trim();
     final effDesc = imgDesc.isNotEmpty ? imgDesc : null;
     final extraFields = <MapEntry<String, String>>[];
     if (effDesc != null && effDesc.isNotEmpty) {
@@ -309,7 +310,7 @@ class FormFieldsLiveCameraCaptureState
       if (mounted && widget.showUploadLoading) {
         _provider.setUploadProgress(0.0);
       }
-      widget.onDirectUploadPayload?.call(payload, image, 0);
+      widget.onDirectUploadPayload?.call([payload]);
       return null;
     }
 

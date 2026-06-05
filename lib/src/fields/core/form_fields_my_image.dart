@@ -50,10 +50,9 @@ class FormFieldsMyImage extends StatefulWidget {
   final bool isDirectUpload;
 
   /// Called when `isDirectUpload == true` but the device has no internet.
-  /// Receives a payload Map containing URL, headers, fields and file data
-  /// so the caller can store and send it later when online.
-  final void Function(
-          Map<String, dynamic> payload, MyImageResult image, int index)?
+  /// Receives a list of payload Maps (each containing URL, headers, fields
+  /// and file data) so the caller can store and send them later when online.
+  final void Function(List<Map<String, dynamic>> payloads)?
       onDirectUploadPayload;
   // Customizable upload messages
   final String? uploadSuccessTitle;
@@ -721,6 +720,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     String? initialSource,
   }) async {
     Future<bool> ensurePermissionForSource(String src) async {
+      if (!mounted) return false;
       final ok =
           await PermissionGate.ensurePickerPermission(context, source: src);
       if (!mounted) return false;
@@ -816,6 +816,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       if (options.length == 1) {
         effective = options.first;
       } else {
+        if (!context.mounted) return;
         final selection = await showAppModalBottomSheet<MyImageSource>(
           context: context,
           backgroundColor: Colors.transparent,
@@ -834,8 +835,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                     if (options.contains(MyImageSource.camera))
                       AppButton(
                         type: AppButtonType.icon,
-                        onPressed: () =>
-                            Navigator.pop(dialogContext, MyImageSource.camera),
+                        onPressed: () {
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext, MyImageSource.camera);
+                        },
                         icon: Icon(Icons.camera_alt,
                             size: 32,
                             color: resolveActiveColor(dialogContext, null)),
@@ -845,8 +848,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                       SizedBox(width: 16),
                       AppButton(
                         type: AppButtonType.icon,
-                        onPressed: () =>
-                            Navigator.pop(dialogContext, MyImageSource.gallery),
+                        onPressed: () {
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext, MyImageSource.gallery);
+                        },
                         icon: Icon(Icons.photo_library,
                             size: 32,
                             color:
@@ -858,8 +863,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                       SizedBox(width: 16),
                       AppButton(
                         type: AppButtonType.icon,
-                        onPressed: () =>
-                            Navigator.pop(dialogContext, MyImageSource.doc),
+                        onPressed: () {
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext, MyImageSource.doc);
+                        },
                         icon: Icon(Icons.sticky_note_2,
                             size: 32,
                             color: Theme.of(dialogContext).colorScheme.primary),
@@ -892,9 +899,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
       // Jika showDesc true, tampilkan modal bottom sheet untuk input deskripsi
       if (widget.showDesc) {
-        // Ambil localization sebelum async gap
-        final l = FormFieldsLocalizations.of(context);
         final formKey = GlobalKey<FormState>();
+        if (!context.mounted) return;
         description = await showAppModalBottomSheet<String>(
           context: context,
           isDismissible: false,
@@ -907,6 +913,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             // dan builder sheet dipanggil ulang oleh MediaQuery viewInsets.
             return StatefulBuilder(
               builder: (sbContext, setSheetState) {
+                final dl = FormFieldsLocalizations.of(dialogContext);
                 String descValue = _lastDescription ?? '';
                 return SafeArea(
                   child: Padding(
@@ -917,7 +924,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           FormFields<String>(
-                            label: l.get('description'),
+                            label: dl.get('description'),
                             currentValue: descValue,
                             onChanged: (v) {
                               setSheetState(() => descValue = v);
@@ -932,9 +939,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                                 child: Container(
                                   margin: const EdgeInsets.only(right: 12),
                                   child: AppButton(
-                                    text: l.cancel,
-                                    onPressed: () =>
-                                        Navigator.pop(dialogContext, null),
+                                    text: dl.cancel,
+                                    onPressed: () {
+                                      if (!dialogContext.mounted) return;
+                                      Navigator.pop(dialogContext, null);
+                                    },
                                     style: ButtonStyle(
                                       backgroundColor: WidgetStatePropertyAll(
                                           Theme.of(dialogContext)
@@ -957,10 +966,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                                 child: Container(
                                   margin: const EdgeInsets.only(left: 12),
                                   child: AppButton(
-                                    text: l.yes,
+                                    text: dl.yes,
                                     onPressed: () {
                                       if (formKey.currentState?.validate() ??
                                           true) {
+                                        if (!dialogContext.mounted) return;
                                         Navigator.pop(
                                             dialogContext, descValue.trim());
                                       }
@@ -1104,7 +1114,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       headers['Authorization'] = widget.uploadToken!;
     }
     // Determine effective description (prefer explicit param, fallback to image.description)
-    final imgDesc = (image.description ?? '').trim();
+    final imgDesc = (image.description).trim();
     final effDesc = (description != null && description.trim().isNotEmpty)
         ? description.trim()
         : (imgDesc.isNotEmpty ? imgDesc : null);
@@ -1138,7 +1148,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (!hasNet) {
       // Keep overlay visible to indicate pending upload.
       provider.setUploadProgress(index, 0.0);
-      widget.onDirectUploadPayload?.call(payload, image, index);
+      widget.onDirectUploadPayload?.call([payload]);
       return;
     }
 
