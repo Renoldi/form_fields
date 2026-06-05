@@ -43,8 +43,6 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a list of payload Maps (each containing URL, headers, fields
   /// and file data) so the caller can store and send them later when online.
-  final void Function(List<Map<String, dynamic>> payloads)?
-      onDirectUploadPayload;
 
   /// Show a result dialog after upload completes (success or failure).
   final bool showUploadResultDialog;
@@ -89,7 +87,6 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.isDirectUpload = false,
     this.uploadUrl,
     this.uploadToken,
-    this.onDirectUploadPayload,
     this.showUploadResultDialog = false,
     this.showUploadLoading = true,
     this.uploadSuccessTitle,
@@ -310,8 +307,17 @@ class FormFieldsLiveCameraCaptureState
       if (mounted && widget.showUploadLoading) {
         _provider.setUploadProgress(0.0);
       }
-      widget.onDirectUploadPayload?.call([payload]);
-      return null;
+      // Return an updated MyImageResult containing payload so callers receive
+      // the image (with payload) instead of a null failure.
+      final updatedImage = MyImageResult(
+        link: image.link,
+        base64: image.base64,
+        path: image.path,
+        imageId: image.imageId,
+        description: image.description,
+        payload: payload,
+      );
+      return updatedImage;
     }
 
     final response = await DioUtil.uploadFile(

@@ -130,8 +130,6 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a list of payload Maps (each containing URL, headers, fields
   /// and file data) so the caller can store and send them later when online.
-  final void Function(List<Map<String, dynamic>> payloads)?
-      onDirectUploadPayload;
 
   /// Show a result dialog after upload completes (success or failure).
   final bool showUploadResultDialog;
@@ -209,7 +207,6 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.layoutBuilder,
     this.liveCameraBuilder,
     this.isDirectUpload = false,
-    this.onDirectUploadPayload,
     this.uploadUrl,
     this.uploadToken,
     this.showUploadResultDialog = false,
@@ -725,8 +722,18 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (mounted && widget.showUploadLoading) {
         _padProvider.setUploadProgress(0.0);
       }
-      widget.onDirectUploadPayload?.call([payload]);
-      return null;
+      // Return an updated MyImageResult containing payload so callers receive
+      // the image (with payload) instead of a null failure. The caller
+      // (export flow) will treat this as the final result and emit callbacks.
+      final updatedImage = MyImageResult(
+        link: image.link,
+        base64: image.base64,
+        path: image.path,
+        imageId: image.imageId,
+        description: image.description,
+        payload: payload,
+      );
+      return updatedImage;
     }
 
     final response = await DioUtil.uploadFile(
@@ -1090,7 +1097,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       isDirectUpload: widget.isDirectUpload,
       uploadUrl: widget.uploadUrl,
       uploadToken: widget.uploadToken,
-      onDirectUploadPayload: widget.onDirectUploadPayload,
       showUploadResultDialog: widget.showUploadResultDialog,
       showUploadLoading: widget.showUploadLoading,
       uploadSuccessTitle: widget.uploadSuccessTitle,

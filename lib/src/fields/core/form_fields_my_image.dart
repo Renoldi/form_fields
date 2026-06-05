@@ -52,8 +52,7 @@ class FormFieldsMyImage extends StatefulWidget {
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a list of payload Maps (each containing URL, headers, fields
   /// and file data) so the caller can store and send them later when online.
-  final void Function(List<Map<String, dynamic>> payloads)?
-      onDirectUploadPayload;
+
   // Customizable upload messages
   final String? uploadSuccessTitle;
   final String? uploadFailedTitle;
@@ -106,7 +105,6 @@ class FormFieldsMyImage extends StatefulWidget {
     this.uploadUrl,
     this.uploadToken,
     this.isDirectUpload = false,
-    this.onDirectUploadPayload,
     this.uploadSuccessTitle,
     this.uploadFailedTitle,
     this.uploadErrorTitle,
@@ -1148,8 +1146,24 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (!hasNet) {
       // Keep overlay visible to indicate pending upload.
       provider.setUploadProgress(index, 0.0);
-      widget.onDirectUploadPayload?.call([payload]);
-      return;
+      // Attach payload to the image so UI/controller can access it later.
+      final updatedImage = MyImageResult(
+        link: images[index].link,
+        base64: images[index].base64,
+        path: images[index].path,
+        imageId: images[index].imageId,
+        description: images[index].description,
+        payload: payload,
+      );
+      provider.updateImage(index, updatedImage);
+      _syncControllerImages(provider);
+      // Notify callers with the full current images list (including payloads)
+      if (widget.maxImages == 1) {
+        widget.onImageChanged?.call(provider.images[index]);
+      } else {
+        widget.onImagesChanged?.call(List<MyImageResult>.from(provider.images));
+        return;
+      }
     }
 
     final response = await DioUtil.uploadFile(

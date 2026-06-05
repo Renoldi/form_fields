@@ -74,7 +74,6 @@ class View extends PresenterState {
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl: 'https://catbox.moe/user/api.php',
-                  onDirectUploadPayload: viewModel.handleDirectUploadPayload,
                   onImagesChanged: (results) {
                     logger.i('Image with desc changed:');
                     for (var r in results) {
@@ -427,7 +426,6 @@ class View extends PresenterState {
                   allowedImageSources: [MyImageSource.doc],
                   isDirectUpload: true,
                   uploadUrl: 'https://catbox.moe/user/api.php',
-                  onDirectUploadPayload: viewModel.handleDirectUploadPayload,
                 ),
                 const SizedBox(height: 8),
                 Text('Contoh Pengisian (JSON):',

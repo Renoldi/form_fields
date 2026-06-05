@@ -203,8 +203,6 @@ class View extends PresenterState {
                           cameraController:
                               viewModel.standaloneCameraController,
                           // onCaptured: viewModel.setStandaloneCapture,
-                          onDirectUploadPayload:
-                              viewModel.handleDirectUploadPayload,
                         ),
                         const SizedBox(height: 10),
                         Row(
@@ -272,8 +270,6 @@ class View extends PresenterState {
                           cameraController:
                               viewModel.controllerCaptureController,
                           onCaptured: viewModel.setControllerCapture,
-                          onDirectUploadPayload:
-                              viewModel.handleDirectUploadPayload,
                         ),
                         const SizedBox(height: 10),
                         Row(
@@ -357,8 +353,6 @@ class View extends PresenterState {
                     child: FormFieldsSignaturePad(
                       isDirectUpload: true,
                       uploadUrl: 'https://catbox.moe/user/api.php',
-                      onDirectUploadPayload:
-                          viewModel.handleDirectUploadPayload,
                       showUploadResultDialog: true,
                       showUploadLoading: true,
                       showExportPreview: true,
@@ -401,8 +395,6 @@ class View extends PresenterState {
                     child: FormFieldsSignaturePad(
                       isDirectUpload: true,
                       uploadUrl: 'https://catbox.moe/user/api.php',
-                      onDirectUploadPayload:
-                          viewModel.handleDirectUploadPayload,
                       showUploadResultDialog: false,
                       showUploadLoading: true,
                       showLiveCamera: true,
@@ -588,8 +580,6 @@ class View extends PresenterState {
                           cameraController:
                               viewModel.hiddenLiveCameraController,
                           onCaptured: viewModel.setHiddenCapture,
-                          onDirectUploadPayload:
-                              viewModel.handleDirectUploadPayload,
                         ),
                         Text(
                           'Camera is running in the background (no preview rendered).',

@@ -7,13 +7,15 @@ class MyImageResult {
   final String path;
   final String imageId;
   final String description;
+  final Map<String, dynamic> payload;
 
   MyImageResult(
       {this.link = "",
       this.base64 = "",
       this.path = "",
       this.imageId = "",
-      this.description = ""});
+      this.description = "",
+      this.payload = const <String, dynamic>{}});
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
@@ -21,10 +23,11 @@ class MyImageResult {
         base64 = "",
         path = "",
         imageId = "",
-        description = "";
+        description = "",
+        payload = const <String, dynamic>{};
   @override
   String toString() {
-    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description)';
+    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description, payload: ${payload.toString()})';
   }
 
   static Future<MyImageResult> fromFile(File file,
@@ -37,7 +40,8 @@ class MyImageResult {
         link: link ?? "",
         base64: base64Str,
         path: file.path,
-        description: description ?? "");
+        description: description ?? "",
+        payload: const <String, dynamic>{});
   }
 
   /// Returns the MIME type based on file extension.
