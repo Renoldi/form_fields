@@ -64,11 +64,24 @@ class FormFieldsMyImage extends StatefulWidget {
   final String uploadFileUrlKey;
   final String uploadImageIdKey;
 
+  /// Name of the multipart file field to use when uploading. Defaults to
+  /// 'fileToUpload' for backward compatibility with the existing server.
+  final String uploadFileFieldName;
+
+  /// Whether to include the legacy 'reqtype=fileupload' field in the
+  /// multipart form. Some servers require it; default is true.
+  final bool uploadIncludeReqType;
+
   final bool allow;
   final bool showUploadResultDialog;
 
   final bool showDesc;
   final String? descriptionField;
+
+  /// Callback invoked when a direct upload is queued/failed due to lack of
+  /// network. Receives the current images list (including any attached
+  /// payloads) so the caller can persist or retry uploads later.
+  final void Function(List<MyImageResult> results)? onFailDirectUpload;
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -114,6 +127,9 @@ class FormFieldsMyImage extends StatefulWidget {
     this.uploadErrorMessage,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
+    this.uploadFileFieldName = 'fileToUpload',
+    this.uploadIncludeReqType = true,
+    this.onFailDirectUpload,
     this.allow = true,
     this.showUploadResultDialog = false,
     this.showDesc = false,
@@ -134,9 +150,7 @@ class FormFieldsMyImage extends StatefulWidget {
 }
 
 class _ImageDescriptionSheet extends StatefulWidget {
-  final String? initialDescription;
-
-  const _ImageDescriptionSheet({this.initialDescription});
+  const _ImageDescriptionSheet({Key? key}) : super(key: key);
 
   @override
   State<_ImageDescriptionSheet> createState() => _ImageDescriptionSheetState();
@@ -149,8 +163,7 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
   @override
   void initState() {
     super.initState();
-    _descController =
-        TextEditingController(text: widget.initialDescription ?? '');
+    _descController = TextEditingController();
   }
 
   @override
@@ -246,7 +259,6 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
 }
 
 class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
-  String? _lastDescription;
   late FormFieldsMyImageProvider _provider;
   int? _uploadingIndex;
   FormFieldsMyImageController? _controller;
@@ -716,7 +728,36 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       child: SizedBox(
         width: 120,
         height: 120,
-        child: displayed,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(child: displayed),
+            if (image.description.trim().isNotEmpty)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: .72),
+                  child: Text(
+                    image.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: resolveTextColor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1020,14 +1061,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          builder: (dialogContext) => _ImageDescriptionSheet(
-            initialDescription: _lastDescription,
-          ),
+          builder: (dialogContext) => const _ImageDescriptionSheet(),
         );
         if (!mounted) return;
-        if (description != null && description.isNotEmpty) {
-          _lastDescription = description;
-        }
       }
 
       // Jika description sudah diisi, masukkan ke dalam `result` sehingga
@@ -1174,18 +1210,17 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         base64: images[index].base64,
         path: images[index].path,
         imageId: images[index].imageId,
-        description: images[index].description,
+        description: (effDesc != null && effDesc.isNotEmpty)
+            ? effDesc
+            : images[index].description,
         payload: payload,
       );
       provider.updateImage(index, updatedImage);
       _syncControllerImages(provider);
-      // Notify callers with the full current images list (including payloads)
-      if (widget.maxImages == 1) {
-        widget.onImageChanged?.call(provider.images[index]);
-      } else {
-        widget.onImagesChanged?.call(List<MyImageResult>.from(provider.images));
-        return;
-      }
+      // Notify callers specifically about a failed/queued direct upload so
+      // they can persist the payloads for later retry.
+      widget.onFailDirectUpload
+          ?.call(List<MyImageResult>.from(provider.images));
     }
 
     final response = await DioUtil.uploadFile(
@@ -1197,6 +1232,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         provider.setUploadProgress(index, progress);
       },
       fields: extraFields.isNotEmpty ? extraFields : null,
+      fileFieldName: widget.uploadFileFieldName,
+      includeReqType: widget.uploadIncludeReqType,
     );
     if (!mounted) return;
     final l = FormFieldsLocalizations.of(context);

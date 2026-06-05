@@ -28,7 +28,7 @@ class View extends PresenterState {
                     'With Description (showDesc)', Colors.teal.shade600),
                 FormFieldsMyImage(
                   controller: FormFieldsMyImageController(),
-                  maxImages: 1,
+                  // maxImages: 1,
                   showDesc: true,
                   descriptionField: 'description',
                   showUploadResultDialog: true,
@@ -73,7 +73,12 @@ class View extends PresenterState {
                   },
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
-                  uploadUrl: 'https://catbox.moe/user/api.php',
+                  uploadUrl:
+                      'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
+                  uploadToken:
+                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA2NDUwNDksImV4cCI6MTc4MDY4ODI0OSwiaWF0IjoxNzgwNjQ1MDQ5fQ.qUtU6qwOWdgjXZSsF4mbCO1pa6H86Z1RzoMhkh349aw",
+                  uploadFileFieldName: 'file',
+                  uploadIncludeReqType: false,
                   onImageChanged: (image) {
                     logger.i('Image changed: ${image.toString()}');
                   },
@@ -81,6 +86,12 @@ class View extends PresenterState {
                     logger.i('Image with desc changed:');
                     for (var r in results) {
                       logger.i(r.toString());
+                    }
+                  },
+                  onFailDirectUpload: (failedImages) {
+                    logger.w('Direct upload failed for images:');
+                    for (var img in failedImages) {
+                      logger.w(img.toString());
                     }
                   },
                 ),

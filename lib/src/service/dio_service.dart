@@ -70,16 +70,25 @@ class DioUtil {
     Map<String, String>? headers,
     void Function(double progress)? onProgress,
     List<MapEntry<String, String>>? fields,
+
+    /// Name of the multipart file field (default: 'fileToUpload')
+    String fileFieldName = 'fileToUpload',
+
+    /// Whether to include the legacy 'reqtype=fileupload' field.
+    /// Some servers expect it; others do not. Default: true.
+    bool includeReqType = true,
   }) async {
     final file = File(filePath);
     final formData = FormData();
-    formData.fields.add(MapEntry('reqtype', 'fileupload'));
+    if (includeReqType) {
+      formData.fields.add(MapEntry('reqtype', 'fileupload'));
+    }
     if (fields != null && fields.isNotEmpty) {
       formData.fields.addAll(fields);
     }
     formData.files.add(
       MapEntry(
-        'fileToUpload',
+        fileFieldName,
         await MultipartFile.fromFile(
           filePath,
           filename: filename ?? file.path.split('/').last,
