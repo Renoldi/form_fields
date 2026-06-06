@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter/foundation.dart';
 
 /// Utility class for file upload and download using Dio.
 class DioUtil {
@@ -72,11 +73,11 @@ class DioUtil {
     List<MapEntry<String, String>>? fields,
 
     /// Name of the multipart file field (default: 'fileToUpload')
-    String fileFieldName = 'fileToUpload',
+    String fileFieldName = 'file',
 
     /// Whether to include the legacy 'reqtype=fileupload' field.
     /// Some servers expect it; others do not. Default: true.
-    bool includeReqType = true,
+    bool includeReqType = false,
   }) async {
     final file = File(filePath);
     final formData = FormData();
@@ -95,6 +96,13 @@ class DioUtil {
         ),
       ),
     );
+    // Debug: log upload details to help diagnose server errors (avoid
+    // printing full header values to reduce secret leakage).
+    try {
+      final fileSize = file.existsSync() ? file.lengthSync() : null;
+      debugPrint(
+          '[DioUtil.uploadFile] url=$url, fileField=$fileFieldName, includeReqType=$includeReqType, filename=${filename ?? file.path.split('/').last}, fileSize=$fileSize, headers=${headers?.keys.toList()}, fields=${fields?.map((e) => '${e.key}=${e.value}').toList()}');
+    } catch (_) {}
     return await safeRequest<Response>(
       () => _dio.post(
         url,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
@@ -10,6 +11,7 @@ import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -76,7 +78,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final String uploadImageIdKey;
 
   /// Name of the multipart file field to use when uploading. Defaults to
-  /// 'fileToUpload' for backward compatibility with the existing server.
+  /// 'file' which is commonly expected by many servers.
   final String uploadFileFieldName;
 
   /// Whether to include the legacy 'reqtype=fileupload' field in the
@@ -116,8 +118,8 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.onFailDirectUpload,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
-    this.uploadFileFieldName = 'fileToUpload',
-    this.uploadIncludeReqType = false,
+    this.uploadFileFieldName = 'file',
+    this.uploadIncludeReqType = true,
     this.hidePreview = false,
     this.preAcquire = false,
   }) : assert(
@@ -149,6 +151,15 @@ class FormFieldsLiveCameraCaptureState
     // Listen for SharedCameraManager state changes so pre-acquire can flip
     // the UI to the live preview once the controller is ready.
     _cam.addListener(_onCameraReady);
+    // Immediately sync camera-ready state in case SharedCameraManager
+    // already has an initialized controller (pre-acquired). This avoids
+    // the preview staying on "Initializing..." when reopening the page.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        _onCameraReady();
+      } catch (_) {}
+    });
     if (widget.preAcquire) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
@@ -161,6 +172,21 @@ class FormFieldsLiveCameraCaptureState
         }
       });
     }
+
+    // If camera permission is already granted (e.g., user opened page before
+    // and accepted), attempt to acquire immediately so reopening the widget
+    // doesn't remain stuck on "Initializing...".
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      try {
+        final status = await Permission.camera.status;
+        if (status.isGranted && !_cam.isReady) {
+          try {
+            await _cam.acquire(widget.resolutionPreset);
+          } catch (_) {}
+        }
+      } catch (_) {}
+    });
   }
 
   bool _cameraInitDone = false;
@@ -371,6 +397,9 @@ class FormFieldsLiveCameraCaptureState
       _syncCapturedFromController();
     }
 
+    debugPrint(
+        '[FormFieldsLiveCameraCapture._uploadImageDio] START upload url=${widget.uploadUrl}, file=${image.path}, fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}');
+
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,
@@ -401,6 +430,8 @@ class FormFieldsLiveCameraCaptureState
     final uploadErrorMessage =
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
+      debugPrint(
+          '[FormFieldsLiveCameraCapture._uploadImageDio] response == null (network error)');
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -424,6 +455,10 @@ class FormFieldsLiveCameraCaptureState
             UploadResponseMapper.extractDescription(data, 'description');
         final uploadedPath = UploadResponseMapper.extractFilePath(data);
 
+        debugPrint('[FormFieldsLiveCameraCapture._uploadImageDio] '
+            'status=${response.statusCode}, uploadedLink=$uploadedLink, '
+            'uploadedPath=$uploadedPath, imageId=$imageId');
+
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
@@ -435,9 +470,36 @@ class FormFieldsLiveCameraCaptureState
             ? Map<String, dynamic>.from(data)
             : <String, dynamic>{'raw': data};
 
+        // Ensure we preserve local base64 so previews can render without
+        // needing to fetch the network copy. If base64 is missing, read
+        // bytes from the local path and encode.
+        String finalBase64 = image.base64;
+        if ((finalBase64.trim()).isEmpty && (image.path.trim()).isNotEmpty) {
+          try {
+            final bytes = await File(image.path).readAsBytes();
+            final mime = MyImageResult.getMimeType(image.path);
+            finalBase64 = 'data:$mime;base64,${base64Encode(bytes)}';
+          } catch (_) {
+            // ignore file read errors — fallback will be network link
+          }
+        }
+
+        // Build a usable link: prefer uploadedLink, otherwise try to build
+        // an absolute URL from uploadedPath when possible.
+        String? finalLink = (uploadedLink ?? image.link).trim();
+        if ((finalLink.isEmpty) &&
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
+          try {
+            final base = Uri.parse(widget.uploadUrl!);
+            final p =
+                uploadedPath.startsWith('/') ? uploadedPath : '/$uploadedPath';
+            finalLink = '${base.scheme}://${base.authority}$p';
+          } catch (_) {}
+        }
+
         final updatedImage = MyImageResult(
-          link: uploadedLink ?? image.link,
-          base64: image.base64,
+          link: finalLink ?? image.link,
+          base64: finalBase64,
           // Prefer server-provided path when available, otherwise keep local.
           path: uploadedPath ?? image.path,
           imageId: imageId ?? image.imageId,
@@ -448,6 +510,8 @@ class FormFieldsLiveCameraCaptureState
 
         return updatedImage;
       } else {
+        debugPrint(
+            '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}');
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,
@@ -554,7 +618,15 @@ class FormFieldsLiveCameraCaptureState
                     ),
                   ),
                   if (provider.capturedResult != null)
-                    _CapturedPhoto(result: provider.capturedResult!),
+                    _CapturedPhoto(
+                      result: provider.capturedResult!,
+                      headers: (widget.uploadToken != null &&
+                              widget.uploadToken!.isNotEmpty)
+                          ? <String, String>{
+                              'Authorization': widget.uploadToken!
+                            }
+                          : null,
+                    ),
                   // Upload loading overlay
                   if (provider.isUploading)
                     Positioned.fill(
@@ -697,12 +769,27 @@ class SharedCameraManager {
 
   final List<VoidCallback> _listeners = [];
 
-  void addListener(VoidCallback cb) => _listeners.add(cb);
-  void removeListener(VoidCallback cb) => _listeners.remove(cb);
+  void addListener(VoidCallback cb) {
+    _listeners.add(cb);
+    debugPrint(
+        '[SharedCameraManager] addListener; listeners=${_listeners.length}');
+  }
+
+  void removeListener(VoidCallback cb) {
+    _listeners.remove(cb);
+    debugPrint(
+        '[SharedCameraManager] removeListener; listeners=${_listeners.length}');
+  }
 
   void _notify() {
+    debugPrint(
+        '[SharedCameraManager] _notify; listeners=${_listeners.length}; isReady=$isReady; initializing=$_initializing; ref=$_refCount');
     for (final l in List<VoidCallback>.of(_listeners)) {
-      l();
+      try {
+        l();
+      } catch (e, st) {
+        debugPrint('[SharedCameraManager] listener threw: $e\n$st');
+      }
     }
   }
 
@@ -763,16 +850,20 @@ class SharedCameraManager {
       debugPrint('[SharedCameraManager] acquire failed: $e\n$st');
     } finally {
       _initializing = false;
+      debugPrint(
+          '[SharedCameraManager] acquire finished; initializing=$_initializing; error=$_errorMessage; ref=$_refCount; isReady=$isReady');
       _notify();
     }
   }
 
   void release() {
     _refCount = (_refCount - 1).clamp(0, double.maxFinite.toInt());
+    debugPrint('[SharedCameraManager] release called; refCount=$_refCount');
     if (_refCount == 0) {
       _controller?.dispose();
       _controller = null;
       _errorMessage = null;
+      debugPrint('[SharedCameraManager] controller disposed');
     }
   }
 
@@ -783,17 +874,42 @@ class SharedCameraManager {
 
 class _CapturedPhoto extends StatelessWidget {
   final MyImageResult result;
-  const _CapturedPhoto({required this.result});
+  final Map<String, String>? headers;
+  const _CapturedPhoto({required this.result, this.headers});
 
   @override
   Widget build(BuildContext context) {
-    if (result.path.isNotEmpty) {
-      return Image.file(File(result.path),
-          fit: BoxFit.cover, width: double.infinity);
+    debugPrint('[FormFieldsLiveCameraCapture._CapturedPhoto] '
+        'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}');
+
+    // Build local fallback (file -> base64 -> placeholder)
+    // Prefer local content: file -> base64. Only if neither exists use network
+    // link. This avoids triggering an immediate GET after upload when we
+    // already have the bytes locally.
+    final hasLocalPath =
+        result.path.isNotEmpty && File(result.path).existsSync();
+    final bytes = Uri.tryParse(result.base64)?.data?.contentAsBytes();
+    final hasBase64 = bytes != null && bytes.isNotEmpty;
+
+    if (hasLocalPath) {
+      return Image.file(
+        File(result.path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+      );
     }
+
+    if (hasBase64) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+      );
+    }
+
     if (result.link.isNotEmpty) {
-      return Image.network(
-        result.link,
+      return Image(
+        image: NetworkImage(result.link, headers: headers),
         fit: BoxFit.cover,
         width: double.infinity,
         errorBuilder: (_, __, ___) => Center(
@@ -802,10 +918,10 @@ class _CapturedPhoto extends StatelessWidget {
         ),
       );
     }
-    return Image.memory(
-      Uri.parse(result.base64).data!.contentAsBytes(),
-      fit: BoxFit.cover,
-      width: double.infinity,
+
+    return Center(
+      child: Icon(Icons.broken_image_outlined,
+          size: 32, color: resolveTextColor(context, muted: true)),
     );
   }
 }

@@ -8,11 +8,11 @@ import 'package:provider/provider.dart';
 
 Widget _buildImageFrom(MyImageResult r, BuildContext context,
     {double? height, BoxFit fit = BoxFit.cover}) {
-  if (r.path.isNotEmpty) {
-    return Image.file(File(r.path), height: height, fit: fit);
-  }
   if (r.link.isNotEmpty) {
     return Image.network(r.link, height: height, fit: fit);
+  }
+  if (r.path.isNotEmpty && File(r.path).existsSync()) {
+    return Image.file(File(r.path), height: height, fit: fit);
   }
   final bytes = Uri.tryParse(r.base64)?.data?.contentAsBytes();
   if (bytes != null && bytes.isNotEmpty) {
@@ -70,6 +70,14 @@ class View extends PresenterState {
                       onExported: viewModel.setSignature,
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
+                      isDirectUpload: true,
+                      uploadFileFieldName: 'file',
+                      uploadIncludeReqType: true,
+                      showLiveCamera: true,
+                      uploadUrl:
+                          'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
+                      uploadToken:
+                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3MTE3NjQsImV4cCI6MTc4MDc1NDk2NCwiaWF0IjoxNzgwNzExNzY0fQ.a_IXBOFzh13R3m7gZn6UCMzSgO4-PoPA5R-vDzlqKjo",
                     ),
                   ),
 
@@ -405,7 +413,7 @@ class View extends PresenterState {
                       onExportedResult: viewModel.setUploadedExportResult,
                       onError: (val) {
                         debugPrint(
-                            'Direct upload error: signature upload ${val.signature.link.isEmpty ? 'failed' : 'succeeded'}, live capture upload ${val.liveCapture?.link.isEmpty == true ? 'failed' : 'succeeded'}');
+                            'Direct upload error: signature upload ${val.signature.link.isEmpty ? 'failed' : 'succeeded'}, live capture upload ${val.liveCapture.link.isEmpty == true ? 'failed' : 'succeeded'}');
                         // viewModel.setUploadError(val);
                       },
                     ),
@@ -1021,16 +1029,16 @@ class _UploadResultPreview extends StatelessWidget {
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: result.link.isNotEmpty
-                ? Image.network(result.link, height: 80, fit: BoxFit.contain)
-                : result.path.isNotEmpty
-                    ? Image.file(File(result.path),
-                        height: 80, fit: BoxFit.contain)
-                    : Image.memory(
+            child: (result.path.isNotEmpty && File(result.path).existsSync())
+                ? Image.file(File(result.path), height: 80, fit: BoxFit.contain)
+                : result.base64.isNotEmpty
+                    ? Image.memory(
                         Uri.parse(result.base64).data!.contentAsBytes(),
                         height: 80,
                         fit: BoxFit.contain,
-                      ),
+                      )
+                    : Image.network(result.link,
+                        height: 80, fit: BoxFit.contain),
           ),
         ],
       ),

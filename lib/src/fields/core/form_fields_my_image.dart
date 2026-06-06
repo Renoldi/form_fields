@@ -66,11 +66,11 @@ class FormFieldsMyImage extends StatefulWidget {
   final String uploadImageIdKey;
 
   /// Name of the multipart file field to use when uploading. Defaults to
-  /// 'fileToUpload' for backward compatibility with the existing server.
+  /// 'file' for backward compatibility with the existing server.
   final String uploadFileFieldName;
 
   /// Whether to include the legacy 'reqtype=fileupload' field in the
-  /// multipart form. Some servers require it; default is true.
+  /// multipart form. Some servers require it; default is false.
   final bool uploadIncludeReqType;
 
   final bool allow;
@@ -128,7 +128,7 @@ class FormFieldsMyImage extends StatefulWidget {
       this.uploadErrorMessage,
       this.uploadFileUrlKey = 'fileUrl',
       this.uploadImageIdKey = 'imageId',
-      this.uploadFileFieldName = 'fileToUpload',
+      this.uploadFileFieldName = 'file',
       this.uploadIncludeReqType = false,
       this.onFailDirectUpload,
       this.allow = true,
@@ -150,7 +150,7 @@ class FormFieldsMyImage extends StatefulWidget {
 }
 
 class _ImageDescriptionSheet extends StatefulWidget {
-  const _ImageDescriptionSheet({Key? key}) : super(key: key);
+  const _ImageDescriptionSheet();
 
   @override
   State<_ImageDescriptionSheet> createState() => _ImageDescriptionSheetState();
@@ -644,38 +644,48 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           child: widget.imageBuilder!(context, MyImageResult(), index),
         );
       }
-      if (!widget.isDirectUpload) {
+      // Single-image default: show an add-tile (plus) placeholder.
+      if (isSingle) {
+        final active = resolveActiveColor(context, null);
         return Container(
           width: 120,
           height: 120,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: active, width: 2),
           ),
           child: Center(
-            child: Icon(
-              Icons.image_not_supported,
-              size: 48,
-              color: resolveTextColor(context, muted: true),
-            ),
+            child: Icon(Icons.image, size: 32, color: active),
           ),
         );
       }
+      if (!widget.isDirectUpload) {
+        final active = resolveActiveColor(context, null);
+        return Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: active, width: 2),
+          ),
+          child: Center(
+            child: Icon(Icons.add, size: 32, color: active),
+          ),
+        );
+      }
+      final active = resolveActiveColor(context, null);
       return Container(
         width: 120,
         height: 120,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: active, width: 2),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person,
-                size: 60, color: resolveTextColor(context, muted: true)),
-            Icon(Icons.camera_alt,
-                size: 24, color: resolveTextColor(context, muted: true)),
-          ],
+        child: Center(
+          child: Icon(Icons.add, size: 32, color: active),
         ),
       );
     }
@@ -1345,8 +1355,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         final uploadedDescription = UploadResponseMapper.extractDescription(
             data, widget.descriptionField ?? 'description');
         final uploadedPath = UploadResponseMapper.extractFilePath(data);
+        // Build absolute link if server provided only a relative path.
+        String? finalLink = (uploadedLink ?? images[index].link).trim();
+        if ((finalLink.isEmpty) &&
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
+          try {
+            final base = Uri.parse(widget.uploadUrl!);
+            final p =
+                uploadedPath.startsWith('/') ? uploadedPath : '/$uploadedPath';
+            finalLink = '${base.scheme}://${base.authority}$p';
+          } catch (_) {}
+        }
+
         final updatedImage = MyImageResult(
-          link: uploadedLink ?? images[index].link,
+          link: finalLink ?? images[index].link,
           base64: images[index].base64,
           // Keep local file path from picked image to avoid re-fetching
           // the same file from server right after upload.

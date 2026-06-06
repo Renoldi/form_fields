@@ -28,10 +28,7 @@ class View extends PresenterState {
                     'With Description (showDesc)', Colors.teal.shade600),
                 FormFieldsMyImage(
                   // controller: pickImageController,
-                  // maxImages: 1,
-                  showDesc: true,
-                  descriptionField: 'description',
-                  showUploadResultDialog: true,
+
                   // imageBuilder: (context, image, index) {
                   //   if (image.link.trim().isNotEmpty &&
                   //       Uri.tryParse(image.link)?.hasAbsolutePath == true) {
@@ -71,15 +68,18 @@ class View extends PresenterState {
                   //     ),
                   //   );
                   // },
-
+                  maxImages: 1,
+                  showDesc: true,
+                  descriptionField: 'description',
+                  showUploadResultDialog: false,
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl:
                       'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                   uploadToken:
-                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA2NDUwNDksImV4cCI6MTc4MDY4ODI0OSwiaWF0IjoxNzgwNjQ1MDQ5fQ.qUtU6qwOWdgjXZSsF4mbCO1pa6H86Z1RzoMhkh349aw",
-                  uploadFileFieldName: 'file',
-                  uploadIncludeReqType: false,
+                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3MTE3NjQsImV4cCI6MTc4MDc1NDk2NCwiaWF0IjoxNzgwNzExNzY0fQ.a_IXBOFzh13R3m7gZn6UCMzSgO4-PoPA5R-vDzlqKjo",
+                  // uploadFileFieldName: 'file',
+                  // uploadIncludeReqType: false,
                   onImageChanged: (image) {
                     logger.i('Image changed: ${image.toString()}');
                   },

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
@@ -186,7 +187,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final String uploadImageIdKey;
 
   /// Name of the multipart file field to use when uploading. Defaults to
-  /// 'fileToUpload' for backward compatibility with the existing server.
+  /// 'file' which is commonly expected by many servers.
   final String uploadFileFieldName;
 
   /// Whether to include the legacy 'reqtype=fileupload' field in the
@@ -256,8 +257,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
-    this.uploadFileFieldName = 'fileToUpload',
-    this.uploadIncludeReqType = false,
+    this.uploadFileFieldName = 'file',
+    this.uploadIncludeReqType = true,
     this.autoExportOnFinish = true,
     this.label,
     this.labelPosition = LabelPosition.none,
@@ -393,6 +394,66 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
+  Widget _wrapWithLabel(Widget content) {
+    if (widget.label == null ||
+        widget.label!.isEmpty ||
+        widget.labelPosition == LabelPosition.none) {
+      return content;
+    }
+    final labelWidget = _buildLabel();
+    const labelWidth = 120.0;
+    const spacing = 12.0;
+    switch (widget.labelPosition) {
+      case LabelPosition.top:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [labelWidget, content],
+        );
+      case LabelPosition.bottom:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [content, labelWidget],
+        );
+      case LabelPosition.left:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: labelWidth, child: labelWidget),
+            const SizedBox(width: spacing),
+            Expanded(child: content),
+          ],
+        );
+      case LabelPosition.right:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: content),
+            const SizedBox(width: spacing),
+            SizedBox(width: labelWidth, child: labelWidget),
+          ],
+        );
+      case LabelPosition.inBorder:
+      case LabelPosition.none:
+        return content;
+    }
+  }
+
+  String? _validateSignature(bool? hasSignature) {
+    if (widget.externalErrorText != null) return widget.externalErrorText;
+    if (widget.validator != null) {
+      return widget.validator!(hasSignature ?? false);
+    }
+    if (widget.isRequired && (hasSignature != true)) {
+      final l = _localizations;
+      if (l == null) return '';
+      final label = widget.label;
+      return (label != null && label.isNotEmpty)
+          ? l.getWithLabel('signatureRequired', label)
+          : l.get('signatureRequiredDefault');
+    }
+    return null;
+  }
+
   void _onLiveCameraControllerChanged() {
     _syncCaptureGuardFromController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -507,66 +568,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         ),
       ),
     );
-  }
-
-  Widget _wrapWithLabel(Widget content) {
-    if (widget.label == null ||
-        widget.label!.isEmpty ||
-        widget.labelPosition == LabelPosition.none) {
-      return content;
-    }
-    final labelWidget = _buildLabel();
-    const labelWidth = 120.0;
-    const spacing = 12.0;
-    switch (widget.labelPosition) {
-      case LabelPosition.top:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [labelWidget, content],
-        );
-      case LabelPosition.bottom:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [content, labelWidget],
-        );
-      case LabelPosition.left:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: labelWidth, child: labelWidget),
-            const SizedBox(width: spacing),
-            Expanded(child: content),
-          ],
-        );
-      case LabelPosition.right:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: content),
-            const SizedBox(width: spacing),
-            SizedBox(width: labelWidth, child: labelWidget),
-          ],
-        );
-      case LabelPosition.inBorder:
-      case LabelPosition.none:
-        return content;
-    }
-  }
-
-  String? _validateSignature(bool? hasSignature) {
-    if (widget.externalErrorText != null) return widget.externalErrorText;
-    if (widget.validator != null) {
-      return widget.validator!(hasSignature ?? false);
-    }
-    if (widget.isRequired && (hasSignature != true)) {
-      final l = _localizations;
-      if (l == null) return '';
-      final label = widget.label;
-      return (label != null && label.isNotEmpty)
-          ? l.getWithLabel('signatureRequired', label)
-          : l.get('signatureRequiredDefault');
-    }
-    return null;
   }
 
   Future<void> _onDrawStart() async {
@@ -686,6 +687,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           widget.showLiveCamera && _cameraController.images.isNotEmpty
               ? _cameraController.images.first
               : liveCapture;
+      // Log final results for debugging (link/path/base64 length/status).
+      debugPrint(
+          '[FormFieldsSignaturePad._exportSignature] finalSignature: link=${finalSignature.link}, path=${finalSignature.path}, base64Len=${finalSignature.base64.length}, status=${finalSignature.status}');
+      debugPrint(
+          '[FormFieldsSignaturePad._exportSignature] finalLiveCapture: link=${finalLiveCapture.link}, path=${finalLiveCapture.path}, base64Len=${finalLiveCapture.base64.length}, status=${finalLiveCapture.status}');
+
       // Update preview with final (server) results.
       if (widget.showExportPreview && mounted) {
         _padProvider.setPreviewResults(
@@ -844,6 +851,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       return updatedImage;
     }
 
+    debugPrint('[FormFieldsSignaturePad._uploadImageDio] '
+        'START upload url=${widget.uploadUrl}, file=${image.path}, '
+        'fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}');
+
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,
@@ -874,6 +885,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final uploadErrorMessage =
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
+      debugPrint(
+          '[FormFieldsSignaturePad._uploadImageDio] response == null (network error)');
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -896,6 +909,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         final uploadedDescription =
             UploadResponseMapper.extractDescription(data, 'description');
         final uploadedPath = UploadResponseMapper.extractFilePath(data);
+        debugPrint('[FormFieldsSignaturePad._uploadImageDio] '
+            'status=${response.statusCode}, uploadedLink=$uploadedLink, '
+            'uploadedPath=$uploadedPath, imageId=$imageId');
 
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
@@ -907,10 +923,39 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         final payload = data is Map<String, dynamic>
             ? Map<String, dynamic>.from(data)
             : <String, dynamic>{'raw': data};
+        // Ensure we preserve local base64 so previews can render without
+        // needing to fetch the network copy. If base64 is missing, read
+        // bytes from the local path and encode.
+        String finalBase64 = image.base64;
+        if ((finalBase64.trim()).isEmpty && (image.path.trim()).isNotEmpty) {
+          try {
+            final bytes = await File(image.path).readAsBytes();
+            final mime = MyImageResult.getMimeType(image.path);
+            finalBase64 = 'data:$mime;base64,${base64Encode(bytes)}';
+          } catch (_) {
+            // ignore file read errors — fallback will be network link
+          }
+        }
+
+        // Build a usable link: prefer uploadedLink, otherwise try to build
+        // an absolute URL from uploadedPath when possible (server may
+        // return only a relative path).
+        String? finalLink = (uploadedLink ?? image.link).trim();
+        if ((finalLink.isEmpty) &&
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
+          try {
+            final base = Uri.parse(widget.uploadUrl!);
+            final p =
+                uploadedPath.startsWith('/') ? uploadedPath : '/$uploadedPath';
+            finalLink = '${base.scheme}://${base.authority}$p';
+          } catch (_) {
+            // ignore and leave finalLink empty
+          }
+        }
 
         return MyImageResult(
-          link: uploadedLink ?? image.link,
-          base64: image.base64,
+          link: finalLink ?? image.link,
+          base64: finalBase64,
           // Prefer server-provided path when available, otherwise keep local.
           path: uploadedPath ?? image.path,
           imageId: imageId ?? image.imageId,
@@ -919,6 +964,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           status: MyImageStatus.uploaded,
         );
       } else {
+        debugPrint(
+            '[FormFieldsSignaturePad._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}');
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,
@@ -928,6 +975,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         }
       }
     } catch (e) {
+      debugPrint(
+          '[FormFieldsSignaturePad._uploadImageDio] exception while processing response: $e');
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadErrorTitle,
@@ -944,24 +993,24 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   Widget _buildPreviewImage(MyImageResult result,
       {BoxFit fit = BoxFit.contain}) {
     Widget imageWidget;
-    if (result.path.trim().isNotEmpty) {
+    final tokenHeader =
+        (widget.uploadToken != null && widget.uploadToken!.isNotEmpty)
+            ? <String, String>{'Authorization': widget.uploadToken!}
+            : null;
+
+    // Prefer local preview (file -> base64) to avoid forcing a network GET
+    // immediately after upload. Only fall back to NetworkImage when no
+    // local content is available.
+    final hasLocalPath =
+        result.path.trim().isNotEmpty && File(result.path).existsSync();
+    final hasBase64 = result.base64.trim().isNotEmpty;
+
+    if (hasLocalPath) {
       imageWidget = Image.file(
         File(result.path),
         fit: fit,
       );
-    } else if (result.link.trim().isNotEmpty) {
-      imageWidget = Image.network(
-        result.link,
-        fit: fit,
-        errorBuilder: (_, __, ___) => Center(
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 28,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    } else if (result.base64.trim().isNotEmpty) {
+    } else if (hasBase64) {
       final bytes = Uri.parse(result.base64).data?.contentAsBytes();
       if (bytes != null) {
         imageWidget = Image.memory(
@@ -977,6 +1026,18 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           ),
         );
       }
+    } else if (result.link.trim().isNotEmpty) {
+      imageWidget = Image(
+        image: NetworkImage(result.link, headers: tokenHeader),
+        fit: fit,
+        errorBuilder: (_, __, ___) => Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 28,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
     } else {
       imageWidget = Center(
         child: Icon(
