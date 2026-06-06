@@ -40,9 +40,9 @@ class UploadResponseMapper {
   }
 
   /// Try to extract a usable uploaded file URL from the server [data].
-  /// [uploadFileUrlKey] is attempted first (server-configurable), then a
+  /// [keys] is attempted first (server-configurable), then a
   /// set of common fallback keys.
-  static String? extractUploadedLink(dynamic data, String uploadFileUrlKey) {
+  static String? extractUploadedLink(dynamic data, {String keys = "fileUrl"}) {
     if (data == null) return null;
 
     if (data is String) {
@@ -59,78 +59,86 @@ class UploadResponseMapper {
       return null;
     }
 
-    final exact = extractNestedValue(data, uploadFileUrlKey);
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'fileUrl',
-      'url',
-      'link',
-      'imageUrl',
-      'downloadUrl',
-      'receiverPhoto',
-      'receiver_photo',
-      'photoUrl',
-      'photo',
-      'redirect_link',
-    ];
-    for (final key in fallbackKeys) {
-      final val = extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
+    if (keys.isNotEmpty) {
+      final exact = extractNestedValue(data, keys);
+      if ((exact ?? '').isNotEmpty) return exact;
+    } else {
+      const fallbackKeys = [
+        'fileUrl',
+        'url',
+        'link',
+        'imageUrl',
+        'downloadUrl',
+        'receiverPhoto',
+        'receiver_photo',
+        'photoUrl',
+        'photo',
+        'redirect_link',
+      ];
+      for (final key in fallbackKeys) {
+        final val = extractNestedValue(data, key);
+        if ((val ?? '').isNotEmpty) return val;
+      }
     }
     return null;
   }
 
   /// Extract an image id from the server [data], preferring the
-  /// [uploadImageIdKey] when provided.
-  static String? extractImageId(dynamic data, String uploadImageIdKey) {
+  /// [keys] when provided.
+  static String? extractImageId(dynamic data, {String keys = "imageId"}) {
     if (data == null) return null;
 
-    final exact = extractNestedValue(data, uploadImageIdKey);
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = ['imageId', 'id'];
-    for (final key in fallbackKeys) {
-      final val = extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
+    if (keys.isNotEmpty) {
+      final exact = extractNestedValue(data, keys);
+      if ((exact ?? '').isNotEmpty) return exact;
+    } else {
+      const fallbackKeys = ['imageId', 'id'];
+      for (final key in fallbackKeys) {
+        final val = extractNestedValue(data, key);
+        if ((val ?? '').isNotEmpty) return val;
+      }
     }
     return null;
   }
 
   /// Extract a server-provided file path (if any).
-  static String? extractFilePath(dynamic data) {
+  static String? extractFilePath(dynamic data, {String keys = "filePath"}) {
     if (data == null) return null;
-
-    final exact = extractNestedValue(data, 'filePath');
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = ['file_path', 'filepath', 'path'];
-    for (final key in fallbackKeys) {
-      final val = extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
+    if (keys.isNotEmpty) {
+      final exact = extractNestedValue(data, keys);
+      if ((exact ?? '').isNotEmpty) return exact;
+    } else {
+      const fallbackKeys = ['file_path', 'filepath', 'path'];
+      for (final key in fallbackKeys) {
+        final val = extractNestedValue(data, key);
+        if ((val ?? '').isNotEmpty) return val;
+      }
     }
     return null;
   }
 
   /// Extract a description/caption from the server [data].
-  /// [descriptionField] is the preferred key to check first.
-  static String? extractDescription(dynamic data, String descriptionField) {
+  /// [keys] is the preferred key to check first.
+  static String? extractDescription(dynamic data,
+      {String keys = 'description'}) {
     if (data == null) return null;
 
-    final exact = extractNestedValue(data, descriptionField);
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'description',
-      'desc',
-      'note',
-      'caption',
-      'alt',
-      'title'
-    ];
-    for (final key in fallbackKeys) {
-      final val = extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
+    if (keys.isNotEmpty) {
+      final exact = extractNestedValue(data, keys);
+      if ((exact ?? '').isNotEmpty) return exact;
+    } else {
+      const fallbackKeys = [
+        'description',
+        'desc',
+        'note',
+        'caption',
+        'alt',
+        'title'
+      ];
+      for (final key in fallbackKeys) {
+        final val = extractNestedValue(data, key);
+        if ((val ?? '').isNotEmpty) return val;
+      }
     }
     return null;
   }

@@ -1348,13 +1348,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     try {
       if (UploadResponseMapper.isSuccessfulStatus(response.statusCode)) {
         final data = response.data;
-        final uploadedLink = UploadResponseMapper.extractUploadedLink(
-            data, widget.uploadFileUrlKey);
-        final imageId =
-            UploadResponseMapper.extractImageId(data, widget.uploadImageIdKey);
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
+            keys: widget.uploadFileUrlKey);
+        final imageId = UploadResponseMapper.extractImageId(data,
+            keys: widget.uploadImageIdKey);
         final uploadedDescription = UploadResponseMapper.extractDescription(
-            data, widget.descriptionField ?? 'description');
-        final uploadedPath = UploadResponseMapper.extractFilePath(data);
+            data,
+            keys: widget.descriptionField ?? 'description');
+        final uploadedPath =
+            UploadResponseMapper.extractFilePath(data, keys: 'filePath');
         // Build absolute link if server provided only a relative path.
         String? finalLink = (uploadedLink ?? images[index].link).trim();
         if ((finalLink.isEmpty) &&

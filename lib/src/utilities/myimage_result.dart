@@ -81,11 +81,14 @@ class MyImageResult {
 
     if (json is Map<String, dynamic>) {
       payload = Map<String, dynamic>.from(json);
-      link = UploadResponseMapper.extractUploadedLink(json, 'fileUrl') ?? '';
-      imageId = UploadResponseMapper.extractImageId(json, 'imageId') ?? '';
-      path = UploadResponseMapper.extractFilePath(json) ?? '';
+      link =
+          UploadResponseMapper.extractUploadedLink(json, keys: 'fileUrl') ?? '';
+      imageId =
+          UploadResponseMapper.extractImageId(json, keys: 'imageId') ?? '';
+      path = UploadResponseMapper.extractFilePath(json, keys: 'filePath') ?? '';
       description =
-          UploadResponseMapper.extractDescription(json, 'description') ?? '';
+          UploadResponseMapper.extractDescription(json, keys: 'description') ??
+              '';
     } else if (json is String) {
       link = json;
       payload = {'raw': json};

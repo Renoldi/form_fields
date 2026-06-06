@@ -98,6 +98,8 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// Permission will be requested if needed.
   final bool preAcquire;
 
+  final String? descriptionField;
+
   FormFieldsLiveCameraCapture({
     super.key,
     this.height = 100,
@@ -122,6 +124,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadIncludeReqType = true,
     this.hidePreview = false,
     this.preAcquire = false,
+    this.descriptionField,
   }) : assert(
           isDirectUpload == false ||
               (uploadUrl != null && uploadUrl.isNotEmpty),
@@ -447,13 +450,15 @@ class FormFieldsLiveCameraCaptureState
           response.statusCode! < 300) {
         final data = response.data;
 
-        final uploadedLink = UploadResponseMapper.extractUploadedLink(
-            data, widget.uploadFileUrlKey);
-        final imageId =
-            UploadResponseMapper.extractImageId(data, widget.uploadImageIdKey);
-        final uploadedDescription =
-            UploadResponseMapper.extractDescription(data, 'description');
-        final uploadedPath = UploadResponseMapper.extractFilePath(data);
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
+            keys: widget.uploadFileUrlKey);
+        final imageId = UploadResponseMapper.extractImageId(data,
+            keys: widget.uploadImageIdKey);
+        final uploadedDescription = UploadResponseMapper.extractDescription(
+            data,
+            keys: widget.descriptionField ?? 'description');
+        final uploadedPath =
+            UploadResponseMapper.extractFilePath(data, keys: 'filePath');
 
         debugPrint('[FormFieldsLiveCameraCapture._uploadImageDio] '
             'status=${response.statusCode}, uploadedLink=$uploadedLink, '
