@@ -73,6 +73,8 @@ class View extends PresenterState {
                   descriptionField: 'description',
                   showUploadResultDialog: false,
                   isDirectUpload: true,
+                  // uploadFileFieldName: 'file',
+                  // uploadIncludeReqType: false,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl:
                       'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',

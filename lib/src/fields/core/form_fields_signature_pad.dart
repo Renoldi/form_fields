@@ -258,7 +258,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.uploadFileFieldName = 'file',
-    this.uploadIncludeReqType = true,
+    this.uploadIncludeReqType = false,
     this.autoExportOnFinish = true,
     this.label,
     this.labelPosition = LabelPosition.none,

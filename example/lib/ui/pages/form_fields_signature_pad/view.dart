@@ -71,8 +71,8 @@ class View extends PresenterState {
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       isDirectUpload: true,
-                      uploadFileFieldName: 'file',
-                      uploadIncludeReqType: true,
+                      // uploadFileFieldName: 'file',
+                      // uploadIncludeReqType: false,
                       showLiveCamera: true,
                       uploadUrl:
                           'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
