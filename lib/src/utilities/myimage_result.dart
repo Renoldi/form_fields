@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'enums.dart';
+import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 
 class MyImageResult {
   final String link;
@@ -32,7 +33,9 @@ class MyImageResult {
         status = MyImageStatus.idle;
   @override
   String toString() {
-    return 'MyimageResult(path: $path, link: $link, base64: ${base64.substring(0, 20)}, imageId: $imageId, description: $description, status: $status, payload: ${payload.toString()})';
+    final b64Preview =
+        (base64.length > 20) ? '${base64.substring(0, 20)}...' : base64;
+    return 'MyimageResult(path: $path, link: $link, base64: $b64Preview, imageId: $imageId, description: $description, status: $status, payload: ${payload.toString()})';
   }
 
   static Future<MyImageResult> fromFile(File file,
@@ -60,6 +63,67 @@ class MyImageResult {
       'payload': payload,
       'status': status.toString().split('.').last,
     };
+  }
+
+  /// Construct a [MyImageResult] from a server response shape.
+  /// Accepts a Map or a raw String (URL) and attempts to normalize common
+  /// keys into the model. If the payload contains a `status` string it will
+  /// be mapped to [MyImageStatus].
+  static MyImageResult fromJson(dynamic json,
+      {MyImageStatus defaultStatus = MyImageStatus.uploaded}) {
+    if (json == null) return MyImageResult();
+
+    String link = '';
+    String path = '';
+    String imageId = '';
+    String description = '';
+    Map<String, dynamic> payload = {};
+
+    if (json is Map<String, dynamic>) {
+      payload = Map<String, dynamic>.from(json);
+      link = UploadResponseMapper.extractUploadedLink(json, 'fileUrl') ?? '';
+      imageId = UploadResponseMapper.extractImageId(json, 'imageId') ?? '';
+      path = UploadResponseMapper.extractFilePath(json) ?? '';
+      description =
+          UploadResponseMapper.extractDescription(json, 'description') ?? '';
+    } else if (json is String) {
+      link = json;
+      payload = {'raw': json};
+    } else {
+      link = json.toString();
+      payload = {'raw': json};
+    }
+
+    var status = defaultStatus;
+    final st = payload['status']?.toString();
+    if (st != null && st.isNotEmpty) {
+      switch (st.toLowerCase()) {
+        case 'idle':
+          status = MyImageStatus.idle;
+          break;
+        case 'uploading':
+          status = MyImageStatus.uploading;
+          break;
+        case 'queued':
+          status = MyImageStatus.queued;
+          break;
+        case 'failed':
+          status = MyImageStatus.failed;
+          break;
+        case 'uploaded':
+          status = MyImageStatus.uploaded;
+          break;
+      }
+    }
+
+    return MyImageResult(
+        link: link,
+        base64: '',
+        path: path,
+        imageId: imageId,
+        description: description,
+        payload: payload,
+        status: status);
   }
 
   /// Returns the MIME type based on file extension.

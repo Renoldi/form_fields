@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:form_fields/src/utilities/myimage_result.dart';
 
@@ -14,12 +16,19 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
   void setImages(List<MyImageResult> images) {
     _images = List<MyImageResult>.from(images);
     _uploadProgress = List<double>.filled(_images.length, 0.0).toList();
+    debugPrint(
+        'FormFieldsMyImageProvider.setImages -> ${_images.length} images');
     commit();
   }
 
   void addImage(MyImageResult image) {
     _images.add(image);
     _uploadProgress.add(0.0);
+    final name = image.path.trim().isNotEmpty
+        ? image.path.split(Platform.pathSeparator).last
+        : (image.link.isNotEmpty ? image.link : '<no-path>');
+    debugPrint(
+        'FormFieldsMyImageProvider.addImage -> added: $name (total=${_images.length})');
     commit();
   }
 
@@ -27,6 +36,8 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
     if (index >= 0 && index < _images.length) {
       _images.removeAt(index);
       _uploadProgress.removeAt(index);
+      debugPrint(
+          'FormFieldsMyImageProvider.removeImage -> removed index $index (total=${_images.length})');
       commit();
     }
   }
@@ -34,6 +45,11 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
   void updateImage(int index, MyImageResult image) {
     if (index >= 0 && index < _images.length) {
       _images[index] = image;
+      final name = image.path.trim().isNotEmpty
+          ? image.path.split(Platform.pathSeparator).last
+          : (image.link.isNotEmpty ? image.link : '<no-path>');
+      debugPrint(
+          'FormFieldsMyImageProvider.updateImage -> index $index updated to: $name');
       commit();
     }
   }
@@ -65,6 +81,18 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
   }
 
   void commit() {
+    try {
+      final summary = _images
+          .map((i) => i.path.trim().isNotEmpty
+              ? i.path.split(Platform.pathSeparator).last
+              : (i.link.isNotEmpty ? i.link : '<no-path>'))
+          .join(', ');
+      debugPrint(
+          'FormFieldsMyImageProvider.commit -> images=${_images.length}; summary=[$summary]');
+    } catch (_) {
+      debugPrint(
+          'FormFieldsMyImageProvider.commit -> images=${_images.length}');
+    }
     notifyListeners();
   }
 }

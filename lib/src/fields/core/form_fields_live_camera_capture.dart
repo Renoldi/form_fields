@@ -5,10 +5,11 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/service/permission_gate.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../utilities/theme_helpers.dart';
-import '../../service/permission_gate.dart';
+import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -333,8 +334,13 @@ class FormFieldsLiveCameraCaptureState
       );
       // Notify caller so they can persist queued payloads for later retry.
       try {
-        widget.onFailDirectUpload?.call(updatedImage);
-      } catch (_) {}
+        if (updatedImage.status == MyImageStatus.queued) {
+          widget.onFailDirectUpload?.call(updatedImage);
+        }
+      } catch (e, st) {
+        debugPrint(
+            'FormFieldsLiveCameraCapture.onFailDirectUpload threw: $e\n$st');
+      }
       // combined export callback removed; callers receive single-item
       // `onFailDirectUpload` for persisting queued payloads.
       return updatedImage;
@@ -396,36 +402,39 @@ class FormFieldsLiveCameraCaptureState
       if (response.statusCode != null &&
           response.statusCode! >= 200 &&
           response.statusCode! < 300) {
-        String? uploadedLink;
-        String? imageId;
         final data = response.data;
-        if (data is String) {
-          final redirectRegex = RegExp(
-            r"redirect_link\s*=\s*'([^']+)'",
-            multiLine: true,
-          );
-          final match = redirectRegex.firstMatch(data);
-          uploadedLink = match != null ? match.group(1) : data;
-        } else if (data is Map) {
-          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
-          imageId = data[widget.uploadImageIdKey]?.toString();
-        }
-        final uploadedDescription = _extractDescription(data);
+
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+            data, widget.uploadFileUrlKey);
+        final imageId =
+            UploadResponseMapper.extractImageId(data, widget.uploadImageIdKey);
+        final uploadedDescription =
+            UploadResponseMapper.extractDescription(data, 'description');
+        final uploadedPath = UploadResponseMapper.extractFilePath(data);
+
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
             message: uploadSuccessMessage,
           );
         }
-        return MyImageResult(
+
+        final payload = data is Map<String, dynamic>
+            ? Map<String, dynamic>.from(data)
+            : <String, dynamic>{'raw': data};
+
+        final updatedImage = MyImageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
-          // Keep local capture path to avoid extra GET right after upload.
-          path: image.path,
+          // Prefer server-provided path when available, otherwise keep local.
+          path: uploadedPath ?? image.path,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
+          payload: payload,
           status: MyImageStatus.uploaded,
         );
+
+        return updatedImage;
       } else {
         if (widget.showUploadResultDialog) {
           await dialog.showError(
@@ -444,54 +453,6 @@ class FormFieldsLiveCameraCaptureState
         );
       }
     }
-    return null;
-  }
-
-  String? _extractDescription(dynamic data) {
-    if (data == null) return null;
-
-    final exact = _extractNestedValue(data, 'description');
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'description',
-      'desc',
-      'note',
-      'caption',
-      'alt',
-      'title'
-    ];
-    for (final key in fallbackKeys) {
-      final val = _extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
-    }
-    return null;
-  }
-
-  String? _extractNestedValue(dynamic data, String key) {
-    if (data is Map) {
-      for (final entry in data.entries) {
-        if (entry.key.toString() == key) {
-          return entry.value?.toString();
-        }
-        final nested = _extractNestedValue(entry.value, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
-    if (data is List) {
-      for (final item in data) {
-        final nested = _extractNestedValue(item, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
     return null;
   }
 

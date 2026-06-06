@@ -2,12 +2,14 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:signature/signature.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../utilities/theme_helpers.dart';
+import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
+import 'package:form_fields/src/utilities/signature_pad_export_nullable_result.dart';
 
 // SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
 // SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
@@ -160,6 +162,13 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// so the caller can persist and retry uploads later.
   final void Function(MyImageResult result)? onFailDirectUpload;
 
+  /// Called when `isDirectUpload == true` but the device has no internet
+  /// and one or more exported results are queued (signature and/or live
+  /// capture). The callback receives a `SignaturePadExportNullableResult`
+  /// where a `null` field indicates that side succeeded (no error).
+  final void Function(SignaturePadExportNullableResult result)?
+      onFailDirectUploadList;
+
   /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
   /// Invoked when one or both uploads (signature, live capture) fail on server
   /// so the caller can render a combined error UI. Receives the combined
@@ -235,6 +244,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadFailedMessage,
     this.uploadErrorMessage,
     this.onFailDirectUpload,
+    this.onFailDirectUploadList,
     this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
@@ -683,15 +693,39 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       // `onExportedResult`.
       if (finalSignature.status == MyImageStatus.queued ||
           finalLiveCapture.status == MyImageStatus.queued) {
-        if (finalSignature.status == MyImageStatus.queued) {
-          try {
-            widget.onFailDirectUpload?.call(finalSignature);
-          } catch (_) {}
+        final nullable =
+            SignaturePadExportNullableResult.fromExportResult(finalResult);
+        try {
+          // Prefer the nullable combined callback when provided so callers
+          // receive both sides in one object where successful sides are
+          // represented as `null`.
+          if (widget.onFailDirectUploadList != null) {
+            widget.onFailDirectUploadList?.call(nullable);
+          }
+        } catch (e, st) {
+          debugPrint(
+              'FormFieldsSignaturePad.onFailDirectUploadList threw: $e\n$st');
         }
-        if (finalLiveCapture.status == MyImageStatus.queued) {
-          try {
-            widget.onFailDirectUpload?.call(finalLiveCapture);
-          } catch (_) {}
+
+        // For backward compatibility, still call the single-item callback
+        // for each queued side if present.
+        if (widget.onFailDirectUpload != null) {
+          if (nullable.signature != null) {
+            try {
+              widget.onFailDirectUpload?.call(nullable.signature!);
+            } catch (e, st) {
+              debugPrint(
+                  'FormFieldsSignaturePad.onFailDirectUpload threw: $e\n$st');
+            }
+          }
+          if (nullable.liveCapture != null) {
+            try {
+              widget.onFailDirectUpload?.call(nullable.liveCapture!);
+            } catch (e, st) {
+              debugPrint(
+                  'FormFieldsSignaturePad.onFailDirectUpload threw: $e\n$st');
+            }
+          }
         }
       }
 
@@ -841,34 +875,35 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (response.statusCode != null &&
           response.statusCode! >= 200 &&
           response.statusCode! < 300) {
-        String? uploadedLink;
-        String? imageId;
         final data = response.data;
-        if (data is String) {
-          final redirectRegex = RegExp(
-            r"redirect_link\s*=\s*'([^']+)'",
-            multiLine: true,
-          );
-          final match = redirectRegex.firstMatch(data);
-          uploadedLink = match != null ? match.group(1) : data;
-        } else if (data is Map) {
-          uploadedLink = data[widget.uploadFileUrlKey]?.toString();
-          imageId = data[widget.uploadImageIdKey]?.toString();
-        }
-        final uploadedDescription = _extractDescription(data);
+
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+            data, widget.uploadFileUrlKey);
+        final imageId =
+            UploadResponseMapper.extractImageId(data, widget.uploadImageIdKey);
+        final uploadedDescription =
+            UploadResponseMapper.extractDescription(data, 'description');
+        final uploadedPath = UploadResponseMapper.extractFilePath(data);
+
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
             title: uploadSuccessTitle,
             message: uploadSuccessMessage,
           );
         }
+
+        final payload = data is Map<String, dynamic>
+            ? Map<String, dynamic>.from(data)
+            : <String, dynamic>{'raw': data};
+
         return MyImageResult(
           link: uploadedLink ?? image.link,
           base64: image.base64,
-          // Keep local signature path to avoid extra GET right after upload.
-          path: image.path,
+          // Prefer server-provided path when available, otherwise keep local.
+          path: uploadedPath ?? image.path,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
+          payload: payload,
           status: MyImageStatus.uploaded,
         );
       } else {
@@ -889,54 +924,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         );
       }
     }
-    return null;
-  }
-
-  String? _extractDescription(dynamic data) {
-    if (data == null) return null;
-
-    final exact = _extractNestedValue(data, 'description');
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'description',
-      'desc',
-      'note',
-      'caption',
-      'alt',
-      'title'
-    ];
-    for (final key in fallbackKeys) {
-      final val = _extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
-    }
-    return null;
-  }
-
-  String? _extractNestedValue(dynamic data, String key) {
-    if (data is Map) {
-      for (final entry in data.entries) {
-        if (entry.key.toString() == key) {
-          return entry.value?.toString();
-        }
-        final nested = _extractNestedValue(entry.value, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
-    if (data is List) {
-      for (final item in data) {
-        final nested = _extractNestedValue(item, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
     return null;
   }
 

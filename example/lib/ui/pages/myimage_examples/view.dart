@@ -27,50 +27,51 @@ class View extends PresenterState {
                 _buildFieldTitle(
                     'With Description (showDesc)', Colors.teal.shade600),
                 FormFieldsMyImage(
-                  controller: FormFieldsMyImageController(),
+                  // controller: pickImageController,
                   // maxImages: 1,
                   showDesc: true,
                   descriptionField: 'description',
                   showUploadResultDialog: true,
-                  imageBuilder: (context, image, index) {
-                    if (image.link.trim().isNotEmpty &&
-                        Uri.tryParse(image.link)?.hasAbsolutePath == true) {
-                      return ClipOval(
-                        child: Image.network(
-                          image.link,
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    }
-                    if (image.path.trim().isNotEmpty) {
-                      return ClipOval(
-                        child: Image.file(
-                          File(image.path),
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    }
-                    return Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.person, size: 60, color: Colors.grey),
-                          Icon(Icons.camera_alt,
-                              size: 24, color: Colors.black54),
-                        ],
-                      ),
-                    );
-                  },
+                  // imageBuilder: (context, image, index) {
+                  //   if (image.link.trim().isNotEmpty &&
+                  //       Uri.tryParse(image.link)?.hasAbsolutePath == true) {
+                  //     return ClipOval(
+                  //       child: Image.network(
+                  //         image.link,
+                  //         width: 120,
+                  //         height: 120,
+                  //         fit: BoxFit.cover,
+                  //       ),
+                  //     );
+                  //   }
+                  //   if (image.path.trim().isNotEmpty) {
+                  //     return ClipOval(
+                  //       child: Image.file(
+                  //         File(image.path),
+                  //         width: 120,
+                  //         height: 120,
+                  //         fit: BoxFit.cover,
+                  //       ),
+                  //     );
+                  //   }
+                  //   return Container(
+                  //     width: 120,
+                  //     height: 120,
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.grey.shade300,
+                  //       shape: BoxShape.circle,
+                  //     ),
+                  //     child: const Column(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Icon(Icons.person, size: 60, color: Colors.grey),
+                  //         Icon(Icons.camera_alt,
+                  //             size: 24, color: Colors.black54),
+                  //       ],
+                  //     ),
+                  //   );
+                  // },
+
                   isDirectUpload: true,
                   allowedImageSources: [MyImageSource.camera],
                   uploadUrl:
@@ -97,6 +98,7 @@ class View extends PresenterState {
                     // app can show offline previews and retry later.
                     try {
                       final payloads = failedImages
+                          .where((img) => img.status == MyImageStatus.queued)
                           .map((img) => img.payload)
                           .where((p) => p.isNotEmpty)
                           .map((p) => Map<String, dynamic>.from(p))

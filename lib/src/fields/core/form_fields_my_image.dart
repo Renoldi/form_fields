@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
@@ -300,7 +301,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       oldWidget.controller?.removeListener(_onControllerChanged);
       if (widget.controller != null) {
         _controller = widget.controller;
-        _provider.setImages(_controller!.images);
+        // If the new controller is empty but provider already has images,
+        // preserve the provider state and push it into the controller to
+        // avoid unintentionally clearing images when callers recreate the
+        // controller (common mistake in example apps).
+        if ((_controller!.images.isEmpty) && _provider.images.isNotEmpty) {
+          _controller!.setImages(List<MyImageResult>.from(_provider.images));
+        } else {
+          _provider.setImages(_controller!.images);
+        }
         _controller!.addListener(_onControllerChanged);
         widget.controller!.registerPickImageHandler((source) async {
           if (!mounted) return;
@@ -1254,9 +1263,23 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       provider.updateImage(index, updatedImage);
       _syncControllerImages(provider);
       // Notify callers specifically about a failed/queued direct upload so
-      // they can persist the payloads for later retry.
-      widget.onFailDirectUpload
-          ?.call(List<MyImageResult>.from(provider.images));
+      // they can persist the payloads for later retry. Wrap the callback in
+      // try/catch to avoid user-provided handlers from throwing and
+      // interrupting the upload flow (which previously could wipe state).
+      try {
+        final queued = provider.images
+            .where((i) => i.status == MyImageStatus.queued)
+            .toList();
+        if (queued.isNotEmpty) {
+          widget.onFailDirectUpload?.call(List<MyImageResult>.from(queued));
+        }
+      } catch (e, st) {
+        debugPrint('FormFieldsMyImage.onFailDirectUpload threw: $e\n$st');
+      }
+      // Stop further processing when offline — avoid attempting the
+      // network upload and potential race conditions that may overwrite
+      // the queued image state.
+      return;
     }
 
     // If we have network, mark the image as uploading before starting the request.
@@ -1314,20 +1337,25 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       return;
     }
     try {
-      if (_isSuccessfulStatus(response.statusCode)) {
+      if (UploadResponseMapper.isSuccessfulStatus(response.statusCode)) {
         final data = response.data;
-        final uploadedLink = _extractUploadedLink(data);
-        final imageId = _extractImageId(data);
-        final uploadedDescription = _extractDescription(data);
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+            data, widget.uploadFileUrlKey);
+        final imageId =
+            UploadResponseMapper.extractImageId(data, widget.uploadImageIdKey);
+        final uploadedDescription = UploadResponseMapper.extractDescription(
+            data, widget.descriptionField ?? 'description');
+        final uploadedPath = UploadResponseMapper.extractFilePath(data);
         final updatedImage = MyImageResult(
           link: uploadedLink ?? images[index].link,
           base64: images[index].base64,
           // Keep local file path from picked image to avoid re-fetching
           // the same file from server right after upload.
-          path: images[index].path,
+          path: uploadedPath ?? images[index].path,
           imageId: imageId ?? images[index].imageId,
           description:
               uploadedDescription ?? description ?? images[index].description,
+          payload: data,
           status: MyImageStatus.uploaded,
         );
         provider.updateImage(
@@ -1397,117 +1425,5 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         );
       }
     }
-  }
-
-  bool _isSuccessfulStatus(int? statusCode) {
-    return statusCode != null && statusCode >= 200 && statusCode < 300;
-  }
-
-  String? _extractUploadedLink(dynamic data) {
-    if (data == null) return null;
-
-    if (data is String) {
-      final raw = data.trim();
-      if (raw.isEmpty) return null;
-
-      final redirectRegex = RegExp(
-        r"redirect_link\s*=\s*'([^']+)'",
-        multiLine: true,
-      );
-      final match = redirectRegex.firstMatch(raw);
-      if (match != null) {
-        return match.group(1);
-      }
-
-      final asUri = Uri.tryParse(raw);
-      if (asUri != null && asUri.hasScheme) {
-        return raw;
-      }
-      return null;
-    }
-
-    final exact = _extractNestedValue(data, widget.uploadFileUrlKey);
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'fileUrl',
-      'url',
-      'link',
-      'imageUrl',
-      'downloadUrl',
-      'receiverPhoto',
-      'receiver_photo',
-      'photoUrl',
-      'photo',
-      'redirect_link',
-    ];
-    for (final key in fallbackKeys) {
-      final val = _extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
-    }
-    return null;
-  }
-
-  String? _extractImageId(dynamic data) {
-    if (data == null) return null;
-
-    final exact = _extractNestedValue(data, widget.uploadImageIdKey);
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = ['imageId', 'id'];
-    for (final key in fallbackKeys) {
-      final val = _extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
-    }
-    return null;
-  }
-
-  String? _extractDescription(dynamic data) {
-    if (data == null) return null;
-
-    final exact =
-        _extractNestedValue(data, widget.descriptionField ?? 'description');
-    if ((exact ?? '').isNotEmpty) return exact;
-
-    const fallbackKeys = [
-      'description',
-      'desc',
-      'note',
-      'caption',
-      'alt',
-      'title'
-    ];
-    for (final key in fallbackKeys) {
-      final val = _extractNestedValue(data, key);
-      if ((val ?? '').isNotEmpty) return val;
-    }
-    return null;
-  }
-
-  String? _extractNestedValue(dynamic data, String key) {
-    if (data is Map) {
-      for (final entry in data.entries) {
-        if (entry.key.toString() == key) {
-          return entry.value?.toString();
-        }
-        final nested = _extractNestedValue(entry.value, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
-    if (data is List) {
-      for (final item in data) {
-        final nested = _extractNestedValue(item, key);
-        if (nested != null && nested.isNotEmpty) {
-          return nested;
-        }
-      }
-      return null;
-    }
-
-    return null;
   }
 }

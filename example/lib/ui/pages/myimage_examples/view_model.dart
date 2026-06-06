@@ -300,11 +300,10 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
         }
       }
 
+      // Append new payloads but avoid duplicates. We consider a payload
+      // duplicate if an existing persisted entry has the same file.path
+      // or file.base64. Also avoid adding duplicate in-memory previews.
       for (final payload in payloads) {
-        arr.add(payload);
-
-        // Also keep a lightweight preview (path/base64) in memory so the UI
-        // can immediately show the image that couldn't be uploaded.
         try {
           final fileMap = (payload['file'] is Map)
               ? Map<String, dynamic>.from(payload['file'])
@@ -317,9 +316,54 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
                   (fileMap['base64'] as String).trim().isNotEmpty)
               ? fileMap['base64'] as String
               : null;
-          _offlinePreviews.add(OfflinePreview(path: pPath, base64: pBase64));
+
+          // Check persisted array for duplicates
+          var alreadyPersisted = false;
+          for (final existing in arr) {
+            try {
+              if (existing is Map) {
+                final existingFile = existing['file'];
+                if (existingFile is Map) {
+                  final existingPath = existingFile['path'] is String
+                      ? existingFile['path'] as String
+                      : null;
+                  final existingBase64 = existingFile['base64'] is String
+                      ? existingFile['base64'] as String
+                      : null;
+                  if ((pPath != null && existingPath == pPath) ||
+                      (pBase64 != null && existingBase64 == pBase64)) {
+                    alreadyPersisted = true;
+                    break;
+                  }
+                }
+              }
+            } catch (_) {
+              // ignore malformed existing entries
+            }
+          }
+          if (alreadyPersisted) continue;
+
+          // Append to persisted list
+          arr.add(payload);
+
+          // Also keep a lightweight preview (path/base64) in memory so the UI
+          // can immediately show the image that couldn't be uploaded.
+          try {
+            // Avoid duplicate previews in memory
+            final alreadyPreviewed = _offlinePreviews.any((p) {
+              if (p.path != null && p.path == pPath) return true;
+              if (p.base64 != null && p.base64 == pBase64) return true;
+              return false;
+            });
+            if (!alreadyPreviewed) {
+              _offlinePreviews
+                  .add(OfflinePreview(path: pPath, base64: pBase64));
+            }
+          } catch (_) {
+            // ignore
+          }
         } catch (_) {
-          // ignore
+          // ignore individual payload errors
         }
       }
 
