@@ -75,6 +75,14 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// JSON key for the image/file ID in the response body.
   final String uploadImageIdKey;
 
+  /// Name of the multipart file field to use when uploading. Defaults to
+  /// 'fileToUpload' for backward compatibility with the existing server.
+  final String uploadFileFieldName;
+
+  /// Whether to include the legacy 'reqtype=fileupload' field in the
+  /// multipart form. Some servers require it; default is false.
+  final bool uploadIncludeReqType;
+
   /// When `true`, the camera preview is hidden (renders as a zero-size widget)
   /// but the camera is still initialised in the background, allowing
   /// [FormFieldsLiveCameraCaptureState.capture] to fire silently.
@@ -108,6 +116,8 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.onFailDirectUpload,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
+    this.uploadFileFieldName = 'fileToUpload',
+    this.uploadIncludeReqType = false,
     this.hidePreview = false,
     this.preAcquire = false,
   }) : assert(
@@ -372,6 +382,8 @@ class FormFieldsLiveCameraCaptureState
         }
       },
       fields: extraFields.isNotEmpty ? extraFields : null,
+      fileFieldName: widget.uploadFileFieldName,
+      includeReqType: widget.uploadIncludeReqType,
     );
     if (!mounted) return null;
     final l = FormFieldsLocalizations.of(context);

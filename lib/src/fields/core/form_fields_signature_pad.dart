@@ -185,6 +185,14 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// JSON key for the image/file ID in the response body.
   final String uploadImageIdKey;
 
+  /// Name of the multipart file field to use when uploading. Defaults to
+  /// 'fileToUpload' for backward compatibility with the existing server.
+  final String uploadFileFieldName;
+
+  /// Whether to include the legacy 'reqtype=fileupload' field in the
+  /// multipart form. Some servers require it; default is false.
+  final bool uploadIncludeReqType;
+
   // ── Validation ──────────────────────────────────────────────────────────────
 
   /// Label text shown above (or beside) the signature pad.
@@ -248,6 +256,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
+    this.uploadFileFieldName = 'fileToUpload',
+    this.uploadIncludeReqType = false,
     this.autoExportOnFinish = true,
     this.label,
     this.labelPosition = LabelPosition.none,
@@ -845,6 +855,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         }
       },
       fields: extraFields.isNotEmpty ? extraFields : null,
+      fileFieldName: widget.uploadFileFieldName,
+      includeReqType: widget.uploadIncludeReqType,
     );
     if (!mounted) return null;
     final l = FormFieldsLocalizations.of(context);
