@@ -150,7 +150,10 @@ class FormFieldsMyImage extends StatefulWidget {
 }
 
 class _ImageDescriptionSheet extends StatefulWidget {
-  const _ImageDescriptionSheet();
+  final AutovalidateMode autovalidateMode;
+
+  const _ImageDescriptionSheet(
+      {this.autovalidateMode = AutovalidateMode.onUserInteraction});
 
   @override
   State<_ImageDescriptionSheet> createState() => _ImageDescriptionSheetState();
@@ -186,7 +189,7 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
               TextFormField(
                 controller: _descController,
                 decoration: InputDecoration(labelText: dl.get('description')),
-                autovalidateMode: AutovalidateMode.onUserInteraction,
+                autovalidateMode: widget.autovalidateMode,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
                     return dl.getWithLabel('required', dl.get('description'));
@@ -335,15 +338,42 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   void _onProviderChanged() {
-    // Schedule FormField updates after the current frame to avoid
-    // rebuilding widgets in the wrong build scope when provider
-    // notifies listeners during build.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Compute the new value early.
+    final newValue = List<MyImageResult>.from(_provider.images);
+
+    void applyChangeIfNeeded() {
       if (!mounted) return;
-      _formFieldKey.currentState
-          ?.didChange(List<MyImageResult>.from(_provider.images));
-      _formFieldKey.currentState?.validate();
-    });
+      final currentState = _formFieldKey.currentState;
+      final currentValue = currentState?.value;
+
+      bool equal = false;
+      if (currentValue == null && (newValue.isEmpty)) {
+        equal = true;
+      } else if (currentValue != null &&
+          currentValue.length == newValue.length) {
+        equal = true;
+        for (var i = 0; i < currentValue.length; i++) {
+          final a = currentValue[i];
+          final b = newValue[i];
+          if (a.path != b.path ||
+              a.imageId != b.imageId ||
+              a.link != b.link ||
+              a.base64 != b.base64 ||
+              a.description != b.description) {
+            equal = false;
+            break;
+          }
+        }
+      }
+
+      if (!equal) {
+        currentState?.didChange(newValue);
+      }
+    }
+
+    // Apply immediately to avoid races where callers call Form.validate()
+    // before the FormField receives the updated value.
+    applyChangeIfNeeded();
   }
 
   void _syncControllerImages(FormFieldsMyImageProvider provider) {
@@ -492,7 +522,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   String? _validateImages(List<MyImageResult>? images) {
     if (widget.externalErrorText != null) return widget.externalErrorText;
     if (widget.validator != null) return widget.validator!(images);
-    if (widget.isRequired && (images == null || images.isEmpty)) {
+
+    // Some race conditions can cause the `images` passed here to be empty
+    // even though the provider already contains images (e.g. user picked an
+    // image and FormField state hasn't been updated yet). Use provider as a
+    // fallback so validation doesn't falsely fail.
+    final effectiveImages =
+        (images == null || images.isEmpty) ? _provider.images : images;
+
+    if (widget.isRequired && (effectiveImages.isEmpty)) {
       final l = _localizations;
       if (l == null) return '';
       final label = widget.label;
@@ -1114,7 +1152,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          builder: (dialogContext) => const _ImageDescriptionSheet(),
+          builder: (dialogContext) =>
+              _ImageDescriptionSheet(autovalidateMode: widget.autovalidateMode),
         );
         if (!mounted) return;
       }
