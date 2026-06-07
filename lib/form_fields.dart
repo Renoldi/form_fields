@@ -108,11 +108,14 @@ export 'src/providers/form_fields_live_camera_capture_provider.dart'
     show FormFieldsLiveCameraCaptureProvider;
 export 'src/utilities/myimage_result.dart' show MyImageResult;
 export 'src/service/dio_service.dart' show DioUtil;
+export 'src/utilities/upload_helper.dart' show UploadHelper;
+export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 
 export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
 export 'src/utilities/upload_ui_constants.dart';
+export 'src/utilities/upload_response_mapper.dart' show UploadResponseMapper;
 export 'src/utilities/validation_exception.dart' show ValidationException;
 export 'src/utilities/app_dialog_typedefs.dart';
 

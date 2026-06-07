@@ -5,12 +5,12 @@ import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
@@ -64,9 +64,15 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final String? uploadErrorMessage;
 
   /// Called when `isDirectUpload == true` but the device has no internet.
-  /// Receives a single `MyImageResult` (with `payload`) so the caller
-  /// can persist and retry uploads later.
-  final void Function(MyImageResult result)? onFailDirectUpload;
+  /// Receives a list of `MyImageResult` (each containing `payload`) so the
+  /// caller can persist and retry uploads later. This matches
+  /// `FormFieldsMyImage` semantics.
+  final void Function(List<MyImageResult> results)? onFailDirectUpload;
+
+  /// Alternative callback that receives a list of upload-friendly payload
+  /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`.
+  final void Function(List<Map<String, dynamic>> payloads)?
+      onFailDirectUploadPayload;
 
   // `onFailDirectUploadResult` removed — live camera reports single results
   // via `onFailDirectUpload` only.
@@ -118,6 +124,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadFailedMessage,
     this.uploadErrorMessage,
     this.onFailDirectUpload,
+    this.onFailDirectUploadPayload,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.uploadFileFieldName = 'file',
@@ -216,11 +223,20 @@ class FormFieldsLiveCameraCaptureState
     controller?.registerCaptureHandler(capture, resetCapture);
     controller?.addListener(_onExternalControllerChanged);
     _syncCapturedFromController();
+    // Register controller with OfflineUploadManager so persisted retry
+    // uploads can update the controller's images automatically.
+    if (controller != null) {
+      OfflineUploadManager.instance.registerController(controller);
+    }
   }
 
   void _unbindController(FormFieldsMyImageController? controller) {
     controller?.unregisterCaptureHandler();
     controller?.removeListener(_onExternalControllerChanged);
+    // Unregister from OfflineUploadManager (best-effort).
+    if (controller != null) {
+      OfflineUploadManager.instance.unregisterController(controller);
+    }
   }
 
   void _onExternalControllerChanged() {
@@ -340,6 +356,8 @@ class FormFieldsLiveCameraCaptureState
     if (effDesc != null && effDesc.isNotEmpty) {
       extraFields.add(MapEntry('description', effDesc));
     }
+    final uploadCorrelationId =
+        DateTime.now().microsecondsSinceEpoch.toString();
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
       'headers': headers,
@@ -353,6 +371,7 @@ class FormFieldsLiveCameraCaptureState
       'uploadImageIdKey': widget.uploadImageIdKey,
       'description': effDesc,
       'index': 0,
+      'uploadCorrelationId': uploadCorrelationId,
     };
 
     final hasNet = await _hasNetwork();
@@ -374,11 +393,62 @@ class FormFieldsLiveCameraCaptureState
       // Notify caller so they can persist queued payloads for later retry.
       try {
         if (updatedImage.status == MyImageStatus.queued) {
-          widget.onFailDirectUpload?.call(updatedImage);
+          widget.onFailDirectUpload?.call([updatedImage]);
         }
       } catch (e, st) {
         debugPrint(
             'FormFieldsLiveCameraCapture.onFailDirectUpload threw: $e\n$st');
+      }
+      // Also provide an upload-friendly payload map for callers that prefer
+      // to persist a simplified shape consumable by `DioUtil.uploadFile`.
+      try {
+        final p = payload;
+        final uploadPayloads = <Map<String, dynamic>>[];
+        final fm = (p['file'] is Map)
+            ? Map<String, dynamic>.from(p['file'] as Map)
+            : <String, dynamic>{};
+        final filePath =
+            (fm['path'] is String && (fm['path'] as String).trim().isNotEmpty)
+                ? fm['path'] as String
+                : '';
+        final fileName =
+            (fm['fileName'] is String && (fm['fileName'] as String).isNotEmpty)
+                ? fm['fileName'] as String
+                : (filePath.isNotEmpty
+                    ? filePath.split(Platform.pathSeparator).last
+                    : 'file');
+        final headersMap = <String, String>{};
+        if (p['headers'] is Map) {
+          (p['headers'] as Map).forEach((k, v) {
+            headersMap[k.toString()] = v.toString();
+          });
+        } else if (widget.uploadToken != null &&
+            widget.uploadToken!.isNotEmpty) {
+          headersMap['Authorization'] = widget.uploadToken!;
+        }
+        final fieldsMap = <String, String>{};
+        if (p['fields'] is Map) {
+          (p['fields'] as Map).forEach((k, v) {
+            fieldsMap[k.toString()] = v.toString();
+          });
+        }
+        uploadPayloads.add({
+          'url': p['url'] ?? widget.uploadUrl,
+          'filePath': filePath,
+          'fileName': fileName,
+          'base64': fm['base64'],
+          'headers': headersMap,
+          'fields': fieldsMap,
+          'fileFieldName': p['fileFieldName'] ?? widget.uploadFileFieldName,
+          'includeReqType': p['includeReqType'] ?? widget.uploadIncludeReqType,
+          'uploadCorrelationId': p['uploadCorrelationId'],
+        });
+        if (uploadPayloads.isNotEmpty) {
+          widget.onFailDirectUploadPayload?.call(uploadPayloads);
+        }
+      } catch (e, st) {
+        debugPrint(
+            'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
       }
       // combined export callback removed; callers receive single-item
       // `onFailDirectUpload` for persisting queued payloads.
@@ -502,11 +572,19 @@ class FormFieldsLiveCameraCaptureState
           } catch (_) {}
         }
 
+        final resolvedPath = (uploadedPath != null &&
+                uploadedPath.trim().isNotEmpty &&
+                uploadedPath.startsWith(Platform.pathSeparator))
+            ? uploadedPath
+            : image.path;
+
         final updatedImage = MyImageResult(
           link: finalLink ?? image.link,
           base64: finalBase64,
-          // Prefer server-provided path when available, otherwise keep local.
-          path: uploadedPath ?? image.path,
+          // Preserve the local captured file path unless the server
+          // returned an absolute filesystem path. Avoid overwriting with
+          // server-relative paths which are not accessible locally.
+          path: resolvedPath,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
           payload: payload,
@@ -884,8 +962,10 @@ class _CapturedPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('[FormFieldsLiveCameraCapture._CapturedPhoto] '
-        'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}');
+    if (kDebugMode) {
+      debugPrint('[FormFieldsLiveCameraCapture._CapturedPhoto] '
+          'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}');
+    }
 
     // Build local fallback (file -> base64 -> placeholder)
     // Prefer local content: file -> base64. Only if neither exists use network

@@ -1,0 +1,194 @@
+import 'dart:io';
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+import 'package:form_fields/src/service/dio_service.dart';
+import 'package:form_fields/src/utilities/myimage_result.dart';
+import 'package:form_fields/src/service/offline_upload_manager.dart';
+import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+
+/// Helper utilities for converting persisted/queued payloads into
+/// upload-ready maps and performing the upload via `DioUtil.uploadFile`.
+class UploadHelper {
+  /// Build an upload-ready payload from a persisted payload map.
+  /// Returns `null` when no usable file information is available.
+  ///
+  /// Output map keys:
+  /// - `url` (String)
+  /// - `filePath` (String)
+  /// - `fileName` (String)
+  /// - `headers` (`Map<String, String>`)
+  /// - `fields` (`Map<String, String>`)
+  /// - `fileFieldName` (String)
+  /// - `includeReqType` (bool)
+  /// - `tempFileCreated` (bool) — true when a temp file was written from base64
+  static Future<Map<String, dynamic>?> buildUploadPayloadFromMap(
+      Map<String, dynamic> persisted) async {
+    if (persisted.isEmpty) return null;
+
+    final url = (persisted['url'] ?? '').toString();
+    if (url.isEmpty) return null;
+
+    final headersMap = <String, String>{};
+    if (persisted['headers'] is Map) {
+      (persisted['headers'] as Map).forEach((k, v) {
+        headersMap[k.toString()] = v.toString();
+      });
+    }
+
+    final fieldsMap = <String, String>{};
+    if (persisted['fields'] is Map) {
+      (persisted['fields'] as Map).forEach((k, v) {
+        fieldsMap[k.toString()] = v.toString();
+      });
+    }
+
+    // Support both shapes:
+    // - Nested: persisted['file'] is a Map with keys {path, base64, fileName}
+    // - Flat: persisted has top-level keys 'filePath', 'base64', 'fileName'
+    final Map<String, dynamic> fileMap;
+    if (persisted['file'] is Map) {
+      fileMap = Map<String, dynamic>.from(persisted['file'] as Map);
+    } else {
+      fileMap = <String, dynamic>{};
+      try {
+        if (persisted['filePath'] is String &&
+            (persisted['filePath'] as String).trim().isNotEmpty) {
+          fileMap['path'] = persisted['filePath'];
+        }
+        if (persisted['fileName'] is String &&
+            (persisted['fileName'] as String).trim().isNotEmpty) {
+          fileMap['fileName'] = persisted['fileName'];
+        }
+        if (persisted['base64'] is String &&
+            (persisted['base64'] as String).trim().isNotEmpty) {
+          fileMap['base64'] = persisted['base64'];
+        }
+        // Also accept common alternative keys
+        if (fileMap['path'] == null && persisted['path'] is String) {
+          fileMap['path'] = persisted['path'];
+        }
+        if (fileMap['fileName'] == null && persisted['filename'] is String) {
+          fileMap['fileName'] = persisted['filename'];
+        }
+        if (fileMap['base64'] == null && persisted['data'] is String) {
+          fileMap['base64'] = persisted['data'];
+        }
+      } catch (_) {}
+    }
+
+    String filePath = '';
+    String? fileName =
+        fileMap['fileName'] is String ? fileMap['fileName'] as String : null;
+
+    if (fileMap['path'] is String &&
+        (fileMap['path'] as String).trim().isNotEmpty) {
+      filePath = fileMap['path'] as String;
+      try {
+        if (!File(filePath).existsSync()) {
+          // If the declared path doesn't exist, clear it so we try base64 next.
+          filePath = '';
+        }
+      } catch (_) {
+        filePath = '';
+      }
+    }
+
+    var tempFileCreated = false;
+    if (filePath.isEmpty) {
+      final b64 =
+          fileMap['base64'] is String ? fileMap['base64'] as String : null;
+      if (b64 != null && b64.trim().isNotEmpty) {
+        try {
+          var rawB64 = b64;
+          if (rawB64.startsWith('data:')) {
+            final comma = rawB64.indexOf(',');
+            if (comma >= 0) rawB64 = rawB64.substring(comma + 1);
+          }
+          final bytes = base64Decode(rawB64);
+          final resolvedFileName = fileName ?? 'file';
+          final tmp = File(
+              '${Directory.systemTemp.path}/${DateTime.now().millisecondsSinceEpoch}_$resolvedFileName');
+          await tmp.writeAsBytes(bytes);
+          filePath = tmp.path;
+          tempFileCreated = true;
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+
+    final resolvedFileName = fileName ??
+        (filePath.isNotEmpty
+            ? filePath.split(Platform.pathSeparator).last
+            : 'file');
+
+    return {
+      'url': url,
+      'filePath': filePath,
+      'fileName': resolvedFileName,
+      'headers': headersMap,
+      'fields': fieldsMap,
+      'fileFieldName': persisted['fileFieldName'] ?? 'file',
+      'includeReqType': persisted['includeReqType'] ?? false,
+      'tempFileCreated': tempFileCreated,
+    };
+  }
+
+  /// Convenience wrapper to build payload from a `MyImageResult` instance.
+  static Future<Map<String, dynamic>?> buildUploadPayloadFromImage(
+      MyImageResult image) async {
+    if (image.payload.isEmpty) return null;
+    return buildUploadPayloadFromMap(Map<String, dynamic>.from(image.payload));
+  }
+
+  /// Upload a persisted payload (the same shape produced by the field's
+  /// queued payload). The helper will decode base64 into a temp file when
+  /// necessary and will remove any temp file after the upload completes.
+  static Future<Response?> uploadPersistedPayload(
+      Map<String, dynamic> persisted,
+      {void Function(double progress)? onProgress}) async {
+    final p = await buildUploadPayloadFromMap(persisted);
+    if (p == null) return null;
+
+    final headers = (p['headers'] is Map)
+        ? Map<String, String>.from(p['headers'] as Map)
+        : null;
+
+    final fieldsList = (p['fields'] is Map)
+        ? (p['fields'] as Map)
+            .entries
+            .map((e) => MapEntry(e.key.toString(), e.value.toString()))
+            .toList()
+        : null;
+
+    try {
+      final resp = await DioUtil.uploadFile(
+        url: p['url'] as String,
+        filePath: p['filePath'] as String,
+        filename: p['fileName'] as String?,
+        headers: headers,
+        onProgress: onProgress,
+        fields: fieldsList,
+        fileFieldName: p['fileFieldName'] as String? ?? 'file',
+        includeReqType: p['includeReqType'] == true,
+      );
+      // Notify manager when the upload succeeded so attached controllers
+      // can update their preview statuses automatically.
+      try {
+        if (resp != null &&
+            UploadResponseMapper.isSuccessfulStatus(resp.statusCode)) {
+          OfflineUploadManager.instance.notifyUploadSuccess(persisted, resp);
+        }
+      } catch (_) {}
+      return resp;
+    } finally {
+      if (p['tempFileCreated'] == true) {
+        try {
+          final tf = File(p['filePath'] as String);
+          if (await tf.exists()) await tf.delete();
+        } catch (_) {}
+      }
+    }
+  }
+}

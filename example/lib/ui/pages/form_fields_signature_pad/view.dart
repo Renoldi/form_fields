@@ -47,6 +47,23 @@ class View extends PresenterState {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Offline queue: ${viewModel.offlineQueueCount}',
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600)),
+                        FilledButton(
+                          onPressed: () async {
+                            await viewModel.retryOfflineUploads(context);
+                          },
+                          child: const Text('Retry Uploads'),
+                        ),
+                      ],
+                    ),
+                  ),
                   // ── 1. Basic ───────────────────────────────────────────────
                   _ExampleCard(
                     index: 1,
@@ -77,7 +94,9 @@ class View extends PresenterState {
                       uploadUrl:
                           'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                       uploadToken:
-                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3MTE3NjQsImV4cCI6MTc4MDc1NDk2NCwiaWF0IjoxNzgwNzExNzY0fQ.a_IXBOFzh13R3m7gZn6UCMzSgO4-PoPA5R-vDzlqKjo",
+                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3OTU0NjYsImV4cCI6MTc4MDgzODY2NiwiaWF0IjoxNzgwNzk1NDY2fQ.6Rp8HskAudwB89QPEl5kj0c_I9uvcNjhyGHVUeakXxs",
+                      onFailDirectUploadPayload:
+                          viewModel.handleDirectUploadPayload,
                     ),
                   ),
 
@@ -372,6 +391,8 @@ class View extends PresenterState {
                             'Exported signature result: link=${val!.link}, imageId=${val.imageId}');
                         viewModel.setUploadedSignature(val);
                       },
+                      onFailDirectUploadPayload:
+                          viewModel.handleDirectUploadPayload,
                     ),
                   ),
 
@@ -416,6 +437,8 @@ class View extends PresenterState {
                             'Direct upload error: signature upload ${val.signature.link.isEmpty ? 'failed' : 'succeeded'}, live capture upload ${val.liveCapture.link.isEmpty == true ? 'failed' : 'succeeded'}');
                         // viewModel.setUploadError(val);
                       },
+                      onFailDirectUploadPayload:
+                          viewModel.handleDirectUploadPayload,
                     ),
                   ),
 

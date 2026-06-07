@@ -27,7 +27,7 @@ class View extends PresenterState {
                 _buildFieldTitle(
                     'With Description (showDesc)', Colors.teal.shade600),
                 FormFieldsMyImage(
-                  // controller: pickImageController,
+                  controller: pickImageController,
 
                   // imageBuilder: (context, image, index) {
                   //   if (image.link.trim().isNotEmpty &&
@@ -68,7 +68,7 @@ class View extends PresenterState {
                   //     ),
                   //   );
                   // },
-                  maxImages: 1,
+                  // maxImages: 1,
                   showDesc: true,
                   descriptionField: 'description',
                   showUploadResultDialog: false,
@@ -79,7 +79,7 @@ class View extends PresenterState {
                   uploadUrl:
                       'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                   uploadToken:
-                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3MTE3NjQsImV4cCI6MTc4MDc1NDk2NCwiaWF0IjoxNzgwNzExNzY0fQ.a_IXBOFzh13R3m7gZn6UCMzSgO4-PoPA5R-vDzlqKjo",
+                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3NjAxNjQsImV4cCI6MTc4MDgwMzM2NCwiaWF0IjoxNzgwNzYwMTY0fQ.MwsVtgsxIK4HlIv7auAHSEeUBIiwlOVbeLosOFiT2o8",
                   // uploadFileFieldName: 'file',
                   // uploadIncludeReqType: false,
                   onImageChanged: (image) {
@@ -109,6 +109,35 @@ class View extends PresenterState {
                         viewModel.handleDirectUploadPayload(payloads);
                       } else {
                         logger.w('No payloads attached to failed images');
+                      }
+                    } catch (e) {
+                      logger.e('Failed to enqueue offline payloads: $e');
+                    }
+                  },
+                  onFailDirectUploadPayload: (payloads) {
+                    // Payloads here are upload-friendly maps suitable for
+                    // direct consumption by `DioUtil.uploadFile`. The example
+                    // persists them in the older nested format so the
+                    // existing retry logic can consume them later.
+                    logger.w('payloads attached to failed images');
+
+                    try {
+                      final persisted = payloads.map((p) {
+                        return {
+                          'url': p['url'],
+                          'headers': p['headers'] ?? {},
+                          'fields': p['fields'] ?? {},
+                          'file': {
+                            'path': p['filePath'] ?? '',
+                            'fileName': p['fileName'] ?? 'file',
+                            'base64': p['base64'] ?? ''
+                          },
+                          'uploadFileUrlKey': 'fileUrl',
+                          'uploadImageIdKey': 'imageId',
+                        };
+                      }).toList();
+                      if (persisted.isNotEmpty) {
+                        viewModel.handleDirectUploadPayload(persisted);
                       }
                     } catch (e) {
                       logger.e('Failed to enqueue offline payloads: $e');
@@ -174,6 +203,16 @@ class View extends PresenterState {
                         );
                       },
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => viewModel.retryOfflineUploads(context),
+                        icon: const Icon(Icons.cloud_upload),
+                        label: const Text('Retry Uploads'),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -478,7 +517,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "uploadFileUrlKey": "fileUrl",\n  "uploadImageIdKey": "imageId",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -1286,7 +1325,7 @@ class _ValidationFormExampleState extends State<_ValidationFormExample> {
               label: 'Supporting Document',
               labelPosition: LabelPosition.top,
               isRequired: true,
-              maxImages: 2,
+              // maxImages: 2,1
               autovalidateMode: _submitted
                   ? AutovalidateMode.always
                   : AutovalidateMode.onUserInteraction,
@@ -1296,6 +1335,7 @@ class _ValidationFormExampleState extends State<_ValidationFormExample> {
             FilledButton.icon(
               onPressed: () {
                 setState(() => _submitted = true);
+                // Debug: show controller image count to diagnose validation timing
                 if (_formKey.currentState?.validate() ?? false) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

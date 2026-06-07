@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:signature/signature.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/signature_pad_export_nullable_result.dart';
 
@@ -170,6 +169,11 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final void Function(SignaturePadExportNullableResult result)?
       onFailDirectUploadList;
 
+  /// Alternative callback that receives a list of upload-friendly payload
+  /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`.
+  final void Function(List<Map<String, dynamic>> payloads)?
+      onFailDirectUploadPayload;
+
   /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
   /// Invoked when one or both uploads (signature, live capture) fail on server
   /// so the caller can render a combined error UI. Receives the combined
@@ -256,6 +260,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadErrorMessage,
     this.onFailDirectUpload,
     this.onFailDirectUploadList,
+    this.onFailDirectUploadPayload,
     this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
@@ -356,10 +361,19 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     _cameraController.addListener(_onLiveCameraControllerChanged);
     _syncCaptureGuardFromController();
+    // Register camera controller with OfflineUploadManager so offline
+    // persisted upload retries can update the controller previews.
+    try {
+      OfflineUploadManager.instance.registerController(_cameraController);
+    } catch (_) {}
   }
 
   void _disposeCameraControllerBinding() {
     _cameraController.removeListener(_onLiveCameraControllerChanged);
+    // Unregister from OfflineUploadManager (best-effort)
+    try {
+      OfflineUploadManager.instance.unregisterController(_cameraController);
+    } catch (_) {}
   }
 
   // ── SignaturePadController binding ────────────────────────────────────────
@@ -480,6 +494,17 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         (_padProvider.previewSignatureResult != null ||
             _padProvider.previewLiveCaptureResult != null)) {
       _padProvider.clearPreviewResults();
+    }
+    // If the external liveCameraController changed, rebind/unbind so the
+    // OfflineUploadManager and listeners attach to the new controller.
+    if (widget.liveCameraController != oldWidget.liveCameraController) {
+      _disposeCameraControllerBinding();
+      if (_ownsCamera) {
+        try {
+          _cameraController.dispose();
+        } catch (_) {}
+      }
+      _initCameraController();
     }
   }
 
@@ -747,6 +772,114 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             }
           }
         }
+
+        // Also provide upload-friendly payload maps for callers that prefer
+        // to persist a simplified shape consumable by `DioUtil.uploadFile`.
+        try {
+          final uploadPayloads = <Map<String, dynamic>>[];
+          if (nullable.signature != null) {
+            final p = nullable.signature!.payload;
+            if (p.isNotEmpty) {
+              try {
+                final fm = (p['file'] is Map)
+                    ? Map<String, dynamic>.from(p['file'] as Map)
+                    : <String, dynamic>{};
+                final filePath = (fm['path'] is String &&
+                        (fm['path'] as String).trim().isNotEmpty)
+                    ? fm['path'] as String
+                    : '';
+                final fileName = (fm['fileName'] is String &&
+                        (fm['fileName'] as String).isNotEmpty)
+                    ? fm['fileName'] as String
+                    : (filePath.isNotEmpty
+                        ? filePath.split(Platform.pathSeparator).last
+                        : 'file');
+                final headersMap = <String, String>{};
+                if (p['headers'] is Map) {
+                  (p['headers'] as Map).forEach((k, v) {
+                    headersMap[k.toString()] = v.toString();
+                  });
+                } else if (widget.uploadToken != null &&
+                    widget.uploadToken!.isNotEmpty) {
+                  headersMap['Authorization'] = widget.uploadToken!;
+                }
+                final fieldsMap = <String, String>{};
+                if (p['fields'] is Map) {
+                  (p['fields'] as Map).forEach((k, v) {
+                    fieldsMap[k.toString()] = v.toString();
+                  });
+                }
+                uploadPayloads.add({
+                  'url': p['url'] ?? widget.uploadUrl,
+                  'filePath': filePath,
+                  'fileName': fileName,
+                  'base64': fm['base64'],
+                  'headers': headersMap,
+                  'fields': fieldsMap,
+                  'fileFieldName':
+                      p['fileFieldName'] ?? widget.uploadFileFieldName,
+                  'includeReqType':
+                      p['includeReqType'] ?? widget.uploadIncludeReqType,
+                  'uploadCorrelationId': p['uploadCorrelationId'],
+                });
+              } catch (_) {}
+            }
+          }
+          if (nullable.liveCapture != null) {
+            final p = nullable.liveCapture!.payload;
+            if (p.isNotEmpty) {
+              try {
+                final fm = (p['file'] is Map)
+                    ? Map<String, dynamic>.from(p['file'] as Map)
+                    : <String, dynamic>{};
+                final filePath = (fm['path'] is String &&
+                        (fm['path'] as String).trim().isNotEmpty)
+                    ? fm['path'] as String
+                    : '';
+                final fileName = (fm['fileName'] is String &&
+                        (fm['fileName'] as String).isNotEmpty)
+                    ? fm['fileName'] as String
+                    : (filePath.isNotEmpty
+                        ? filePath.split(Platform.pathSeparator).last
+                        : 'file');
+                final headersMap = <String, String>{};
+                if (p['headers'] is Map) {
+                  (p['headers'] as Map).forEach((k, v) {
+                    headersMap[k.toString()] = v.toString();
+                  });
+                } else if (widget.uploadToken != null &&
+                    widget.uploadToken!.isNotEmpty) {
+                  headersMap['Authorization'] = widget.uploadToken!;
+                }
+                final fieldsMap = <String, String>{};
+                if (p['fields'] is Map) {
+                  (p['fields'] as Map).forEach((k, v) {
+                    fieldsMap[k.toString()] = v.toString();
+                  });
+                }
+                uploadPayloads.add({
+                  'url': p['url'] ?? widget.uploadUrl,
+                  'filePath': filePath,
+                  'fileName': fileName,
+                  'base64': fm['base64'],
+                  'headers': headersMap,
+                  'fields': fieldsMap,
+                  'fileFieldName':
+                      p['fileFieldName'] ?? widget.uploadFileFieldName,
+                  'includeReqType':
+                      p['includeReqType'] ?? widget.uploadIncludeReqType,
+                  'uploadCorrelationId': p['uploadCorrelationId'],
+                });
+              } catch (_) {}
+            }
+          }
+          if (uploadPayloads.isNotEmpty) {
+            widget.onFailDirectUploadPayload?.call(uploadPayloads);
+          }
+        } catch (e, st) {
+          debugPrint(
+              'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+        }
       }
 
       // If preview shows both images and this is a direct upload, notify
@@ -833,6 +966,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       'description': effDesc,
       'index': 0,
     };
+    // Add a correlation id to help reliably match persisted payloads back to
+    // controller images when retry succeeds.
+    final uploadCorrelationId =
+        DateTime.now().microsecondsSinceEpoch.toString();
+    payload['uploadCorrelationId'] = uploadCorrelationId;
 
     final hasNet = await _hasNetwork();
     if (!hasNet) {
@@ -958,11 +1096,17 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           }
         }
 
+        final resolvedPath = (uploadedPath != null &&
+                uploadedPath.trim().isNotEmpty &&
+                uploadedPath.startsWith(Platform.pathSeparator))
+            ? uploadedPath
+            : image.path;
+
         return MyImageResult(
           link: finalLink ?? image.link,
           base64: finalBase64,
-          // Prefer server-provided path when available, otherwise keep local.
-          path: uploadedPath ?? image.path,
+          // Preserve local path unless server returned absolute path.
+          path: resolvedPath,
           imageId: imageId ?? image.imageId,
           description: uploadedDescription ?? image.description,
           payload: payload,
@@ -1262,6 +1406,17 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   }
 
   Widget _buildCameraWidget(BuildContext context) {
+    final void Function(List<MyImageResult>)? failListCb =
+        (widget.onFailDirectUpload != null)
+            ? (List<MyImageResult> list) {
+                for (final r in list) {
+                  try {
+                    widget.onFailDirectUpload?.call(r);
+                  } catch (_) {}
+                }
+              }
+            : null;
+
     final preview = FormFieldsLiveCameraCapture(
       key: _liveCameraKey,
       height: widget.liveCameraHeight,
@@ -1281,7 +1436,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       uploadErrorMessage: widget.uploadErrorMessage,
       uploadFileUrlKey: widget.uploadFileUrlKey,
       uploadImageIdKey: widget.uploadImageIdKey,
-      onFailDirectUpload: widget.onFailDirectUpload,
+      onFailDirectUpload: failListCb,
     );
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);

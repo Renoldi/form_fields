@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+// `UploadResponseMapper` is exported by `package:form_fields/form_fields.dart`.
+// Import removed to avoid unnecessary import lint.
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
@@ -84,6 +85,23 @@ class FormFieldsMyImage extends StatefulWidget {
   /// payloads) so the caller can persist or retry uploads later.
   final void Function(List<MyImageResult> results)? onFailDirectUpload;
 
+  /// Alternative callback that receives a list of upload-friendly payload
+  /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`:
+  /// {
+  ///   'url': String,
+  ///   'filePath': String,
+  ///   'fileName': String,
+  ///   'base64': String?,
+  ///   'headers': `Map<String, String>`,
+  ///   'fields': `Map<String, String>`,
+  ///   'fileFieldName': String,
+  ///   'includeReqType': bool,
+  /// }
+  /// This callback is provided as a convenience so callers can immediately
+  /// pass the returned maps to `DioUtil.uploadFile` or persist them.
+  final void Function(List<Map<String, dynamic>> payloads)?
+      onFailDirectUploadPayload;
+
   // ── Validation ──────────────────────────────────────────────────────────────
 
   /// Whether this field is required. Shows error when no images are present.
@@ -131,6 +149,7 @@ class FormFieldsMyImage extends StatefulWidget {
       this.uploadFileFieldName = 'file',
       this.uploadIncludeReqType = false,
       this.onFailDirectUpload,
+      this.onFailDirectUploadPayload,
       this.allow = true,
       this.showUploadResultDialog = false,
       this.showDesc = false,
@@ -274,6 +293,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     super.initState();
     _provider = FormFieldsMyImageProvider();
     _provider.addListener(_onProviderChanged);
+    // Register provider so OfflineUploadManager can update provider images
+    // when persisted/offline uploads are retried and succeed.
+    OfflineUploadManager.instance.registerProvider(_provider);
     if (widget.controller != null) {
       _controller = widget.controller;
       _provider.setImages(_controller!.images);
@@ -287,6 +309,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
     }
+    // Register controller so OfflineUploadManager can update UI images when
+    // persisted/offline uploads are retried and succeed.
+    if (_controller != null) {
+      OfflineUploadManager.instance.registerController(_controller!);
+    }
+
     _uploadingIndex = null;
   }
 
@@ -299,6 +327,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       });
     }
     if (widget.controller != oldWidget.controller) {
+      // Unregister previous controller from offline manager and listeners.
+      if (_controller != null) {
+        OfflineUploadManager.instance.unregisterController(_controller!);
+      }
       oldWidget.controller?.unregisterPickImageHandler();
       oldWidget.controller?.removeListener(_onControllerChanged);
       if (widget.controller != null) {
@@ -317,6 +349,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           if (!mounted) return;
           await _pickImage(context, _provider, initialSource: source);
         });
+        OfflineUploadManager.instance.registerController(_controller!);
       }
     }
   }
@@ -327,6 +360,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (widget.controller != null) {
       widget.controller!.unregisterPickImageHandler();
     }
+    // Unregister controller from offline manager (best-effort)
+    if (_controller != null) {
+      OfflineUploadManager.instance.unregisterController(_controller!);
+    }
+    // Unregister provider
+    OfflineUploadManager.instance.unregisterProvider(_provider);
     _controller?.removeListener(_onControllerChanged);
     super.dispose();
   }
@@ -374,6 +413,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     // Apply immediately to avoid races where callers call Form.validate()
     // before the FormField receives the updated value.
     applyChangeIfNeeded();
+    // Update manager registry for quick correlation-id -> location mapping.
+    try {
+      OfflineUploadManager.instance
+          .updateProviderLocations(_provider, newValue);
+    } catch (_) {}
   }
 
   void _syncControllerImages(FormFieldsMyImageProvider provider) {
@@ -1277,6 +1321,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     final fileName = image.path.trim().isNotEmpty
         ? image.path.split(Platform.pathSeparator).last
         : (image.link.isNotEmpty ? image.link.split('/').last : 'image');
+    final uploadCorrelationId =
+        DateTime.now().microsecondsSinceEpoch.toString();
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
       'headers': headers,
@@ -1290,6 +1336,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       'uploadImageIdKey': widget.uploadImageIdKey,
       'description': effDesc,
       'index': index,
+      // Correlation id used to reliably match persisted payloads back to
+      // controller images when retries succeed.
+      'uploadCorrelationId': uploadCorrelationId,
     };
 
     final hasNet = await _hasNetwork();
@@ -1320,6 +1369,64 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             .toList();
         if (queued.isNotEmpty) {
           widget.onFailDirectUpload?.call(List<MyImageResult>.from(queued));
+
+          // Also provide an upload-friendly payload list for callers that
+          // want to immediately pass payloads to `DioUtil.uploadFile`.
+          try {
+            final uploadPayloads = <Map<String, dynamic>>[];
+            for (final img in queued) {
+              try {
+                final p = Map<String, dynamic>.from(img.payload);
+                final fm = (p['file'] is Map)
+                    ? Map<String, dynamic>.from(p['file'])
+                    : <String, dynamic>{};
+                final filePath = (fm['path'] is String &&
+                        (fm['path'] as String).trim().isNotEmpty)
+                    ? fm['path'] as String
+                    : '';
+                final fileName = (fm['fileName'] is String &&
+                        (fm['fileName'] as String).isNotEmpty)
+                    ? fm['fileName'] as String
+                    : (filePath.isNotEmpty
+                        ? filePath.split(Platform.pathSeparator).last
+                        : 'file');
+                final headersMap = <String, String>{};
+                if (p['headers'] is Map) {
+                  (p['headers'] as Map).forEach((k, v) {
+                    headersMap[k.toString()] = v.toString();
+                  });
+                } else if (widget.uploadToken != null &&
+                    widget.uploadToken!.isNotEmpty) {
+                  headersMap['Authorization'] = widget.uploadToken!;
+                }
+                final fieldsMap = <String, String>{};
+                if (p['fields'] is Map) {
+                  (p['fields'] as Map).forEach((k, v) {
+                    fieldsMap[k.toString()] = v.toString();
+                  });
+                }
+                uploadPayloads.add({
+                  'url': p['url'] ?? widget.uploadUrl,
+                  'filePath': filePath,
+                  'fileName': fileName,
+                  'base64': fm['base64'],
+                  'headers': headersMap,
+                  'fields': fieldsMap,
+                  'fileFieldName':
+                      p['fileFieldName'] ?? widget.uploadFileFieldName,
+                  'includeReqType':
+                      p['includeReqType'] ?? widget.uploadIncludeReqType,
+                  'uploadCorrelationId': p['uploadCorrelationId'],
+                });
+              } catch (_) {}
+            }
+            if (uploadPayloads.isNotEmpty) {
+              widget.onFailDirectUploadPayload?.call(uploadPayloads);
+            }
+          } catch (e, st) {
+            debugPrint(
+                'FormFieldsMyImage.onFailDirectUploadPayload threw: $e\n$st');
+          }
         }
       } catch (e, st) {
         debugPrint('FormFieldsMyImage.onFailDirectUpload threw: $e\n$st');
@@ -1408,12 +1515,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           } catch (_) {}
         }
 
+        final resolvedPath = (uploadedPath != null &&
+                uploadedPath.trim().isNotEmpty &&
+                uploadedPath.startsWith(Platform.pathSeparator))
+            ? uploadedPath
+            : images[index].path;
+
         final updatedImage = MyImageResult(
           link: finalLink ?? images[index].link,
           base64: images[index].base64,
-          // Keep local file path from picked image to avoid re-fetching
-          // the same file from server right after upload.
-          path: uploadedPath ?? images[index].path,
+          // Preserve the local picked file path unless the server
+          // returned an absolute filesystem path (rare). Avoid
+          // overwriting with server-relative paths which are not
+          // accessible locally and cause PathNotFound errors.
+          path: resolvedPath,
           imageId: imageId ?? images[index].imageId,
           description:
               uploadedDescription ?? description ?? images[index].description,

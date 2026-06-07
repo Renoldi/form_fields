@@ -189,9 +189,7 @@ class AppDialogService {
           okLabel: okLabel,
         );
       }
-      if (onSuccess != null) {
-        await onSuccess(result);
-      }
+      await onSuccess?.call(result);
       return result;
     } catch (error) {
       _dismissLoadingIfVisible();
@@ -206,9 +204,7 @@ class AppDialogService {
           validationErrors =
               (mapped as dynamic).details as Map<String, List<String>>?;
         }
-        if (onValidationError != null && validationErrors != null) {
-          onValidationError(validationErrors);
-        }
+        if (validationErrors != null) onValidationError?.call(validationErrors);
         await showInfo(
           title: errorTitle,
           message: mapped.message,
@@ -224,9 +220,7 @@ class AppDialogService {
           okLabel: okLabel,
         );
       }
-      if (onError != null) {
-        await onError(error, mapped.message, mapped.type);
-      }
+      await onError?.call(error, mapped.message, mapped.type);
       return null;
     } finally {
       if (loadingShown) {
@@ -481,7 +475,7 @@ class AppDialogService {
         ),
       ),
     ).whenComplete(() {
-      if (onComplete != null) onComplete();
+      onComplete?.call();
     });
   }
 
@@ -635,13 +629,11 @@ class AppDialogService {
   Future<bool> _resolveCancellation(
     AppDialogCancelRequested? onCancelRequested,
   ) async {
-    if (onCancelRequested == null) return true;
-    return await onCancelRequested();
+    return await onCancelRequested?.call() ?? true;
   }
 
   Future<void> _runCancelled(AppDialogCancelled? onCancelled) async {
-    if (onCancelled == null) return;
-    await onCancelled();
+    await onCancelled?.call();
   }
 
   Future<bool> _showCancelLoadingConfirm({
