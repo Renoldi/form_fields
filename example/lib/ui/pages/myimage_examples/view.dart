@@ -79,7 +79,25 @@ class View extends PresenterState {
                   uploadUrl:
                       'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                   uploadToken:
-                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3NjAxNjQsImV4cCI6MTc4MDgwMzM2NCwiaWF0IjoxNzgwNzYwMTY0fQ.MwsVtgsxIK4HlIv7auAHSEeUBIiwlOVbeLosOFiT2o8",
+                      "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA4MjI2MTYsImV4cCI6MTc4MDg2NTgxNiwiaWF0IjoxNzgwODIyNjE2fQ.ScZ4i-21ey7yhVbXt-vZvU1axEGmln1dFnPm4m2KIsU",
+                  uploadTokenRefresher: () async {
+                    // Example refresher: simulate network call to obtain
+                    // a fresh token. Replace with real auth logic in apps.
+                    logger.i('Example: refreshing upload token...');
+                    await Future<void>.delayed(const Duration(seconds: 1));
+                    final newToken =
+                        'Bearer EXAMPLE_REFRESHED_TOKEN_${DateTime.now().millisecondsSinceEpoch}';
+                    logger.i('Example: refreshed token=$newToken');
+                    return newToken;
+                  },
+                  onUploadAuthExpired: () {
+                    logger.w('Example: upload auth expired; prompt user');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Upload auth expired — please re-login'),
+                      ),
+                    );
+                  },
                   // uploadFileFieldName: 'file',
                   // uploadIncludeReqType: false,
                   onImageChanged: (image) {
@@ -91,49 +109,28 @@ class View extends PresenterState {
                       logger.i(r.toString());
                     }
                   },
-                  onFailDirectUpload: (failedImages) {
-                    logger.w('Direct upload failed for images:');
-                    for (var img in failedImages) {
-                      logger.w(img.toString());
-                    }
-                    // Persist queued payloads via the view model so the example
-                    // app can show offline previews and retry later.
-                    try {
-                      final payloads = failedImages
-                          .where((img) => img.status == MyImageStatus.queued)
-                          .map((img) => img.payload)
-                          .where((p) => p.isNotEmpty)
-                          .map((p) => Map<String, dynamic>.from(p))
-                          .toList();
-                      if (payloads.isNotEmpty) {
-                        viewModel.handleDirectUploadPayload(payloads);
-                      } else {
-                        logger.w('No payloads attached to failed images');
-                      }
-                    } catch (e) {
-                      logger.e('Failed to enqueue offline payloads: $e');
-                    }
-                  },
-                  onFailDirectUploadPayload: (payloads) {
-                    // Payloads here are upload-friendly maps suitable for
-                    // direct consumption by `DioUtil.uploadFile`. The example
-                    // persists them in the older nested format so the
-                    // existing retry logic can consume them later.
+
+                  onFailDirectUploadPayload:
+                      (List<DirectUploadPayload> payloads) {
+                    // Payloads here are typed `DirectUploadPayload` objects.
+                    // Convert to the older nested map format expected by the
+                    // example app's persistence layer and retry logic.
                     logger.w('payloads attached to failed images');
 
                     try {
                       final persisted = payloads.map((p) {
                         return {
-                          'url': p['url'],
-                          'headers': p['headers'] ?? {},
-                          'fields': p['fields'] ?? {},
+                          'url': p.url,
+                          'headers': p.headers,
+                          'fields': p.fields,
                           'file': {
-                            'path': p['filePath'] ?? '',
-                            'fileName': p['fileName'] ?? 'file',
-                            'base64': p['base64'] ?? ''
+                            'path': p.filePath,
+                            'fileName': p.fileName,
+                            'base64': p.base64 ?? ''
                           },
                           'uploadFileUrlKey': 'fileUrl',
                           'uploadImageIdKey': 'imageId',
+                          'uploadCorrelationId': p.uploadCorrelationId,
                         };
                       }).toList();
                       if (persisted.isNotEmpty) {

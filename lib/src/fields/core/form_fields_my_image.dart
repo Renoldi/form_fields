@@ -52,6 +52,15 @@ class FormFieldsMyImage extends StatefulWidget {
   final String? uploadToken;
   final bool isDirectUpload;
 
+  /// Optional callback to obtain a fresh upload token when an upload
+  /// returns 401. Should return the new token string or null on failure.
+  final Future<String?> Function()? uploadTokenRefresher;
+
+  /// Optional callback invoked when upload authentication is expired and
+  /// the library has queued the payload for later retry. Use to prompt
+  /// re-login or show a UI hint.
+  final VoidCallback? onUploadAuthExpired;
+
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a list of payload Maps (each containing URL, headers, fields
   /// and file data) so the caller can store and send them later when online.
@@ -83,7 +92,6 @@ class FormFieldsMyImage extends StatefulWidget {
   /// Callback invoked when a direct upload is queued/failed due to lack of
   /// network. Receives the current images list (including any attached
   /// payloads) so the caller can persist or retry uploads later.
-  final void Function(List<MyImageResult> results)? onFailDirectUpload;
 
   /// Alternative callback that receives a list of upload-friendly payload
   /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`:
@@ -98,8 +106,10 @@ class FormFieldsMyImage extends StatefulWidget {
   ///   'includeReqType': bool,
   /// }
   /// This callback is provided as a convenience so callers can immediately
-  /// pass the returned maps to `DioUtil.uploadFile` or persist them.
-  final void Function(List<Map<String, dynamic>> payloads)?
+  /// pass the returned payloads to upload helpers or persist them.
+  /// Each item is a typed `DirectUploadPayload` and can be serialized via
+  /// `toMap()`/`toJson()` for storage or resending.
+  final void Function(List<DirectUploadPayload> payloads)?
       onFailDirectUploadPayload;
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -138,6 +148,8 @@ class FormFieldsMyImage extends StatefulWidget {
       this.uploadUrl,
       this.uploadToken,
       this.isDirectUpload = false,
+      this.uploadTokenRefresher,
+      this.onUploadAuthExpired,
       this.uploadSuccessTitle,
       this.uploadFailedTitle,
       this.uploadErrorTitle,
@@ -148,7 +160,6 @@ class FormFieldsMyImage extends StatefulWidget {
       this.uploadImageIdKey = 'imageId',
       this.uploadFileFieldName = 'file',
       this.uploadIncludeReqType = false,
-      this.onFailDirectUpload,
       this.onFailDirectUploadPayload,
       this.allow = true,
       this.showUploadResultDialog = false,
@@ -1368,60 +1379,16 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             .where((i) => i.status == MyImageStatus.queued)
             .toList();
         if (queued.isNotEmpty) {
-          widget.onFailDirectUpload?.call(List<MyImageResult>.from(queued));
-
-          // Also provide an upload-friendly payload list for callers that
-          // want to immediately pass payloads to `DioUtil.uploadFile`.
           try {
-            final uploadPayloads = <Map<String, dynamic>>[];
-            for (final img in queued) {
-              try {
-                final p = Map<String, dynamic>.from(img.payload);
-                final fm = (p['file'] is Map)
-                    ? Map<String, dynamic>.from(p['file'])
-                    : <String, dynamic>{};
-                final filePath = (fm['path'] is String &&
-                        (fm['path'] as String).trim().isNotEmpty)
-                    ? fm['path'] as String
-                    : '';
-                final fileName = (fm['fileName'] is String &&
-                        (fm['fileName'] as String).isNotEmpty)
-                    ? fm['fileName'] as String
-                    : (filePath.isNotEmpty
-                        ? filePath.split(Platform.pathSeparator).last
-                        : 'file');
-                final headersMap = <String, String>{};
-                if (p['headers'] is Map) {
-                  (p['headers'] as Map).forEach((k, v) {
-                    headersMap[k.toString()] = v.toString();
-                  });
-                } else if (widget.uploadToken != null &&
-                    widget.uploadToken!.isNotEmpty) {
-                  headersMap['Authorization'] = widget.uploadToken!;
-                }
-                final fieldsMap = <String, String>{};
-                if (p['fields'] is Map) {
-                  (p['fields'] as Map).forEach((k, v) {
-                    fieldsMap[k.toString()] = v.toString();
-                  });
-                }
-                uploadPayloads.add({
-                  'url': p['url'] ?? widget.uploadUrl,
-                  'filePath': filePath,
-                  'fileName': fileName,
-                  'base64': fm['base64'],
-                  'headers': headersMap,
-                  'fields': fieldsMap,
-                  'fileFieldName':
-                      p['fileFieldName'] ?? widget.uploadFileFieldName,
-                  'includeReqType':
-                      p['includeReqType'] ?? widget.uploadIncludeReqType,
-                  'uploadCorrelationId': p['uploadCorrelationId'],
-                });
-              } catch (_) {}
-            }
-            if (uploadPayloads.isNotEmpty) {
-              widget.onFailDirectUploadPayload?.call(uploadPayloads);
+            final payloads =
+                await UploadHelper.buildDirectUploadPayloadsFromImages(
+              queued,
+              defaultUrl: widget.uploadUrl,
+              fileFieldName: widget.uploadFileFieldName,
+              includeReqType: widget.uploadIncludeReqType,
+            );
+            if (payloads.isNotEmpty) {
+              widget.onFailDirectUploadPayload?.call(payloads);
             }
           } catch (e, st) {
             debugPrint(
@@ -1429,7 +1396,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           }
         }
       } catch (e, st) {
-        debugPrint('FormFieldsMyImage.onFailDirectUpload threw: $e\n$st');
+        debugPrint(
+            'FormFieldsMyImage.onFailDirectUploadPayload handling threw: $e\n$st');
       }
       // Stop further processing when offline — avoid attempting the
       // network upload and potential race conditions that may overwrite
@@ -1453,7 +1421,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       _syncControllerImages(provider);
     }
 
-    final response = await DioUtil.uploadFile(
+    var response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
       filePath: image.path,
       filename: File(image.path).path.split('/').last,
@@ -1465,6 +1433,92 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       fileFieldName: widget.uploadFileFieldName,
       includeReqType: widget.uploadIncludeReqType,
     );
+
+    // Handle authentication failure (401): attempt a single silent token
+    // refresh via `uploadTokenRefresher`, retry once with the new token,
+    // otherwise enqueue the sanitized payload and notify the caller.
+    if (response != null && response.statusCode == 401) {
+      String? newToken;
+      if (widget.uploadTokenRefresher != null) {
+        try {
+          newToken = await widget.uploadTokenRefresher!();
+        } catch (_) {
+          newToken = null;
+        }
+      }
+
+      if (newToken != null && newToken.isNotEmpty) {
+        try {
+          final retryHeaders = Map<String, String>.from(headers);
+          retryHeaders['Authorization'] = newToken;
+          final retryResp = await DioUtil.uploadFile(
+            url: widget.uploadUrl!,
+            filePath: image.path,
+            filename: File(image.path).path.split('/').last,
+            headers: retryHeaders,
+            onProgress: (progress) {
+              provider.setUploadProgress(index, progress);
+            },
+            fields: extraFields.isNotEmpty ? extraFields : null,
+            fileFieldName: widget.uploadFileFieldName,
+            includeReqType: widget.uploadIncludeReqType,
+          );
+          response = retryResp;
+        } catch (_) {
+          // ignore and fallthrough to queueing below
+        }
+      }
+
+      // If after optional refresh/retry we still have no response or the
+      // server returned 401, treat as auth-expired: queue sanitized payload
+      // (without Authorization) and notify the app.
+      if (response == null || response.statusCode == 401) {
+        // Prepare sanitized payload (remove Authorization) for persistence
+        final headersForPersist = Map<String, String>.from(headers);
+        headersForPersist.remove('Authorization');
+        final sanitizedPayload = Map<String, dynamic>.from(payload);
+        sanitizedPayload['headers'] = headersForPersist;
+
+        // Mark image as queued and attach sanitized payload
+        final updatedImage = MyImageResult(
+          link: images[index].link,
+          base64: images[index].base64,
+          path: images[index].path,
+          imageId: images[index].imageId,
+          description: (effDesc != null && effDesc.isNotEmpty)
+              ? effDesc
+              : images[index].description,
+          payload: sanitizedPayload,
+          status: MyImageStatus.queued,
+        );
+        provider.updateImage(index, updatedImage);
+        _syncControllerImages(provider);
+
+        // Legacy list callback removed; notify via payload-based callback below.
+
+        try {
+          final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+            updatedImage,
+            defaultUrl: widget.uploadUrl,
+            fileFieldName: widget.uploadFileFieldName,
+            includeReqType: widget.uploadIncludeReqType,
+          );
+          if (direct != null) {
+            widget.onFailDirectUploadPayload?.call([direct]);
+          }
+        } catch (e, st) {
+          debugPrint('Failed to call onFailDirectUploadPayload: $e\n$st');
+        }
+
+        // Notify the app that auth expired so it can prompt re-login.
+        try {
+          widget.onUploadAuthExpired?.call();
+        } catch (_) {}
+
+        // Stop further processing for this upload.
+        return;
+      }
+    }
     if (!mounted) return;
     final l = FormFieldsLocalizations.of(context);
     final dialog = AppDialogService(context);

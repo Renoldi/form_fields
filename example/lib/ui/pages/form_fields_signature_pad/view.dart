@@ -94,9 +94,14 @@ class View extends PresenterState {
                       uploadUrl:
                           'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                       uploadToken:
-                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA3OTU0NjYsImV4cCI6MTc4MDgzODY2NiwiaWF0IjoxNzgwNzk1NDY2fQ.6Rp8HskAudwB89QPEl5kj0c_I9uvcNjhyGHVUeakXxs",
+                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA4MjI2MTYsImV4cCI6MTc4MDg2NTgxNiwiaWF0IjoxNzgwODIyNjE2fQ.ScZ4i-21ey7yhVbXt-vZvU1axEGmln1dFnPm4m2KIsU",
                       onFailDirectUploadPayload:
-                          viewModel.handleDirectUploadPayload,
+                          (List<DirectUploadPayload> payloads) {
+                        try {
+                          viewModel.handleDirectUploadPayload(
+                              payloads.map((p) => p.toMap()).toList());
+                        } catch (_) {}
+                      },
                     ),
                   ),
 
@@ -392,7 +397,12 @@ class View extends PresenterState {
                         viewModel.setUploadedSignature(val);
                       },
                       onFailDirectUploadPayload:
-                          viewModel.handleDirectUploadPayload,
+                          (List<DirectUploadPayload> payloads) {
+                        try {
+                          viewModel.handleDirectUploadPayload(
+                              payloads.map((p) => p.toMap()).toList());
+                        } catch (_) {}
+                      },
                     ),
                   ),
 
@@ -438,7 +448,12 @@ class View extends PresenterState {
                         // viewModel.setUploadError(val);
                       },
                       onFailDirectUploadPayload:
-                          viewModel.handleDirectUploadPayload,
+                          (List<DirectUploadPayload> payloads) {
+                        try {
+                          viewModel.handleDirectUploadPayload(
+                              payloads.map((p) => p.toMap()).toList());
+                        } catch (_) {}
+                      },
                     ),
                   ),
 

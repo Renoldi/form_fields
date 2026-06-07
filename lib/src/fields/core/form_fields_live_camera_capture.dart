@@ -67,11 +67,11 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// Receives a list of `MyImageResult` (each containing `payload`) so the
   /// caller can persist and retry uploads later. This matches
   /// `FormFieldsMyImage` semantics.
-  final void Function(List<MyImageResult> results)? onFailDirectUpload;
 
-  /// Alternative callback that receives a list of upload-friendly payload
-  /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`.
-  final void Function(List<Map<String, dynamic>> payloads)?
+  /// Alternative callback that receives a list of typed `DirectUploadPayload`.
+  /// Each item is ready to be serialized via `toMap()`/`toJson()` for
+  /// persistence or re-upload.
+  final void Function(List<DirectUploadPayload> payloads)?
       onFailDirectUploadPayload;
 
   // `onFailDirectUploadResult` removed — live camera reports single results
@@ -123,7 +123,6 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadSuccessMessage,
     this.uploadFailedMessage,
     this.uploadErrorMessage,
-    this.onFailDirectUpload,
     this.onFailDirectUploadPayload,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
@@ -391,60 +390,20 @@ class FormFieldsLiveCameraCaptureState
         status: MyImageStatus.queued,
       );
       // Notify caller so they can persist queued payloads for later retry.
-      try {
-        if (updatedImage.status == MyImageStatus.queued) {
-          widget.onFailDirectUpload?.call([updatedImage]);
-        }
-      } catch (e, st) {
-        debugPrint(
-            'FormFieldsLiveCameraCapture.onFailDirectUpload threw: $e\n$st');
-      }
+      // Legacy single-item callback removed; callers receive payloads via
+      // `onFailDirectUploadPayload` below.
       // Also provide an upload-friendly payload map for callers that prefer
       // to persist a simplified shape consumable by `DioUtil.uploadFile`.
       try {
-        final p = payload;
-        final uploadPayloads = <Map<String, dynamic>>[];
-        final fm = (p['file'] is Map)
-            ? Map<String, dynamic>.from(p['file'] as Map)
-            : <String, dynamic>{};
-        final filePath =
-            (fm['path'] is String && (fm['path'] as String).trim().isNotEmpty)
-                ? fm['path'] as String
-                : '';
-        final fileName =
-            (fm['fileName'] is String && (fm['fileName'] as String).isNotEmpty)
-                ? fm['fileName'] as String
-                : (filePath.isNotEmpty
-                    ? filePath.split(Platform.pathSeparator).last
-                    : 'file');
-        final headersMap = <String, String>{};
-        if (p['headers'] is Map) {
-          (p['headers'] as Map).forEach((k, v) {
-            headersMap[k.toString()] = v.toString();
-          });
-        } else if (widget.uploadToken != null &&
-            widget.uploadToken!.isNotEmpty) {
-          headersMap['Authorization'] = widget.uploadToken!;
-        }
-        final fieldsMap = <String, String>{};
-        if (p['fields'] is Map) {
-          (p['fields'] as Map).forEach((k, v) {
-            fieldsMap[k.toString()] = v.toString();
-          });
-        }
-        uploadPayloads.add({
-          'url': p['url'] ?? widget.uploadUrl,
-          'filePath': filePath,
-          'fileName': fileName,
-          'base64': fm['base64'],
-          'headers': headersMap,
-          'fields': fieldsMap,
-          'fileFieldName': p['fileFieldName'] ?? widget.uploadFileFieldName,
-          'includeReqType': p['includeReqType'] ?? widget.uploadIncludeReqType,
-          'uploadCorrelationId': p['uploadCorrelationId'],
-        });
-        if (uploadPayloads.isNotEmpty) {
-          widget.onFailDirectUploadPayload?.call(uploadPayloads);
+        final updated = updatedImage;
+        final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+          updated,
+          defaultUrl: widget.uploadUrl,
+          fileFieldName: widget.uploadFileFieldName,
+          includeReqType: widget.uploadIncludeReqType,
+        );
+        if (direct != null) {
+          widget.onFailDirectUploadPayload?.call([direct]);
         }
       } catch (e, st) {
         debugPrint(

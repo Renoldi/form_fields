@@ -106,7 +106,8 @@ export 'src/providers/form_fields_signature_pad_provider.dart'
     show FormFieldsSignaturePadProvider;
 export 'src/providers/form_fields_live_camera_capture_provider.dart'
     show FormFieldsLiveCameraCaptureProvider;
-export 'src/utilities/myimage_result.dart' show MyImageResult;
+export 'src/models/myimage_result.dart' show MyImageResult;
+export 'src/models/direct_upload_payload.dart' show DirectUploadPayload;
 export 'src/service/dio_service.dart' show DioUtil;
 export 'src/utilities/upload_helper.dart' show UploadHelper;
 export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;

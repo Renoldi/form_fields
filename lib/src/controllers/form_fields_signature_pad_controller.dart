@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields/src/utilities/myimage_result.dart';
+import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utilities/signature_pad_export_result.dart';
 
 /// Controller for [FormFieldsSignaturePad].

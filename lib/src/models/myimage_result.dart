@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:form_fields/form_fields.dart';
 
-import 'enums.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+part 'myimage_result.g.dart';
 
+@JsonSerializable()
 class MyImageResult {
   final String link;
   final String base64;
@@ -11,16 +13,18 @@ class MyImageResult {
   final String imageId;
   final String description;
   final Map<String, dynamic> payload;
+  @JsonKey(fromJson: _statusFromJson, toJson: _statusToJson)
   final MyImageStatus status;
 
-  MyImageResult(
-      {this.link = "",
-      this.base64 = "",
-      this.path = "",
-      this.imageId = "",
-      this.description = "",
-      this.payload = const <String, dynamic>{},
-      this.status = MyImageStatus.idle});
+  MyImageResult({
+    this.link = "",
+    this.base64 = "",
+    this.path = "",
+    this.imageId = "",
+    this.description = "",
+    Map<String, dynamic>? payload,
+    this.status = MyImageStatus.idle,
+  }) : payload = payload ?? const <String, dynamic>{};
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
@@ -35,7 +39,7 @@ class MyImageResult {
   String toString() {
     final b64Preview =
         (base64.length > 20) ? '${base64.substring(0, 20)}...' : base64;
-    return 'MyimageResult(path: $path, link: $link, base64: $b64Preview, imageId: $imageId, description: $description, status: $status, payload: ${payload.toString()})';
+    return 'MyimageResult(path: $path, link: $link, base64: $b64Preview, imageId: $imageId, description: $description, status: $status)';
   }
 
   static Future<MyImageResult> fromFile(File file,
@@ -49,27 +53,24 @@ class MyImageResult {
         base64: base64Str,
         path: file.path,
         description: description ?? "",
-        payload: const <String, dynamic>{},
+        // payload: const <String, dynamic>{},
         status: MyImageStatus.idle);
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'link': link,
-      'base64': base64,
-      'path': path,
-      'imageId': imageId,
-      'description': description,
-      'payload': payload,
-      'status': status.toString().split('.').last,
-    };
-  }
+  factory MyImageResult.fromJson(Map<String, dynamic> json) =>
+      _$MyImageResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MyImageResultToJson(this);
 
   /// Construct a [MyImageResult] from a server response shape.
   /// Accepts a Map or a raw String (URL) and attempts to normalize common
   /// keys into the model. If the payload contains a `status` string it will
   /// be mapped to [MyImageStatus].
-  static MyImageResult fromJson(dynamic json,
+  /// Legacy helper to build a `MyImageResult` from a server response or
+  /// arbitrary dynamic payload. This preserves existing normalization logic
+  /// while still allowing `json_serializable`-based (de)serialization via
+  /// `fromJson`/`toJson`.
+  static MyImageResult fromServerResponse(dynamic json,
       {MyImageStatus defaultStatus = MyImageStatus.uploaded}) {
     if (json == null) return MyImageResult();
 
@@ -125,7 +126,7 @@ class MyImageResult {
         path: path,
         imageId: imageId,
         description: description,
-        payload: payload,
+        // payload: payload,
         status: status);
   }
 
@@ -159,3 +160,23 @@ class MyImageResult {
     }
   }
 }
+
+MyImageStatus _statusFromJson(String? value) {
+  if (value == null) return MyImageStatus.idle;
+  switch (value.toLowerCase()) {
+    case 'idle':
+      return MyImageStatus.idle;
+    case 'uploading':
+      return MyImageStatus.uploading;
+    case 'queued':
+      return MyImageStatus.queued;
+    case 'failed':
+      return MyImageStatus.failed;
+    case 'uploaded':
+      return MyImageStatus.uploaded;
+    default:
+      return MyImageStatus.idle;
+  }
+}
+
+String _statusToJson(MyImageStatus status) => status.toString().split('.').last;

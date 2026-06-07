@@ -43,7 +43,15 @@ class DioUtil {
     }
   }
 
-  static final Dio _dio = Dio();
+  static final Dio _dio = Dio()
+    ..interceptors.add(LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
 
   static final Logger _logger = Logger();
 

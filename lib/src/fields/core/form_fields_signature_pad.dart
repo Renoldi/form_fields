@@ -160,7 +160,6 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a single `MyImageResult` (with `payload`) for each queued item
   /// so the caller can persist and retry uploads later.
-  final void Function(MyImageResult result)? onFailDirectUpload;
 
   /// Called when `isDirectUpload == true` but the device has no internet
   /// and one or more exported results are queued (signature and/or live
@@ -169,9 +168,10 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final void Function(SignaturePadExportNullableResult result)?
       onFailDirectUploadList;
 
-  /// Alternative callback that receives a list of upload-friendly payload
-  /// Maps. Each map is shaped for easy consumption by `DioUtil.uploadFile`.
-  final void Function(List<Map<String, dynamic>> payloads)?
+  /// Alternative callback that receives a list of typed `DirectUploadPayload`.
+  /// Each item is ready to be serialized via `toMap()`/`toJson()` for
+  /// persistence or re-upload.
+  final void Function(List<DirectUploadPayload> payloads)?
       onFailDirectUploadPayload;
 
   /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
@@ -258,7 +258,6 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadSuccessMessage,
     this.uploadFailedMessage,
     this.uploadErrorMessage,
-    this.onFailDirectUpload,
     this.onFailDirectUploadList,
     this.onFailDirectUploadPayload,
     this.onError,
@@ -752,129 +751,24 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               'FormFieldsSignaturePad.onFailDirectUploadList threw: $e\n$st');
         }
 
-        // For backward compatibility, still call the single-item callback
-        // for each queued side if present.
-        if (widget.onFailDirectUpload != null) {
-          if (nullable.signature != null) {
-            try {
-              widget.onFailDirectUpload?.call(nullable.signature!);
-            } catch (e, st) {
-              debugPrint(
-                  'FormFieldsSignaturePad.onFailDirectUpload threw: $e\n$st');
-            }
-          }
-          if (nullable.liveCapture != null) {
-            try {
-              widget.onFailDirectUpload?.call(nullable.liveCapture!);
-            } catch (e, st) {
-              debugPrint(
-                  'FormFieldsSignaturePad.onFailDirectUpload threw: $e\n$st');
-            }
-          }
-        }
+        // Legacy single-item callback removed; callers should use
+        // `onFailDirectUploadList` or `onFailDirectUploadPayload`.
 
         // Also provide upload-friendly payload maps for callers that prefer
         // to persist a simplified shape consumable by `DioUtil.uploadFile`.
         try {
-          final uploadPayloads = <Map<String, dynamic>>[];
-          if (nullable.signature != null) {
-            final p = nullable.signature!.payload;
-            if (p.isNotEmpty) {
-              try {
-                final fm = (p['file'] is Map)
-                    ? Map<String, dynamic>.from(p['file'] as Map)
-                    : <String, dynamic>{};
-                final filePath = (fm['path'] is String &&
-                        (fm['path'] as String).trim().isNotEmpty)
-                    ? fm['path'] as String
-                    : '';
-                final fileName = (fm['fileName'] is String &&
-                        (fm['fileName'] as String).isNotEmpty)
-                    ? fm['fileName'] as String
-                    : (filePath.isNotEmpty
-                        ? filePath.split(Platform.pathSeparator).last
-                        : 'file');
-                final headersMap = <String, String>{};
-                if (p['headers'] is Map) {
-                  (p['headers'] as Map).forEach((k, v) {
-                    headersMap[k.toString()] = v.toString();
-                  });
-                } else if (widget.uploadToken != null &&
-                    widget.uploadToken!.isNotEmpty) {
-                  headersMap['Authorization'] = widget.uploadToken!;
-                }
-                final fieldsMap = <String, String>{};
-                if (p['fields'] is Map) {
-                  (p['fields'] as Map).forEach((k, v) {
-                    fieldsMap[k.toString()] = v.toString();
-                  });
-                }
-                uploadPayloads.add({
-                  'url': p['url'] ?? widget.uploadUrl,
-                  'filePath': filePath,
-                  'fileName': fileName,
-                  'base64': fm['base64'],
-                  'headers': headersMap,
-                  'fields': fieldsMap,
-                  'fileFieldName':
-                      p['fileFieldName'] ?? widget.uploadFileFieldName,
-                  'includeReqType':
-                      p['includeReqType'] ?? widget.uploadIncludeReqType,
-                  'uploadCorrelationId': p['uploadCorrelationId'],
-                });
-              } catch (_) {}
-            }
-          }
-          if (nullable.liveCapture != null) {
-            final p = nullable.liveCapture!.payload;
-            if (p.isNotEmpty) {
-              try {
-                final fm = (p['file'] is Map)
-                    ? Map<String, dynamic>.from(p['file'] as Map)
-                    : <String, dynamic>{};
-                final filePath = (fm['path'] is String &&
-                        (fm['path'] as String).trim().isNotEmpty)
-                    ? fm['path'] as String
-                    : '';
-                final fileName = (fm['fileName'] is String &&
-                        (fm['fileName'] as String).isNotEmpty)
-                    ? fm['fileName'] as String
-                    : (filePath.isNotEmpty
-                        ? filePath.split(Platform.pathSeparator).last
-                        : 'file');
-                final headersMap = <String, String>{};
-                if (p['headers'] is Map) {
-                  (p['headers'] as Map).forEach((k, v) {
-                    headersMap[k.toString()] = v.toString();
-                  });
-                } else if (widget.uploadToken != null &&
-                    widget.uploadToken!.isNotEmpty) {
-                  headersMap['Authorization'] = widget.uploadToken!;
-                }
-                final fieldsMap = <String, String>{};
-                if (p['fields'] is Map) {
-                  (p['fields'] as Map).forEach((k, v) {
-                    fieldsMap[k.toString()] = v.toString();
-                  });
-                }
-                uploadPayloads.add({
-                  'url': p['url'] ?? widget.uploadUrl,
-                  'filePath': filePath,
-                  'fileName': fileName,
-                  'base64': fm['base64'],
-                  'headers': headersMap,
-                  'fields': fieldsMap,
-                  'fileFieldName':
-                      p['fileFieldName'] ?? widget.uploadFileFieldName,
-                  'includeReqType':
-                      p['includeReqType'] ?? widget.uploadIncludeReqType,
-                  'uploadCorrelationId': p['uploadCorrelationId'],
-                });
-              } catch (_) {}
-            }
-          }
-          if (uploadPayloads.isNotEmpty) {
-            widget.onFailDirectUploadPayload?.call(uploadPayloads);
+          final imgs = <MyImageResult>[];
+          if (nullable.signature != null) imgs.add(nullable.signature!);
+          if (nullable.liveCapture != null) imgs.add(nullable.liveCapture!);
+          final payloads =
+              await UploadHelper.buildDirectUploadPayloadsFromImages(
+            imgs,
+            defaultUrl: widget.uploadUrl,
+            fileFieldName: widget.uploadFileFieldName,
+            includeReqType: widget.uploadIncludeReqType,
+          );
+          if (payloads.isNotEmpty) {
+            widget.onFailDirectUploadPayload?.call(payloads);
           }
         } catch (e, st) {
           debugPrint(
@@ -1406,14 +1300,15 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   }
 
   Widget _buildCameraWidget(BuildContext context) {
-    final void Function(List<MyImageResult>)? failListCb =
-        (widget.onFailDirectUpload != null)
-            ? (List<MyImageResult> list) {
-                for (final r in list) {
-                  try {
-                    widget.onFailDirectUpload?.call(r);
-                  } catch (_) {}
-                }
+    // Forward payload-based failures from the live camera to the
+    // signature pad's payload callback when provided. Use typed
+    // `DirectUploadPayload` objects.
+    final void Function(List<DirectUploadPayload>)? failPayloadCb =
+        (widget.onFailDirectUploadPayload != null)
+            ? (List<DirectUploadPayload> list) {
+                try {
+                  widget.onFailDirectUploadPayload!.call(list);
+                } catch (_) {}
               }
             : null;
 
@@ -1436,7 +1331,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       uploadErrorMessage: widget.uploadErrorMessage,
       uploadFileUrlKey: widget.uploadFileUrlKey,
       uploadImageIdKey: widget.uploadImageIdKey,
-      onFailDirectUpload: failListCb,
+      onFailDirectUploadPayload: failPayloadCb,
     );
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);

@@ -1,4 +1,4 @@
-import 'package:form_fields/src/utilities/myimage_result.dart';
+import 'package:form_fields/src/models/myimage_result.dart';
 
 /// Result of a signature pad export, optionally including a live camera capture.
 class SignaturePadExportResult {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields/src/utilities/myimage_result.dart';
+import 'package:form_fields/src/models/myimage_result.dart';
 
 class FormFieldsSignaturePadProvider extends ChangeNotifier {
   double? _uploadProgress;

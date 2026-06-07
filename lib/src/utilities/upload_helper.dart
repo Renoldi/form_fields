@@ -3,7 +3,8 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:form_fields/src/service/dio_service.dart';
-import 'package:form_fields/src/utilities/myimage_result.dart';
+import 'package:form_fields/src/models/myimage_result.dart';
+import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/offline_upload_manager.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 
@@ -140,6 +141,75 @@ class UploadHelper {
       MyImageResult image) async {
     if (image.payload.isEmpty) return null;
     return buildUploadPayloadFromMap(Map<String, dynamic>.from(image.payload));
+  }
+
+  /// Build a typed `DirectUploadPayload` from a `MyImageResult`.
+  /// Returns `null` when no usable file information is available.
+  static Future<DirectUploadPayload?> buildDirectUploadPayloadFromImage(
+      MyImageResult image,
+      {String? defaultUrl,
+      String fileFieldName = 'file',
+      bool includeReqType = false}) async {
+    if (image.payload.isEmpty) return null;
+    final persisted = Map<String, dynamic>.from(image.payload);
+    if ((persisted['url'] == null ||
+            persisted['url'].toString().trim().isEmpty) &&
+        defaultUrl != null) {
+      persisted['url'] = defaultUrl;
+    }
+
+    final built = await buildUploadPayloadFromMap(persisted);
+    if (built == null) return null;
+
+    String? base64Val;
+    try {
+      final fp = image.payload['file'];
+      if (fp is Map &&
+          fp['base64'] is String &&
+          (fp['base64'] as String).trim().isNotEmpty) {
+        base64Val = fp['base64'] as String;
+      } else if (image.base64.isNotEmpty) {
+        base64Val = image.base64;
+      }
+    } catch (_) {}
+
+    final headers = (built['headers'] is Map)
+        ? Map<String, String>.from(built['headers'] as Map)
+        : <String, String>{};
+    final fields = (built['fields'] is Map)
+        ? Map<String, String>.from(built['fields'] as Map)
+        : <String, String>{};
+
+    return DirectUploadPayload(
+      url: built['url'] as String,
+      filePath: built['filePath'] as String,
+      fileName: built['fileName'] as String,
+      base64: base64Val,
+      headers: headers,
+      fields: fields,
+      fileFieldName: built['fileFieldName'] as String? ?? fileFieldName,
+      includeReqType: built['includeReqType'] == true || includeReqType,
+      uploadCorrelationId: image.payload['uploadCorrelationId']?.toString(),
+    );
+  }
+
+  /// Build typed `DirectUploadPayload` objects for a list of images.
+  static Future<List<DirectUploadPayload>> buildDirectUploadPayloadsFromImages(
+      List<MyImageResult> images,
+      {String? defaultUrl,
+      String fileFieldName = 'file',
+      bool includeReqType = false}) async {
+    final out = <DirectUploadPayload>[];
+    for (final img in images) {
+      try {
+        final d = await buildDirectUploadPayloadFromImage(img,
+            defaultUrl: defaultUrl,
+            fileFieldName: fileFieldName,
+            includeReqType: includeReqType);
+        if (d != null) out.add(d);
+      } catch (_) {}
+    }
+    return out;
   }
 
   /// Upload a persisted payload (the same shape produced by the field's
