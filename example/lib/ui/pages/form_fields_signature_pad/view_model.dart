@@ -444,24 +444,16 @@ class ViewModel extends ChangeNotifier {
             }
           }
 
-          final resp = await UploadHelper.uploadPersistedPayload(persisted,
+          final result = await UploadHelper.uploadPersistedPayload(persisted,
               onProgress: (p) {
             debugPrint('Retry #$idx: upload progress=${p.toStringAsFixed(3)}');
           });
 
-          if (resp != null &&
-              UploadResponseMapper.isSuccessfulStatus(resp.statusCode)) {
+          if (result != null && result.status == MyImageStatus.uploaded) {
             success++;
-            debugPrint(
-                'Retry #$idx: upload succeeded status=${resp.statusCode}');
-            try {
-              OfflineUploadManager.instance
-                  .notifyUploadSuccess(persisted, resp);
-            } catch (e) {
-              debugPrint('Retry #$idx: notifyUploadSuccess error: $e');
-            }
+            debugPrint('Retry #$idx: upload succeeded link=${result.link}');
           } else {
-            debugPrint('Retry #$idx: upload failed status=${resp?.statusCode}');
+            debugPrint('Retry #$idx: upload failed');
             remaining.add(persisted);
           }
         } catch (e, st) {

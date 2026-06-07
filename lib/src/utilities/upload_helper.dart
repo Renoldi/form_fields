@@ -1,12 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-import 'package:form_fields/src/service/upload_service.dart';
-import 'package:form_fields/src/models/myimage_result.dart';
-import 'package:form_fields/src/models/direct_upload_payload.dart';
-import 'package:form_fields/src/service/offline_upload_manager.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// Helper utilities for converting persisted/queued payloads into
 /// upload-ready maps and performing the upload via `DioUtil.uploadFile`.
@@ -215,7 +210,7 @@ class UploadHelper {
   /// Upload a persisted payload (the same shape produced by the field's
   /// queued payload). The helper will decode base64 into a temp file when
   /// necessary and will remove any temp file after the upload completes.
-  static Future<Response?> uploadPersistedPayload(
+  static Future<MyImageResult?> uploadPersistedPayload(
       Map<String, dynamic> persisted,
       {void Function(double progress)? onProgress}) async {
     final p = await buildUploadPayloadFromMap(persisted);
@@ -269,9 +264,32 @@ class UploadHelper {
                 outcome.response!.statusCode)) {
           OfflineUploadManager.instance
               .notifyUploadSuccess(persisted, outcome.response!);
+          // Map successful response into a MyImageResult so callers can
+          // conveniently consume normalized upload metadata.
+          final data = outcome.response!.data;
+          final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
+              keys: persisted['uploadFileUrlKey'] ?? 'fileUrl');
+          final imageId = UploadResponseMapper.extractImageId(data,
+              keys: persisted['uploadImageIdKey'] ?? 'imageId');
+          final filePath = UploadResponseMapper.extractFilePath(data,
+              keys: persisted['uploadFilePathKey'] ?? 'filePath');
+          final description = UploadResponseMapper.extractDescription(data,
+              keys: persisted['uploadDescriptionKey'] ?? 'description');
+
+          return MyImageResult(
+            link: uploadedLink ?? '',
+            base64: '',
+            path: filePath ?? '',
+            imageId: imageId ?? '',
+            description: description ?? '',
+            payload: (outcome.response!.data is Map)
+                ? Map<String, dynamic>.from(outcome.response!.data as Map)
+                : <String, dynamic>{},
+            status: MyImageStatus.uploaded,
+          );
         }
       } catch (_) {}
-      return outcome.response;
+      return null;
     } finally {
       if (p['tempFileCreated'] == true) {
         try {
