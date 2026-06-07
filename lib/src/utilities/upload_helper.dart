@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:form_fields/src/service/dio_service.dart';
+import 'package:form_fields/src/service/upload_service.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/offline_upload_manager.dart';
@@ -225,33 +225,53 @@ class UploadHelper {
         ? Map<String, String>.from(p['headers'] as Map)
         : null;
 
-    final fieldsList = (p['fields'] is Map)
-        ? (p['fields'] as Map)
-            .entries
-            .map((e) => MapEntry(e.key.toString(), e.value.toString()))
-            .toList()
-        : null;
-
     try {
-      final resp = await DioUtil.uploadFile(
-        url: p['url'] as String,
-        filePath: p['filePath'] as String,
-        filename: p['fileName'] as String?,
-        headers: headers,
-        onProgress: onProgress,
-        fields: fieldsList,
-        fileFieldName: p['fileFieldName'] as String? ?? 'file',
-        includeReqType: p['includeReqType'] == true,
-      );
-      // Notify manager when the upload succeeded so attached controllers
-      // can update their preview statuses automatically.
+      // Build DirectUploadPayload and delegate upload to UploadService so
+      // higher-level behaviors (401 refresh+retry) are centralized.
+      String? base64Val;
       try {
-        if (resp != null &&
-            UploadResponseMapper.isSuccessfulStatus(resp.statusCode)) {
-          OfflineUploadManager.instance.notifyUploadSuccess(persisted, resp);
+        final fileEntry = persisted['file'];
+        if (fileEntry is Map && fileEntry['base64'] is String) {
+          base64Val = fileEntry['base64'] as String;
         }
       } catch (_) {}
-      return resp;
+
+      final headersMap = headers != null
+          ? Map<String, String>.from(headers)
+          : <String, String>{};
+      final fieldsMap = <String, String>{};
+      if (p['fields'] is Map) {
+        (p['fields'] as Map).forEach((k, v) {
+          fieldsMap[k.toString()] = v.toString();
+        });
+      }
+
+      final direct = DirectUploadPayload(
+        url: p['url'] as String,
+        filePath: p['filePath'] as String,
+        fileName: p['fileName'] as String,
+        base64: base64Val,
+        headers: headersMap,
+        fields: fieldsMap,
+        fileFieldName: p['fileFieldName'] as String? ?? 'file',
+        includeReqType: p['includeReqType'] == true,
+        uploadCorrelationId: persisted['uploadCorrelationId']?.toString(),
+      );
+
+      final outcome = await UploadService.instance.uploadDirectPayload(
+        direct,
+        onProgress: onProgress,
+      );
+
+      try {
+        if (outcome.response != null &&
+            UploadResponseMapper.isSuccessfulStatus(
+                outcome.response!.statusCode)) {
+          OfflineUploadManager.instance
+              .notifyUploadSuccess(persisted, outcome.response!);
+        }
+      } catch (_) {}
+      return outcome.response;
     } finally {
       if (p['tempFileCreated'] == true) {
         try {

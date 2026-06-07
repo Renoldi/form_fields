@@ -109,6 +109,7 @@ export 'src/providers/form_fields_live_camera_capture_provider.dart'
 export 'src/models/myimage_result.dart' show MyImageResult;
 export 'src/models/direct_upload_payload.dart' show DirectUploadPayload;
 export 'src/service/dio_service.dart' show DioUtil;
+export 'src/service/upload_service.dart' show UploadService, UploadOutcome;
 export 'src/utilities/upload_helper.dart' show UploadHelper;
 export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 

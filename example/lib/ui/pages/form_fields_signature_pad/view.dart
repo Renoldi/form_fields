@@ -105,6 +105,146 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  // ── 8b. Manual Upload (UploadService) ──────────────────
+                  _ExampleCard(
+                    index: 15,
+                    title: 'Manual Upload (UploadService)',
+                    subtitle:
+                        'Build payload from exported result and upload via UploadService',
+                    snippet: 'FormFieldsSignaturePad(...manual upload...)',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FormFieldsSignaturePad(
+                          showExportPreview: true,
+                          exportBackgroundColor: Colors.transparent,
+                          backgroundColor: Colors.white,
+                          isDirectUpload: false,
+                          onExported: (val) async {
+                            if (val == null) return;
+                            final messenger =
+                                ScaffoldMessenger.maybeOf(context);
+                            Map<String, dynamic>? built;
+                            try {
+                              final persisted = {
+                                'url': 'https://catbox.moe/user/api.php',
+                                'headers': <String, String>{},
+                                'fields': <String, String>{},
+                                'file': {
+                                  'fileName': 'signature.png',
+                                  'base64': val.base64,
+                                  'path': '',
+                                },
+                                'uploadCorrelationId': DateTime.now()
+                                    .microsecondsSinceEpoch
+                                    .toString(),
+                              };
+
+                              built =
+                                  await UploadHelper.buildUploadPayloadFromMap(
+                                      persisted);
+                              if (built == null) {
+                                messenger?.showSnackBar(const SnackBar(
+                                    content:
+                                        Text('Failed to prepare payload')));
+                                return;
+                              }
+
+                              final direct = DirectUploadPayload(
+                                url: built['url'] as String,
+                                filePath: built['filePath'] as String,
+                                fileName: built['fileName'] as String,
+                                base64: val.base64,
+                                headers: (built['headers'] is Map)
+                                    ? Map<String, String>.from(
+                                        built['headers'] as Map)
+                                    : <String, String>{},
+                                fields: (built['fields'] is Map)
+                                    ? Map<String, String>.from(
+                                        built['fields'] as Map)
+                                    : <String, String>{},
+                                fileFieldName:
+                                    built['fileFieldName'] as String? ?? 'file',
+                                includeReqType: built['includeReqType'] == true,
+                                uploadCorrelationId:
+                                    persisted['uploadCorrelationId'] as String?,
+                              );
+
+                              final outcome = await UploadService.instance
+                                  .uploadDirectPayload(
+                                direct,
+                                uploadTokenRefresher: () async {
+                                  // Example refresher; replace with real logic.
+                                  await Future<void>.delayed(
+                                      const Duration(seconds: 1));
+                                  return null;
+                                },
+                                onUploadAuthExpired: () {
+                                  messenger?.showSnackBar(const SnackBar(
+                                      content: Text(
+                                          'Auth expired — payload queued')));
+                                },
+                                onProgress: (p) {
+                                  debugPrint(
+                                      'Manual upload progress: ${p.toStringAsFixed(3)}');
+                                },
+                              );
+
+                              if (outcome.success && outcome.response != null) {
+                                final data = outcome.response!.data;
+                                final link =
+                                    UploadResponseMapper.extractUploadedLink(
+                                        data,
+                                        keys: 'fileUrl');
+                                final imageId =
+                                    UploadResponseMapper.extractImageId(data,
+                                        keys: 'imageId');
+                                viewModel.setUploadedSignature(MyImageResult(
+                                  link: link ?? '',
+                                  base64: val.base64,
+                                  path: '',
+                                  imageId: imageId ?? '',
+                                  description: '',
+                                  payload: data,
+                                  status: MyImageStatus.uploaded,
+                                ));
+                                messenger?.showSnackBar(const SnackBar(
+                                    content: Text('Upload succeeded')));
+                              } else if (outcome.authExpiredQueued &&
+                                  outcome.sanitizedPayload != null) {
+                                final sanitized = outcome.sanitizedPayload;
+                                if (sanitized != null) {
+                                  viewModel.handleDirectUploadPayload(
+                                      [sanitized.toJson()]);
+                                }
+                              } else {
+                                // Fallback: queue prepared built map for retry
+                                try {
+                                  viewModel.handleDirectUploadPayload([built]);
+                                } catch (_) {}
+                                messenger?.showSnackBar(const SnackBar(
+                                    content: Text(
+                                        'Upload failed — queued for retry')));
+                              }
+                            } catch (e, st) {
+                              debugPrint('Manual upload error: $e\n$st');
+                              messenger?.showSnackBar(
+                                  SnackBar(content: Text('Upload error: $e')));
+                            } finally {
+                              try {
+                                if (built != null &&
+                                    built['tempFileCreated'] == true) {
+                                  final tf = File(built['filePath'] as String);
+                                  if (await tf.exists()) await tf.delete();
+                                }
+                              } catch (_) {}
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 20),
 
                   // ── 2. Live camera ─────────────────────────────────────────

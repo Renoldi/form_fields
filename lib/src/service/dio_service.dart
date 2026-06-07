@@ -111,22 +111,90 @@ class DioUtil {
       debugPrint(
           '[DioUtil.uploadFile] url=$url, fileField=$fileFieldName, includeReqType=$includeReqType, filename=${filename ?? file.path.split('/').last}, fileSize=$fileSize, headers=${headers?.keys.toList()}, fields=${fields?.map((e) => '${e.key}=${e.value}').toList()}');
     } catch (_) {}
-    return await safeRequest<Response>(
-      () => _dio.post(
-        url,
-        data: formData,
-        options: Options(
-          headers: headers,
-          followRedirects: true,
-          validateStatus: (status) => status != null && status < 400,
-        ),
-        onSendProgress: (sent, total) {
-          if (onProgress != null) {
-            onProgress(total > 0 ? sent / total : 0.0);
-          }
-        },
-      ),
-      url: url,
+    // Retry loop for transient network/DNS errors. We still use
+    // `safeRequest` to normalize DioExceptions into Responses when
+    // possible, but wrap it here to catch any thrown SocketExceptions
+    // or DioExceptions that might escape and retry a few times.
+    const maxAttempts = 3;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final resp = await safeRequest<Response>(
+          () => _dio.post(
+            url,
+            data: formData,
+            options: Options(
+              headers: headers,
+              followRedirects: true,
+              validateStatus: (status) => status != null && status < 400,
+            ),
+            onSendProgress: (sent, total) {
+              if (onProgress != null) {
+                onProgress(total > 0 ? sent / total : 0.0);
+              }
+            },
+          ),
+          url: url,
+        );
+
+        // If we received a valid response object, return it.
+        if (resp != null) return resp;
+
+        // Otherwise, treat as transient and retry (unless last attempt).
+        if (attempt < maxAttempts) {
+          final backoff = Duration(milliseconds: 200 * attempt);
+          debugPrint(
+              '[DioUtil.uploadFile] transient null response, retrying in $backoff (attempt $attempt)');
+          await Future.delayed(backoff);
+          continue;
+        }
+
+        // Last attempt and still null -> return a synthetic 500 Response.
+        return Response(
+          requestOptions: RequestOptions(path: url),
+          statusCode: 500,
+          statusMessage: 'Network error (no response)',
+          data: {'error': 'no_response'},
+        );
+      } on DioException catch (e) {
+        _logger.w(
+            '[DioUtil.uploadFile] DioException on attempt $attempt: ${e.message}');
+        // If last attempt, convert to a Response so callers can proceed.
+        if (attempt >= maxAttempts) {
+          return e.response ??
+              Response(
+                requestOptions: RequestOptions(path: url),
+                statusCode: 500,
+                statusMessage: 'Dio connection error',
+                data: {
+                  'errorType': e.type.toString(),
+                  'errorMessage': e.message
+                },
+              );
+        }
+        // small backoff before next try
+        await Future.delayed(Duration(milliseconds: 200 * attempt));
+        continue;
+      } catch (e, st) {
+        _logger.w('[DioUtil.uploadFile] Error on attempt $attempt: $e',
+            error: e, stackTrace: st);
+        if (attempt >= maxAttempts) {
+          return Response(
+            requestOptions: RequestOptions(path: url),
+            statusCode: 500,
+            statusMessage: 'Network/error',
+            data: {'errorType': 'Unknown', 'errorMessage': e.toString()},
+          );
+        }
+        await Future.delayed(Duration(milliseconds: 200 * attempt));
+        continue;
+      }
+    }
+    // Shouldn't reach here, but return a fallback.
+    return Response(
+      requestOptions: RequestOptions(path: url),
+      statusCode: 500,
+      statusMessage: 'Network/error',
+      data: {'error': 'unexpected_fallback'},
     );
   }
 }

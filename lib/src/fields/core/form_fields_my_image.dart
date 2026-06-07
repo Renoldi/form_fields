@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
@@ -1421,65 +1422,77 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       _syncControllerImages(provider);
     }
 
-    var response = await DioUtil.uploadFile(
-      url: widget.uploadUrl!,
-      filePath: image.path,
-      filename: File(image.path).path.split('/').last,
-      headers: headers,
-      onProgress: (progress) {
-        provider.setUploadProgress(index, progress);
-      },
-      fields: extraFields.isNotEmpty ? extraFields : null,
-      fileFieldName: widget.uploadFileFieldName,
-      includeReqType: widget.uploadIncludeReqType,
-    );
-
-    // Handle authentication failure (401): attempt a single silent token
-    // refresh via `uploadTokenRefresher`, retry once with the new token,
-    // otherwise enqueue the sanitized payload and notify the caller.
-    if (response != null && response.statusCode == 401) {
-      String? newToken;
-      if (widget.uploadTokenRefresher != null) {
-        try {
-          newToken = await widget.uploadTokenRefresher!();
-        } catch (_) {
-          newToken = null;
-        }
+    Response? response;
+    Map<String, dynamic>? built;
+    try {
+      // Build an upload-ready payload map (may write temp file for base64)
+      built = await UploadHelper.buildUploadPayloadFromMap(payload);
+      if (built == null) {
+        provider.resetUploadProgress(index);
+        return;
       }
 
-      if (newToken != null && newToken.isNotEmpty) {
-        try {
-          final retryHeaders = Map<String, String>.from(headers);
-          retryHeaders['Authorization'] = newToken;
-          final retryResp = await DioUtil.uploadFile(
-            url: widget.uploadUrl!,
-            filePath: image.path,
-            filename: File(image.path).path.split('/').last,
-            headers: retryHeaders,
-            onProgress: (progress) {
-              provider.setUploadProgress(index, progress);
-            },
-            fields: extraFields.isNotEmpty ? extraFields : null,
-            fileFieldName: widget.uploadFileFieldName,
-            includeReqType: widget.uploadIncludeReqType,
-          );
-          response = retryResp;
-        } catch (_) {
-          // ignore and fallthrough to queueing below
-        }
+      // Merge headers (use current `headers` which contains latest Authorization)
+      final headersForUpload = (built['headers'] is Map)
+          ? Map<String, String>.from(built['headers'] as Map)
+          : <String, String>{};
+      headersForUpload.addAll(headers);
+
+      // Build fields map
+      final fieldsMap = <String, String>{};
+      if (built['fields'] is Map) {
+        (built['fields'] as Map).forEach((k, v) {
+          fieldsMap[k.toString()] = v.toString();
+        });
       }
 
-      // If after optional refresh/retry we still have no response or the
-      // server returned 401, treat as auth-expired: queue sanitized payload
-      // (without Authorization) and notify the app.
-      if (response == null || response.statusCode == 401) {
-        // Prepare sanitized payload (remove Authorization) for persistence
-        final headersForPersist = Map<String, String>.from(headers);
-        headersForPersist.remove('Authorization');
-        final sanitizedPayload = Map<String, dynamic>.from(payload);
-        sanitizedPayload['headers'] = headersForPersist;
+      // Base64 (prefer explicit file entry, fallback to image.base64)
+      String? base64Val;
+      try {
+        final fe = payload['file'];
+        if (fe is Map &&
+            fe['base64'] is String &&
+            (fe['base64'] as String).trim().isNotEmpty) {
+          base64Val = fe['base64'] as String;
+        } else if (image.base64.isNotEmpty) {
+          base64Val = image.base64;
+        }
+      } catch (_) {}
 
-        // Mark image as queued and attach sanitized payload
+      final direct = DirectUploadPayload(
+        url: built['url'] as String,
+        filePath: built['filePath'] as String,
+        fileName: built['fileName'] as String,
+        base64: base64Val,
+        headers: headersForUpload,
+        fields: fieldsMap,
+        fileFieldName:
+            built['fileFieldName'] as String? ?? widget.uploadFileFieldName,
+        includeReqType:
+            (built['includeReqType'] == true) || widget.uploadIncludeReqType,
+        uploadCorrelationId: payload['uploadCorrelationId']?.toString(),
+      );
+
+      final outcome = await UploadService.instance.uploadDirectPayload(
+        direct,
+        uploadTokenRefresher: widget.uploadTokenRefresher,
+        onUploadAuthExpired: () {
+          try {
+            widget.onUploadAuthExpired?.call();
+          } catch (_) {}
+        },
+        onProgress: (progress) {
+          provider.setUploadProgress(index, progress);
+        },
+      );
+
+      response = outcome.response;
+
+      // If UploadService signalled auth-expired and returned a sanitized
+      // payload, attach it to the image and notify the caller.
+      if (outcome.authExpiredQueued && outcome.sanitizedPayload != null) {
+        final sanitized = outcome.sanitizedPayload!;
+        final sanitizedMap = sanitized.toJson();
         final updatedImage = MyImageResult(
           link: images[index].link,
           base64: images[index].base64,
@@ -1488,36 +1501,29 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           description: (effDesc != null && effDesc.isNotEmpty)
               ? effDesc
               : images[index].description,
-          payload: sanitizedPayload,
+          payload: sanitizedMap,
           status: MyImageStatus.queued,
         );
         provider.updateImage(index, updatedImage);
         _syncControllerImages(provider);
 
-        // Legacy list callback removed; notify via payload-based callback below.
-
         try {
-          final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
-            updatedImage,
-            defaultUrl: widget.uploadUrl,
-            fileFieldName: widget.uploadFileFieldName,
-            includeReqType: widget.uploadIncludeReqType,
-          );
-          if (direct != null) {
-            widget.onFailDirectUploadPayload?.call([direct]);
-          }
+          widget.onFailDirectUploadPayload?.call([sanitized]);
         } catch (e, st) {
           debugPrint('Failed to call onFailDirectUploadPayload: $e\n$st');
         }
 
-        // Notify the app that auth expired so it can prompt re-login.
-        try {
-          widget.onUploadAuthExpired?.call();
-        } catch (_) {}
-
         // Stop further processing for this upload.
         return;
       }
+    } finally {
+      // Clean up any temp file created by buildUploadPayloadFromMap
+      try {
+        if (built != null && built['tempFileCreated'] == true) {
+          final tf = File(built['filePath'] as String);
+          if (await tf.exists()) await tf.delete();
+        }
+      } catch (_) {}
     }
     if (!mounted) return;
     final l = FormFieldsLocalizations.of(context);
