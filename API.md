@@ -569,8 +569,6 @@ FormFieldsMyImage({
   String? uploadSuccessMessage,
   String? uploadFailedMessage,
   String? uploadErrorMessage,
-  String uploadFileUrlKey = 'fileUrl',
-  String uploadImageIdKey = 'imageId',
   bool allow = true,
   bool showUploadResultDialog = false,
   bool showDesc = false,
@@ -610,14 +608,13 @@ FormFieldsMyImage({
 
 #### Direct Upload
 
-| Property                 | Type      | Default     | Description                                              |
-| ------------------------ | --------- | ----------- | -------------------------------------------------------- |
-| `isDirectUpload`         | `bool`    | `false`     | Upload immediately after picking                         |
-| `uploadUrl`              | `String?` | `null`      | Upload endpoint (required when `isDirectUpload: true`)   |
-| `uploadToken`            | `String?` | `null`      | Bearer token for `Authorization` header                  |
-| `uploadFileUrlKey`       | `String`  | `'fileUrl'` | JSON key for the uploaded file URL in the response       |
-| `uploadImageIdKey`       | `String`  | `'imageId'` | JSON key for the image ID in the response                |
-| `showUploadResultDialog` | `bool`    | `false`     | Show `AppDialogService` dialog on upload success/failure |
+| Property                 | Type      | Default | Description                                                                                   |
+| ------------------------ | --------- | ------- | --------------------------------------------------------------------------------------------- |
+| `isDirectUpload`         | `bool`    | `false` | Upload immediately after picking                                                              |
+| `uploadUrl`              | `String?` | `null`  | Upload endpoint (required when `isDirectUpload: true`)                                        |
+| `uploadToken`            | `String?` | `null`  | Bearer token for `Authorization` header                                                       |
+| _Note_                   |           |         | The upload response keys are auto-detected by the mapper; manual keys are no longer required. |
+| `showUploadResultDialog` | `bool`    | `false` | Show `AppDialogService` dialog on upload success/failure                                      |
 
 #### Upload Messages
 
@@ -646,6 +643,58 @@ All message/title fields are optional; missing values fall back to `FormFieldsLo
 - **Direct upload**: after picking, `DioUtil.uploadFile` is called with a linear progress indicator. On success, `MyimageResult.link` and `MyimageResult.imageId` are populated from the server response.
 - **Picker source**: a bottom-sheet lets the user choose camera or gallery. Use `controller.pickImage(source: 'camera'|'gallery')` to skip the sheet programmatically.
 - **Controller sync**: every change (add, remove, upload complete) is synced to `controller.images` before any callback fires.
+
+### Retry & Offline Queue (Cara penggunaan retry)
+
+- Saat `isDirectUpload: true` dan perangkat tidak memiliki koneksi, widget akan membangun payload upload bertipe `DirectUploadPayload` dan memanggil callback `onFailDirectUploadPayload` dengan daftar payload yang siap di-persist. Simpan payload ini (mis. file JSON) agar bisa dikirim ulang nanti.
+- `UploadService.uploadDirectPayload` mencoba upload langsung. Jika server merespon `401`, layanan akan memanggil `uploadTokenRefresher` sekali untuk mendapatkan token baru dan mencoba kembali. Jika token baru tidak tersedia atau retry masih menghasilkan `401`, service mengembalikan `sanitizedPayload` (tanpa header `Authorization`) sehingga caller dapat menyimpan/ mengantri payload tersebut.
+- Jika terjadi kesalahan jaringan/DNS (mis. "Failed host lookup"), `DioUtil.uploadFile` melakukan beberapa percobaan ulang singkat (retry/backoff) lalu mengembalikan `Response` diagnostik. `UploadService` mengenali kondisi ini dan juga mengembalikan `sanitizedPayload` sehingga payload dapat langsung di-queue untuk retry.
+
+#### Callback: `onUploadQueued`
+
+Untuk membedakan alasan payload di-queue (auth vs network), library menambahkan callback `onUploadQueued(DirectUploadPayload payload, bool authExpired)` yang dipanggil ketika `UploadService` memutuskan untuk mengantre payload untuk pengiriman ulang. Parameter `authExpired` bernilai `true` bila queue terjadi karena masalah otentikasi (`401`) dan `false` bila karena masalah jaringan/DNS.
+
+Contoh penggunaan singkat:
+
+```dart
+FormFieldsMyImage(
+  isDirectUpload: true,
+  uploadUrl: 'https://api.example.com/upload',
+  onUploadQueued: (payload, authExpired) {
+    // Simpan payload ke disk atau tampilkan notifikasi berbeda
+    savePayload(payload.toJson());
+    if (authExpired) promptRelogin();
+  },
+)
+```
+
+Contoh pola penyimpanan & pengiriman ulang (contoh singkat):
+
+```dart
+// Saat menerima payload yang gagal karena offline/auth:
+void onFail(List<DirectUploadPayload> payloads) async {
+  // Simpan ke file lokal (mis. JSON) atau database ringan
+  await savePayloadsToDisk(payloads.map((p) => p.toJson()).toList());
+}
+
+// Ketika aplikasi kembali online atau pengguna menekan "Retry":
+Future<void> retrySavedPayloads() async {
+  final items = await loadPayloadsFromDisk(); // List<Map>
+  for (final m in items) {
+    final payload = DirectUploadPayload.fromJson(m);
+    final outcome = await UploadService.instance.uploadDirectPayload(
+      payload,
+      uploadTokenRefresher: () async => await refreshToken(),
+    );
+    if (outcome.success) removePayloadFromDisk(m);
+  }
+}
+```
+
+Catatan:
+
+- `UploadHelper.buildDirectUploadPayloadsFromImages` membantu membuat `DirectUploadPayload` dari `MyImageResult` untuk langsung disimpan.
+- `DioUtil.uploadFile` dapat membuat berkas sementara dari `base64` — kode library mencoba membersihkan berkas temp setelah upload atau ketika payload diproses.
 
 ### Usage Examples
 

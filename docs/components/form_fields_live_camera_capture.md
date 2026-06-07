@@ -56,7 +56,7 @@ Both `key` and `cameraController` can be used together.
 - `uploadToken` _(optional)_: Bearer token sent in `Authorization` header.
 - `showUploadResultDialog` _(optional)_: Show success/error dialog after upload.
 - `showUploadLoading` _(optional)_: Show loading overlay on the camera preview while uploading (default `true`).
-- `uploadFileUrlKey` / `uploadImageIdKey`: JSON keys for server response parsing.
+- Response JSON keys: the mapper auto-detects common keys for file URL and image ID; no manual keys required.
 
 ## Direct Upload
 

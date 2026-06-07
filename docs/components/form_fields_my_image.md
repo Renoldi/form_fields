@@ -27,8 +27,6 @@ FormFieldsMyImage(
   maxImages: 1,
   isDirectUpload: true,
   uploadUrl: 'https://api.example.com/upload',
-  uploadFileUrlKey: 'fileUrl',
-  uploadImageIdKey: 'imageId',
   onImageChanged: (image) {
     // Pada direct upload, callback ini membawa hasil final.
     // Cek image.link untuk URL file dari server.
@@ -37,8 +35,6 @@ FormFieldsMyImage(
   },
 )
 ```
-
-> Jika `image.link` masih kosong, pastikan response upload memang mengandung key URL sesuai `uploadFileUrlKey`.
 
 ---
 
@@ -95,17 +91,15 @@ FormFieldsMyImage(
 
 ### Upload
 
-| Properti                     | Tipe      | Default     | Deskripsi                             |
-| ---------------------------- | --------- | ----------- | ------------------------------------- |
-| `uploadUrl`                  | `String?` | `null`      | Endpoint upload                       |
-| `uploadToken`                | `String?` | `null`      | Authorization token                   |
-| `isDirectUpload`             | `bool`    | `false`     | Upload otomatis saat gambar dipilih   |
-| `uploadFileUrlKey`           | `String`  | `'fileUrl'` | Key JSON untuk URL file hasil upload  |
-| `uploadImageIdKey`           | `String`  | `'imageId'` | Key JSON untuk ID gambar hasil upload |
-| `showUploadResultDialog`     | `bool`    | `false`     | Tampilkan dialog hasil upload         |
-| `uploadSuccessTitle/Message` | `String?` |             | Pesan kustom sukses upload            |
-| `uploadFailedTitle/Message`  | `String?` |             | Pesan kustom gagal upload             |
-| `uploadErrorTitle/Message`   | `String?` |             | Pesan kustom error upload             |
+| Properti                     | Tipe      | Default | Deskripsi                           |
+| ---------------------------- | --------- | ------- | ----------------------------------- |
+| `uploadUrl`                  | `String?` | `null`  | Endpoint upload                     |
+| `uploadToken`                | `String?` | `null`  | Authorization token                 |
+| `isDirectUpload`             | `bool`    | `false` | Upload otomatis saat gambar dipilih |
+| `showUploadResultDialog`     | `bool`    | `false` | Tampilkan dialog hasil upload       |
+| `uploadSuccessTitle/Message` | `String?` |         | Pesan kustom sukses upload          |
+| `uploadFailedTitle/Message`  | `String?` |         | Pesan kustom gagal upload           |
+| `uploadErrorTitle/Message`   | `String?` |         | Pesan kustom error upload           |
 
 ### UI Builders
 

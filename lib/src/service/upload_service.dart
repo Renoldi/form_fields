@@ -4,6 +4,12 @@ import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 
+/// Callback type invoked when a payload is queued because of auth expiry
+/// or network failure. The boolean flag is `true` when the queueing was
+/// due to authentication (401) and `false` for network/DNS errors.
+typedef UploadQueuedCallback = void Function(
+    DirectUploadPayload payload, bool authExpired);
+
 /// Result of an upload operation.
 class UploadOutcome {
   final bool success;
@@ -39,6 +45,7 @@ class UploadService {
     Future<String?> Function()? uploadTokenRefresher,
     VoidCallback? onUploadAuthExpired,
     void Function(double progress)? onProgress,
+    UploadQueuedCallback? onUploadQueued,
   }) async {
     final headers = Map<String, String>.from(payload.headers);
     final fieldsList = payload.fields.entries
@@ -88,6 +95,9 @@ class UploadService {
         includeReqType: payload.includeReqType,
         uploadCorrelationId: payload.uploadCorrelationId,
       );
+      try {
+        onUploadQueued?.call(sanitized, false);
+      } catch (_) {}
       return UploadOutcome(
           success: false,
           response: response,
@@ -142,6 +152,9 @@ class UploadService {
         );
         try {
           onUploadAuthExpired?.call();
+        } catch (_) {}
+        try {
+          onUploadQueued?.call(sanitized, true);
         } catch (_) {}
         return UploadOutcome(
             success: false,

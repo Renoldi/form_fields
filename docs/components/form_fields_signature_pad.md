@@ -133,14 +133,13 @@ FormFieldsSignaturePad(
 | `uploadToken`                 | `String?`                                 | Bearer token for `Authorization` header                          |
 | `showUploadResultDialog`      | `bool`                                    | Show success/error dialog after upload                           |
 | `showUploadLoading`           | `bool`                                    | Loading overlay on pad + camera while uploading (default `true`) |
-| `uploadFileUrlKey`            | `String`                                  | JSON key for server file URL (default `'url'`)                   |
-| `uploadImageIdKey`            | `String`                                  | JSON key for server image ID (default `'id'`)                    |
-| `uploadSuccessTitle`          | `String?`                                 | Custom dialog title on success (`null` = localized default)      |
-| `uploadFailedTitle`           | `String?`                                 | Custom dialog title on failure                                   |
-| `uploadErrorTitle`            | `String?`                                 | Custom dialog title on error                                     |
-| `uploadSuccessMessage`        | `String?`                                 | Custom dialog message on success                                 |
-| `uploadFailedMessage`         | `String?`                                 | Custom dialog message on failure                                 |
-| `uploadErrorMessage`          | `String?`                                 | Custom dialog message on error                                   |
+
+| `uploadSuccessTitle` | `String?` | Custom dialog title on success (`null` = localized default) |
+| `uploadFailedTitle` | `String?` | Custom dialog title on failure |
+| `uploadErrorTitle` | `String?` | Custom dialog title on error |
+| `uploadSuccessMessage` | `String?` | Custom dialog message on success |
+| `uploadFailedMessage` | `String?` | Custom dialog message on failure |
+| `uploadErrorMessage` | `String?` | Custom dialog message on error |
 
 ## SignaturePadExportResult
 
@@ -186,6 +185,21 @@ FormFieldsSignaturePad(
   },
 )
 ```
+
+### Queued uploads and `onUploadQueued`
+
+When an automatic upload cannot be completed immediately (for example due to a transient network/DNS error or because the server returns 401 and token refresh fails), the widget will surface a sanitized payload to the host app via the `onUploadQueued` callback. The payload is a `DirectUploadPayload` instance with any sensitive headers (for example `Authorization`) removed so it is safe to persist to disk for later retry.
+
+Callback signature:
+
+```dart
+void Function(DirectUploadPayload payload, bool authExpired)
+```
+
+- `payload`: sanitized `DirectUploadPayload` suitable for persistence and retry.
+- `authExpired`: `true` if the upload was queued because authentication expired (caller may trigger login/refresh), `false` for network/connection issues.
+
+The widget also continues to support the legacy `onFailDirectUploadPayload(List<DirectUploadPayload>)` which is invoked when multiple payloads need to be queued (for example signature + live selfie). Prefer using `onUploadQueued` for single-payload handling and clearer semantics.
 
 - When `isDirectUpload: true`, `uploadUrl` must be non-empty (enforced by assertion).
 - The loading overlay disables the Clear and Export buttons while uploading.

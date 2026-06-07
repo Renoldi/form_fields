@@ -62,6 +62,12 @@ class FormFieldsMyImage extends StatefulWidget {
   /// re-login or show a UI hint.
   final VoidCallback? onUploadAuthExpired;
 
+  /// New callback invoked when UploadService queues a payload for later
+  /// retry. The boolean is `true` when queueing was due to auth expiry
+  /// (401) and `false` for network/DNS failures.
+  final void Function(DirectUploadPayload payload, bool authExpired)?
+      onUploadQueued;
+
   /// Called when `isDirectUpload == true` but the device has no internet.
   /// Receives a list of payload Maps (each containing URL, headers, fields
   /// and file data) so the caller can store and send them later when online.
@@ -162,6 +168,7 @@ class FormFieldsMyImage extends StatefulWidget {
       this.uploadFileFieldName = 'file',
       this.uploadIncludeReqType = false,
       this.onFailDirectUploadPayload,
+      this.onUploadQueued,
       this.allow = true,
       this.showUploadResultDialog = false,
       this.showDesc = false,
@@ -1481,41 +1488,44 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             widget.onUploadAuthExpired?.call();
           } catch (_) {}
         },
+        onUploadQueued: (sanitized, authExpired) {
+          try {
+            final sanitizedMap = sanitized.toJson();
+            final updatedImage = MyImageResult(
+              link: images[index].link,
+              base64: images[index].base64,
+              path: images[index].path,
+              imageId: images[index].imageId,
+              description: (effDesc != null && effDesc.isNotEmpty)
+                  ? effDesc
+                  : images[index].description,
+              payload: sanitizedMap,
+              status: MyImageStatus.queued,
+            );
+            provider.updateImage(index, updatedImage);
+            _syncControllerImages(provider);
+
+            try {
+              widget.onFailDirectUploadPayload?.call([sanitized]);
+            } catch (e, st) {
+              debugPrint('Failed to call onFailDirectUploadPayload: $e\n$st');
+            }
+
+            if (authExpired) {
+              try {
+                widget.onUploadAuthExpired?.call();
+              } catch (_) {}
+            }
+          } catch (e, st) {
+            debugPrint('onUploadQueued handler error: $e\n$st');
+          }
+        },
         onProgress: (progress) {
           provider.setUploadProgress(index, progress);
         },
       );
 
       response = outcome.response;
-
-      // If UploadService signalled auth-expired and returned a sanitized
-      // payload, attach it to the image and notify the caller.
-      if (outcome.authExpiredQueued && outcome.sanitizedPayload != null) {
-        final sanitized = outcome.sanitizedPayload!;
-        final sanitizedMap = sanitized.toJson();
-        final updatedImage = MyImageResult(
-          link: images[index].link,
-          base64: images[index].base64,
-          path: images[index].path,
-          imageId: images[index].imageId,
-          description: (effDesc != null && effDesc.isNotEmpty)
-              ? effDesc
-              : images[index].description,
-          payload: sanitizedMap,
-          status: MyImageStatus.queued,
-        );
-        provider.updateImage(index, updatedImage);
-        _syncControllerImages(provider);
-
-        try {
-          widget.onFailDirectUploadPayload?.call([sanitized]);
-        } catch (e, st) {
-          debugPrint('Failed to call onFailDirectUploadPayload: $e\n$st');
-        }
-
-        // Stop further processing for this upload.
-        return;
-      }
     } finally {
       // Clean up any temp file created by buildUploadPayloadFromMap
       try {

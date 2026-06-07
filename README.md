@@ -138,6 +138,11 @@ FormFieldsSignaturePad(
 )
 ```
 
+Note on resiliency and queuing:
+
+- The uploader includes short retry/backoff for transient DNS/connection errors. If a payload cannot be uploaded because of network issues or `401` auth failures, the library will produce a sanitized `DirectUploadPayload` (with `Authorization` removed) and queue it for retry. Use `onFailDirectUploadPayload` to persist payloads.
+- New callback `onUploadQueued(DirectUploadPayload payload, bool authExpired)` is invoked when the library queues a payload; `authExpired == true` indicates the queueing was due to an authentication failure (401).
+
 ### Prefilled Signature (Controller)
 
 Seed the pad with an existing signature on first render using `FormFieldsSignaturePadController`:
@@ -200,38 +205,39 @@ FormFieldsSignaturePad(
 
 ### API Reference
 
-| Parameter                | Type                                       | Default              | Description                                            |
-| ------------------------ | ------------------------------------------ | -------------------- | ------------------------------------------------------ |
-| `height`                 | `double`                                   | `200`                | Signature pad height                                   |
-| `width`                  | `double`                                   | `∞`                  | Signature pad width                                    |
-| `backgroundColor`        | `Color`                                    | `white`              | Pad background                                         |
-| `penColor`               | `Color`                                    | `black`              | Pen color                                              |
-| `penStrokeWidth`         | `double`                                   | `3.0`                | Pen thickness                                          |
-| `exportBackgroundColor`  | `Color?`                                   | `null`               | Export PNG background (`null` = transparent)           |
-| `onExported`             | `void Function(MyimageResult?)?`           | —                    | Callback with signature only                           |
-| `onExportedResult`       | `void Function(SignaturePadExportResult)?` | —                    | Callback with signature + live capture                 |
-| `onLiveCaptured`         | `void Function(MyimageResult)?`            | —                    | Fired immediately after auto-capture                   |
-| `showExportPreview`      | `bool`                                     | `false`              | Replace pad with exported image preview                |
-| `exportPreviewSource`    | `SignaturePadPreviewSource`                | `.signature`         | Which image to show in preview                         |
-| `showLiveCamera`         | `bool`                                     | `false`              | Show front-camera live preview                         |
-| `liveCameraHeight`       | `double`                                   | `200`                | Camera widget height                                   |
-| `liveCameraController`   | `FormFieldsMyImageController?`             | —                    | External controller for live capture                   |
-| `signaturePadController` | `FormFieldsSignaturePadController?`        | —                    | Controller for prefill and programmatic clear          |
-| `layoutBuilder`          | `Widget Function(ctx, pad, camera?)?`      | —                    | Fully custom layout                                    |
-| `liveCameraBuilder`      | `Widget Function(ctx, camera)?`            | —                    | Custom camera section wrapper                          |
-| `isDirectUpload`         | `bool`                                     | `false`              | Auto-upload after export                               |
-| `uploadUrl`              | `String?`                                  | —                    | Upload endpoint (required when `isDirectUpload: true`) |
-| `uploadToken`            | `String?`                                  | —                    | Bearer token for `Authorization` header                |
-| `showUploadResultDialog` | `bool`                                     | `false`              | Show success/error dialog                              |
-| `showUploadLoading`      | `bool`                                     | `true`               | Loading overlay during upload                          |
-| `uploadFileUrlKey`       | `String`                                   | `'fileUrl'`          | JSON key for server URL                                |
-| `uploadImageIdKey`       | `String`                                   | `'imageId'`          | JSON key for server ID                                 |
-| `label`                  | `String?`                                  | —                    | Label text                                             |
-| `labelPosition`          | `LabelPosition`                            | `.none`              | Label placement                                        |
-| `isRequired`             | `bool`                                     | `false`              | Signature is required for form validity                |
-| `validator`              | `String? Function(bool)?`                  | —                    | Custom validator                                       |
-| `autovalidateMode`       | `AutovalidateMode`                         | `.onUserInteraction` | When to validate                                       |
-| `externalErrorText`      | `String?`                                  | —                    | Backend error shown unconditionally                    |
+| Parameter                | Type                                       | Default      | Description                                            |
+| ------------------------ | ------------------------------------------ | ------------ | ------------------------------------------------------ |
+| `height`                 | `double`                                   | `200`        | Signature pad height                                   |
+| `width`                  | `double`                                   | `∞`          | Signature pad width                                    |
+| `backgroundColor`        | `Color`                                    | `white`      | Pad background                                         |
+| `penColor`               | `Color`                                    | `black`      | Pen color                                              |
+| `penStrokeWidth`         | `double`                                   | `3.0`        | Pen thickness                                          |
+| `exportBackgroundColor`  | `Color?`                                   | `null`       | Export PNG background (`null` = transparent)           |
+| `onExported`             | `void Function(MyimageResult?)?`           | —            | Callback with signature only                           |
+| `onExportedResult`       | `void Function(SignaturePadExportResult)?` | —            | Callback with signature + live capture                 |
+| `onLiveCaptured`         | `void Function(MyimageResult)?`            | —            | Fired immediately after auto-capture                   |
+| `showExportPreview`      | `bool`                                     | `false`      | Replace pad with exported image preview                |
+| `exportPreviewSource`    | `SignaturePadPreviewSource`                | `.signature` | Which image to show in preview                         |
+| `showLiveCamera`         | `bool`                                     | `false`      | Show front-camera live preview                         |
+| `liveCameraHeight`       | `double`                                   | `200`        | Camera widget height                                   |
+| `liveCameraController`   | `FormFieldsMyImageController?`             | —            | External controller for live capture                   |
+| `signaturePadController` | `FormFieldsSignaturePadController?`        | —            | Controller for prefill and programmatic clear          |
+| `layoutBuilder`          | `Widget Function(ctx, pad, camera?)?`      | —            | Fully custom layout                                    |
+| `liveCameraBuilder`      | `Widget Function(ctx, camera)?`            | —            | Custom camera section wrapper                          |
+| `isDirectUpload`         | `bool`                                     | `false`      | Auto-upload after export                               |
+| `uploadUrl`              | `String?`                                  | —            | Upload endpoint (required when `isDirectUpload: true`) |
+| `uploadToken`            | `String?`                                  | —            | Bearer token for `Authorization` header                |
+| `showUploadResultDialog` | `bool`                                     | `false`      | Show success/error dialog                              |
+| `showUploadLoading`      | `bool`                                     | `true`       | Loading overlay during upload                          |
+
+# `uploadFileUrlKey` and `uploadImageIdKey` have been removed; the mapper now auto-detects common response keys.
+
+| `label` | `String?` | — | Label text |
+| `labelPosition` | `LabelPosition` | `.none` | Label placement |
+| `isRequired` | `bool` | `false` | Signature is required for form validity |
+| `validator` | `String? Function(bool)?` | — | Custom validator |
+| `autovalidateMode` | `AutovalidateMode` | `.onUserInteraction` | When to validate |
+| `externalErrorText` | `String?` | — | Backend error shown unconditionally |
 
 ---
 
@@ -337,6 +343,32 @@ FormFieldsMyImage(
 ```
 
 ---
+
+## Offline persistence & retry (examples)
+
+The example app includes a simple offline-persistence + retry pattern for direct uploads. Key points:
+
+- Persistence location: example uses files under the system temp directory:
+  - `form_fields_offline_payloads_myimage.json` — persisted payloads from `FormFieldsMyImage` example pages
+  - `form_fields_offline_payloads_signature_pad.json` — persisted payloads from `FormFieldsSignaturePad` example pages
+
+- Payload shape and normalization:
+  - Example code normalizes upload payloads into a canonical map with a nested `file` entry (`{ 'file': { 'path', 'base64', 'fileName' }, ... }`).
+  - Each persisted payload includes an `uploadCorrelationId` so retry results can be matched back to UI controllers.
+  - A `source` tag (`myimage` or `signature_pad`) is added so multiple example pages can share the same cache directory without showing mixed previews.
+
+- Deduplication: persisted entries are deduplicated, preferring `uploadCorrelationId` equality, then falling back to `file.path` or `file.base64`.
+
+- Retry behavior: the example's `Retry Uploads` button reads the persisted file, rebuilds upload-ready payloads (decoding `base64` to temp files when needed), calls the upload helper, and removes successful uploads from the persisted queue. Failed uploads remain for future retries.
+
+- Clearing/migrating persisted data:
+  - Remove old global file used by older examples (if present):
+    ```bash
+    adb shell run-as com.example.form_fields_example.debug rm /data/user/0/com.example.form_fields_example.debug/cache/form_fields_offline_payloads.json
+    ```
+  - New per-view files can be removed similarly, or you can rely on the example UI to retry and clear entries.
+
+If you want me to update the documentation in `docs/components/` or add a migration script for legacy persisted files, tell me which option you prefer.
 
 ## Controllers
 
@@ -577,7 +609,7 @@ FormFields<String>(
 - `uploadToken`: optional bearer token sent in `Authorization` header.
 - `showUploadResultDialog`: show success/error dialog after upload.
 - `showUploadLoading`: show loading overlay on the pad (and camera) during upload.
-- `uploadFileUrlKey` / `uploadImageIdKey`: response JSON keys for the server URL and ID.
+- Upload response keys: mapper auto-detects common keys for file URL and image ID; manual keys are no longer required.
 
 ### Signature + Live Camera Example
 
@@ -836,8 +868,7 @@ FormFieldsSignaturePad(
   uploadToken: 'Bearer your_token',       // optional; sent as Authorization header
   showUploadResultDialog: false,          // show success/error dialog after upload
   showUploadLoading: true,                // loading overlay on pad + camera while uploading
-  uploadFileUrlKey: 'url',               // JSON key for server file URL
-  uploadImageIdKey: 'id',                // JSON key for server image ID
+  // Upload response keys are auto-detected by the mapper; no manual keys required.
   uploadSuccessTitle: null,              // null = use localized default
   uploadFailedTitle: null,
   uploadErrorTitle: null,
@@ -881,8 +912,7 @@ FormFieldsLiveCameraCapture(
   uploadToken: 'Bearer your_token',   // optional
   showUploadResultDialog: false,
   showUploadLoading: true,            // loading overlay during upload
-  uploadFileUrlKey: 'url',
-  uploadImageIdKey: 'id',
+  // Upload response keys are auto-detected by the mapper; no manual keys required.
 )
 ```
 

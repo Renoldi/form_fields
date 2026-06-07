@@ -179,10 +179,20 @@ class View extends PresenterState {
                                       const Duration(seconds: 1));
                                   return null;
                                 },
-                                onUploadAuthExpired: () {
-                                  messenger?.showSnackBar(const SnackBar(
-                                      content: Text(
-                                          'Auth expired — payload queued')));
+                                onUploadQueued: (sanitized, authExpired) {
+                                  try {
+                                    viewModel.handleDirectUploadPayload(
+                                        [sanitized.toJson()]);
+                                  } catch (_) {}
+                                  if (authExpired) {
+                                    messenger?.showSnackBar(const SnackBar(
+                                        content: Text(
+                                            'Auth expired — payload queued')));
+                                  } else {
+                                    messenger?.showSnackBar(const SnackBar(
+                                        content: Text(
+                                            'Network error — payload queued')));
+                                  }
                                 },
                                 onProgress: (p) {
                                   debugPrint(
@@ -210,13 +220,6 @@ class View extends PresenterState {
                                 ));
                                 messenger?.showSnackBar(const SnackBar(
                                     content: Text('Upload succeeded')));
-                              } else if (outcome.authExpiredQueued &&
-                                  outcome.sanitizedPayload != null) {
-                                final sanitized = outcome.sanitizedPayload;
-                                if (sanitized != null) {
-                                  viewModel.handleDirectUploadPayload(
-                                      [sanitized.toJson()]);
-                                }
                               } else {
                                 // Fallback: queue prepared built map for retry
                                 try {
@@ -542,6 +545,24 @@ class View extends PresenterState {
                           viewModel.handleDirectUploadPayload(
                               payloads.map((p) => p.toMap()).toList());
                         } catch (_) {}
+                      },
+                      // NEW: onUploadQueued demonstrates how callers receive sanitized payloads
+                      // when upload is queued due to network or auth issues.
+                      onUploadQueued:
+                          (DirectUploadPayload payload, bool authExpired) {
+                        try {
+                          // persist queued payload into example VM
+                          viewModel
+                              .handleDirectUploadPayload([payload.toJson()]);
+                        } catch (_) {}
+                        final messenger = ScaffoldMessenger.maybeOf(context);
+                        if (authExpired) {
+                          messenger?.showSnackBar(const SnackBar(
+                              content: Text('Auth expired — payload queued')));
+                        } else {
+                          messenger?.showSnackBar(const SnackBar(
+                              content: Text('Network error — payload queued')));
+                        }
                       },
                     ),
                   ),

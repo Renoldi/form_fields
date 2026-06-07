@@ -174,6 +174,13 @@ class FormFieldsSignaturePad extends StatefulWidget {
   final void Function(List<DirectUploadPayload> payloads)?
       onFailDirectUploadPayload;
 
+  /// New callback invoked when an individual upload payload is queued by the
+  /// widget (e.g. network failure). Receives a sanitized `DirectUploadPayload`
+  /// and a boolean `authExpired` which is true when the library detected an
+  /// authentication expiry (401) situation.
+  final void Function(DirectUploadPayload payload, bool authExpired)?
+      onUploadQueued;
+
   /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
   /// Invoked when one or both uploads (signature, live capture) fail on server
   /// so the caller can render a combined error UI. Receives the combined
@@ -260,6 +267,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.uploadErrorMessage,
     this.onFailDirectUploadList,
     this.onFailDirectUploadPayload,
+    this.onUploadQueued,
     this.onError,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
@@ -769,6 +777,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           );
           if (payloads.isNotEmpty) {
             widget.onFailDirectUploadPayload?.call(payloads);
+            // Also provide a per-payload queued notification for callers
+            // that prefer handling single sanitized payloads. At this point
+            // we treat the queue reason as network-related (`authExpired=false`).
+            try {
+              for (final p in payloads) {
+                widget.onUploadQueued?.call(p, false);
+              }
+            } catch (_) {}
           }
         } catch (e, st) {
           debugPrint(

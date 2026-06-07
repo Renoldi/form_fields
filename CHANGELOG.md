@@ -12,6 +12,9 @@ All notable changes to the FormFields package will be documented in this file.
 - Professional UX: validation above countdown, always visible timer, InputDecoration for OTP boxes
 - MyImage widget: image picker/uploader dengan upload langsung, multi-image, scanner dokumen, dan callback perubahan gambar
 
+- Upload resiliency: `DioUtil.uploadFile` adds short retry/backoff for transient DNS/connection errors and returns diagnostic responses on persistent failures.
+- `UploadService.uploadDirectPayload` returns a sanitized `DirectUploadPayload` when uploads are queued due to auth expiry (401) or network failures; new callback `onUploadQueued(DirectUploadPayload payload, bool authExpired)` notifies callers when a payload is queued (authExpired=true means 401).
+
 ### Documentation
 
 - Updated all markdown docs for OTP/verification field, resend UI, OtpBorderType, and localization
