@@ -37,6 +37,10 @@ enum AppRoute {
     name: 'myimage',
     title: 'MyImage',
   ),
+  listData(
+    name: 'list_data',
+    title: 'List Data',
+  ),
   formFieldsSignaturePad(
     name: 'form_fields_signature_pad',
     title: 'Signature Pad',

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:form_fields_example/ui/pages/login/main.dart' as login;
 import 'package:form_fields_example/ui/pages/myimage_examples/main.dart'
     as myimage;
+import 'package:form_fields_example/ui/pages/list_data_examples/main.dart'
+    as list_data_examples;
 import 'package:form_fields_example/ui/pages/icons_gallery/main.dart'
     as icons_gallery;
 import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
@@ -93,6 +95,15 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.myImage,
           child: const myimage.Presenter(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.listData.path,
+        name: AppRoute.listData.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.listData,
+          child: const list_data_examples.Presenter(),
         ),
       ),
       // Public routes
@@ -421,6 +432,8 @@ String _routeTitleKey(AppRoute route) {
       return 'modalBottomSheetShapeExamples';
     case AppRoute.myImage:
       return 'myImage';
+    case AppRoute.listData:
+      return 'listData';
     case AppRoute.formFieldsSignaturePad:
       return 'formFieldsSignaturePad';
     case AppRoute.responsiveMenuGrid:

@@ -101,9 +101,12 @@ class FormFieldsLocalizations {
   // Convenience getters for common strings
   String get cancel => get('cancel');
   String get searchHint => get('searchHint');
+  String get showMore => get('showMore');
+  String get refresh => get('refresh');
   String get selectPrefix => get('selectPrefix');
   String get enterPrefix => get('enterPrefix');
   String get yes => get('yes');
+  String get noItemsFound => get('noItemsFound');
 
   String select(String label) => getWithLabel('select', label);
   String selectAtLeastOne(String label) =>

@@ -35,6 +35,9 @@ const Map<String, String> enUSStrings = {
   'selectAll': 'Select All',
   'deselectAll': 'Deselect All',
   'itemCount': '{value} items selected',
+  // ListData / general UI
+  'showMore': 'Show More',
+  'refresh': 'Refresh',
 
   // Checkbox
   'checkboxRequired': 'Please select at least one {label}',

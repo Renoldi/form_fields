@@ -129,6 +129,13 @@ class ViewModel extends ChangeNotifier {
           routeName: AppRoute.myImage.name,
         ),
         AppMenuItemData(
+          title: 'List Data',
+          subtitle: 'Contoh ListDataComponent',
+          icon: Icons.list,
+          color: Colors.teal,
+          routeName: AppRoute.listData.name,
+        ),
+        AppMenuItemData(
           title: 'Signature Pad',
           subtitle: 'Contoh FormFieldsSignaturePad',
           icon: Icons.draw,

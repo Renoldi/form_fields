@@ -92,6 +92,10 @@ const Map<String, String> idIDStrings = {
   'yes': 'Ya',
   'description': 'Deskripsi',
 
+  // ListData / general UI
+  'showMore': 'Lihat lebih banyak',
+  'refresh': 'Muat Ulang',
+
   // Upload Result
   'uploadSuccessTitle': 'Upload Berhasil',
   'uploadFailedTitle': 'Upload Gagal',

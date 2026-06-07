@@ -118,6 +118,7 @@ export 'src/utilities/upload_ui_constants.dart';
 export 'src/utilities/upload_response_mapper.dart' show UploadResponseMapper;
 export 'src/utilities/validation_exception.dart' show ValidationException;
 export 'src/utilities/app_dialog_typedefs.dart';
+export 'src/general/list_data.dart';
 
 // -------------------
 // Export AppButtonThemeData secara publik agar bisa diimport dari package utama, bukan dari src.
