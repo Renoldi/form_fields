@@ -128,7 +128,10 @@ class AppButton<T> extends StatelessWidget {
           break;
       }
     }
-    final mergedStyle = themedStyle?.merge(style) ?? style;
+    // Ensure a caller-provided `style` overrides theme styles.
+    // `ButtonStyle.merge` prefers the receiver's non-null fields, so
+    // calling `style.merge(themedStyle)` makes `style` take precedence.
+    final mergedStyle = style?.merge(themedStyle) ?? themedStyle;
     final iconColor = mergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
         IconTheme.of(context).color;
 
