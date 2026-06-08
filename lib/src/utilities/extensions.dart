@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 extension StringExtensions on String? {
   /// Check if string is empty or contains only whitespace
@@ -66,6 +67,11 @@ extension StringExtensions on String? {
   String get removeWhitespace {
     if (this == null) return '';
     return this!.replaceAll(RegExp(r'\s+'), '');
+  }
+
+  String get toBeginning {
+    if (this == null || this!.isEmpty) return this ?? '';
+    return toBeginningOfSentenceCase(this!) ?? this!;
   }
 }
 

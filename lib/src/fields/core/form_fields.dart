@@ -459,7 +459,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   Widget _buildBarcodeScanField() {
     final String? value = widget.currentValue as String?;
     final errorText = widget.externalErrorText;
-    final label = widget.label;
+    final label = widget.label.toTitleCase;
     final scanIcon = const Icon(Icons.qr_code_scanner);
     // final scanButtonLabel = 'Scan';
     final cancelButtonLabel = 'Cancel';
@@ -1675,12 +1675,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         if (effectiveValue is String) {
           final localDigits = _extractLocalPhoneDigits(effectiveValue);
           final fullPhone = '$_selectedCountryCode$localDigits';
-          return FormFieldValidators.phone(vm.label, l)(fullPhone);
+          return FormFieldValidators.phone(vm.label.toTitleCase, l)(fullPhone);
         }
         break;
       case FormType.email:
         if (effectiveValue is String) {
-          return FormFieldValidators.email(vm.label, l)(effectiveValue);
+          return FormFieldValidators.email(vm.label.toTitleCase, l)(
+              effectiveValue);
         }
         break;
       case FormType.password:
@@ -1707,7 +1708,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           // Validasi karakter jika verificationOtpAlphanumeric false (hanya angka)
           if (!widget.verificationOtpAlphanumeric &&
               !RegExp(r'^\d+$').hasMatch(effectiveValue)) {
-            return l.getWithLabel('enterValidInteger', vm.label);
+            return l.getWithLabel('enterValidInteger', vm.label.toTitleCase);
           }
           // Jika verificationOtpAlphanumeric true, boleh angka/alfabet, tidak perlu validasi khusus
         }
@@ -1724,7 +1725,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             ? _stripSeparatorsForParse(normalized)
             : normalized;
         if (int.tryParse(cleaned) == null) {
-          return l.getWithLabel('enterValidInteger', vm.label);
+          return l.getWithLabel('enterValidInteger', vm.label.toTitleCase);
         }
       }
     } else if (_isDoubleType()) {
@@ -1734,7 +1735,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             ? _stripSeparatorsForParse(normalized)
             : normalized;
         if (double.tryParse(cleaned) == null) {
-          return l.getWithLabel('enterValidNumber', vm.label);
+          return l.getWithLabel('enterValidNumber', vm.label.toTitleCase);
         }
       }
     }
@@ -1764,7 +1765,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       child: RichText(
         text: TextSpan(
           children: [
-            TextSpan(text: vm.label, style: labelStyle),
+            TextSpan(text: vm.label.toTitleCase, style: labelStyle),
             if (widget.isRequired)
               TextSpan(
                 text: ' *',
@@ -1990,7 +1991,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       autovalidateMode: widget.autovalidateMode,
       validator: (value) => _validateRequired(
         value as T?,
-        widget.label,
+        widget.label.toTitleCase,
         widget.isRequired,
         vm,
         context,
@@ -2266,7 +2267,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       if (normalized.isEmpty) {
                         return _validateRequired(
                           null,
-                          widget.label,
+                          widget.label.toTitleCase,
                           widget.isRequired,
                           vm,
                           context,
@@ -2277,7 +2278,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : normalized);
                       return _validateRequired(
                         parsed as T?,
-                        widget.label,
+                        widget.label.toTitleCase,
                         widget.isRequired,
                         vm,
                         context,
@@ -2287,7 +2288,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       if (normalized.isEmpty) {
                         return _validateRequired(
                           null,
-                          widget.label,
+                          widget.label.toTitleCase,
                           widget.isRequired,
                           vm,
                           context,
@@ -2298,7 +2299,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           : normalized);
                       return _validateRequired(
                         parsed as T?,
-                        widget.label,
+                        widget.label.toTitleCase,
                         widget.isRequired,
                         vm,
                         context,
@@ -2309,7 +2310,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       // Use widget.currentValue for validation, not value from controller
                       return _validateRequired(
                         widget.currentValue,
-                        widget.label,
+                        widget.label.toTitleCase,
                         widget.isRequired,
                         vm,
                         context,
@@ -2322,7 +2323,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       }
                       return _validateRequired(
                         value as T?,
-                        widget.label,
+                        widget.label.toTitleCase,
                         widget.isRequired,
                         vm,
                         context,
@@ -2387,10 +2388,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         prefix: widget.prefix,
                         prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
                         hintText:
-                            '${_getLocalizations(context).enterPrefix}${vm.label}',
+                            '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}',
                         labelText: widget.labelPosition ==
                                 LabelPosition.inBorder
-                            ? '${_getLocalizations(context).enterPrefix}${vm.label}${widget.isRequired ? ' *' : ''}'
+                            ? '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}${widget.isRequired ? ' *' : ''}'
                             : null,
                         focusedErrorBorder: _buildBorderFromType(
                             ctx, widget.borderType,

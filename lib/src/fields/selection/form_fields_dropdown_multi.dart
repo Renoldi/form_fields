@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/enums.dart';
 import '../../utilities/theme_helpers.dart';
+import '../../utilities/extensions.dart';
 
 class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String label;
@@ -88,7 +89,7 @@ class _FormFieldsDropdownMultiState<T>
         }
         final selected = values ?? [];
         if (widget.isRequired && selected.isEmpty) {
-          return l10n.selectAtLeastOne(widget.label);
+          return l10n.selectAtLeastOne(widget.label.toTitleCase);
         }
         if (widget.minSelections != null &&
             selected.length < widget.minSelections!) {
@@ -122,7 +123,7 @@ class _FormFieldsDropdownMultiState<T>
                       ? widget.items.where((item) {
                           final label = widget.itemLabelBuilder != null
                               ? widget.itemLabelBuilder!(item)
-                              : item.toString();
+                              : item.toString().toBeginning;
                           return label
                               .toLowerCase()
                               .contains(filterState[0].toLowerCase());
@@ -130,7 +131,7 @@ class _FormFieldsDropdownMultiState<T>
                       : widget.items;
 
                   return AlertDialog(
-                    title: Text(dialogL10n.select(widget.label)),
+                    title: Text(dialogL10n.select(widget.label.toTitleCase)),
                     content: SizedBox(
                       width: double.maxFinite,
                       height: MediaQuery.of(context).size.height * 0.6,
@@ -175,7 +176,7 @@ class _FormFieldsDropdownMultiState<T>
                                   title: Text(
                                     widget.itemLabelBuilder != null
                                         ? widget.itemLabelBuilder!(item)
-                                        : item.toString(),
+                                        : item.toString().toBeginning,
                                   ),
                                   value: isSelected,
                                   onChanged: (checked) {
@@ -229,12 +230,13 @@ class _FormFieldsDropdownMultiState<T>
           onTap: () => openDialog(state.context),
           child: InputDecorator(
             decoration: InputDecoration(
-              hintText: widget.hintText ?? l10n.select(widget.label),
+              hintText:
+                  widget.hintText ?? l10n.select(widget.label.toTitleCase),
               errorText:
                   (state.errorText != null && state.errorText!.isNotEmpty)
                       ? state.errorText
                       : (state.hasError
-                          ? l10n.selectAtLeastOne(widget.label)
+                          ? l10n.selectAtLeastOne(widget.label.toTitleCase)
                           : null),
               border: border,
               enabledBorder: border,
@@ -243,7 +245,7 @@ class _FormFieldsDropdownMultiState<T>
             ),
             child: selectedItems.isEmpty
                 ? Text(
-                    widget.hintText ?? l10n.select(widget.label),
+                    widget.hintText ?? l10n.select(widget.label.toTitleCase),
                     style: TextStyle(
                       color: resolveTextColor(context, muted: true),
                     ),
@@ -256,7 +258,7 @@ class _FormFieldsDropdownMultiState<T>
                         label: Text(
                           widget.itemLabelBuilder != null
                               ? widget.itemLabelBuilder!(item)
-                              : item.toString(),
+                              : item.toString().toBeginning,
                           style: TextStyle(
                             color: widget.chipTextColor ??
                                 Theme.of(context).colorScheme.onPrimary,
@@ -286,7 +288,7 @@ class _FormFieldsDropdownMultiState<T>
           text: TextSpan(
             children: [
               TextSpan(
-                text: widget.label,
+                text: widget.label.toTitleCase,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: resolveTextColor(context),

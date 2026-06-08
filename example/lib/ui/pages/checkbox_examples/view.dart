@@ -76,7 +76,7 @@ class View extends PresenterState {
                     FormFieldsCheckbox<String>(
                       label: context.tr('cbNewsletter'),
                       initialValue: viewModel.checkbox2,
-                      items: [context.tr('cbSubscribeWeekly')],
+                      items: ['yes', 'no'],
                       isRequired: false,
                       direction: Axis.horizontal,
                       horizontalSideBySide: true,

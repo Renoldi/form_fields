@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/enums.dart';
 import '../../utilities/theme_helpers.dart';
+import '../../utilities/extensions.dart';
 import '../../providers/form_fields_dropdown_notifier.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
@@ -107,7 +108,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                 return widget.externalErrorText;
               }
               if (widget.isRequired && value == null) {
-                return l.select(widget.label);
+                return l.select(widget.label.toTitleCase);
               }
               if (widget.validator != null) {
                 return widget.validator!(value);
@@ -139,14 +140,14 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
               final filteredItems = widget.items.where((item) {
                 final label = widget.itemLabelBuilder != null
                     ? widget.itemLabelBuilder!(item)
-                    : item.toString();
+                    : item.toString().toBeginning;
                 return label
                     .toLowerCase()
                     .contains(filterState[0].toLowerCase());
               }).toList();
 
               return AlertDialog(
-                title: Text(l10n.select(widget.label)),
+                title: Text(l10n.select(widget.label.toTitleCase)),
                 content: SizedBox(
                   width: double.maxFinite,
                   height: MediaQuery.of(context).size.height * 0.6,
@@ -185,7 +186,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                               title: Text(
                                 widget.itemLabelBuilder != null
                                     ? widget.itemLabelBuilder!(item)
-                                    : item.toString(),
+                                    : item.toString().toBeginning,
                               ),
                               selected: isSelected,
                               onTap: () {
@@ -221,14 +222,15 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
         final l10n = FormFieldsLocalizations.of(context);
         final effectiveDecoration = (widget.decoration ??
                 InputDecoration(
-                  hintText: widget.hintText ?? l10n.select(widget.label),
+                  hintText:
+                      widget.hintText ?? l10n.select(widget.label.toTitleCase),
                   prefixIcon: widget.prefixIcon,
                   suffixIcon: widget.suffixIcon,
                 ))
             .copyWith(
           errorText: (state.errorText != null && state.errorText!.isNotEmpty)
               ? state.errorText
-              : (state.hasError ? l10n.select(widget.label) : null),
+              : (state.hasError ? l10n.select(widget.label.toTitleCase) : null),
           border: _buildBorder(context, widget.borderType),
           enabledBorder: _buildBorder(context, widget.borderType),
           focusedBorder:
@@ -245,7 +247,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             if (widget.itemLabelBuilder != null && state.value != null) {
               currentValueText = widget.itemLabelBuilder!(state.value as T);
             } else {
-              currentValueText = state.value.toString();
+              currentValueText = state.value.toString().toBeginning;
             }
           }
 
@@ -259,7 +261,8 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   Expanded(
                     child: Text(
                       currentValueText.isEmpty
-                          ? (widget.hintText ?? l10n.select(widget.label))
+                          ? (widget.hintText ??
+                              l10n.select(widget.label.toTitleCase))
                           : currentValueText,
                       style: TextStyle(
                         color: currentValueText.isEmpty
@@ -279,7 +282,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: widget.label,
+                  text: widget.label.toTitleCase,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -348,7 +351,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   child: Text(
                     widget.itemLabelBuilder != null
                         ? widget.itemLabelBuilder!(item)
-                        : item.toString(),
+                        : item.toString().toBeginning,
                   ),
                 ),
               )
@@ -369,7 +372,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: widget.label,
+                text: widget.label.toTitleCase,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

@@ -507,12 +507,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }
 
   Widget _buildLabel() {
-    final label = widget.label;
-    if (label == null ||
-        label.isEmpty ||
+    final raw = widget.label;
+    if (raw == null ||
+        raw.isEmpty ||
         widget.labelPosition == LabelPosition.none) {
       return const SizedBox.shrink();
     }
+    final label = raw.toTitleCase;
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
     final style = (widget.labelTextStyle ?? defaultStyle)
@@ -596,9 +597,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (widget.isRequired && (effectiveImages.isEmpty)) {
       final l = _localizations;
       if (l == null) return '';
-      final label = widget.label;
-      return (label != null && label.isNotEmpty)
-          ? l.getWithLabel('imageRequired', label)
+      final raw = widget.label;
+      return (raw != null && raw.isNotEmpty)
+          ? l.getWithLabel('imageRequired', raw.toTitleCase)
           : l.get('imageRequiredDefault');
     }
     return null;

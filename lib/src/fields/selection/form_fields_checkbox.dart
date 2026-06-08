@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/theme_helpers.dart';
+import '../../utilities/extensions.dart';
 
 class FormFieldsCheckbox<T> extends StatefulWidget {
   final String? externalErrorText;
@@ -92,7 +93,7 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
           return widget.externalErrorText;
         }
         if (widget.isRequired && (value == null || value.isEmpty)) {
-          return l.selectAtLeastOne(widget.label);
+          return l.selectAtLeastOne(widget.label.toTitleCase);
         }
         if (widget.validator != null) return widget.validator!(value ?? []);
         return null;
@@ -217,7 +218,7 @@ class _FormFieldsCheckboxBodyView<T>
       text: TextSpan(
         children: [
           TextSpan(
-            text: widget.label,
+            text: widget.label.toTitleCase,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -250,6 +251,7 @@ class _FormFieldsCheckboxBodyView<T>
         : null;
 
     final checkboxContainer = Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         border: containerBorder,
         borderRadius: BorderRadius.circular(10),
@@ -275,7 +277,7 @@ class _FormFieldsCheckboxBodyView<T>
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               widget.state.errorText?.isEmpty ?? true
-                  ? l.selectAtLeastOne(widget.label)
+                  ? l.selectAtLeastOne(widget.label.toTitleCase)
                   : widget.state.errorText!,
               style: TextStyle(
                 color: errorColor,
@@ -380,7 +382,7 @@ class _FormFieldsCheckboxBodyView<T>
             child: Text(
               widget.itemLabelBuilder != null
                   ? widget.itemLabelBuilder!(item)
-                  : item.toString(),
+                  : item.toString().toBeginning,
               style: TextStyle(
                 color: isSelected
                     ? resolveTextColor(context)

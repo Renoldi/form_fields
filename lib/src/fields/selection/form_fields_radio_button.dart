@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/theme_helpers.dart';
+import '../../utilities/extensions.dart';
 
 class FormFieldsRadioButton<T> extends StatefulWidget {
   final String? externalErrorText;
@@ -108,7 +109,7 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
           return widget.externalErrorText;
         }
         if (widget.isRequired && value == null) {
-          return l.getWithLabel('selectRequired', widget.label);
+          return l.getWithLabel('selectRequired', widget.label.toTitleCase);
         }
         if (widget.validator != null) return widget.validator!(value);
         return null;
@@ -254,7 +255,7 @@ class _FormFieldsRadioButtonBodyView<T>
       text: TextSpan(
         children: [
           TextSpan(
-            text: widget.label,
+            text: widget.label.toTitleCase,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -288,6 +289,7 @@ class _FormFieldsRadioButtonBodyView<T>
         : null;
 
     final radioContainer = Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         border: containerBorder,
         borderRadius:
@@ -314,7 +316,7 @@ class _FormFieldsRadioButtonBodyView<T>
               (widget.state.errorText != null &&
                       widget.state.errorText!.isNotEmpty)
                   ? widget.state.errorText!
-                  : l.getWithLabel('selectRequired', widget.label),
+                  : l.getWithLabel('selectRequired', widget.label.toTitleCase),
               style: const TextStyle(
                 color: Color(0xFFB71C1C),
                 fontSize: 12,
@@ -490,7 +492,7 @@ class _FormFieldsRadioButtonBodyView<T>
             child: Text(
               widget.itemLabelBuilder != null
                   ? widget.itemLabelBuilder!(item)
-                  : item.toString(),
+                  : item.toString().toBeginning,
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??

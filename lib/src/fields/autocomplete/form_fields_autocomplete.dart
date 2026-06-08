@@ -4,6 +4,7 @@ import 'package:dio/dio.dart' show Options, Response, Dio;
 import 'package:form_fields/src/service/dio_service.dart';
 import 'package:logger/logger.dart';
 import '../../utilities/enums.dart';
+import '../../utilities/extensions.dart';
 
 /// FormFieldsAutocomplete supports:
 /// - Custom query param and token header
@@ -144,8 +145,9 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             break;
         }
 
-        final baseDecoration =
-            (inputDecoration ?? InputDecoration(hintText: fieldLabel)).copyWith(
+        final baseDecoration = (inputDecoration ??
+                InputDecoration(hintText: fieldLabel.toTitleCase))
+            .copyWith(
           border: border,
         );
         InputDecoration effectiveDecoration;
@@ -181,7 +183,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 4.0),
-              child: Text(fieldLabel,
+              child: Text(fieldLabel.toTitleCase,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
             field,
@@ -195,7 +197,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             field,
             Padding(
               padding: const EdgeInsets.only(top: 4.0),
-              child: Text(fieldLabel,
+              child: Text(fieldLabel.toTitleCase,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
           ],
@@ -207,7 +209,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: Text(fieldLabel,
+              child: Text(fieldLabel.toTitleCase,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
             Expanded(child: field),
@@ -221,7 +223,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             Expanded(child: field),
             Padding(
               padding: const EdgeInsets.only(left: 8.0),
-              child: Text(fieldLabel,
+              child: Text(fieldLabel.toTitleCase,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
           ],

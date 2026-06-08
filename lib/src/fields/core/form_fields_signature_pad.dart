@@ -470,9 +470,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     if (widget.isRequired && (hasSignature != true)) {
       final l = _localizations;
       if (l == null) return '';
-      final label = widget.label;
-      return (label != null && label.isNotEmpty)
-          ? l.getWithLabel('signatureRequired', label)
+      final raw = widget.label;
+      return (raw != null && raw.isNotEmpty)
+          ? l.getWithLabel('signatureRequired', raw.toTitleCase)
           : l.get('signatureRequiredDefault');
     }
     return null;
@@ -574,12 +574,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   }
 
   Widget _buildLabel() {
-    final label = widget.label;
-    if (label == null ||
-        label.isEmpty ||
+    final raw = widget.label;
+    if (raw == null ||
+        raw.isEmpty ||
         widget.labelPosition == LabelPosition.none) {
       return const SizedBox.shrink();
     }
+    final label = raw.toTitleCase;
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
     final style = (widget.labelTextStyle ?? defaultStyle)
