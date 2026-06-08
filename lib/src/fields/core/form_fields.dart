@@ -158,6 +158,12 @@ class FormFields<T> extends StatefulWidget {
   /// Number of lines for multiline input
   final int multiLine;
 
+  /// Size presets for the field height. Matches `AppButtonSize` presets.
+  final AppSize fieldSize;
+
+  /// Custom height when `fieldSize` is `AppButtonSize.custom`.
+  final double? customFieldHeight;
+
   /// Number of digits for verification input (default: 6)
   final int verificationLength;
 
@@ -276,6 +282,8 @@ class FormFields<T> extends StatefulWidget {
     this.formType,
     this.labelPosition = LabelPosition.none,
     this.multiLine = 0,
+    this.fieldSize = AppSize.medium,
+    this.customFieldHeight,
     this.verificationLength = 6,
     this.verificationAsOtp = true,
     this.verificationHidden = false,
@@ -1774,7 +1782,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   /// Positions the text field with its label based on labelPosition setting
   Widget _buildFieldWithLabel(Widget textField, FormFieldsController vm) {
-    if (widget.labelPosition == LabelPosition.none) return textField;
+    // When label is hidden (`LabelPosition.none`) add a small top padding so
+    // the field aligns vertically with other controls like `AppButton`
+    // which uses a default `topPadding` of 12.
+    if (widget.labelPosition == LabelPosition.none) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: textField,
+      );
+    }
 
     final label = _buildLabel(vm);
     const labelWidth = 120.0;
@@ -2128,8 +2144,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         ? _buildPhoneCountryCodeDropdown()
                         : null;
 
+                final singleLine = (vm.formType == FormType.password ||
+                    _isVerificationType() ||
+                    widget.multiLine <= 1);
+
                 final textField = TextFormField(
-                  textAlignVertical: (widget.multiLine > 1)
+                  textAlignVertical: singleLine
                       ? TextAlignVertical.center
                       : TextAlignVertical.top,
                   textAlign: TextAlign.start,
@@ -2391,9 +2411,30 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       ),
                 );
 
+                double fieldHeight;
+                switch (widget.fieldSize) {
+                  case AppSize.small:
+                    fieldHeight = kFieldHeightSmall;
+                    break;
+                  case AppSize.medium:
+                    fieldHeight = kFieldHeightMedium;
+                    break;
+                  case AppSize.large:
+                    fieldHeight = kFieldHeightLarge;
+                    break;
+                  case AppSize.custom:
+                    fieldHeight =
+                        widget.customFieldHeight ?? kFieldHeightDefault;
+                    break;
+                }
+
+                final effectiveField = singleLine
+                    ? SizedBox(height: fieldHeight, child: textField)
+                    : textField;
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 20),
-                  child: _buildFieldWithLabel(textField, vm),
+                  child: _buildFieldWithLabel(effectiveField, vm),
                 );
               },
             ),

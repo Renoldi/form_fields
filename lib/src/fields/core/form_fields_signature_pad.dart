@@ -1283,7 +1283,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                 child: AppButton(
                   icon: const Icon(Icons.delete_forever),
                   text: '',
-                  size: AppButtonSize.small,
+                  size: AppSize.small,
                   type: AppButtonType.icon,
                   onPressed:
                       provider.isUploading ? null : _clearSignatureSession,
@@ -1302,7 +1302,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               child: AppButton(
                 icon: const Icon(Icons.verified, size: 32),
                 text: '',
-                size: AppButtonSize.small,
+                size: AppSize.small,
                 type: AppButtonType.icon,
                 onPressed: provider.isUploading ? null : _exportSignature,
                 customIconSize: 32,

@@ -4,8 +4,6 @@ import 'presenter.dart';
 import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'package:form_fields_example/state/app_state_notifier.dart';
-import 'package:form_fields_example/config/app_routes.dart';
 
 class View extends PresenterState {
   Future<List<String>> _dataSource(int offset, String? search) async {
@@ -35,14 +33,18 @@ class View extends PresenterState {
     }
     final detailTemplate = context.tr('detailFor');
     final detail = detailTemplate.replaceFirst('{value}', value);
-    return ListTile(
-      leading: CircleAvatar(child: Text(value.split(' ').last)),
-      title: Text(value),
-      subtitle: Text(detail),
-      onTap: () {
-        listController.value.selected = value;
-        listController.commit();
-      },
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      color: Colors.white,
+      child: ListTile(
+        leading: CircleAvatar(child: Text(value.split(' ').last)),
+        title: Text(value),
+        subtitle: Text(detail),
+        onTap: () {
+          listController.value.selected = value;
+          listController.commit();
+        },
+      ),
     );
   }
 
@@ -54,35 +56,35 @@ class View extends PresenterState {
         builder: (context, vm, _) {
           // Keep the view model informed when data arrives via param
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+          return Scaffold(
+            backgroundColor: Color(0xFFF6F6FB),
+            body: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        context.tr('listDataExampleTitle'),
-                        style: Theme.of(context).textTheme.titleLarge,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    TextButton.icon(
-                      onPressed: () => context.pushRoute(AppRoute.language),
-                      icon: const Icon(Icons.language),
-                      label: Text(context
-                                  .watch<AppStateNotifier>()
-                                  .locale
-                                  .languageCode ==
-                              'id'
-                          ? context.tr('languageIndonesian')
-                          : context.tr('languageEnglish')),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: Text(
+                //         context.tr('listDataExampleTitle'),
+                //         style: Theme.of(context).textTheme.titleLarge,
+                //         overflow: TextOverflow.ellipsis,
+                //       ),
+                //     ),
+                //     const SizedBox(width: 12),
+                //     TextButton.icon(
+                //       onPressed: () => context.pushRoute(AppRoute.language),
+                //       icon: const Icon(Icons.language),
+                //       label: Text(context
+                //                   .watch<AppStateNotifier>()
+                //                   .locale
+                //                   .languageCode ==
+                //               'id'
+                //           ? context.tr('languageIndonesian')
+                //           : context.tr('languageEnglish')),
+                //     ),
+                //   ],
+                // ),
+                // const SizedBox(height: 8),
                 ValueListenableBuilder<ListDataComponentValue<String>>(
                   valueListenable: listController,
                   builder: (context, value, _) {
@@ -95,6 +97,7 @@ class View extends PresenterState {
                 const SizedBox(height: 8),
                 Expanded(
                   child: ListDataComponent<String>(
+                    searchIconInside: false,
                     controller: listController,
                     dataSource: _dataSource,
                     onDataReceived: (datas, search) => vm.updateSearch(search),

@@ -11,7 +11,7 @@ class AppSegmentedButton<T> extends StatelessWidget {
   final ValueChanged<Set<T>> onSelectionChanged;
   final bool multiSelectionEnabled;
   final bool emptySelectionAllowed;
-  final AppButtonSize size;
+  final AppSize size;
   final ButtonStyle? style;
   final bool showSelectedIcon;
   final Widget? selectedIcon;
@@ -23,7 +23,7 @@ class AppSegmentedButton<T> extends StatelessWidget {
     required this.onSelectionChanged,
     this.multiSelectionEnabled = false,
     this.emptySelectionAllowed = false,
-    this.size = AppButtonSize.medium,
+    this.size = AppSize.medium,
     this.style,
     this.showSelectedIcon = true,
     this.selectedIcon,
@@ -45,23 +45,23 @@ class AppSegmentedButton<T> extends StatelessWidget {
 
   ButtonStyle get _sizeStyle {
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return SegmentedButton.styleFrom(
           minimumSize: const Size.fromHeight(36),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           visualDensity: VisualDensity.compact,
         );
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return SegmentedButton.styleFrom(
           minimumSize: const Size.fromHeight(40),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         );
-      case AppButtonSize.large:
+      case AppSize.large:
         return SegmentedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         );
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return SegmentedButton.styleFrom(
           minimumSize: const Size.fromHeight(40),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

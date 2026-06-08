@@ -21,13 +21,13 @@ class AppFabMenuItem {
 class AppFabMenu extends StatefulWidget {
   final List<AppFabMenuItem> items;
   final Widget? mainIcon;
-  final AppButtonSize size;
+  final AppSize size;
 
   const AppFabMenu({
     super.key,
     required this.items,
     this.mainIcon,
-    this.size = AppButtonSize.medium,
+    this.size = AppSize.medium,
   });
 
   @override
@@ -140,12 +140,12 @@ class _AppFabMenuState extends State<AppFabMenu>
     }
 
     final fab = switch (widget.size) {
-      AppButtonSize.small => FloatingActionButton.small(
+      AppSize.small => FloatingActionButton.small(
           heroTag: null,
           onPressed: onPress,
           child: item.icon,
         ),
-      AppButtonSize.large => FloatingActionButton.large(
+      AppSize.large => FloatingActionButton.large(
           heroTag: null,
           onPressed: onPress,
           child: item.icon,
@@ -192,12 +192,12 @@ class _AppFabMenuState extends State<AppFabMenu>
     );
 
     return switch (widget.size) {
-      AppButtonSize.small => FloatingActionButton.small(
+      AppSize.small => FloatingActionButton.small(
           heroTag: null,
           onPressed: _toggle,
           child: icon,
         ),
-      AppButtonSize.large => FloatingActionButton.large(
+      AppSize.large => FloatingActionButton.large(
           heroTag: null,
           onPressed: _toggle,
           child: icon,

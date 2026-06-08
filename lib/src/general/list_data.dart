@@ -28,6 +28,16 @@ class ListDataComponent<T> extends StatefulWidget {
   final bool autoSearch;
   final TextStyle? searchStyle;
   final Widget? searchIcon;
+
+  /// When true the search icon is shown inside the input field. When false
+  /// a separate search button is shown to the right of the input.
+  final bool searchIconInside;
+
+  /// Optional override for the search box background color. If provided,
+  /// this color will be used directly.
+  final Color? searchBackgroundColor;
+
+  /// Optional flag removed: use `searchBackgroundColor` (defaults to white).
   final String? showMoreText;
   final String? emptyDataText;
   final String? refreshIntructionText;
@@ -72,6 +82,8 @@ class ListDataComponent<T> extends StatefulWidget {
     this.refreshEdgeOffset,
     this.searchStyle,
     this.searchIcon,
+    this.searchBackgroundColor,
+    this.searchIconInside = true,
     this.showMoreText,
     this.emptyDataText,
     this.emptyDataTextStyle,
@@ -140,62 +152,116 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     final hasText =
         (widget.controller?.value.searchController.text ?? '').isNotEmpty;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: FormFields<String>(
-        label:
-            widget.searchHint ?? FormFieldsLocalizations.of(context).searchHint,
-        labelPosition: LabelPosition.none,
-        currentValue: widget.controller?.value.searchController.text ?? '',
-        onChanged: (val) {
-          final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
-          try {
-            widget.controller?.value.searchController.text = sanitized;
-          } catch (_) {}
-          if (widget.autoSearch == true) widget.controller?.refresh();
-        },
-        inputDecoration: InputDecoration(
-          prefixIcon: widget.searchIcon ??
-              Icon(Icons.search, color: Theme.of(context).iconTheme.color),
-          suffixIcon: hasText
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: () {
-                    try {
-                      widget.controller?.value.searchController.clear();
-                    } catch (_) {}
-                    widget.controller?.refresh();
-                  },
-                )
-              : null,
-          filled: true,
-          fillColor:
-              Theme.of(context).cardColor.withAlpha((0.02 * 255).round()),
-          hintText: widget.searchHint ??
-              FormFieldsLocalizations.of(context).searchHint,
-          hintStyle:
-              widget.searchStyle ?? Theme.of(context).textTheme.bodyMedium,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withAlpha((0.12 * 255).round()),
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
-              width: 1.25,
-            ),
-          ),
+    // Default to white when no explicit background color is provided.
+    final Color bgColor = widget.searchBackgroundColor ?? Colors.white;
+
+    final Color iconColor = Theme.of(context).colorScheme.primary;
+    // Use a neutral icon widget by default (no explicit color) so external
+    // buttons can inherit the button foreground color via IconTheme.
+    final Widget searchIconWidget =
+        widget.searchIcon ?? const Icon(Icons.search);
+
+    // Input decoration uses same background as container so the visual
+    // appearance is consistent.
+    final inputDec = InputDecoration(
+      prefixIcon: widget.searchIconInside
+          ? (widget.searchIcon ?? Icon(Icons.search, color: iconColor))
+          : null,
+      suffixIcon: hasText
+          ? IconButton(
+              icon: const Icon(Icons.clear, size: 20),
+              onPressed: () {
+                try {
+                  widget.controller?.value.searchController.clear();
+                } catch (_) {}
+                widget.controller?.refresh();
+              },
+            )
+          : null,
+      filled: true,
+      fillColor: bgColor,
+      hintText:
+          widget.searchHint ?? FormFieldsLocalizations.of(context).searchHint,
+      hintStyle: widget.searchStyle ?? Theme.of(context).textTheme.bodyMedium,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Theme.of(context)
+              .colorScheme
+              .primary
+              .withAlpha((0.12 * 255).round()),
+          width: 1,
         ),
       ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1.25,
+        ),
+      ),
+    );
+    // Fixed height for input and external button so they align.
+
+    return Container(
+      // Use chosen background color.
+      color: bgColor,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+      child: widget.searchIconInside
+          ? FormFields<String>(
+              label: widget.searchHint ??
+                  FormFieldsLocalizations.of(context).searchHint,
+              labelPosition: LabelPosition.none,
+              currentValue:
+                  widget.controller?.value.searchController.text ?? '',
+              onChanged: (val) {
+                final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
+                try {
+                  widget.controller?.value.searchController.text = sanitized;
+                } catch (_) {}
+                if (widget.autoSearch == true) widget.controller?.refresh();
+              },
+              inputDecoration: inputDec,
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: FormFields<String>(
+                    label: widget.searchHint ??
+                        FormFieldsLocalizations.of(context).searchHint,
+                    labelPosition: LabelPosition.none,
+                    currentValue:
+                        widget.controller?.value.searchController.text ?? '',
+                    onChanged: (val) {
+                      final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
+                      try {
+                        widget.controller?.value.searchController.text =
+                            sanitized;
+                      } catch (_) {}
+                      if (widget.autoSearch == true) {
+                        widget.controller?.refresh();
+                      }
+                    },
+                    inputDecoration: inputDec,
+                  ),
+                ),
+                // const SizedBox(width: 8),
+                AppButton(
+                  withLayout: true,
+                  type: AppButtonType.filled,
+                  size: AppSize.medium,
+                  icon: searchIconWidget,
+                  onPressed: () {
+                    try {
+                      widget.controller?.refresh();
+                    } catch (_) {}
+                  },
+                ),
+              ],
+            ),
     );
   }
 

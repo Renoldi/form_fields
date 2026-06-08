@@ -131,7 +131,7 @@ class View extends PresenterState {
   Widget _buildLoginButton(ViewModel viewModel) {
     return AppButton(
       type: AppButtonType.elevated,
-      size: AppButtonSize.medium,
+      size: AppSize.medium,
       text: context.tr('login'),
       isLoading: false,
       onPressed: (!viewModel.canSubmit || viewModel.isLoading)

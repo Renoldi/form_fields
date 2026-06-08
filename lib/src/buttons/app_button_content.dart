@@ -5,7 +5,7 @@ import 'package:form_fields/form_fields.dart';
 
 class AppButtonContent extends StatelessWidget {
   final AppButtonType type;
-  final AppButtonSize size;
+  final AppSize size;
   final bool isLoading;
   final Widget? icon;
   final String? text;
@@ -97,13 +97,13 @@ class AppButtonContent extends StatelessWidget {
 
   double get _spinnerSize {
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 16;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 18;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 20;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return customSpinnerSize ?? 18;
     }
   }

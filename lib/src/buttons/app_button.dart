@@ -5,7 +5,7 @@ import 'package:form_fields/form_fields.dart';
 
 class AppButton<T> extends StatelessWidget {
   final AppButtonType type;
-  final AppButtonSize size;
+  final AppSize size;
   final String? text;
   final Widget? child;
   final Widget? icon;
@@ -15,7 +15,7 @@ class AppButton<T> extends StatelessWidget {
   final bool isLoading;
   final ButtonStyle? style;
 
-  /// Custom sizing when [size] is [AppButtonSize.custom].
+  /// Custom sizing when [size] is [AppSize.custom].
   final double? customHeight;
   final double? customHorizontalPadding;
   final double? customIconSize;
@@ -35,7 +35,7 @@ class AppButton<T> extends StatelessWidget {
     this.value,
     this.onPressedWithValue,
     this.type = AppButtonType.filled,
-    this.size = AppButtonSize.medium,
+    this.size = AppSize.medium,
     this.text,
     this.child,
     this.icon,
@@ -132,6 +132,13 @@ class AppButton<T> extends StatelessWidget {
     final iconColor = mergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
         IconTheme.of(context).color;
 
+    // Ensure icons inside non-icon buttons receive the button's foreground
+    // color (e.g. white on filled buttons) by wrapping the content in an
+    // IconTheme. If the icon widget specifies its own color it will not be
+    // overridden.
+    final themedChild =
+        IconTheme(data: IconThemeData(color: iconColor), child: childWidget);
+
     if (isIcon) {
       final double diameter = _heightBySize;
       final double iconSize = _iconSizeBySize;
@@ -200,20 +207,20 @@ class AppButton<T> extends StatelessWidget {
             )
           : (icon ?? const Icon(Icons.add));
       switch (size) {
-        case AppButtonSize.small:
+        case AppSize.small:
           return FloatingActionButton.small(
             onPressed: effectiveOnPressed,
             backgroundColor: fabBgColor,
             child: fabChild,
           );
-        case AppButtonSize.large:
+        case AppSize.large:
           return FloatingActionButton.large(
             onPressed: effectiveOnPressed,
             backgroundColor: fabBgColor,
             child: fabChild,
           );
-        case AppButtonSize.medium:
-        case AppButtonSize.custom:
+        case AppSize.medium:
+        case AppSize.custom:
           return FloatingActionButton(
             onPressed: effectiveOnPressed,
             backgroundColor: fabBgColor,
@@ -235,27 +242,27 @@ class AppButton<T> extends StatelessWidget {
       AppButtonType.filled => FilledButton(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(mergedStyle),
-          child: childWidget,
+          child: themedChild,
         ),
       AppButtonType.filledTonal => FilledButton.tonal(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(mergedStyle),
-          child: childWidget,
+          child: themedChild,
         ),
       AppButtonType.elevated => ElevatedButton(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(mergedStyle),
-          child: childWidget,
+          child: themedChild,
         ),
       AppButtonType.outlined => OutlinedButton(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(mergedStyle),
-          child: childWidget,
+          child: themedChild,
         ),
       AppButtonType.text => TextButton(
           onPressed: effectiveOnPressed,
           style: _buttonStyle().merge(mergedStyle),
-          child: childWidget,
+          child: themedChild,
         ),
       AppButtonType.icon => const SizedBox.shrink(),
       AppButtonType.fab => const SizedBox.shrink(),
@@ -300,39 +307,39 @@ class AppButton<T> extends StatelessWidget {
 
   double get _heightBySize {
     switch (size) {
-      case AppButtonSize.small:
-        return 40;
-      case AppButtonSize.medium:
-        return 48;
-      case AppButtonSize.large:
-        return 56;
-      case AppButtonSize.custom:
-        return customHeight ?? 48;
+      case AppSize.small:
+        return kFieldHeightSmall;
+      case AppSize.medium:
+        return kFieldHeightMedium;
+      case AppSize.large:
+        return kFieldHeightLarge;
+      case AppSize.custom:
+        return customHeight ?? kFieldHeightDefault;
     }
   }
 
   double get _horizontalPaddingBySize {
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 12;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 16;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 20;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return customHorizontalPadding ?? 16;
     }
   }
 
   double get _iconSizeBySize {
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 18;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 20;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 24;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return customIconSize ?? 20;
     }
   }

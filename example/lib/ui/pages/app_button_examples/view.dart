@@ -61,7 +61,7 @@ class View extends PresenterState {
                   const SizedBox(height: 24),
                   AppButton(
                     type: AppButtonType.filled,
-                    size: AppButtonSize.large,
+                    size: AppSize.large,
                     text: 'Filled Large',
                     icon: const Icon(Icons.check_circle_outline),
                     onPressed: () {},
@@ -93,7 +93,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.elevated,
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     text: 'Elevated Medium',
                     icon: const Icon(Icons.rocket_launch_outlined),
                     onPressed: () {},
@@ -125,7 +125,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.outlined,
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     text: 'Outlined Medium',
                     icon: const Icon(Icons.edit_outlined),
                     onPressed: () {},
@@ -157,7 +157,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.text,
-                    size: AppButtonSize.small,
+                    size: AppSize.small,
                     text: 'Text Small',
                     icon: const Icon(Icons.info_outline),
                     onPressed: () {},
@@ -189,7 +189,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.filledTonal,
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     text: 'Filled Tonal',
                     icon: const Icon(Icons.palette_outlined),
                     onPressed: () {},
@@ -221,7 +221,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.filled,
-                    size: AppButtonSize.custom,
+                    size: AppSize.custom,
                     customHeight: 52,
                     customHorizontalPadding: 28,
                     customIconSize: 26,
@@ -257,7 +257,7 @@ class View extends PresenterState {
                   const SizedBox(height: 8),
                   AppButton<String>(
                     type: AppButtonType.outlined,
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     text: 'Typed Callback (T)',
                     icon: const Icon(Icons.data_object),
                     value: 'checkout',
@@ -350,13 +350,13 @@ class View extends PresenterState {
                       ),
                       AppButton(
                         type: AppButtonType.icon,
-                        size: AppButtonSize.medium,
+                        size: AppSize.medium,
                         icon: const Icon(Icons.favorite_border),
                         onPressed: () {},
                       ),
                       AppButton(
                         type: AppButtonType.fab,
-                        size: AppButtonSize.medium,
+                        size: AppSize.medium,
                         icon: const Icon(Icons.add),
                         onPressed: () {},
                       ),
@@ -443,7 +443,7 @@ class View extends PresenterState {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         AppSegmentedButton<String>(
-                          size: AppButtonSize.small,
+                          size: AppSize.small,
                           segments: const [
                             ButtonSegment<String>(
                               value: '4oz',
@@ -477,7 +477,7 @@ class View extends PresenterState {
                           children: [
                             AppButton(
                               type: AppButtonType.icon,
-                              size: AppButtonSize.custom,
+                              size: AppSize.custom,
                               customHeight: 48,
                               customIconSize: 22,
                               icon:
@@ -499,7 +499,7 @@ class View extends PresenterState {
                             Expanded(
                               child: AppButton(
                                 type: AppButtonType.filled,
-                                size: AppButtonSize.custom,
+                                size: AppSize.custom,
                                 customHeight: 48,
                                 text: 'Get started',
                                 style: FilledButton.styleFrom(
@@ -511,7 +511,7 @@ class View extends PresenterState {
                             const SizedBox(width: 10),
                             AppButton(
                               type: AppButtonType.icon,
-                              size: AppButtonSize.custom,
+                              size: AppSize.custom,
                               customHeight: 48,
                               customIconSize: 22,
                               icon: const Icon(Icons.public_outlined),
@@ -538,21 +538,21 @@ class View extends PresenterState {
                     children: [
                       AppButton(
                         type: AppButtonType.icon,
-                        size: AppButtonSize.small,
+                        size: AppSize.small,
                         icon: const Icon(Icons.favorite_border),
                         onPressed: () {},
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.icon,
-                        size: AppButtonSize.medium,
+                        size: AppSize.medium,
                         icon: const Icon(Icons.bookmark_border),
                         onPressed: () {},
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.icon,
-                        size: AppButtonSize.large,
+                        size: AppSize.large,
                         icon: const Icon(Icons.share_outlined),
                         onPressed: () {},
                       ),
@@ -640,21 +640,21 @@ class View extends PresenterState {
                     children: [
                       AppButton(
                         type: AppButtonType.fab,
-                        size: AppButtonSize.small,
+                        size: AppSize.small,
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () {},
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.fab,
-                        size: AppButtonSize.medium,
+                        size: AppSize.medium,
                         icon: const Icon(Icons.edit),
                         onPressed: () {},
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.fab,
-                        size: AppButtonSize.large,
+                        size: AppSize.large,
                         icon: const Icon(Icons.edit_note),
                         onPressed: () {},
                       ),
@@ -772,7 +772,7 @@ class View extends PresenterState {
                       Expanded(
                         child: AppButton(
                           type: AppButtonType.filled,
-                          size: AppButtonSize.medium,
+                          size: AppSize.medium,
                           text: 'Custom Style Override',
                           icon: const Icon(Icons.tune),
                           style: FilledButton.styleFrom(
@@ -785,7 +785,7 @@ class View extends PresenterState {
                       Expanded(
                         child: AppButton(
                           type: AppButtonType.filled,
-                          size: AppButtonSize.small,
+                          size: AppSize.small,
                           text: 'Custom Style Override',
                           icon: const Icon(Icons.tune),
                           style: FilledButton.styleFrom(
@@ -850,7 +850,7 @@ class View extends PresenterState {
                       Expanded(
                         child: AppButton(
                           type: AppButtonType.elevated,
-                          size: AppButtonSize.medium,
+                          size: AppSize.medium,
                           text: 'Rounded 16',
                           icon: const Icon(Icons.rounded_corner),
                           style: ElevatedButton.styleFrom(
@@ -865,7 +865,7 @@ class View extends PresenterState {
                       Expanded(
                         child: AppButton(
                           type: AppButtonType.outlined,
-                          size: AppButtonSize.medium,
+                          size: AppSize.medium,
                           text: 'Beveled',
                           icon: const Icon(Icons.crop_16_9),
                           style: OutlinedButton.styleFrom(
@@ -931,7 +931,7 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   AppButton(
                     type: AppButtonType.filled,
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     text: 'Continuous Rectangle Shape',
                     icon: const Icon(Icons.hexagon_outlined),
                     style: FilledButton.styleFrom(
@@ -972,7 +972,7 @@ class View extends PresenterState {
                   ),
                   const SizedBox(height: 8),
                   AppSegmentedButton<String>(
-                    size: AppButtonSize.medium,
+                    size: AppSize.medium,
                     segments: const [
                       ButtonSegment<String>(
                         value: 'songs',
@@ -1026,7 +1026,7 @@ class View extends PresenterState {
                   ),
                   const SizedBox(height: 8),
                   AppSplitButton<String>(
-                    size: AppButtonSize.large,
+                    size: AppSize.large,
                     text: 'Add to cart',
                     icon: const Icon(Icons.shopping_cart_outlined),
                     onPressed: () {
@@ -1089,7 +1089,7 @@ class View extends PresenterState {
                   Align(
                     alignment: Alignment.centerRight,
                     child: AppFabMenu(
-                      size: AppButtonSize.small,
+                      size: AppSize.small,
                       items: [
                         AppFabMenuItem(
                           label: 'First',
@@ -1140,7 +1140,7 @@ class View extends PresenterState {
             AppButton(
               withLayout: true,
               type: AppButtonType.filled,
-              size: AppButtonSize.large,
+              size: AppSize.large,
               text: 'Submit (Loading + SafeArea + Keyboard)',
               icon: const Icon(Icons.send_outlined),
               isLoading: viewModel.isSubmitting,

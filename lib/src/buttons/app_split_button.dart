@@ -24,8 +24,8 @@ class AppSplitButton<T> extends StatelessWidget {
   final ValueChanged<T> onSelected;
   final bool isLoading;
 
-  /// Size preset aligned with [AppButtonSize].
-  final AppButtonSize size;
+  /// Size preset aligned with [AppSize].
+  final AppSize size;
 
   /// Optional overrides for [size].
   final double? height;
@@ -42,7 +42,7 @@ class AppSplitButton<T> extends StatelessWidget {
     required this.onSelected,
     this.icon,
     this.isLoading = false,
-    this.size = AppButtonSize.medium,
+    this.size = AppSize.medium,
     this.height,
     this.mainHorizontalPadding,
     this.dropdownWidth,
@@ -158,13 +158,13 @@ class AppSplitButton<T> extends StatelessWidget {
     if (height != null) return height!;
 
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 44;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 52;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 58;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return 52;
     }
   }
@@ -173,13 +173,13 @@ class AppSplitButton<T> extends StatelessWidget {
     if (mainHorizontalPadding != null) return mainHorizontalPadding!;
 
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 20;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 28;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 34;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return 28;
     }
   }
@@ -188,13 +188,13 @@ class AppSplitButton<T> extends StatelessWidget {
     if (dropdownWidth != null) return dropdownWidth!;
 
     switch (size) {
-      case AppButtonSize.small:
+      case AppSize.small:
         return 64;
-      case AppButtonSize.medium:
+      case AppSize.medium:
         return 72;
-      case AppButtonSize.large:
+      case AppSize.large:
         return 88;
-      case AppButtonSize.custom:
+      case AppSize.custom:
         return 72;
     }
   }
