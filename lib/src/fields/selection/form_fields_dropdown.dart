@@ -25,6 +25,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final bool enableFilter;
   final String? filterHintText;
   final String? externalErrorText;
+  final bool readOnly;
 
   const FormFieldsDropdown({
     super.key,
@@ -45,6 +46,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.enableFilter = false,
     this.filterHintText,
     this.externalErrorText,
+    this.readOnly = false,
   });
 
   @override
@@ -252,7 +254,9 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           }
 
           final field = InkWell(
-            onTap: () => openFilterDialog(context),
+            onTap: (widget.readOnly || !widget.enabled)
+                ? null
+                : () => openFilterDialog(context),
             child: InputDecorator(
               decoration: effectiveDecoration,
               child: Row(
@@ -356,7 +360,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                 ),
               )
               .toList(),
-          onChanged: widget.enabled
+          onChanged: (widget.enabled && !widget.readOnly)
               ? (value) {
                   widget.onChanged?.call(value);
                   state.didChange(value);

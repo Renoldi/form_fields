@@ -846,6 +846,88 @@ class View extends PresenterState {
                   ),
                   buildResultDisplay(context.tr('valPreferredContact'),
                       viewModel.radioSelected),
+
+                  const SizedBox(height: 24),
+                  // ===== READ-ONLY SELECTION EXAMPLES =====
+                  buildSectionTitle('Read-only Selection Examples',
+                      Colors.grey.shade700, Colors.grey.shade400),
+
+                  buildFieldTitle('Read-only Checkbox', Colors.grey.shade600),
+                  buildDescriptionBox(
+                    'This example shows a checkbox group with readOnly: true.',
+                    Colors.grey,
+                  ),
+                  FormFieldsCheckbox<String>(
+                    label: 'Interests (read-only)',
+                    items: const ['Music', 'Sports', 'Travel'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setCheckboxReadOnlySelected,
+                    initialValue: viewModel.checkboxReadOnlySelected,
+                    readOnly: true,
+                  ),
+                  buildResultDisplay('Interests (read-only)',
+                      viewModel.checkboxReadOnlySelected.join(', ')),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle(
+                      'Read-only Dropdown Multi', Colors.grey.shade600),
+                  buildDescriptionBox(
+                    'Multi-select dropdown shown as read-only (dialog disabled).',
+                    Colors.grey,
+                  ),
+                  FormFieldsDropdownMulti<String>(
+                    label: 'Tags (read-only)',
+                    items: const ['New', 'Featured', 'Sale'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDropdownMultiReadOnlySelected,
+                    initialValues: viewModel.dropdownMultiReadOnlySelected,
+                    readOnly: true,
+                  ),
+                  buildResultDisplay('Tags (read-only)',
+                      viewModel.dropdownMultiReadOnlySelected.join(', ')),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle('Read-only Dropdown', Colors.grey.shade600),
+                  buildDescriptionBox(
+                    'Single-select dropdown with readOnly: true.',
+                    Colors.grey,
+                  ),
+                  FormFieldsDropdown<String>(
+                    label: 'Country (read-only)',
+                    items: const ['USA', 'Canada', 'Indonesia'],
+                    isRequired: true,
+                    labelPosition: LabelPosition.top,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setDropdownReadOnlySelected,
+                    initialValue: viewModel.dropdownReadOnlySelected,
+                    readOnly: true,
+                  ),
+                  buildResultDisplay('Country (read-only)',
+                      viewModel.dropdownReadOnlySelected),
+                  const SizedBox(height: 16),
+
+                  buildFieldTitle(
+                      'Read-only Radio Buttons', Colors.grey.shade600),
+                  buildDescriptionBox(
+                    'Radio button group with readOnly: true.',
+                    Colors.grey,
+                  ),
+                  FormFieldsRadioButton<String>(
+                    label: 'Preferred Contact (read-only)',
+                    items: const ['Email', 'Phone', 'SMS'],
+                    isRequired: true,
+                    direction: Axis.vertical,
+                    borderType: BorderType.outlineInputBorder,
+                    onChanged: viewModel.setRadioReadOnlySelected,
+                    initialValue: viewModel.radioReadOnlySelected,
+                    readOnly: true,
+                  ),
+                  buildResultDisplay('Preferred Contact (read-only)',
+                      viewModel.radioReadOnlySelected),
                   const SizedBox(height: 24),
 
                   // ===== DATE / DATETIME / DATERANGE / OTP EXAMPLES =====

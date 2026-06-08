@@ -29,6 +29,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
   final FormFieldValidator<List<T>>? validator;
   final LabelPosition labelPosition;
   final double containerGap;
+  final bool readOnly;
 
   const FormFieldsCheckbox({
     super.key,
@@ -55,6 +56,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
     this.validator,
     this.labelPosition = LabelPosition.top,
     this.containerGap = 8,
+    this.readOnly = false,
     this.externalErrorText,
   });
 
@@ -121,6 +123,7 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
           itemBuilder: widget.itemBuilder,
           isRequired: widget.isRequired,
           labelPosition: widget.labelPosition,
+          readOnly: widget.readOnly,
           containerGap: widget.containerGap,
         );
       },
@@ -151,6 +154,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final bool isRequired;
   final LabelPosition labelPosition;
   final double containerGap;
+  final bool readOnly;
 
   const _FormFieldsCheckboxBody({
     required this.label,
@@ -175,6 +179,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     required this.isRequired,
     required this.labelPosition,
     required this.containerGap,
+    required this.readOnly,
   });
 
   @override
@@ -405,20 +410,22 @@ class _FormFieldsCheckboxBodyView<T>
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(widget.itemBorderRadius),
-          onTap: () {
-            final updated = List<T>.from(selectedValues);
+          onTap: widget.readOnly
+              ? null
+              : () {
+                  final updated = List<T>.from(selectedValues);
 
-            if (isSelected) {
-              updated.remove(item);
-            } else {
-              updated.add(item);
-            }
+                  if (isSelected) {
+                    updated.remove(item);
+                  } else {
+                    updated.add(item);
+                  }
 
-            widget.onChanged(updated);
-            widget.state.didChange(updated);
-            // Validate after user toggles an option so external errors clear
-            widget.state.validate();
-          },
+                  widget.onChanged(updated);
+                  widget.state.didChange(updated);
+                  // Validate after user toggles an option so external errors clear
+                  widget.state.validate();
+                },
           child: Padding(
             padding: widget.itemPadding,
             child: Row(
@@ -429,20 +436,22 @@ class _FormFieldsCheckboxBodyView<T>
                 Checkbox(
                   value: isSelected,
                   activeColor: resolveActiveColor(context, widget.activeColor),
-                  onChanged: (checked) {
-                    final updated = List<T>.from(selectedValues);
+                  onChanged: widget.readOnly
+                      ? null
+                      : (checked) {
+                          final updated = List<T>.from(selectedValues);
 
-                    if (checked == true) {
-                      updated.add(item);
-                    } else {
-                      updated.remove(item);
-                    }
+                          if (checked == true) {
+                            updated.add(item);
+                          } else {
+                            updated.remove(item);
+                          }
 
-                    widget.onChanged(updated);
-                    widget.state.didChange(updated);
-                    // Validate when checkbox changes
-                    widget.state.validate();
-                  },
+                          widget.onChanged(updated);
+                          widget.state.didChange(updated);
+                          // Validate when checkbox changes
+                          widget.state.validate();
+                        },
                 ),
                 const SizedBox(width: 8),
                 if (isCompactHorizontal)

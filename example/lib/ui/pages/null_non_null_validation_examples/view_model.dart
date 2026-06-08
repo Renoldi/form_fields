@@ -26,6 +26,11 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
   List<String> dropdownMultiSelected = [];
   String? dropdownSelected;
   String? radioSelected;
+  // Read-only demo state
+  List<String> checkboxReadOnlySelected = [];
+  List<String> dropdownMultiReadOnlySelected = [];
+  String? dropdownReadOnlySelected;
+  String? radioReadOnlySelected;
   // Date/time and OTP examples
   DateTime? dateRequired;
   DateTime? dateTimeRequired;
@@ -112,8 +117,18 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCheckboxReadOnlySelected(List<String> values) {
+    checkboxReadOnlySelected = values;
+    notifyListeners();
+  }
+
   void setDropdownMultiSelected(List<String> values) {
     dropdownMultiSelected = values;
+    notifyListeners();
+  }
+
+  void setDropdownMultiReadOnlySelected(List<String> values) {
+    dropdownMultiReadOnlySelected = values;
     notifyListeners();
   }
 
@@ -122,8 +137,18 @@ class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setDropdownReadOnlySelected(String? value) {
+    dropdownReadOnlySelected = value;
+    notifyListeners();
+  }
+
   void setRadioSelected(String? value) {
     radioSelected = value;
+    notifyListeners();
+  }
+
+  void setRadioReadOnlySelected(String? value) {
+    radioReadOnlySelected = value;
     notifyListeners();
   }
 

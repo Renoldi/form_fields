@@ -25,6 +25,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final bool enableFilter;
   final String? filterHintText;
   final String? externalErrorText;
+  final bool readOnly;
 
   const FormFieldsDropdownMulti({
     super.key,
@@ -47,6 +48,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     this.enableFilter = false,
     this.filterHintText,
     this.externalErrorText,
+    this.readOnly = false,
   });
 
 // Removed duplicate createState and stray bracket
@@ -227,7 +229,7 @@ class _FormFieldsDropdownMultiState<T>
             _buildBorder(context, widget.borderType, isError: state.hasError);
 
         final field = InkWell(
-          onTap: () => openDialog(state.context),
+          onTap: widget.readOnly ? null : () => openDialog(state.context),
           child: InputDecorator(
             decoration: InputDecoration(
               hintText:

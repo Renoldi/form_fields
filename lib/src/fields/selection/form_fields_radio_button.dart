@@ -36,6 +36,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
   final IndicatorVerticalAlignment indicatorVerticalAlignment;
   final bool horizontalSideBySide;
   final FormFieldValidator<T>? validator;
+  final bool readOnly;
 
   const FormFieldsRadioButton({
     super.key,
@@ -69,6 +70,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
     this.indicatorVerticalAlignment = IndicatorVerticalAlignment.center,
     this.horizontalSideBySide = false,
     this.validator,
+    this.readOnly = false,
     this.externalErrorText,
   }) : assert(items != null || sections != null,
             'Either items or sections must be provided');
@@ -145,6 +147,7 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
           itemMarginBottom: widget.itemMarginBottom,
           indicatorVerticalAlignment: widget.indicatorVerticalAlignment,
           horizontalSideBySide: widget.horizontalSideBySide,
+          readOnly: widget.readOnly,
         );
       },
     );
@@ -181,6 +184,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final double itemMarginBottom;
   final IndicatorVerticalAlignment indicatorVerticalAlignment;
   final bool horizontalSideBySide;
+  final bool readOnly;
 
   const _FormFieldsRadioButtonBody({
     required this.label,
@@ -212,6 +216,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
     required this.itemMarginBottom,
     required this.indicatorVerticalAlignment,
     required this.horizontalSideBySide,
+    required this.readOnly,
   });
 
   @override
@@ -552,12 +557,14 @@ class _FormFieldsRadioButtonBodyView<T>
                         : [],
                   ),
                   child: InkWell(
-                    onTap: () {
-                      widget.onChanged(item);
-                      widget.state.didChange(item);
-                      // Re-validate so externalErrorText clears when user selects
-                      widget.state.validate();
-                    },
+                    onTap: widget.readOnly
+                        ? null
+                        : () {
+                            widget.onChanged(item);
+                            widget.state.didChange(item);
+                            // Re-validate so externalErrorText clears when user selects
+                            widget.state.validate();
+                          },
                     hoverColor: (widget.hoverBackgroundColor ??
                             _effectiveActiveColor(context))
                         .withValues(alpha: 0.08),
