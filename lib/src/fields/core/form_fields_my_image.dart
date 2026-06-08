@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
@@ -199,17 +200,33 @@ class _ImageDescriptionSheet extends StatefulWidget {
 
 class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
   late final TextEditingController _descController;
+  late final FocusNode _descFocusNode;
+  late final FocusNode _rawKeyboardFocusNode;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     _descController = TextEditingController();
+    _descFocusNode = FocusNode();
+    _rawKeyboardFocusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      // Wait a short time for the sheet animation to finish so that
+      // the Flutter view is "served" and IME can attach reliably.
+      await Future.delayed(const Duration(milliseconds: 250));
+      try {
+        FocusScope.of(context).requestFocus(_descFocusNode);
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+      } catch (_) {}
+    });
   }
 
   @override
   void dispose() {
     _descController.dispose();
+    _descFocusNode.dispose();
+    _rawKeyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -224,16 +241,67 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _descController,
-                decoration: InputDecoration(labelText: dl.get('description')),
-                autovalidateMode: widget.autovalidateMode,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return dl.getWithLabel('required', dl.get('description'));
+              KeyboardListener(
+                focusNode: _rawKeyboardFocusNode,
+                onKeyEvent: (KeyEvent event) {
+                  if (event is KeyDownEvent) {
+                    final key = event.logicalKey;
+                    if (key == LogicalKeyboardKey.enter) {
+                      if (_formKey.currentState?.validate() ?? true) {
+                        if (!context.mounted) return;
+                        Navigator.pop(context, _descController.text.trim());
+                      }
+                      return;
+                    }
+
+                    if (key == LogicalKeyboardKey.backspace) {
+                      final text = _descController.text;
+                      final sel = _descController.selection;
+                      if (sel.start > 0) {
+                        final newStart = sel.start - 1;
+                        final newText =
+                            text.replaceRange(newStart, sel.start, '');
+                        _descController.text = newText;
+                        _descController.selection =
+                            TextSelection.collapsed(offset: newStart);
+                      }
+                      return;
+                    }
+
+                    final char = event.character;
+                    if (char != null && char.isNotEmpty) {
+                      final text = _descController.text;
+                      final sel = _descController.selection;
+                      final start = sel.start >= 0 ? sel.start : text.length;
+                      final end = sel.end >= 0 ? sel.end : text.length;
+                      final newText = text.replaceRange(start, end, char);
+                      final newOffset = start + char.length;
+                      _descController.text = newText;
+                      _descController.selection =
+                          TextSelection.collapsed(offset: newOffset);
+                    }
                   }
-                  return null;
                 },
+                child: TextFormField(
+                  controller: _descController,
+                  focusNode: _descFocusNode,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(labelText: dl.get('description')),
+                  autovalidateMode: widget.autovalidateMode,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return dl.getWithLabel('required', dl.get('description'));
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted: (_) {
+                    if (_formKey.currentState?.validate() ?? true) {
+                      if (!context.mounted) return;
+                      Navigator.pop(context, _descController.text.trim());
+                    }
+                  },
+                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -1213,6 +1281,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           context: context,
           isDismissible: false,
           useSafeArea: true,
+          requestFocus: true,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
