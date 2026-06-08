@@ -85,7 +85,7 @@ class AppButton<T> extends StatelessWidget {
       size: size,
       isLoading: isLoading,
       icon: icon,
-      text: text,
+      text: text.toBegin,
       customSpinnerSize: customSpinnerSize,
       child: child,
     );
@@ -132,15 +132,43 @@ class AppButton<T> extends StatelessWidget {
     // `ButtonStyle.merge` prefers the receiver's non-null fields, so
     // calling `style.merge(themedStyle)` makes `style` take precedence.
     final mergedStyle = style?.merge(themedStyle) ?? themedStyle;
-    final iconColor = mergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
-        IconTheme.of(context).color;
+
+    // If the caller provided a `textStyle` with an explicit color but did
+    // not provide `foregroundColor`, prefer the `textStyle` color for the
+    // button foreground so callers who set `textStyle(color: ...)` see that
+    // color applied (Flutter buttons use `foregroundColor` to color text
+    // and icons, which can otherwise override `textStyle.color`). We'll
+    // create an adjusted style that sets `foregroundColor` from the
+    // resolved `textStyle.color` when appropriate.
+    ButtonStyle? effectiveMergedStyle = mergedStyle;
+    final resolvedTextStyle = mergedStyle?.textStyle?.resolve(<WidgetState>{});
+    final resolvedTextColor = resolvedTextStyle?.color;
+    final callerHasForeground = style?.foregroundColor != null;
+    if (mergedStyle != null &&
+        resolvedTextColor != null &&
+        style != null &&
+        !callerHasForeground) {
+      effectiveMergedStyle = mergedStyle.copyWith(
+        foregroundColor: WidgetStatePropertyAll(resolvedTextColor),
+      );
+    }
+
+    final iconColor =
+        effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
+            IconTheme.of(context).color;
 
     // Ensure icons inside non-icon buttons receive the button's foreground
     // color (e.g. white on filled buttons) by wrapping the content in an
-    // IconTheme. If the icon widget specifies its own color it will not be
-    // overridden.
-    final themedChild =
-        IconTheme(data: IconThemeData(color: iconColor), child: childWidget);
+    // IconTheme. Also apply a DefaultTextStyle merge using the resolved
+    // foreground color so plain `Text` widgets inside `AppButtonContent`
+    // pick up caller `textStyle.color` when provided.
+    final resolvedForegroundColor =
+        effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{});
+    final themedChild = DefaultTextStyle.merge(
+      style: TextStyle(color: resolvedForegroundColor),
+      child:
+          IconTheme(data: IconThemeData(color: iconColor), child: childWidget),
+    );
 
     if (isIcon) {
       final double diameter = _heightBySize;
@@ -236,7 +264,7 @@ class AppButton<T> extends StatelessWidget {
       return FloatingActionButton.extended(
         onPressed: effectiveOnPressed,
         icon: icon,
-        label: child ?? Text(text ?? 'Action'),
+        label: child ?? Text((text ?? 'Action').toTitleCase),
         backgroundColor: fabBgColor,
       );
     }
@@ -244,27 +272,27 @@ class AppButton<T> extends StatelessWidget {
     final button = switch (type) {
       AppButtonType.filled => FilledButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(mergedStyle),
+          style: _buttonStyle().merge(effectiveMergedStyle),
           child: themedChild,
         ),
       AppButtonType.filledTonal => FilledButton.tonal(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(mergedStyle),
+          style: _buttonStyle().merge(effectiveMergedStyle),
           child: themedChild,
         ),
       AppButtonType.elevated => ElevatedButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(mergedStyle),
+          style: _buttonStyle().merge(effectiveMergedStyle),
           child: themedChild,
         ),
       AppButtonType.outlined => OutlinedButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(mergedStyle),
+          style: _buttonStyle().merge(effectiveMergedStyle),
           child: themedChild,
         ),
       AppButtonType.text => TextButton(
           onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(mergedStyle),
+          style: _buttonStyle().merge(effectiveMergedStyle),
           child: themedChild,
         ),
       AppButtonType.icon => const SizedBox.shrink(),
