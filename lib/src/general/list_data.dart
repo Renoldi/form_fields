@@ -29,6 +29,10 @@ class ListDataComponent<T> extends StatefulWidget {
   final TextStyle? searchStyle;
   final Widget? searchIcon;
 
+  /// When true, the default empty-state text is shown below the inbox icon.
+  /// Defaults to `false` to keep an icon-only empty state.
+  final bool showEmptyText;
+
   /// When true the search icon is shown inside the input field. When false
   /// a separate search button is shown to the right of the input.
   final bool searchIconInside;
@@ -84,6 +88,7 @@ class ListDataComponent<T> extends StatefulWidget {
     this.searchIcon,
     this.searchBackgroundColor,
     this.searchIconInside = true,
+    this.showEmptyText = false,
     this.showMoreText,
     this.emptyDataText,
     this.emptyDataTextStyle,
