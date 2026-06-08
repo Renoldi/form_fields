@@ -492,7 +492,7 @@ class _FormFieldsRadioButtonBodyView<T>
             child: Text(
               widget.itemLabelBuilder != null
                   ? widget.itemLabelBuilder!(item)
-                  : item.toString().toBeginning,
+                  : item.toString().toBegin,
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??

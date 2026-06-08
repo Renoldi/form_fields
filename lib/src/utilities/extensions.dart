@@ -69,7 +69,7 @@ extension StringExtensions on String? {
     return this!.replaceAll(RegExp(r'\s+'), '');
   }
 
-  String get toBeginning {
+  String get toBegin {
     if (this == null || this!.isEmpty) return this ?? '';
     return toBeginningOfSentenceCase(this!) ?? this!;
   }

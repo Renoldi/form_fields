@@ -123,7 +123,7 @@ class _FormFieldsDropdownMultiState<T>
                       ? widget.items.where((item) {
                           final label = widget.itemLabelBuilder != null
                               ? widget.itemLabelBuilder!(item)
-                              : item.toString().toBeginning;
+                              : item.toString().toBegin;
                           return label
                               .toLowerCase()
                               .contains(filterState[0].toLowerCase());
@@ -176,7 +176,7 @@ class _FormFieldsDropdownMultiState<T>
                                   title: Text(
                                     widget.itemLabelBuilder != null
                                         ? widget.itemLabelBuilder!(item)
-                                        : item.toString().toBeginning,
+                                        : item.toString().toBegin,
                                   ),
                                   value: isSelected,
                                   onChanged: (checked) {
@@ -258,7 +258,7 @@ class _FormFieldsDropdownMultiState<T>
                         label: Text(
                           widget.itemLabelBuilder != null
                               ? widget.itemLabelBuilder!(item)
-                              : item.toString().toBeginning,
+                              : item.toString().toBegin,
                           style: TextStyle(
                             color: widget.chipTextColor ??
                                 Theme.of(context).colorScheme.onPrimary,

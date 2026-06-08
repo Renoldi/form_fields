@@ -140,7 +140,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
               final filteredItems = widget.items.where((item) {
                 final label = widget.itemLabelBuilder != null
                     ? widget.itemLabelBuilder!(item)
-                    : item.toString().toBeginning;
+                    : item.toString().toBegin;
                 return label
                     .toLowerCase()
                     .contains(filterState[0].toLowerCase());
@@ -186,7 +186,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                               title: Text(
                                 widget.itemLabelBuilder != null
                                     ? widget.itemLabelBuilder!(item)
-                                    : item.toString().toBeginning,
+                                    : item.toString().toBegin,
                               ),
                               selected: isSelected,
                               onTap: () {
@@ -247,7 +247,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             if (widget.itemLabelBuilder != null && state.value != null) {
               currentValueText = widget.itemLabelBuilder!(state.value as T);
             } else {
-              currentValueText = state.value.toString().toBeginning;
+              currentValueText = state.value.toString().toBegin;
             }
           }
 
@@ -351,7 +351,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   child: Text(
                     widget.itemLabelBuilder != null
                         ? widget.itemLabelBuilder!(item)
-                        : item.toString().toBeginning,
+                        : item.toString().toBegin,
                   ),
                 ),
               )
