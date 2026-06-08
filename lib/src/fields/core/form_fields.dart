@@ -542,6 +542,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   late FormFieldsController model;
   late Timer debounce;
   FocusNode? _internalFocusNode;
+  late ValueNotifier<double> _effectiveFieldExtraBottom;
   String _selectedCountryCode = '';
   late FormFieldsNotifier _notifier;
   List<TextEditingController> _verificationControllers = [];
@@ -561,6 +562,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     model = FormFieldsController();
     debounce = Timer(Duration.zero, () {});
     _notifier = FormFieldsNotifier();
+    _effectiveFieldExtraBottom = ValueNotifier<double>(0.0);
     if (_isPhoneType()) {
       _initializePhoneCountryCode(
         widget.currentValue?.toString(),
@@ -687,6 +689,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     model.dispose();
     debounce.cancel();
     _internalFocusNode?.dispose();
+    _effectiveFieldExtraBottom.dispose();
     super.dispose();
   }
 
@@ -1743,6 +1746,77 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     return null;
   }
 
+  String? _computeMainFieldValidation(
+      String? value, FormFieldsController vm, BuildContext context) {
+    if (_isIntType()) {
+      final normalized = value?.trim() ?? '';
+      if (normalized.isEmpty) {
+        return _validateRequired(
+          null,
+          widget.label.toTitleCase,
+          widget.isRequired,
+          vm,
+          context,
+        );
+      }
+      final parsed = int.tryParse(widget.stripSeparators
+          ? _stripSeparatorsForParse(normalized)
+          : normalized);
+      return _validateRequired(
+        parsed as T?,
+        widget.label.toTitleCase,
+        widget.isRequired,
+        vm,
+        context,
+      );
+    } else if (_isDoubleType()) {
+      final normalized = value?.trim() ?? '';
+      if (normalized.isEmpty) {
+        return _validateRequired(
+          null,
+          widget.label.toTitleCase,
+          widget.isRequired,
+          vm,
+          context,
+        );
+      }
+      final parsed = double.tryParse(widget.stripSeparators
+          ? _stripSeparatorsForParse(normalized)
+          : normalized);
+      return _validateRequired(
+        parsed as T?,
+        widget.label.toTitleCase,
+        widget.isRequired,
+        vm,
+        context,
+      );
+    } else if (_isDateTimeType() ||
+        _isDateTimeRangeType() ||
+        _isTimeOfDayType()) {
+      // Use widget.currentValue for validation, not value from controller
+      return _validateRequired(
+        widget.currentValue,
+        widget.label.toTitleCase,
+        widget.isRequired,
+        vm,
+        context,
+      );
+    } else {
+      // Show externalErrorText if present
+      if (widget.externalErrorText != null &&
+          widget.externalErrorText!.isNotEmpty) {
+        return widget.externalErrorText;
+      }
+      return _validateRequired(
+        value as T?,
+        widget.label.toTitleCase,
+        widget.isRequired,
+        vm,
+        context,
+      );
+    }
+  }
+
   /// Builds the label widget for the form field
   Widget _buildLabel(FormFieldsController vm) {
     // Don't show label for none or inBorder positions
@@ -2262,73 +2336,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     }
                   },
                   validator: (value) {
-                    if (_isIntType()) {
-                      final normalized = value?.trim() ?? '';
-                      if (normalized.isEmpty) {
-                        return _validateRequired(
-                          null,
-                          widget.label.toTitleCase,
-                          widget.isRequired,
-                          vm,
-                          context,
-                        );
-                      }
-                      final parsed = int.tryParse(widget.stripSeparators
-                          ? _stripSeparatorsForParse(normalized)
-                          : normalized);
-                      return _validateRequired(
-                        parsed as T?,
-                        widget.label.toTitleCase,
-                        widget.isRequired,
-                        vm,
-                        context,
-                      );
-                    } else if (_isDoubleType()) {
-                      final normalized = value?.trim() ?? '';
-                      if (normalized.isEmpty) {
-                        return _validateRequired(
-                          null,
-                          widget.label.toTitleCase,
-                          widget.isRequired,
-                          vm,
-                          context,
-                        );
-                      }
-                      final parsed = double.tryParse(widget.stripSeparators
-                          ? _stripSeparatorsForParse(normalized)
-                          : normalized);
-                      return _validateRequired(
-                        parsed as T?,
-                        widget.label.toTitleCase,
-                        widget.isRequired,
-                        vm,
-                        context,
-                      );
-                    } else if (_isDateTimeType() ||
-                        _isDateTimeRangeType() ||
-                        _isTimeOfDayType()) {
-                      // Use widget.currentValue for validation, not value from controller
-                      return _validateRequired(
-                        widget.currentValue,
-                        widget.label.toTitleCase,
-                        widget.isRequired,
-                        vm,
-                        context,
-                      );
-                    } else {
-                      // Show externalErrorText if present
-                      if (widget.externalErrorText != null &&
-                          widget.externalErrorText!.isNotEmpty) {
-                        return widget.externalErrorText;
-                      }
-                      return _validateRequired(
-                        value as T?,
-                        widget.label.toTitleCase,
-                        widget.isRequired,
-                        vm,
-                        context,
-                      );
-                    }
+                    final error =
+                        _computeMainFieldValidation(value, vm, context);
+                    _effectiveFieldExtraBottom.value =
+                        error != null ? 15.0 : 0.0;
+                    return error;
                   },
                   controller: vm.controller,
                   onTap: () async {
@@ -2429,13 +2441,18 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     break;
                 }
 
-                final effectiveField = singleLine
-                    ? SizedBox(height: fieldHeight, child: textField)
-                    : textField;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child: _buildFieldWithLabel(effectiveField, vm),
+                return ValueListenableBuilder<double>(
+                  valueListenable: _effectiveFieldExtraBottom,
+                  builder: (ctx2, extra, _) {
+                    final effectiveField = singleLine
+                        ? SizedBox(
+                            height: fieldHeight + extra, child: textField)
+                        : textField;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      child: _buildFieldWithLabel(effectiveField, vm),
+                    );
+                  },
                 );
               },
             ),
