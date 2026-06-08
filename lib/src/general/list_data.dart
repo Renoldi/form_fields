@@ -720,16 +720,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                             size: 42,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.emptyDataText ??
-                              FormFieldsLocalizations.of(context).noItemsFound,
-                          style: widget.emptyDataTextStyle ??
-                              Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton.icon(
+                        const SizedBox(height: 16),
+                        IconButton(
                           onPressed: () {
                             try {
                               widget.controller?.refresh();
@@ -739,8 +731,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                             Icons.refresh,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                          label: Text(widget.refreshIntructionText ??
-                              FormFieldsLocalizations.of(context).refresh),
+                          tooltip: widget.refreshIntructionText ??
+                              FormFieldsLocalizations.of(context).refresh,
                         ),
                       ],
                     ),
