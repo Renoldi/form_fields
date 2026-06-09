@@ -74,7 +74,6 @@ class _SearchBoxState extends State<SearchBox> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final effectiveIcon = widget.icon ?? const Icon(Icons.search);
 
     return FormField<String>(
@@ -116,6 +115,10 @@ class _SearchBoxState extends State<SearchBox> {
             const SizedBox(width: 8),
             AppButton(
               type: AppButtonType.icon,
+              size: AppSize.medium,
+              customHeight: kFieldHeightMedium + 12,
+              customIconSize: 20,
+              customHorizontalPadding: 8,
               icon: effectiveIcon,
               onPressed: widget.onSearchPressed ?? () => _triggerSearch(),
             ),

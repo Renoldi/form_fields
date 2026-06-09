@@ -140,25 +140,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               widget.header != null ? widget.header! : const SizedBox(),
               const SizedBox(),
               // Toolbar area: show search box, extra toolbar, or both.
-              widget.showSearchBox
-                  ? (widget.extraToolbar != null
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          child: Row(
-                            children: [
-                              Expanded(child: searchBox()),
-                              const SizedBox(width: 8),
-                              widget.extraToolbar!,
-                            ],
-                          ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          child: searchBox(),
-                        ))
-                  : (widget.extraToolbar ?? const SizedBox()),
+              widget.showSearchBox ? searchBox() : const SizedBox(),
               [
                 ListDataComponentMode.listView,
                 ListDataComponentMode.tile,
@@ -275,8 +257,12 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                 ),
                 AppButton(
                   withLayout: true,
+                  useSafeArea: false,
                   type: AppButtonType.filled,
                   size: AppSize.medium,
+                  customHeight: kFieldHeightMedium + 12,
+                  customIconSize: 20,
+                  customHorizontalPadding: 12,
                   icon: buttonIconWidget,
                   onPressed: () {
                     try {
