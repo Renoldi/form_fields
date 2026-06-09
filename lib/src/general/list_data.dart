@@ -228,13 +228,13 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               },
               inputDecoration: inputDec,
             )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: kFieldHeightMedium + 12,
+          : SizedBox(
+              height: kFieldHeightMedium + 12,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
                     child: FormFields<String>(
                       label: widget.searchHint ??
                           FormFieldsLocalizations.of(context).searchHint,
@@ -255,23 +255,21 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                       inputDecoration: inputDec,
                     ),
                   ),
-                ),
-                AppButton(
-                  withLayout: true,
-                  useSafeArea: false,
-                  type: AppButtonType.filled,
-                  size: AppSize.medium,
-                  customHeight: kFieldHeightMedium + 12,
-                  customIconSize: 20,
-                  customHorizontalPadding: 12,
-                  icon: buttonIconWidget,
-                  onPressed: () {
-                    try {
-                      widget.controller?.refresh();
-                    } catch (_) {}
-                  },
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  AppButton(
+                    withLayout: true,
+                    useSafeArea: false,
+                    type: AppButtonType.filled,
+                    size: AppSize.medium,
+                    icon: buttonIconWidget,
+                    onPressed: () {
+                      try {
+                        widget.controller?.refresh();
+                      } catch (_) {}
+                    },
+                  ),
+                ],
+              ),
             ),
     );
   }
