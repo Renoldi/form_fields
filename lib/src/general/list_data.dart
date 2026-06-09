@@ -174,6 +174,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           : null,
       suffixIcon: hasText
           ? IconButton(
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              iconSize: 20,
+              splashRadius: 20,
               icon: const Icon(Icons.clear, size: 20),
               onPressed: () {
                 try {
@@ -212,45 +215,56 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     return Container(
       // Use chosen background color.
       color: bgColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+
+      height: widget.searchIconInside
+          ? kFieldHeightMedium
+          : kFieldHeightMedium + 20,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
 
       child: widget.searchIconInside
-          ? FormFields<String>(
-              label: widget.searchHint ??
-                  FormFieldsLocalizations.of(context).searchHint,
-              labelPosition: LabelPosition.none,
-              currentValue:
-                  widget.controller?.value.searchController.text ?? '',
-              onChanged: (val) {
-                final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
-                try {
-                  widget.controller?.value.searchController.text = sanitized;
-                } catch (_) {}
-                if (widget.autoSearch == true) widget.controller?.refresh();
-              },
-              inputDecoration: inputDec,
+          ? SizedBox(
+              height: kFieldHeightMedium,
+              child: FormFields<String>(
+                label: widget.searchHint ??
+                    FormFieldsLocalizations.of(context).searchHint,
+                labelPosition: LabelPosition.none,
+                currentValue:
+                    widget.controller?.value.searchController.text ?? '',
+                onChanged: (val) {
+                  final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
+                  try {
+                    widget.controller?.value.searchController.text = sanitized;
+                  } catch (_) {}
+                  if (widget.autoSearch == true) widget.controller?.refresh();
+                },
+                inputDecoration: inputDec,
+              ),
             )
           : Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: FormFields<String>(
-                    label: widget.searchHint ??
-                        FormFieldsLocalizations.of(context).searchHint,
-                    labelPosition: LabelPosition.none,
-                    currentValue:
-                        widget.controller?.value.searchController.text ?? '',
-                    onChanged: (val) {
-                      final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
-                      try {
-                        widget.controller?.value.searchController.text =
-                            sanitized;
-                      } catch (_) {}
-                      if (widget.autoSearch == true) {
-                        widget.controller?.refresh();
-                      }
-                    },
-                    inputDecoration: inputDec,
+                  child: SizedBox(
+                    height: kFieldHeightMedium + 12,
+                    child: FormFields<String>(
+                      label: widget.searchHint ??
+                          FormFieldsLocalizations.of(context).searchHint,
+                      labelPosition: LabelPosition.none,
+                      currentValue:
+                          widget.controller?.value.searchController.text ?? '',
+                      onChanged: (val) {
+                        final sanitized =
+                            val.replaceAll(RegExp("[',\\\"]"), '');
+                        try {
+                          widget.controller?.value.searchController.text =
+                              sanitized;
+                        } catch (_) {}
+                        if (widget.autoSearch == true) {
+                          widget.controller?.refresh();
+                        }
+                      },
+                      inputDecoration: inputDec,
+                    ),
                   ),
                 ),
                 // const SizedBox(width: 8),

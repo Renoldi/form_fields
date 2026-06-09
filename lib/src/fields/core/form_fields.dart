@@ -383,6 +383,7 @@ class _ScannerOverlay extends StatelessWidget {
 }
 
 class _FormFieldsState<T> extends State<FormFields<T>> {
+  static const double _kExtraFieldBottom = 20.0;
   // Barcode scanner dialog for scanBarcode type
   Future<void> _showBarcodeScannerDialog({
     required ValueChanged<String> onScanned,
@@ -491,6 +492,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
             widget.labelPosition == LabelPosition.inBorder ? label : null,
         errorText: errorText,
         suffixIcon: IconButton(
+          constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+          iconSize: 20,
+          splashRadius: 20,
           icon: scanIcon,
           onPressed: widget.readOnly
               ? null
@@ -571,6 +575,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     _initializeValue();
     _initializeModel();
     _initializeVerificationInputs();
+    // Keep extra-bottom spacing in sync with controller changes so layout
+    // adjusts correctly when user types/deletes text (including manual
+    // deletion, paste, or programmatic changes).
+    model.controller.addListener(_onControllerTextChanged);
     // Mulai countdown OTP jika verificationAsOtp aktif dan isOtpCountdown true
     if (_isVerificationType() &&
         widget.verificationAsOtp &&
@@ -686,11 +694,25 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   @override
   void dispose() {
     _disposeVerificationInputs();
+    model.controller.removeListener(_onControllerTextChanged);
     model.dispose();
     debounce.cancel();
     _internalFocusNode?.dispose();
     _effectiveFieldExtraBottom.dispose();
     super.dispose();
+  }
+
+  void _onControllerTextChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final error =
+          _computeMainFieldValidation(model.controller.text, model, context);
+      final hasText = model.controller.text.trim().isNotEmpty;
+      _effectiveFieldExtraBottom.value =
+          (error != null || (hasText && _effectiveFocusNode.hasFocus))
+              ? _kExtraFieldBottom
+              : 0.0;
+    });
   }
 
   void _initializeValue() {
@@ -1618,6 +1640,18 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         widget.onChanged(null as T);
       }
     }
+    // Update extra bottom spacing used to reserve room for validation
+    // messages so the field height stays consistent after clearing.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final error =
+          _computeMainFieldValidation(vm.controller.text, vm, context);
+      final hasText = vm.controller.text.trim().isNotEmpty;
+      _effectiveFieldExtraBottom.value =
+          (error != null || (hasText && _effectiveFocusNode.hasFocus))
+              ? _kExtraFieldBottom
+              : 0.0;
+    });
   }
 
   void _handleVisibilityToggleTap(FormFieldsController vm) {
@@ -2338,8 +2372,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   validator: (value) {
                     final error =
                         _computeMainFieldValidation(value, vm, context);
-                    _effectiveFieldExtraBottom.value =
-                        error != null ? 15.0 : 0.0;
+                    final hasText =
+                        (value != null && value.trim().isNotEmpty) ||
+                            vm.controller.text.trim().isNotEmpty;
+                    _effectiveFieldExtraBottom.value = (error != null ||
+                            (hasText && _effectiveFocusNode.hasFocus))
+                        ? _kExtraFieldBottom
+                        : 0.0;
                     return error;
                   },
                   controller: vm.controller,
@@ -2381,6 +2420,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                     _isTimeOfDayType() ||
                                     _isDateTimeRangeType())
                                 ? IconButton(
+                                    constraints: const BoxConstraints.tightFor(
+                                        width: 36, height: 36),
+                                    iconSize: 20,
+                                    splashRadius: 20,
                                     icon: Icon(_getPickerIcon()),
                                     onPressed: widget.readOnly
                                         ? null
@@ -2392,6 +2435,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                   )
                                 : widget.suffixIcon ??
                                     IconButton(
+                                      constraints:
+                                          const BoxConstraints.tightFor(
+                                              width: 36, height: 36),
+                                      iconSize: 20,
+                                      splashRadius: 20,
                                       icon: const Icon(Icons.close),
                                       onPressed: widget.readOnly
                                           ? null
@@ -2449,7 +2497,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                             height: fieldHeight + extra, child: textField)
                         : textField;
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 20),
+                      margin: widget.labelPosition == LabelPosition.none
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.only(bottom: 20),
                       child: _buildFieldWithLabel(effectiveField, vm),
                     );
                   },
