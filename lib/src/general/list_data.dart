@@ -157,21 +157,17 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     final hasText =
         (widget.controller?.value.searchController.text ?? '').isNotEmpty;
 
-    // Default to white when no explicit background color is provided.
     final Color bgColor = widget.searchBackgroundColor ?? Colors.white;
-
     final Color iconColor = Theme.of(context).colorScheme.primary;
-    // Use a neutral icon widget by default (no explicit color) so external
-    // buttons can inherit the button foreground color via IconTheme.
-    final Widget searchIconWidget =
+    final Widget prefixIconWidget =
+        widget.searchIcon ?? Icon(Icons.search, color: iconColor);
+    // For the external button prefer a neutral icon so the button's
+    // foreground color (IconTheme) can paint it correctly.
+    final Widget buttonIconWidget =
         widget.searchIcon ?? const Icon(Icons.search);
 
-    // Input decoration uses same background as container so the visual
-    // appearance is consistent.
     final inputDec = InputDecoration(
-      prefixIcon: widget.searchIconInside
-          ? (widget.searchIcon ?? Icon(Icons.search, color: iconColor))
-          : null,
+      prefixIcon: widget.searchIconInside ? prefixIconWidget : null,
       suffixIcon: hasText
           ? IconButton(
               constraints: const BoxConstraints.tightFor(width: 36, height: 36),
@@ -210,16 +206,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         ),
       ),
     );
-    // Fixed height for input and external button so they align.
 
     return Container(
-      // Use chosen background color.
       color: bgColor,
-
       height: kFieldHeightMedium + 30,
-
       padding: const EdgeInsets.symmetric(horizontal: 12),
-
       child: widget.searchIconInside
           ? FormFields<String>(
               label: widget.searchHint ??
@@ -263,12 +254,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                     ),
                   ),
                 ),
-                // const SizedBox(width: 8),
                 AppButton(
                   withLayout: true,
                   type: AppButtonType.filled,
                   size: AppSize.medium,
-                  icon: searchIconWidget,
+                  icon: buttonIconWidget,
                   onPressed: () {
                     try {
                       widget.controller?.refresh();
