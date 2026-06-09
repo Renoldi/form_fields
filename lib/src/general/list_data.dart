@@ -35,7 +35,6 @@ class ListDataComponent<T> extends StatefulWidget {
 
   /// When true the search icon is shown inside the input field. When false
   /// a separate search button is shown to the right of the input.
-  final bool searchIconInside;
 
   /// Optional override for the search box background color. If provided,
   /// this color will be used directly.
@@ -87,7 +86,6 @@ class ListDataComponent<T> extends StatefulWidget {
     this.searchStyle,
     this.searchIcon,
     this.searchBackgroundColor,
-    this.searchIconInside = true,
     this.showEmptyText = false,
     this.showMoreText,
     this.emptyDataText,
@@ -101,6 +99,7 @@ class ListDataComponent<T> extends StatefulWidget {
 }
 
 class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
+  VoidCallback? _searchListener;
   @override
   void initState() {
     widget.controller?.value.dataSource = widget.dataSource;
@@ -108,6 +107,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     widget.controller?.value.onSelected = widget.onSelected;
     widget.controller?.value.onUpdated = widget.onUpdated;
     super.initState();
+
+    // Listen to search controller text changes to update the clear button state
+    _attachSearchListener(widget.controller?.value.searchController);
 
     // Defer any refresh or state change until after the first frame to avoid
     // calling notifyListeners()/setState() during the build phase.
@@ -128,6 +130,40 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant ListDataComponent<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If controller instance changed, reattach listener
+    final oldController = oldWidget.controller?.value.searchController;
+    final newController = widget.controller?.value.searchController;
+    if (oldController != newController) {
+      _detachSearchListener(oldController);
+      _attachSearchListener(newController);
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachSearchListener(widget.controller?.value.searchController);
+    super.dispose();
+  }
+
+  void _attachSearchListener(TextEditingController? c) {
+    if (c == null) return;
+    _searchListener = () {
+      if (mounted) setState(() {});
+    };
+    c.addListener(_searchListener!);
+  }
+
+  void _detachSearchListener(TextEditingController? c) {
+    if (c == null || _searchListener == null) return;
+    try {
+      c.removeListener(_searchListener!);
+    } catch (_) {}
+    _searchListener = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.transparent,
@@ -138,9 +174,12 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               widget.header != null ? widget.header! : const SizedBox(),
-              const SizedBox(),
               // Toolbar area: show search box, extra toolbar, or both.
               widget.showSearchBox ? searchBox() : const SizedBox(),
+              Container(
+                // color: Colors.blue,
+                height: 8,
+              ),
               [
                 ListDataComponentMode.listView,
                 ListDataComponentMode.tile,
@@ -154,123 +193,97 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     );
   }
 
+  Future<void> _doSearch() async {
+    try {
+      await widget.controller?.refresh();
+    } catch (_) {}
+  }
+
   Widget searchBox() {
-    final hasText =
-        (widget.controller?.value.searchController.text ?? '').isNotEmpty;
-
-    final Color bgColor = widget.searchBackgroundColor ?? Colors.white;
-    final Color iconColor = Theme.of(context).colorScheme.primary;
-    final Widget prefixIconWidget =
-        widget.searchIcon ?? Icon(Icons.search, color: iconColor);
-    // For the external button prefer a neutral icon so the button's
-    // foreground color (IconTheme) can paint it correctly.
-    final Widget buttonIconWidget =
-        widget.searchIcon ?? const Icon(Icons.search);
-
-    final inputDec = InputDecoration(
-      prefixIcon: widget.searchIconInside ? prefixIconWidget : null,
-      suffixIcon: hasText
-          ? IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              iconSize: 20,
-              splashRadius: 20,
-              icon: const Icon(Icons.clear, size: 20),
-              onPressed: () {
-                try {
-                  widget.controller?.value.searchController.clear();
-                } catch (_) {}
-                widget.controller?.refresh();
-              },
-            )
-          : null,
-      filled: true,
-      fillColor: bgColor,
-      hintText:
-          widget.searchHint ?? FormFieldsLocalizations.of(context).searchHint,
-      hintStyle: widget.searchStyle ?? Theme.of(context).textTheme.bodyMedium,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: Theme.of(context)
-              .colorScheme
-              .primary
-              .withAlpha((0.12 * 255).round()),
-          width: 1,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: Theme.of(context).colorScheme.primary,
-          width: 1.25,
-        ),
-      ),
-    );
-
-    return Container(
-      color: bgColor,
-      height: kFieldHeightMedium + 30,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: widget.searchIconInside
-          ? FormFields<String>(
-              label: widget.searchHint ??
-                  FormFieldsLocalizations.of(context).searchHint,
-              labelPosition: LabelPosition.none,
-              currentValue:
-                  widget.controller?.value.searchController.text ?? '',
-              onChanged: (val) {
-                final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
-                try {
-                  widget.controller?.value.searchController.text = sanitized;
-                } catch (_) {}
-                if (widget.autoSearch == true) widget.controller?.refresh();
-              },
-              inputDecoration: inputDec,
-            )
-          : SizedBox(
-              height: kFieldHeightMedium + 12,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: FormFields<String>(
-                      label: widget.searchHint ??
-                          FormFieldsLocalizations.of(context).searchHint,
-                      labelPosition: LabelPosition.none,
-                      currentValue:
-                          widget.controller?.value.searchController.text ?? '',
-                      onChanged: (val) {
-                        final sanitized =
-                            val.replaceAll(RegExp("[',\\\"]"), '');
-                        try {
-                          widget.controller?.value.searchController.text =
-                              sanitized;
-                        } catch (_) {}
-                        if (widget.autoSearch == true) {
-                          widget.controller?.refresh();
-                        }
-                      },
-                      inputDecoration: inputDec,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  AppButton(
-                    withLayout: true,
-                    useSafeArea: false,
-                    type: AppButtonType.filled,
-                    size: AppSize.medium,
-                    icon: buttonIconWidget,
-                    onPressed: () {
-                      try {
-                        widget.controller?.refresh();
-                      } catch (_) {}
-                    },
-                  ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: widget.controller?.value.searchController,
+              style: widget.searchStyle,
+              decoration: InputDecoration(
+                hintText: widget.searchHint ??
+                    FormFieldsLocalizations.of(context).searchHint,
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                filled: true,
+                fillColor: widget.searchBackgroundColor ?? Colors.white,
+                suffixIcon: (widget.controller?.value.searchController.text
+                            .isNotEmpty ==
+                        true)
+                    ? GestureDetector(
+                        onTap: () {
+                          try {
+                            widget.controller?.value.searchController.clear();
+                            if (widget.autoSearch == true) {
+                              _doSearch();
+                            } else {
+                              setState(() {});
+                            }
+                          } catch (_) {}
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: widget.searchBackgroundColor ??
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  borderSide: BorderSide.none,
+                ),
               ),
+              textInputAction: TextInputAction.search,
+              onFieldSubmitted: (_) async => await _doSearch(),
             ),
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            margin: const EdgeInsets.only(left: 8),
+            decoration: BoxDecoration(
+              color: widget.searchBackgroundColor ??
+                  Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: widget.searchIcon ??
+                  const Icon(Icons.search, color: Colors.white),
+              color: Colors.white,
+              onPressed: () async => await _doSearch(),
+              tooltip: widget.searchHint ??
+                  FormFieldsLocalizations.of(context).searchHint,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
