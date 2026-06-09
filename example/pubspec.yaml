@@ -23,6 +23,7 @@ dependencies:
   dio: any
   permission_handler: any
   camera: any
+  google_fonts: any
 
 dev_dependencies:
   flutter_test:

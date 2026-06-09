@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // Local configuration & state management
 import 'config/app_router.dart';
@@ -347,12 +348,12 @@ class View extends PresenterState {
             surface: Colors.white,
             surfaceContainerHighest: Colors.white,
           ),
-      textTheme: ThemeData.light(
-        useMaterial3: true,
-      ).textTheme.apply(fontFamily: 'Roboto'),
-      primaryTextTheme: ThemeData.light(
-        useMaterial3: true,
-      ).primaryTextTheme.apply(fontFamily: 'Roboto'),
+      textTheme: GoogleFonts.robotoTextTheme(
+        ThemeData.light(useMaterial3: true).textTheme,
+      ),
+      primaryTextTheme: GoogleFonts.robotoTextTheme(
+        ThemeData.light(useMaterial3: true).primaryTextTheme,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: seedColor,
         elevation: 0,
