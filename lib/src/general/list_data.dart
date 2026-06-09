@@ -216,29 +216,25 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       // Use chosen background color.
       color: bgColor,
 
-      height: widget.searchIconInside
-          ? kFieldHeightMedium
-          : kFieldHeightMedium + 20,
+      height: kFieldHeightMedium + 30,
+
       padding: const EdgeInsets.symmetric(horizontal: 12),
 
       child: widget.searchIconInside
-          ? SizedBox(
-              height: kFieldHeightMedium,
-              child: FormFields<String>(
-                label: widget.searchHint ??
-                    FormFieldsLocalizations.of(context).searchHint,
-                labelPosition: LabelPosition.none,
-                currentValue:
-                    widget.controller?.value.searchController.text ?? '',
-                onChanged: (val) {
-                  final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
-                  try {
-                    widget.controller?.value.searchController.text = sanitized;
-                  } catch (_) {}
-                  if (widget.autoSearch == true) widget.controller?.refresh();
-                },
-                inputDecoration: inputDec,
-              ),
+          ? FormFields<String>(
+              label: widget.searchHint ??
+                  FormFieldsLocalizations.of(context).searchHint,
+              labelPosition: LabelPosition.none,
+              currentValue:
+                  widget.controller?.value.searchController.text ?? '',
+              onChanged: (val) {
+                final sanitized = val.replaceAll(RegExp("[',\\\"]"), '');
+                try {
+                  widget.controller?.value.searchController.text = sanitized;
+                } catch (_) {}
+                if (widget.autoSearch == true) widget.controller?.refresh();
+              },
+              inputDecoration: inputDec,
             )
           : Row(
               crossAxisAlignment: CrossAxisAlignment.start,
