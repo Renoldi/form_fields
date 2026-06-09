@@ -97,7 +97,7 @@ class View extends PresenterState {
                 const SizedBox(height: 8),
                 Expanded(
                   child: ListDataComponent<String>(
-                    // searchIconInside: false,
+                    searchIconInside: false,
                     controller: listController,
                     dataSource: _dataSource,
                     onDataReceived: (datas, search) => vm.updateSearch(search),

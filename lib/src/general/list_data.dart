@@ -229,7 +229,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               inputDecoration: inputDec,
             )
           : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Expanded(
                   child: SizedBox(
