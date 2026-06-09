@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../localization/form_fields_localizations.dart';
-import '../../utilities/enums.dart';
-import '../../utilities/theme_helpers.dart';
-import '../../utilities/extensions.dart';
+import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
 
 class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String label;
@@ -244,20 +242,32 @@ class _FormFieldsDropdownMultiState<T>
                       ),
                     ),
                     actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(dialogL10n.cancel),
+                      SizedBox(
+                        width: 92,
+                        child: AppButton(
+                          type: AppButtonType.outlined,
+                          size: AppSize.small,
+                          text: dialogL10n.cancel,
+                          useSafeArea: false,
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          final updated = tempSelected.toList();
-                          widget.onChanged(updated);
-                          state.didChange(updated);
-                          // Re-validate so externalErrorText clears when selection is valid
-                          state.validate();
-                          Navigator.pop(context);
-                        },
-                        child: Text(dialogL10n.get('ok')),
+                      SizedBox(
+                        width: 92,
+                        child: AppButton(
+                          type: AppButtonType.filled,
+                          size: AppSize.small,
+                          text: dialogL10n.get('ok'),
+                          useSafeArea: false,
+                          onPressed: () {
+                            final updated = tempSelected.toList();
+                            widget.onChanged(updated);
+                            state.didChange(updated);
+                            // Re-validate so externalErrorText clears when selection is valid
+                            state.validate();
+                            Navigator.pop(context);
+                          },
+                        ),
                       ),
                     ],
                   );

@@ -452,22 +452,18 @@ class AppDialogService {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: AppButton(
+                type: AppButtonType.filled,
+                text: okLabel,
+                size: AppSize.medium,
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  foregroundColor:
-                      isWarning ? Colors.orange.shade900 : Colors.white,
-                  // Use a darker orange for text on orange background
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  okLabel,
-                  style: TextStyle(
-                    color: isWarning ? Colors.orange.shade900 : Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(buttonColor),
+                  foregroundColor: WidgetStatePropertyAll(
+                      isWarning ? Colors.orange.shade900 : Colors.white),
+                  padding: WidgetStatePropertyAll(
+                      const EdgeInsets.symmetric(vertical: 12)),
                 ),
               ),
             ),
@@ -503,14 +499,26 @@ class AppDialogService {
           }),
           content: Text(message),
           actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext, rootNavigator: true).pop(),
-              child: Text(stayLabel),
+            SizedBox(
+              width: 92,
+              child: AppButton(
+                type: AppButtonType.outlined,
+                size: AppSize.small,
+                text: stayLabel,
+                useSafeArea: false,
+                onPressed: () =>
+                    Navigator.of(dialogContext, rootNavigator: true).pop(),
+              ),
             ),
-            FilledButton(
-              onPressed: () async => _exitApplication(dialogContext),
-              child: Text(exitLabel),
+            SizedBox(
+              width: 92,
+              child: AppButton(
+                type: AppButtonType.filled,
+                size: AppSize.small,
+                text: exitLabel,
+                useSafeArea: false,
+                onPressed: () async => _exitApplication(dialogContext),
+              ),
             ),
           ],
         );
@@ -652,15 +660,27 @@ class AppDialogService {
           title: Text(title),
           content: Text(message),
           actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext, rootNavigator: true).pop(false),
-              child: Text(stayLabel),
+            SizedBox(
+              width: 92,
+              child: AppButton(
+                type: AppButtonType.outlined,
+                size: AppSize.small,
+                text: stayLabel,
+                useSafeArea: false,
+                onPressed: () =>
+                    Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              ),
             ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext, rootNavigator: true).pop(true),
-              child: Text(cancelLabel),
+            SizedBox(
+              width: 92,
+              child: AppButton(
+                type: AppButtonType.filled,
+                size: AppSize.small,
+                text: cancelLabel,
+                useSafeArea: false,
+                onPressed: () =>
+                    Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              ),
             ),
           ],
         );

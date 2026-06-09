@@ -311,24 +311,14 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
                     child: Container(
                       margin: const EdgeInsets.only(right: 12),
                       child: AppButton(
+                        type: AppButtonType.outlined,
+                        size: AppSize.medium,
+                        useSafeArea: false,
                         text: dl.cancel,
                         onPressed: () {
                           if (!context.mounted) return;
                           Navigator.pop(context, null);
                         },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                              Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest),
-                          foregroundColor:
-                              WidgetStatePropertyAll(resolveTextColor(context)),
-                          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24))),
-                          elevation: WidgetStatePropertyAll(2),
-                          padding: WidgetStatePropertyAll(
-                              EdgeInsets.symmetric(vertical: 14)),
-                        ),
                       ),
                     ),
                   ),
@@ -336,6 +326,9 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
                     child: Container(
                       margin: const EdgeInsets.only(left: 12),
                       child: AppButton(
+                        type: AppButtonType.filled,
+                        size: AppSize.medium,
+                        useSafeArea: false,
                         text: dl.yes,
                         onPressed: () {
                           if (_formKey.currentState?.validate() ?? true) {
@@ -343,17 +336,6 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
                             Navigator.pop(context, _descController.text.trim());
                           }
                         },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                              resolveActiveColor(context, null)),
-                          foregroundColor: WidgetStatePropertyAll(
-                              Theme.of(context).colorScheme.onPrimary),
-                          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24))),
-                          elevation: WidgetStatePropertyAll(4),
-                          padding: WidgetStatePropertyAll(
-                              EdgeInsets.symmetric(vertical: 14)),
-                        ),
                       ),
                     ),
                   ),

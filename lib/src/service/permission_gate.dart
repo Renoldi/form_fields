@@ -41,22 +41,34 @@ class PermissionGate extends StatefulWidget {
                 title: Text(l.get('permissionRequiredTitle')),
                 content: Text(l.get('permissionCameraContent')),
                 actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(l.get('cancel')),
+                  SizedBox(
+                    width: 92,
+                    child: AppButton(
+                      type: AppButtonType.outlined,
+                      size: AppSize.small,
+                      text: l.get('cancel'),
+                      useSafeArea: false,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      if (onOpenSettings != null) {
-                        try {
-                          onOpenSettings.call();
-                        } catch (_) {}
-                      } else {
-                        await openAppSettings();
-                      }
-                    },
-                    child: Text(l.get('openSettings')),
+                  SizedBox(
+                    width: 92,
+                    child: AppButton(
+                      type: AppButtonType.filled,
+                      size: AppSize.small,
+                      text: l.get('openSettings'),
+                      useSafeArea: false,
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        if (onOpenSettings != null) {
+                          try {
+                            onOpenSettings.call();
+                          } catch (_) {}
+                        } else {
+                          await openAppSettings();
+                        }
+                      },
+                    ),
                   ),
                 ],
               );
@@ -93,22 +105,34 @@ class PermissionGate extends StatefulWidget {
                   title: Text(l.get('permissionRequiredTitle')),
                   content: Text(l.get('permissionCameraContent')),
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l.get('cancel')),
+                    SizedBox(
+                      width: 92,
+                      child: AppButton(
+                        type: AppButtonType.outlined,
+                        size: AppSize.small,
+                        text: l.get('cancel'),
+                        useSafeArea: false,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                     ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        Navigator.of(context).pop();
-                        if (onOpenSettings != null) {
-                          try {
-                            onOpenSettings.call();
-                          } catch (_) {}
-                        } else {
-                          await openAppSettings();
-                        }
-                      },
-                      child: Text(l.get('openSettings')),
+                    SizedBox(
+                      width: 92,
+                      child: AppButton(
+                        type: AppButtonType.filled,
+                        size: AppSize.small,
+                        text: l.get('openSettings'),
+                        useSafeArea: false,
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          if (onOpenSettings != null) {
+                            try {
+                              onOpenSettings.call();
+                            } catch (_) {}
+                          } else {
+                            await openAppSettings();
+                          }
+                        },
+                      ),
                     ),
                   ],
                 );
@@ -196,29 +220,41 @@ class _PermissionGateState extends State<PermissionGate> {
                 title: Text(l.get('permissionRequiredTitle')),
                 content: Text(l.get('permissionGenericContent')),
                 actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(l.get('cancel')),
+                  SizedBox(
+                    width: 92,
+                    child: AppButton(
+                      type: AppButtonType.outlined,
+                      size: AppSize.small,
+                      text: l.get('cancel'),
+                      useSafeArea: false,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      if (widget.onOpenSettings != null) {
-                        try {
-                          widget.onOpenSettings!.call();
-                        } catch (_) {}
-                      } else {
-                        await openAppSettings();
-                      }
-                      // After returning from settings (or navigation), re-check permissions.
-                      if (mounted) {
-                        setState(() {
-                          _checking = true;
-                        });
-                        _checkPermissions();
-                      }
-                    },
-                    child: Text(l.get('openSettings')),
+                  SizedBox(
+                    width: 92,
+                    child: AppButton(
+                      type: AppButtonType.filled,
+                      size: AppSize.small,
+                      text: l.get('openSettings'),
+                      useSafeArea: false,
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        if (widget.onOpenSettings != null) {
+                          try {
+                            widget.onOpenSettings!.call();
+                          } catch (_) {}
+                        } else {
+                          await openAppSettings();
+                        }
+                        // After returning from settings (or navigation), re-check permissions.
+                        if (mounted) {
+                          setState(() {
+                            _checking = true;
+                          });
+                          _checkPermissions();
+                        }
+                      },
+                    ),
                   ),
                 ],
               );
@@ -250,10 +286,11 @@ class _PermissionGateState extends State<PermissionGate> {
               Text(FormFieldsLocalizations.of(context)
                   .get('permissionsRequiredShort')),
               const SizedBox(height: 16),
-              ElevatedButton(
+              AppButton(
+                type: AppButtonType.filled,
+                size: AppSize.medium,
+                text: FormFieldsLocalizations.of(context).get('requestAgain'),
                 onPressed: _checkPermissions,
-                child: Text(
-                    FormFieldsLocalizations.of(context).get('requestAgain')),
               ),
             ],
           ),

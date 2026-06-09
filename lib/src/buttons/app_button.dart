@@ -3,6 +3,30 @@ library;
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
+/// A flexible, theme-aware button wrapper used across the app.
+///
+/// Usage notes:
+/// - By default `AppButton` wraps its content with a `SafeArea` to avoid
+///   overlapping system UI (status bar, notches) when used in full-screen
+///   layouts. This is appropriate for most on-screen buttons.
+/// - When placing buttons inside platform dialogs (e.g. `AlertDialog`)
+///   the dialog already manages insets and intrinsic sizing. In those
+///   cases `SafeArea` can cause layout conflicts. Set `useSafeArea: false`
+///   for dialog actions and control sizing from the caller (for example
+///   by wrapping the `AppButton` in a `SizedBox`).
+///
+/// Example (dialog action):
+/// ```dart
+/// SizedBox(
+///   width: 96,
+///   child: AppButton(
+///     useSafeArea: false,
+///     size: AppSize.small,
+///     text: 'OK',
+///     onPressed: () => Navigator.pop(context),
+///   ),
+/// )
+/// ```
 class AppButton<T> extends StatelessWidget {
   final AppButtonType type;
   final AppSize size;
@@ -29,6 +53,11 @@ class AppButton<T> extends StatelessWidget {
   final bool respectSafeArea;
   final bool avoidKeyboard;
 
+  /// When true (default) the button is wrapped with `SafeArea` to avoid
+  /// system insets. Set to false when the parent (like an `AlertDialog`)
+  /// already manages layout/insets and you need full control over sizing.
+  final bool useSafeArea;
+
   const AppButton({
     super.key,
     this.onPressed,
@@ -51,6 +80,7 @@ class AppButton<T> extends StatelessWidget {
     this.topPadding = 12,
     this.respectSafeArea = true,
     this.avoidKeyboard = true,
+    this.useSafeArea = true,
   }) : assert(
           text != null || child != null || icon != null,
           'Provide at least one of text, child, or icon.',
@@ -70,8 +100,8 @@ class AppButton<T> extends StatelessWidget {
         child: button,
       );
     }
-    // Always wrap with SafeArea if not already handled
-    return SafeArea(child: button);
+    // Optionally wrap with SafeArea if not already handled
+    return useSafeArea ? SafeArea(child: button) : button;
   }
 
   Widget _buildButton(BuildContext context) {
@@ -300,18 +330,7 @@ class AppButton<T> extends StatelessWidget {
       AppButtonType.extendedFab => const SizedBox.shrink(),
     };
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final hasFiniteWidth =
-            constraints.hasBoundedWidth && constraints.maxWidth.isFinite;
-
-        if (!hasFiniteWidth) {
-          return button;
-        }
-
-        return SizedBox(width: constraints.maxWidth, child: button);
-      },
-    );
+    return button;
   }
 
   VoidCallback? get _effectiveOnPressed {

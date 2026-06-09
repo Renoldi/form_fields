@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/providers/form_fields_dropdown_notifier.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
-import '../../localization/form_fields_localizations.dart';
-import '../../utilities/enums.dart';
-import '../../utilities/theme_helpers.dart';
-import '../../utilities/extensions.dart';
-import '../../providers/form_fields_dropdown_notifier.dart';
 
 class FormFieldsDropdown<T> extends StatefulWidget {
   final List<T> items;
@@ -250,9 +248,15 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   ),
                 ),
                 actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.cancel),
+                  SizedBox(
+                    width: 92,
+                    child: AppButton(
+                      type: AppButtonType.outlined,
+                      size: AppSize.small,
+                      text: l10n.cancel,
+                      useSafeArea: false,
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ),
                 ],
               );
