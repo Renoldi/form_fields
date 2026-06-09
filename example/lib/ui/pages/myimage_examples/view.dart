@@ -72,7 +72,7 @@ class View extends PresenterState {
                   showDesc: true,
                   descriptionField: 'description',
                   showUploadResultDialog: false,
-                  isDirectUpload: true,
+                  isDirectUpload: false,
                   // uploadFileFieldName: 'file',
                   // uploadIncludeReqType: false,
                   allowedImageSources: [MyImageSource.camera],
@@ -96,6 +96,11 @@ class View extends PresenterState {
                       const SnackBar(
                         content: Text('Upload auth expired — please re-login'),
                       ),
+                    );
+                  },
+                  onRemoveImage: (index, image) {
+                    logger.i(
+                      'Removed image at index $index: ${image.link.isNotEmpty ? image.link : image.path}',
                     );
                   },
                   // uploadFileFieldName: 'file',

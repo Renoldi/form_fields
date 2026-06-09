@@ -787,11 +787,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               final removed = provider.images[0];
               provider.removeImage(0);
               _syncControllerImages(provider);
-              widget.onImagesChanged?.call(
-                List<MyImageResult>.from(provider.images),
-              );
+              // widget.onImagesChanged?.call(
+              //   List<MyImageResult>.from(provider.images),
+              // );
               widget.onRemoveImage?.call(0, removed);
-              widget.onImageChanged?.call(MyImageResult());
+              // widget.onImageChanged?.call(MyImageResult());
             }),
           ),
       ],
@@ -1044,9 +1044,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   final removed = images[idx];
                   provider.removeImage(idx);
                   _syncControllerImages(provider);
-                  widget.onImagesChanged?.call(
-                    List<MyImageResult>.from(provider.images),
-                  );
+                  // widget.onImagesChanged?.call(
+                  //   List<MyImageResult>.from(provider.images),
+                  // );
                   widget.onRemoveImage?.call(idx, removed);
                 }),
               ),
