@@ -32,6 +32,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.top,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelTopValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) => viewModel.setLabelTopValue(value),
                   ),
                   buildResultDisplay(
@@ -46,7 +48,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -94,6 +96,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.bottom,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelBottomValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) => viewModel.setLabelBottomValue(value),
                   ),
                   buildResultDisplay(
@@ -108,7 +112,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -129,6 +133,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.left,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelLeftValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) => viewModel.setLabelLeftValue(value),
                   ),
                   buildResultDisplay(
@@ -143,7 +149,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -164,6 +170,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.right,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelRightValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) => viewModel.setLabelRightValue(value),
                   ),
                   buildResultDisplay(
@@ -178,7 +186,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -199,6 +207,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.inBorder,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelInBorderValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) =>
                         viewModel.setLabelInBorderValue(value),
                   ),
@@ -214,7 +224,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -235,6 +245,8 @@ class View extends PresenterState {
                     labelPosition: LabelPosition.none,
                     items: const ['A', 'B', 'C'],
                     initialValue: viewModel.labelNoneValue,
+                    filled: true,
+                    backgroundColor: Colors.white,
                     onChanged: (value) => viewModel.setLabelNoneValue(value),
                   ),
                   buildResultDisplay(
@@ -249,7 +261,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -289,7 +301,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -335,7 +347,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -377,7 +389,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -422,7 +434,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -470,7 +482,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -507,7 +519,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -542,7 +554,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -577,7 +589,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),
@@ -612,7 +624,7 @@ class View extends PresenterState {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F5F7),
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Color(0xFFE0E0E0)),
                     ),

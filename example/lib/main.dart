@@ -337,9 +337,15 @@ class View extends PresenterState {
 
     return ThemeData.light(useMaterial3: true).copyWith(
       primaryColor: seedColor,
+      // Ensure UI surfaces (cards, dialogs, canvas) use white to match inputs
+      cardColor: Colors.white,
+      dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
+      canvasColor: Colors.white,
       colorScheme: ThemeData.light(useMaterial3: true).colorScheme.copyWith(
             primary: seedColor,
             secondary: seedColor,
+            surface: Colors.white,
+            surfaceContainerHighest: Colors.white,
           ),
       textTheme: ThemeData.light(
         useMaterial3: true,

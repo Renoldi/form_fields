@@ -1097,7 +1097,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           child: Icon(
             Icons.image_not_supported_outlined,
             size: 28,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         );
       }
@@ -1109,7 +1109,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           child: Icon(
             Icons.broken_image_outlined,
             size: 28,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       );
@@ -1118,7 +1118,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         child: Icon(
           Icons.image_not_supported_outlined,
           size: 28,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       );
     }
@@ -1202,9 +1202,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                             child: Text(
                               localizations.get('noLiveCapture'),
                               style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                             ),

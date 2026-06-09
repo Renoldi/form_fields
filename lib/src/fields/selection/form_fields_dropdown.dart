@@ -54,7 +54,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.filterHintText,
     this.externalErrorText,
     this.readOnly = false,
-    this.backgroundColor,
+    this.backgroundColor = Colors.white,
     this.filled = true,
     this.textStyle,
     this.selectedItemBackgroundColor,

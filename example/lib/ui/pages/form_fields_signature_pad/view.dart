@@ -23,7 +23,7 @@ Widget _buildImageFrom(MyImageResult r, BuildContext context,
     color: Colors.grey.shade200,
     child: Center(
       child: Icon(Icons.image_not_supported_outlined,
-          color: Theme.of(context).colorScheme.onSurfaceVariant),
+          color: Theme.of(context).colorScheme.onSurface),
     ),
   );
 }
