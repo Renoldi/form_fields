@@ -13,14 +13,36 @@ import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 
+/// A form field widget that lets the user pick one or more images, with
+/// optional direct upload support.
+///
+/// Callbacks and semantics:
+/// - `onRemoveImage` is called when a specific image is removed (index + item),
+///   and it is invoked *before* `onImagesChanged` so callers can react to the
+///   removed item prior to receiving the new list.
+/// - `onImagesChanged` is called whenever the backing images list changes
+///   (including after initial controller->provider sync, removals, adds, and
+///   successful uploads). It receives a fresh copy of the current list.
+/// - `onImageChanged` is only used when `maxImages == 1` and is invoked when
+///   a new image is picked/replaced. It is NOT called when the single image is
+///   removed; use `onRemoveImage` / `onImagesChanged` to observe removals.
 class FormFieldsMyImage extends StatefulWidget {
   final FormFieldsMyImageController? controller;
 
   /// Callback untuk perubahan daftar gambar (multi-image, kompatibilitas lama)
+  ///
+  /// Called after the images list has been updated. When a removal occurs,
+  /// `onRemoveImage` will be invoked first, then `onImagesChanged` with the
+  /// updated list. Also invoked after initial controller->provider sync so
+  /// callers receive the starting state when the widget is built with a
+  /// pre-populated controller.
   final void Function(List<MyImageResult> results)? onImagesChanged;
 
-  /// Callback untuk perubahan gambar pada mode single image (maxImages == 1)
-  /// Dipanggil setiap kali gambar dipilih atau diganti.
+  /// Callback untuk perubahan gambar pada mode single image (maxImages == 1).
+  ///
+  /// Invoked when a new image is selected or replaced. It is NOT called when
+  /// the image is removed; use `onRemoveImage` / `onImagesChanged` to detect
+  /// deletions.
   final void Function(MyImageResult image)? onImageChanged;
   final String? label;
 
@@ -47,7 +69,12 @@ class FormFieldsMyImage extends StatefulWidget {
       removeIconBuilder;
 
   /// Callback saat gambar dihapus.
-  /// Pada mode single image, index selalu 0.
+  ///
+  /// Receives the `index` and the `image` that was removed. This callback is
+  /// invoked *before* `onImagesChanged` so callers can react to the removed
+  /// item directly (for example, to cancel an in-flight upload or show a
+  /// confirmation). In single-image mode (`maxImages == 1`) the index will be
+  /// `0`.
   final void Function(int index, MyImageResult image)? onRemoveImage;
   final Widget Function(BuildContext context)? plusBuilder;
   final String? uploadUrl;

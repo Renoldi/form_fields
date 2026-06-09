@@ -234,7 +234,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "FormFieldsMyImageController()",\n  "maxImages": 1,\n  "showDesc": true,\n  "descriptionField": "description",\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { ... }"\n}',
+                      '{\n  "controller": "FormFieldsMyImageController()",\n  "maxImages": 1,\n  "showDesc": true,\n  "descriptionField": "description",\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onRemoveImage": "(index, image) => { /* called BEFORE onImagesChanged */ }",\n  "onImagesChanged": "(results) => { ... }",\n  "onImageChanged": "(image) => { /* single-image pick/replace only */ }"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -299,7 +299,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "networkImagesController",\n  "maxImages": 5,\n  "allow": false,\n  "imageBuilder": "(context, image, index) => Image.network(image.link)",\n  "onRemoveImage": "(index, image) => logger.i(...)",\n  "onImagesChanged": "(images) => logger.i(...)"\n}',
+                      '{\n  "controller": "networkImagesController",\n  "maxImages": 5,\n  "allow": false,\n  "imageBuilder": "(context, image, index) => Image.network(image.link)",\n  "onRemoveImage": "(index, image) => logger.i(...)  // called BEFORE onImagesChanged",\n  "onImagesChanged": "(images) => logger.i(...)"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -400,7 +400,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "assetImagesController",\n  "maxImages": 5,\n  "onRemoveImage": "(index, image) => logger.i(...)",\n  "onImagesChanged": "(images) => { setState(() {}); logger.i(...) }"\n}',
+                      '{\n  "controller": "assetImagesController",\n  "maxImages": 5,\n  "onRemoveImage": "(index, image) => logger.i(...)  // called BEFORE onImagesChanged",\n  "onImagesChanged": "(images) => { setState(() {}); logger.i(...) }"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -464,7 +464,8 @@ class View extends PresenterState {
                 _buildFieldTitle(
                     'Profile Image (with Upload)', Colors.indigo.shade600),
                 Text(
-                  'Contoh direct upload single image: controller sudah sinkron sebelum onImageChanged/onRemoveImage.',
+                  'Contoh direct upload single image: controller sudah sinkron sebelum onImagesChanged dipanggil.\n'
+                  'Catatan: `onImageChanged` hanya dipanggil saat pick/replace; `onRemoveImage` dipanggil saat hapus (sebelum `onImagesChanged`).',
                   style: TextStyle(color: Colors.indigo.shade400),
                 ),
                 const SizedBox(height: 6),
@@ -519,7 +520,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })"\n}',
+                      '{\n  "controller": "profileController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "isDirectUpload": true,\n  "uploadUrl": "https://catbox.moe/user/api.php",\n  "onRemoveImage": "(idx, image) => setState(() { singleRemoveLog = ... })  // called BEFORE onImagesChanged",\n  "onImagesChanged": "(results) => { setState(() {}); ... }",\n  "onImageChanged": "(image) => print(image.link)  // single-image pick/replace only"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
@@ -667,7 +668,7 @@ class View extends PresenterState {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SelectableText(
-                      '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })",\n  "onRemoveImage": "(idx, image) => setState(() { ... })"\n}',
+                      '{\n  "controller": "customsController",\n  "maxImages": 1,\n  "allowedImageSources": ["doc"],\n  "plusBuilder": "(context) => Container(width: 100, ...)",\n  "imageBuilder": "(context, image, index) => ClipRRect(...)",\n  "removeIconBuilder": "(context, idx, image) => Container(...)",\n  "onRemoveImage": "(idx, image) => setState(() { ... })  // called BEFORE onImagesChanged",\n  "onImagesChanged": "(results) => setState(() {})",\n  "onImageChanged": "(image) => setState(() { ... })  // single-image pick/replace only"\n}',
                       style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,
