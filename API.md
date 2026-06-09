@@ -287,17 +287,53 @@ A tappable field that opens a full-screen or modal selection list. Useful for lo
 
 ### Key Parameters
 
-| Property           | Type                  | Description                |
-| ------------------ | --------------------- | -------------------------- |
-| `label`            | `String`              | Field label                |
-| `items`            | `List<T>`             | List of selectable options |
-| `onChanged`        | `ValueChanged<T?>`    | Selection callback         |
-| `initialValue`     | `T?`                  | Pre-selected value         |
-| `itemLabelBuilder` | `String Function(T)?` | Display text per item      |
-| `isRequired`       | `bool`                | Required validation        |
-| `labelPosition`    | `LabelPosition`       | Label placement            |
+| Property                      | Type                        | Description                                         |
+| ----------------------------- | --------------------------- | --------------------------------------------------- |
+| `label`                       | `String`                    | Field label                                         |
+| `items`                       | `List<T>`                   | List of selectable options                          |
+| `onChanged`                   | `ValueChanged<T?>`          | Selection callback                                  |
+| `initialValue`                | `T?`                        | Pre-selected value                                  |
+| `itemLabelBuilder`            | `String Function(T)?`       | Display text per item                               |
+| `isRequired`                  | `bool`                      | Required validation                                 |
+| `labelPosition`               | `LabelPosition`             | Label placement                                     |
+| `itemBuilder`                 | `Widget Function(T, bool)?` | Custom widget per item; receives `(item, selected)` |
+| `selectedItemBackgroundColor` | `Color?`                    | Quick override for selected item background color   |
+| `selectedItemTextColor`       | `Color?`                    | Quick override for selected item text color         |
 
 ---
+
+### Examples
+
+Simple color overrides (quick):
+
+```dart
+FormFieldsSelect<String>(
+  label: 'Country',
+  items: ['ID', 'US', 'SG'],
+  initialValue: 'ID',
+  selectedItemBackgroundColor: Colors.blue.shade50,
+  selectedItemTextColor: Colors.blue.shade900,
+  onChanged: (v) => print(v),
+)
+```
+
+Custom item rendering using `itemBuilder`:
+
+```dart
+FormFieldsSelect<String>(
+  label: 'Options',
+  items: ['One', 'Two', 'Three'],
+  itemBuilder: (item, selected) => Row(
+    children: [
+      Icon(selected ? Icons.check_circle : Icons.circle_outlined,
+          color: selected ? Colors.green : Colors.grey),
+      SizedBox(width: 8),
+      Text(item, style: TextStyle(color: selected ? Colors.green : null)),
+    ],
+  ),
+  onChanged: (v) {},
+)
+```
 
 ## 5. FormFieldsDropdown\<T\>
 
@@ -305,15 +341,18 @@ Inline Material dropdown (single select).
 
 ### Key Parameters
 
-| Property           | Type                  | Description           |
-| ------------------ | --------------------- | --------------------- |
-| `label`            | `String`              | Field label           |
-| `items`            | `List<T>`             | Dropdown items        |
-| `onChanged`        | `ValueChanged<T?>`    | Selection callback    |
-| `initialValue`     | `T?`                  | Pre-selected value    |
-| `itemLabelBuilder` | `String Function(T)?` | Display text per item |
-| `isRequired`       | `bool`                | Required validation   |
-| `labelPosition`    | `LabelPosition`       | Label placement       |
+| Property                      | Type                        | Description                                         |
+| ----------------------------- | --------------------------- | --------------------------------------------------- |
+| `label`                       | `String`                    | Field label                                         |
+| `items`                       | `List<T>`                   | Dropdown items                                      |
+| `onChanged`                   | `ValueChanged<T?>`          | Selection callback                                  |
+| `initialValue`                | `T?`                        | Pre-selected value                                  |
+| `itemLabelBuilder`            | `String Function(T)?`       | Display text per item                               |
+| `itemBuilder`                 | `Widget Function(T, bool)?` | Custom widget per item; receives `(item, selected)` |
+| `selectedItemBackgroundColor` | `Color?`                    | Quick override for selected item background color   |
+| `selectedItemTextColor`       | `Color?`                    | Quick override for selected item text color         |
+| `isRequired`                  | `bool`                      | Required validation                                 |
+| `labelPosition`               | `LabelPosition`             | Label placement                                     |
 
 ---
 
@@ -323,15 +362,18 @@ Inline dropdown for selecting multiple values simultaneously.
 
 ### Key Parameters
 
-| Property           | Type                    | Description                          |
-| ------------------ | ----------------------- | ------------------------------------ |
-| `label`            | `String`                | Field label                          |
-| `items`            | `List<T>`               | All available options                |
-| `onChanged`        | `ValueChanged<List<T>>` | Called with updated selection list   |
-| `initialValue`     | `List<T>?`              | Pre-selected values                  |
-| `itemLabelBuilder` | `String Function(T)?`   | Display text per item                |
-| `isRequired`       | `bool`                  | Validates at least one item selected |
-| `labelPosition`    | `LabelPosition`         | Label placement                      |
+| Property                      | Type                        | Description                                         |
+| ----------------------------- | --------------------------- | --------------------------------------------------- |
+| `label`                       | `String`                    | Field label                                         |
+| `items`                       | `List<T>`                   | All available options                               |
+| `onChanged`                   | `ValueChanged<List<T>>`     | Called with updated selection list                  |
+| `initialValue`                | `List<T>?`                  | Pre-selected values                                 |
+| `itemLabelBuilder`            | `String Function(T)?`       | Display text per item                               |
+| `itemBuilder`                 | `Widget Function(T, bool)?` | Custom widget per item; receives `(item, selected)` |
+| `selectedItemBackgroundColor` | `Color?`                    | Quick override for selected item background color   |
+| `selectedItemTextColor`       | `Color?`                    | Quick override for selected item text color         |
+| `isRequired`                  | `bool`                      | Validates at least one item selected                |
+| `labelPosition`               | `LabelPosition`             | Label placement                                     |
 
 ---
 

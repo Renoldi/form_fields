@@ -14,6 +14,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
   final Axis direction;
   final BorderType borderType;
   final Color activeColor;
+  final TextStyle? textStyle;
   final EdgeInsets itemPadding;
   final double itemMarginTop;
   final double itemMarginBottom;
@@ -26,10 +27,13 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
   final double itemBorderRadius;
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
+  final Color? selectedItemTextColor;
   final FormFieldValidator<List<T>>? validator;
   final LabelPosition labelPosition;
   final double containerGap;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
 
   const FormFieldsCheckbox({
     super.key,
@@ -41,6 +45,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
     this.direction = Axis.vertical,
     this.borderType = BorderType.outlineInputBorder,
     this.activeColor = Colors.blue,
+    this.textStyle,
     this.itemPadding = const EdgeInsets.symmetric(vertical: 6),
     this.itemMarginTop = 4,
     this.itemMarginBottom = 4,
@@ -58,6 +63,9 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
     this.containerGap = 8,
     this.readOnly = false,
     this.externalErrorText,
+    this.backgroundColor,
+    this.selectedItemTextColor,
+    this.filled = true,
   });
 
   @override
@@ -109,6 +117,7 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
           direction: widget.direction,
           borderType: widget.borderType,
           activeColor: widget.activeColor,
+          textStyle: widget.textStyle,
           itemPadding: widget.itemPadding,
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
@@ -125,6 +134,8 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
           labelPosition: widget.labelPosition,
           readOnly: widget.readOnly,
           containerGap: widget.containerGap,
+          backgroundColor: widget.backgroundColor,
+          filled: widget.filled,
         );
       },
     );
@@ -151,10 +162,14 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final double itemBorderRadius;
   final String Function(T item)? itemLabelBuilder;
   final Widget Function(T item, bool selected)? itemBuilder;
+  final Color? selectedItemTextColor;
   final bool isRequired;
   final LabelPosition labelPosition;
   final double containerGap;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
+  final TextStyle? textStyle;
 
   const _FormFieldsCheckboxBody({
     required this.label,
@@ -176,10 +191,14 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     required this.itemBorderRadius,
     this.itemLabelBuilder,
     this.itemBuilder,
+    this.selectedItemTextColor,
     required this.isRequired,
     required this.labelPosition,
     required this.containerGap,
     required this.readOnly,
+    this.textStyle,
+    this.backgroundColor,
+    this.filled = true,
   });
 
   @override
@@ -229,7 +248,7 @@ class _FormFieldsCheckboxBodyView<T>
               fontWeight: FontWeight.w600,
               color: hasError
                   ? theme.colorScheme.error
-                  : resolveTextColor(context),
+                  : (widget.textStyle?.color ?? resolveTextColor(context)),
             ),
           ),
           if (widget.isRequired)
@@ -258,6 +277,10 @@ class _FormFieldsCheckboxBodyView<T>
     final checkboxContainer = Container(
       width: double.infinity,
       decoration: BoxDecoration(
+        color: widget.filled
+            ? (widget.backgroundColor ??
+                Theme.of(context).colorScheme.surfaceContainerHighest)
+            : null,
         border: containerBorder,
         borderRadius: BorderRadius.circular(10),
       ),
@@ -295,74 +318,92 @@ class _FormFieldsCheckboxBodyView<T>
     // Handle label position
     switch (widget.labelPosition) {
       case LabelPosition.top:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            labelWidget,
-            SizedBox(height: widget.containerGap),
-            checkboxContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              labelWidget,
+              const SizedBox(height: 8),
+              checkboxContainer,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.bottom:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            checkboxContainer,
-            SizedBox(height: widget.containerGap),
-            labelWidget,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              checkboxContainer,
+              const SizedBox(height: 8),
+              labelWidget,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.left:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IntrinsicWidth(child: labelWidget),
-            SizedBox(width: widget.containerGap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  checkboxContainer,
-                  errorWidget,
-                ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IntrinsicWidth(child: labelWidget),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    checkboxContainer,
+                    errorWidget,
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       case LabelPosition.right:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  checkboxContainer,
-                  errorWidget,
-                ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    checkboxContainer,
+                    errorWidget,
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: widget.containerGap),
-            IntrinsicWidth(child: labelWidget),
-          ],
+              const SizedBox(width: 8),
+              IntrinsicWidth(child: labelWidget),
+            ],
+          ),
         );
       case LabelPosition.inBorder:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            checkboxContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              checkboxContainer,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.none:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            checkboxContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              checkboxContainer,
+              errorWidget,
+            ],
+          ),
         );
     }
   }
@@ -390,8 +431,12 @@ class _FormFieldsCheckboxBodyView<T>
                   : item.toString().toBegin,
               style: TextStyle(
                 color: isSelected
-                    ? resolveTextColor(context)
-                    : resolveTextColor(context, muted: true),
+                    ? (widget.selectedItemTextColor ??
+                        widget.textStyle?.color ??
+                        resolveTextColor(context))
+                    : (widget.textStyle?.color != null
+                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                        : resolveTextColor(context, muted: true)),
               ),
             ),
           );

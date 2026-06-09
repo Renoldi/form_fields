@@ -14,6 +14,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final String? Function(T?)? validator;
   final bool isRequired;
   final String Function(T item)? itemLabelBuilder;
+  final Widget Function(T item, bool selected)? itemBuilder;
   final LabelPosition labelPosition;
   final BorderType borderType;
   // visual styling controlled by `borderType` and theme
@@ -26,6 +27,11 @@ class FormFieldsDropdown<T> extends StatefulWidget {
   final String? filterHintText;
   final String? externalErrorText;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
+  final Color? selectedItemBackgroundColor;
+  final Color? selectedItemTextColor;
+  final TextStyle? textStyle;
 
   const FormFieldsDropdown({
     super.key,
@@ -39,6 +45,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.labelPosition = LabelPosition.top,
     this.borderType = BorderType.outlineInputBorder,
     this.decoration,
+    this.itemBuilder,
     this.prefixIcon,
     this.suffixIcon,
     this.hintText,
@@ -47,6 +54,11 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.filterHintText,
     this.externalErrorText,
     this.readOnly = false,
+    this.backgroundColor,
+    this.filled = true,
+    this.textStyle,
+    this.selectedItemBackgroundColor,
+    this.selectedItemTextColor,
   });
 
   @override
@@ -184,21 +196,52 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                             final item = filteredItems[index];
                             final isSelected = tempSelected == item;
 
-                            return ListTile(
-                              title: Text(
+                            final txt = widget.selectedItemTextColor ??
+                                widget.textStyle?.color ??
+                                Theme.of(context).colorScheme.primary;
+                            final bg = widget.selectedItemBackgroundColor ??
+                                (txt.withValues(alpha: 0.12));
+
+                            Widget titleContent;
+                            if (widget.itemBuilder != null) {
+                              titleContent = DefaultTextStyle(
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? (widget.selectedItemTextColor ??
+                                          resolveTextColor(context))
+                                      : resolveTextColor(context, muted: true),
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                ),
+                                child: widget.itemBuilder!(item, isSelected),
+                              );
+                            } else {
+                              titleContent = Text(
                                 widget.itemLabelBuilder != null
                                     ? widget.itemLabelBuilder!(item)
                                     : item.toString().toBegin,
+                              );
+                            }
+
+                            return ListTileTheme(
+                              data: ListTileTheme.of(context).copyWith(
+                                selectedTileColor: bg,
+                                selectedColor: txt,
                               ),
-                              selected: isSelected,
-                              onTap: () {
-                                tempSelected = item;
-                                widget.onChanged?.call(item);
-                                state.didChange(item);
-                                // Re-validate after user interaction so external errors clear
-                                state.validate();
-                                Navigator.pop(context);
-                              },
+                              child: ListTile(
+                                title: titleContent,
+                                selected: isSelected,
+                                selectedTileColor: bg,
+                                selectedColor: txt,
+                                onTap: () {
+                                  tempSelected = item;
+                                  widget.onChanged?.call(item);
+                                  state.didChange(item);
+                                  state.validate();
+                                  Navigator.pop(context);
+                                },
+                              ),
                             );
                           },
                         ),
@@ -222,14 +265,22 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
     return StatefulBuilder(
       builder: (context, setStateDropdown) {
         final l10n = FormFieldsLocalizations.of(context);
-        final effectiveDecoration = (widget.decoration ??
-                InputDecoration(
-                  hintText:
-                      widget.hintText ?? l10n.select(widget.label.toTitleCase),
-                  prefixIcon: widget.prefixIcon,
-                  suffixIcon: widget.suffixIcon,
-                ))
-            .copyWith(
+
+        final baseDecoration = widget.decoration ??
+            InputDecoration(
+              hintText:
+                  widget.hintText ?? l10n.select(widget.label.toTitleCase),
+              prefixIcon: widget.prefixIcon,
+              suffixIcon: widget.suffixIcon,
+            );
+
+        final fillColor = widget.decoration?.fillColor ??
+            widget.backgroundColor ??
+            Theme.of(context).colorScheme.surfaceContainerHighest;
+
+        final effectiveDecoration = baseDecoration.copyWith(
+          filled: widget.filled,
+          fillColor: widget.filled ? fillColor : null,
           errorText: (state.errorText != null && state.errorText!.isNotEmpty)
               ? state.errorText
               : (state.hasError ? l10n.select(widget.label.toTitleCase) : null),
@@ -271,7 +322,8 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                       style: TextStyle(
                         color: currentValueText.isEmpty
                             ? Theme.of(context).disabledColor
-                            : resolveTextColor(context),
+                            : (widget.textStyle?.color ??
+                                resolveTextColor(context)),
                       ),
                     ),
                   ),
@@ -290,7 +342,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: resolveTextColor(context),
+                    color: widget.textStyle?.color ?? resolveTextColor(context),
                   ),
                 ),
                 if (widget.isRequired)
@@ -308,38 +360,56 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
 
           switch (widget.labelPosition) {
             case LabelPosition.top:
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [labelWidget, const SizedBox(height: 8), field],
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [labelWidget, const SizedBox(height: 8), field],
+                ),
               );
             case LabelPosition.bottom:
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [field, const SizedBox(height: 8), labelWidget],
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [field, const SizedBox(height: 8), labelWidget],
+                ),
               );
             case LabelPosition.left:
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  labelWidget,
-                  const SizedBox(width: 12),
-                  Expanded(child: field),
-                ],
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    labelWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: field),
+                  ],
+                ),
               );
             case LabelPosition.right:
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(child: field),
-                  const SizedBox(width: 12),
-                  labelWidget,
-                ],
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: field),
+                    const SizedBox(width: 12),
+                    labelWidget,
+                  ],
+                ),
               );
             case LabelPosition.inBorder:
               // Let InputDecoration handle floating label
-              return field;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: field,
+              );
             case LabelPosition.none:
-              return field;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: field,
+              );
           }
         }
 
@@ -398,38 +468,56 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
 
         switch (widget.labelPosition) {
           case LabelPosition.top:
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [labelWidget, const SizedBox(height: 8), dropdown],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [labelWidget, const SizedBox(height: 8), dropdown],
+              ),
             );
           case LabelPosition.bottom:
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [dropdown, const SizedBox(height: 8), labelWidget],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [dropdown, const SizedBox(height: 8), labelWidget],
+              ),
             );
           case LabelPosition.left:
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                labelWidget,
-                const SizedBox(width: 12),
-                Expanded(child: dropdown),
-              ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  labelWidget,
+                  const SizedBox(width: 12),
+                  Expanded(child: dropdown),
+                ],
+              ),
             );
           case LabelPosition.right:
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: dropdown),
-                const SizedBox(width: 12),
-                labelWidget,
-              ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: dropdown),
+                  const SizedBox(width: 12),
+                  labelWidget,
+                ],
+              ),
             );
           case LabelPosition.inBorder:
             // Let InputDecoration handle floating label
-            return dropdown;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: dropdown,
+            );
           case LabelPosition.none:
-            return dropdown;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: dropdown,
+            );
         }
       },
     );

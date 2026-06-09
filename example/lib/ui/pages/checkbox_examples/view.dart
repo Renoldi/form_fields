@@ -114,6 +114,34 @@ class View extends PresenterState {
                   ],
                 ),
 
+                // Filled & Background examples
+                buildSectionTitle('Filled & Background', Colors.green.shade700,
+                    Colors.green.shade400),
+                buildFieldTitle(
+                    'Filled with custom background', Colors.green.shade600),
+                FormFieldsCheckbox<String>(
+                  label: 'Preferences (filled)',
+                  initialValue: viewModel.checkbox9,
+                  items: const ['Option A', 'Option B', 'Option C'],
+                  filled: true,
+                  backgroundColor: Colors.green.shade50,
+                  onChanged: viewModel.setCheckbox9,
+                ),
+                buildResultDisplay(
+                    context, 'Selected (filled)', viewModel.checkbox9),
+                const SizedBox(height: 8),
+                buildFieldTitle(
+                    'Not filled (transparent)', Colors.green.shade600),
+                FormFieldsCheckbox<String>(
+                  label: 'Preferences (not filled)',
+                  initialValue: viewModel.checkbox10,
+                  items: const ['Option A', 'Option B', 'Option C'],
+                  filled: false,
+                  onChanged: viewModel.setCheckbox10,
+                ),
+                buildResultDisplay(
+                    context, 'Selected (not filled)', viewModel.checkbox10),
+
                 buildSectionTitle(context.tr('cbMultipleSelection'),
                     Colors.pink.shade700, Colors.pink.shade400),
 

@@ -429,36 +429,51 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     const spacing = 12.0;
     switch (widget.labelPosition) {
       case LabelPosition.top:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [labelWidget, content],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labelWidget, const SizedBox(height: 8), content],
+          ),
         );
       case LabelPosition.bottom:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [content, labelWidget],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [content, const SizedBox(height: 8), labelWidget],
+          ),
         );
       case LabelPosition.left:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(width: labelWidth, child: labelWidget),
-            const SizedBox(width: spacing),
-            Expanded(child: content),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: labelWidth, child: labelWidget),
+              const SizedBox(width: spacing),
+              Expanded(child: content),
+            ],
+          ),
         );
       case LabelPosition.right:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: content),
-            const SizedBox(width: spacing),
-            SizedBox(width: labelWidth, child: labelWidget),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: content),
+              const SizedBox(width: spacing),
+              SizedBox(width: labelWidth, child: labelWidget),
+            ],
+          ),
         );
       case LabelPosition.inBorder:
       case LabelPosition.none:
-        return content;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: content,
+        );
     }
   }
 

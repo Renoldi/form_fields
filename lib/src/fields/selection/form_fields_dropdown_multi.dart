@@ -10,6 +10,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final ValueChanged<List<T>> onChanged;
   final List<T>? initialValues;
   final String Function(T item)? itemLabelBuilder;
+  final Widget Function(T item, bool selected)? itemBuilder;
   final String? Function(List<T>?)? validator;
   final bool isRequired;
   final int? minSelections;
@@ -26,6 +27,11 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
   final String? filterHintText;
   final String? externalErrorText;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
+  final Color? selectedItemBackgroundColor;
+  final Color? selectedItemTextColor;
+  final TextStyle? textStyle;
 
   const FormFieldsDropdownMulti({
     super.key,
@@ -34,6 +40,7 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     required this.onChanged,
     this.initialValues,
     this.itemLabelBuilder,
+    this.itemBuilder,
     this.validator,
     this.isRequired = false,
     this.minSelections,
@@ -49,9 +56,12 @@ class FormFieldsDropdownMulti<T> extends StatefulWidget {
     this.filterHintText,
     this.externalErrorText,
     this.readOnly = false,
+    this.backgroundColor,
+    this.filled = true,
+    this.textStyle,
+    this.selectedItemBackgroundColor,
+    this.selectedItemTextColor,
   });
-
-// Removed duplicate createState and stray bracket
 
   @override
   State<FormFieldsDropdownMulti<T>> createState() =>
@@ -174,26 +184,58 @@ class _FormFieldsDropdownMultiState<T>
                                 final item = filteredItems[index];
                                 final isSelected = tempSelected.contains(item);
 
-                                return CheckboxListTile(
-                                  title: Text(
+                                final txt = widget.selectedItemTextColor ??
+                                    widget.textStyle?.color ??
+                                    Theme.of(context).colorScheme.primary;
+                                final bg = widget.selectedItemBackgroundColor ??
+                                    (txt.withValues(alpha: 0.12));
+                                Widget titleContent;
+                                if (widget.itemBuilder != null) {
+                                  titleContent = DefaultTextStyle(
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? (widget.selectedItemTextColor ??
+                                              resolveTextColor(context))
+                                          : resolveTextColor(context,
+                                              muted: true),
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                                    child:
+                                        widget.itemBuilder!(item, isSelected),
+                                  );
+                                } else {
+                                  titleContent = Text(
                                     widget.itemLabelBuilder != null
                                         ? widget.itemLabelBuilder!(item)
                                         : item.toString().toBegin,
+                                  );
+                                }
+
+                                return ListTileTheme(
+                                  data: ListTileTheme.of(context).copyWith(
+                                    selectedTileColor: bg,
+                                    selectedColor: txt,
                                   ),
-                                  value: isSelected,
-                                  onChanged: (checked) {
-                                    setDialogState(() {
-                                      if (checked == true) {
-                                        if (widget.maxSelections == null ||
-                                            tempSelected.length <
-                                                widget.maxSelections!) {
-                                          tempSelected.add(item);
+                                  child: CheckboxListTile(
+                                    title: titleContent,
+                                    value: isSelected,
+                                    selected: isSelected,
+                                    onChanged: (checked) {
+                                      setDialogState(() {
+                                        if (checked == true) {
+                                          if (widget.maxSelections == null ||
+                                              tempSelected.length <
+                                                  widget.maxSelections!) {
+                                            tempSelected.add(item);
+                                          }
+                                        } else {
+                                          tempSelected.remove(item);
                                         }
-                                      } else {
-                                        tempSelected.remove(item);
-                                      }
-                                    });
-                                  },
+                                      });
+                                    },
+                                  ),
                                 );
                               },
                             ),
@@ -228,28 +270,35 @@ class _FormFieldsDropdownMultiState<T>
         final border =
             _buildBorder(context, widget.borderType, isError: state.hasError);
 
+        final baseDecoration = InputDecoration(
+          hintText: widget.hintText ?? l10n.select(widget.label.toTitleCase),
+          errorText: (state.errorText != null && state.errorText!.isNotEmpty)
+              ? state.errorText
+              : (state.hasError
+                  ? l10n.selectAtLeastOne(widget.label.toTitleCase)
+                  : null),
+          border: border,
+          enabledBorder: border,
+          focusedBorder:
+              _buildBorder(context, widget.borderType, isFocused: true),
+        );
+
+        final fillColor = widget.backgroundColor ??
+            Theme.of(context).colorScheme.surfaceContainerHighest;
+
         final field = InkWell(
           onTap: widget.readOnly ? null : () => openDialog(state.context),
           child: InputDecorator(
-            decoration: InputDecoration(
-              hintText:
-                  widget.hintText ?? l10n.select(widget.label.toTitleCase),
-              errorText:
-                  (state.errorText != null && state.errorText!.isNotEmpty)
-                      ? state.errorText
-                      : (state.hasError
-                          ? l10n.selectAtLeastOne(widget.label.toTitleCase)
-                          : null),
-              border: border,
-              enabledBorder: border,
-              focusedBorder:
-                  _buildBorder(context, widget.borderType, isFocused: true),
-            ),
+            decoration: baseDecoration.copyWith(
+                filled: widget.filled,
+                fillColor: widget.filled ? fillColor : null),
             child: selectedItems.isEmpty
                 ? Text(
                     widget.hintText ?? l10n.select(widget.label.toTitleCase),
                     style: TextStyle(
-                      color: resolveTextColor(context, muted: true),
+                      color: widget.textStyle?.color != null
+                          ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                          : resolveTextColor(context, muted: true),
                     ),
                   )
                 : Wrap(
@@ -263,12 +312,15 @@ class _FormFieldsDropdownMultiState<T>
                               : item.toString().toBegin,
                           style: TextStyle(
                             color: widget.chipTextColor ??
-                                Theme.of(context).colorScheme.onPrimary,
+                                (widget.textStyle?.color ??
+                                    Theme.of(context).colorScheme.onPrimary),
                             fontSize: 12,
                           ),
                         ),
                         backgroundColor: widget.chipBackgroundColor ??
-                            resolveActiveColor(context, null),
+                            (widget.chipBackgroundColor ??
+                                (widget.textStyle?.color ??
+                                    resolveActiveColor(context, null))),
                         deleteIconColor: widget.chipDeleteIconColor ??
                             Theme.of(context).colorScheme.onPrimary,
                         onDeleted: () {
@@ -323,63 +375,81 @@ class _FormFieldsDropdownMultiState<T>
 
         switch (widget.labelPosition) {
           case LabelPosition.top:
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                labelWidget,
-                const SizedBox(height: 8),
-                field,
-                itemCountWidget,
-              ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  labelWidget,
+                  const SizedBox(height: 8),
+                  field,
+                  itemCountWidget,
+                ],
+              ),
             );
           case LabelPosition.bottom:
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                field,
-                const SizedBox(height: 8),
-                labelWidget,
-                itemCountWidget,
-              ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  field,
+                  const SizedBox(height: 8),
+                  labelWidget,
+                  itemCountWidget,
+                ],
+              ),
             );
           case LabelPosition.left:
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                IntrinsicWidth(child: labelWidget),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      field,
-                      itemCountWidget,
-                    ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IntrinsicWidth(child: labelWidget),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        field,
+                        itemCountWidget,
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           case LabelPosition.right:
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      field,
-                      itemCountWidget,
-                    ],
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        field,
+                        itemCountWidget,
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IntrinsicWidth(child: labelWidget),
-              ],
+                  const SizedBox(width: 8),
+                  IntrinsicWidth(child: labelWidget),
+                ],
+              ),
             );
           case LabelPosition.inBorder:
-            return field;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: field,
+            );
           case LabelPosition.none:
-            return field;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: field,
+            );
         }
       },
     );

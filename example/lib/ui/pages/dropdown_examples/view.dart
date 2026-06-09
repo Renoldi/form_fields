@@ -61,6 +61,33 @@ class View extends PresenterState {
                       ),
                     ),
                   ),
+                  // Example: filled + backgroundColor usage
+                  buildSectionTitle('Filled & Background',
+                      Colors.purple.shade700, Colors.purple.shade400),
+                  buildFieldTitle(
+                      'Filled with custom background', Colors.purple.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Tema (filled)',
+                    items: const ['Light', 'Dark', 'Auto', 'System'],
+                    initialValue: viewModel.dropdown9,
+                    filled: true,
+                    backgroundColor: Colors.purple.shade50,
+                    onChanged: (value) => viewModel.setDropdown9(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (filled)', viewModel.dropdown9),
+                  const SizedBox(height: 8),
+                  buildFieldTitle(
+                      'Not filled (transparent)', Colors.purple.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Tema (not filled)',
+                    items: const ['Light', 'Dark', 'Auto', 'System'],
+                    initialValue: viewModel.dropdown9,
+                    filled: false,
+                    onChanged: (value) => viewModel.setDropdown9(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (not filled)', viewModel.dropdown9),
                   buildFieldTitle('Label Bottom', Colors.pink.shade600),
                   FormFieldsDropdown<String>(
                     label: context.tr('positionBottom'),
@@ -739,6 +766,40 @@ class View extends PresenterState {
                     ),
                   ),
 
+                  // Example: Direct style overrides (textStyle / selected colors)
+                  buildSectionTitle('Style Overrides', Colors.blue.shade700,
+                      Colors.blue.shade400),
+                  buildFieldTitle('Direct textStyle & selected color',
+                      Colors.blue.shade600),
+                  FormFieldsDropdown<String>(
+                    label: 'Styled Dropdown',
+                    items: viewModel.countries,
+                    initialValue: viewModel.dropdownStyled,
+                    textStyle:
+                        const TextStyle(color: Colors.deepPurple, fontSize: 14),
+                    selectedItemBackgroundColor:
+                        Colors.deepPurple.withValues(alpha: 0.08),
+                    selectedItemTextColor: Colors.deepPurple.shade900,
+                    onChanged: (value) => viewModel.setDropdownStyled(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Styled)', viewModel.dropdownStyled),
+                  const SizedBox(height: 12),
+
+                  buildFieldTitle('Radio with textStyle & activeColor',
+                      Colors.blue.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: 'Radio Styled',
+                    items: const ['One', 'Two', 'Three'],
+                    initialValue: viewModel.radioStyled,
+                    textStyle:
+                        const TextStyle(color: Colors.teal, fontSize: 14),
+                    activeColor: Colors.teal,
+                    onChanged: (v) => viewModel.setRadioStyled(v),
+                  ),
+                  buildResultDisplay(context, 'Selected (Radio Styled)',
+                      viewModel.radioStyled),
+
                   buildSectionTitle(context.tr('ddWithFilter'),
                       Colors.green.shade700, Colors.green.shade400),
 
@@ -787,6 +848,37 @@ class View extends PresenterState {
                   ),
 
                   const SizedBox(height: 32),
+
+                  // Example 11: FormFieldsSelect with custom itemBuilder and colors
+                  buildSectionTitle('Select: Custom Item Builder',
+                      Colors.blue.shade700, Colors.blue.shade400),
+                  buildFieldTitle(
+                      'Custom item rendering', Colors.blue.shade600),
+                  FormFieldsSelect<String>(
+                    formType: FormType.dropdown,
+                    label: 'Custom Select',
+                    items: viewModel.colors,
+                    initialValue: viewModel.dropdown7,
+                    itemBuilder: (item, selected) => Row(
+                      children: [
+                        Icon(
+                          selected ? Icons.check_circle : Icons.circle_outlined,
+                          color: selected ? Colors.blue : Colors.grey,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(item,
+                            style: TextStyle(
+                                color: selected ? Colors.blue.shade900 : null)),
+                      ],
+                    ),
+                    selectedItemBackgroundColor: Colors.blue.shade50,
+                    selectedItemTextColor: Colors.blue.shade900,
+                    onChanged: (value) => viewModel.setDropdown7(value),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (Custom)', viewModel.dropdown7),
+                  const SizedBox(height: 16),
 
                   // Submit Button
                   SizedBox(

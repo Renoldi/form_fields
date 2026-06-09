@@ -52,6 +52,13 @@ class FormFieldsSelect<T> extends StatefulWidget {
   final String filterHintText;
 
   final String? externalErrorText;
+  final Color? backgroundColor;
+  final bool filled;
+  final TextStyle? textStyle;
+  final Color? activeColor;
+  final Widget Function(T item, bool selected)? itemBuilder;
+  final Color? selectedItemBackgroundColor;
+  final Color? selectedItemTextColor;
   const FormFieldsSelect({
     super.key,
     required this.formType,
@@ -84,6 +91,13 @@ class FormFieldsSelect<T> extends StatefulWidget {
     this.enableFilter = false,
     this.filterHintText = 'Search...',
     this.externalErrorText,
+    this.backgroundColor,
+    this.filled = true,
+    this.textStyle,
+    this.activeColor,
+    this.itemBuilder,
+    this.selectedItemBackgroundColor,
+    this.selectedItemTextColor,
   });
 
   @override
@@ -124,6 +138,9 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           initialValue: widget.initialValue,
           isRequired: widget.isRequired,
           itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
+          selectedItemBackgroundColor: widget.selectedItemBackgroundColor,
+          selectedItemTextColor: widget.selectedItemTextColor,
           onChanged: widget.onChanged ?? (_) {},
           validator: widget.validator,
           labelPosition: widget.labelPosition,
@@ -131,6 +148,9 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,
+          backgroundColor: widget.backgroundColor,
+          filled: widget.filled,
+          textStyle: widget.textStyle,
         );
 
       case FormType.dropdownMulti:
@@ -140,6 +160,9 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           initialValues: widget.initialValues ?? [],
           isRequired: widget.isRequired,
           itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
+          selectedItemBackgroundColor: widget.selectedItemBackgroundColor,
+          selectedItemTextColor: widget.selectedItemTextColor,
           onChanged: widget.onMultiChanged ?? (_) {},
           validator: widget.multiValidator,
           labelPosition: widget.labelPosition,
@@ -147,6 +170,9 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           enableFilter: widget.enableFilter,
           filterHintText: widget.filterHintText,
           externalErrorText: widget.externalErrorText,
+          backgroundColor: widget.backgroundColor,
+          filled: widget.filled,
+          textStyle: widget.textStyle,
         );
 
       case FormType.radioButton:
@@ -156,17 +182,24 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           initialValue: widget.initialValue,
           isRequired: widget.isRequired,
           itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
           onChanged: widget.onChanged ?? (_) {},
           validator: widget.validator,
           labelPosition: widget.labelPosition,
           borderType: widget.borderType,
-          activeColor: resolveActiveColor(context, null),
+          activeColor: widget.activeColor ?? resolveActiveColor(context, null),
+          textStyle: widget.textStyle,
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemBorderColor: widget.itemBorderColor,
           itemBorderWidth: widget.itemBorderWidth,
           itemBorderRadius: widget.itemBorderRadius,
           externalErrorText: widget.externalErrorText,
+          selectedItemBackgroundColor: widget.selectedItemBackgroundColor,
+          selectedItemTextColor: widget.selectedItemTextColor,
+          hoverBackgroundColor: widget.backgroundColor,
+          backgroundColor: widget.backgroundColor,
+          filled: widget.filled,
         );
 
       case FormType.checkbox:
@@ -176,12 +209,14 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           initialValue: widget.initialValues ?? [],
           isRequired: widget.isRequired,
           itemLabelBuilder: widget.itemLabelBuilder,
+          itemBuilder: widget.itemBuilder,
           onChanged: widget.onMultiChanged ?? (_) {},
           validator: widget.multiValidator != null
               ? (List<T>? values) => widget.multiValidator!(values)
               : null,
           borderType: widget.borderType,
-          activeColor: resolveActiveColor(context, null),
+          activeColor: widget.activeColor ?? resolveActiveColor(context, null),
+          textStyle: widget.textStyle,
           itemMarginTop: widget.itemMarginTop,
           itemMarginBottom: widget.itemMarginBottom,
           itemMarginHorizontal: widget.itemMarginHorizontal,
@@ -189,6 +224,10 @@ class _FormFieldsSelectView<T> extends _FormFieldsSelectPresenterState<T> {
           itemBorderWidth: widget.itemBorderWidth,
           itemBorderRadius: widget.itemBorderRadius,
           externalErrorText: widget.externalErrorText,
+          // use same background for checkbox container
+          backgroundColor: widget.backgroundColor,
+          selectedItemTextColor: widget.selectedItemTextColor,
+          filled: widget.filled,
         );
 
       default:

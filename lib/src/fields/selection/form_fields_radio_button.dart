@@ -17,6 +17,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
   final Axis direction;
   final BorderType borderType;
   final Color activeColor;
+  final TextStyle? textStyle;
   final EdgeInsets itemPadding;
   final double sectionSpacing;
   final Color? itemBorderColor;
@@ -37,6 +38,8 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
   final bool horizontalSideBySide;
   final FormFieldValidator<T>? validator;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
 
   const FormFieldsRadioButton({
     super.key,
@@ -51,6 +54,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
     this.direction = Axis.vertical,
     this.borderType = BorderType.outlineInputBorder,
     this.activeColor = Colors.blue,
+    this.textStyle,
     this.itemPadding = const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
     this.sectionSpacing = 12,
     this.itemBorderColor,
@@ -72,6 +76,8 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
     this.validator,
     this.readOnly = false,
     this.externalErrorText,
+    this.backgroundColor,
+    this.filled = true,
   }) : assert(items != null || sections != null,
             'Either items or sections must be provided');
 
@@ -128,6 +134,7 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
           direction: widget.direction,
           borderType: widget.borderType,
           activeColor: widget.activeColor,
+          textStyle: widget.textStyle,
           itemPadding: widget.itemPadding,
           isRequired: widget.isRequired,
           sectionSpacing: widget.sectionSpacing,
@@ -148,6 +155,8 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
           indicatorVerticalAlignment: widget.indicatorVerticalAlignment,
           horizontalSideBySide: widget.horizontalSideBySide,
           readOnly: widget.readOnly,
+          backgroundColor: widget.backgroundColor,
+          filled: widget.filled,
         );
       },
     );
@@ -185,6 +194,9 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final IndicatorVerticalAlignment indicatorVerticalAlignment;
   final bool horizontalSideBySide;
   final bool readOnly;
+  final Color? backgroundColor;
+  final bool filled;
+  final TextStyle? textStyle;
 
   const _FormFieldsRadioButtonBody({
     required this.label,
@@ -217,6 +229,9 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
     required this.indicatorVerticalAlignment,
     required this.horizontalSideBySide,
     required this.readOnly,
+    this.textStyle,
+    this.backgroundColor,
+    this.filled = true,
   });
 
   @override
@@ -266,7 +281,7 @@ class _FormFieldsRadioButtonBodyView<T>
               fontWeight: FontWeight.w600,
               color: hasError
                   ? theme.colorScheme.error
-                  : resolveTextColor(context),
+                  : (widget.textStyle?.color ?? resolveTextColor(context)),
             ),
           ),
           if (widget.isRequired)
@@ -296,6 +311,10 @@ class _FormFieldsRadioButtonBodyView<T>
     final radioContainer = Container(
       width: double.infinity,
       decoration: BoxDecoration(
+        color: widget.filled
+            ? (widget.backgroundColor ??
+                Theme.of(context).colorScheme.surfaceContainerHighest)
+            : null,
         border: containerBorder,
         borderRadius:
             widget.itemBorderColor == null ? BorderRadius.circular(10) : null,
@@ -333,74 +352,92 @@ class _FormFieldsRadioButtonBodyView<T>
     // Handle label position
     switch (widget.labelPosition) {
       case LabelPosition.top:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            labelWidget,
-            SizedBox(height: widget.containerGap),
-            radioContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              labelWidget,
+              const SizedBox(height: 8),
+              radioContainer,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.bottom:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            radioContainer,
-            SizedBox(height: widget.containerGap),
-            labelWidget,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              radioContainer,
+              const SizedBox(height: 8),
+              labelWidget,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.left:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            IntrinsicWidth(child: labelWidget),
-            SizedBox(width: widget.containerGap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  radioContainer,
-                  errorWidget,
-                ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IntrinsicWidth(child: labelWidget),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    radioContainer,
+                    errorWidget,
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       case LabelPosition.right:
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  radioContainer,
-                  errorWidget,
-                ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    radioContainer,
+                    errorWidget,
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: widget.containerGap),
-            IntrinsicWidth(child: labelWidget),
-          ],
+              const SizedBox(width: 8),
+              IntrinsicWidth(child: labelWidget),
+            ],
+          ),
         );
       case LabelPosition.inBorder:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            radioContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              radioContainer,
+              errorWidget,
+            ],
+          ),
         );
       case LabelPosition.none:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            radioContainer,
-            errorWidget,
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              radioContainer,
+              errorWidget,
+            ],
+          ),
         );
     }
   }
@@ -408,7 +445,7 @@ class _FormFieldsRadioButtonBodyView<T>
   Color _effectiveActiveColor(BuildContext context) {
     final theme = Theme.of(context);
     return (widget.activeColor == Colors.blue)
-        ? theme.colorScheme.primary
+        ? (widget.textStyle?.color ?? theme.colorScheme.primary)
         : widget.activeColor;
   }
 
@@ -435,7 +472,9 @@ class _FormFieldsRadioButtonBodyView<T>
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: resolveTextColor(context, muted: true),
+                    color: widget.textStyle?.color != null
+                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                        : resolveTextColor(context, muted: true),
                   ),
                 ),
               ),
@@ -483,8 +522,11 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
+                        widget.textStyle?.color ??
                         resolveTextColor(context))
-                    : resolveTextColor(context, muted: true),
+                    : (widget.textStyle?.color != null
+                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                        : resolveTextColor(context, muted: true)),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
               child: widget.itemBuilder!(item, selected),
@@ -501,8 +543,11 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
+                        widget.textStyle?.color ??
                         resolveTextColor(context))
-                    : resolveTextColor(context, muted: true),
+                    : (widget.textStyle?.color != null
+                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                        : resolveTextColor(context, muted: true)),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: selected ? 14 : 13.5,
               ),

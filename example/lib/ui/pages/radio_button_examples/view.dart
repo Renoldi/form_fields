@@ -110,6 +110,33 @@ class View extends PresenterState {
                       ),
                     ),
                   ),
+                  // Filled & Background examples
+                  buildSectionTitle('Filled & Background', Colors.teal.shade700,
+                      Colors.teal.shade400),
+                  buildFieldTitle(
+                      'Filled with custom background', Colors.teal.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: 'Theme (filled)',
+                    initialValue: viewModel.radio9,
+                    items: const ['Light', 'Dark', 'Auto'],
+                    filled: true,
+                    backgroundColor: Colors.teal.shade50,
+                    onChanged: (value) => viewModel.setRadio9(value ?? ''),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (filled)', viewModel.radio9),
+                  const SizedBox(height: 8),
+                  buildFieldTitle(
+                      'Not filled (transparent)', Colors.teal.shade600),
+                  FormFieldsRadioButton<String>(
+                    label: 'Theme (not filled)',
+                    initialValue: viewModel.radio10,
+                    items: const ['Light', 'Dark', 'Auto'],
+                    filled: false,
+                    onChanged: (value) => viewModel.setRadio10(value ?? ''),
+                  ),
+                  buildResultDisplay(
+                      context, 'Selected (not filled)', viewModel.radio10),
 
                   buildSectionTitle(context.tr('radioBorderColors'),
                       Colors.orange.shade700, Colors.orange.shade400),

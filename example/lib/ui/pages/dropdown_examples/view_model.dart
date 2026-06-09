@@ -13,6 +13,8 @@ class DropdownExamplesViewModel extends ChangeNotifier {
   String? dropdown8;
   String? dropdown9;
   String? dropdown10;
+  String? dropdownStyled;
+  String? radioStyled;
   // Unique state for all-label-positions demo
   String? labelTopValue;
   String? labelBottomValue;
@@ -112,6 +114,16 @@ class DropdownExamplesViewModel extends ChangeNotifier {
 
   void setDropdown10(String? value) {
     dropdown10 = value;
+    notifyListeners();
+  }
+
+  void setDropdownStyled(String? value) {
+    dropdownStyled = value;
+    notifyListeners();
+  }
+
+  void setRadioStyled(String? value) {
+    radioStyled = value;
     notifyListeners();
   }
 
