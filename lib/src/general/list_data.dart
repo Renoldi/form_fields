@@ -138,8 +138,27 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               widget.header != null ? widget.header! : const SizedBox(),
-              widget.showSearchBox ? searchBox() : const SizedBox(),
-              widget.extraToolbar ?? const SizedBox(),
+              const SizedBox(),
+              // Toolbar area: show search box, extra toolbar, or both.
+              widget.showSearchBox
+                  ? (widget.extraToolbar != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          child: Row(
+                            children: [
+                              Expanded(child: searchBox()),
+                              const SizedBox(width: 8),
+                              widget.extraToolbar!,
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          child: searchBox(),
+                        ))
+                  : (widget.extraToolbar ?? const SizedBox()),
               [
                 ListDataComponentMode.listView,
                 ListDataComponentMode.tile,
