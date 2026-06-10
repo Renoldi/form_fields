@@ -176,6 +176,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               widget.header != null ? widget.header! : const SizedBox(),
               // Toolbar area: show search box, extra toolbar, or both.
               widget.showSearchBox ? searchBox() : const SizedBox(),
+              searchBoxWithFormFields(),
               Container(
                 // color: Colors.blue,
                 height: 8,
@@ -281,6 +282,55 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               onPressed: () async => await _doSearch(),
               tooltip: widget.searchHint ??
                   FormFieldsLocalizations.of(context).searchHint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget searchBoxWithFormFields() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+      color: Colors.red,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: FormFields<String>(
+              onChanged: (v) {
+                try {
+                  final c = widget.controller?.value.searchController;
+                  if (c != null) c.text = v;
+                } catch (_) {}
+              },
+              label: '',
+              labelPosition: LabelPosition.none,
+              fieldSize: AppSize.medium,
+              currentValue: widget.controller != null
+                  ? widget.controller!.value.searchController.text
+                  : '',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            child: AppButton(
+              onPressed: () async => await _doSearch(),
+              type: AppButtonType.icon,
+              size: AppSize.medium,
+              useSafeArea: false,
+              icon: widget.searchIcon ?? const Icon(Icons.search),
+              style: ButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(
+                    widget.searchBackgroundColor ??
+                        Theme.of(context).colorScheme.primary),
+                foregroundColor: WidgetStatePropertyAll(Colors.white),
+                shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                )),
+                // padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+              ),
             ),
           ),
         ],
