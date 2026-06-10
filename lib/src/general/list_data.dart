@@ -30,6 +30,13 @@ class ListDataComponent<T> extends StatefulWidget {
   final TextStyle? searchStyle;
   final Widget? searchIcon;
 
+  /// Minimum characters required to perform a search. Default: 3
+  final int minSearchChars;
+
+  /// When true the search icon is shown inside the input field. When false
+  /// a separate search button is shown to the right of the input.
+  final bool searchIconInside;
+
   /// When true, the default empty-state text is shown below the inbox icon.
   /// Defaults to `false` to keep an icon-only empty state.
   final bool showEmptyText;
@@ -86,6 +93,8 @@ class ListDataComponent<T> extends StatefulWidget {
     this.refreshEdgeOffset,
     this.searchStyle,
     this.searchIcon,
+    this.minSearchChars = 3,
+    this.searchIconInside = false,
     this.searchBackgroundColor,
     this.showEmptyText = false,
     this.showMoreText,
@@ -213,65 +222,107 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                 .withAlpha((0.08 * 255).round()),
         borderRadius: const BorderRadius.all(Radius.circular(6)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: FormFields<String>(
-              onChanged: (v) async {
-                try {
-                  final c = widget.controller?.value.searchController;
-                  if (c != null) c.text = v;
-                  if (widget.autoSearch == true) {
-                    await _doSearch();
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: FormFields<String>(
+                onChanged: (v) async {
+                  try {
+                    final c = widget.controller?.value.searchController;
+                    if (c != null) c.text = v;
+                    if (widget.searchIconInside == true &&
+                        widget.autoSearch == true) {
+                      final t =
+                          widget.controller?.value.searchController.text ?? '';
+                      if (t.trim().isEmpty ||
+                          t.trim().length >= widget.minSearchChars) {
+                        await _doSearch();
+                      }
+                    }
+                  } catch (_) {}
+                },
+                label: '',
+                labelPosition: LabelPosition.none,
+                fieldSize: AppSize.medium,
+                currentValue: widget.controller != null
+                    ? widget.controller!.value.searchController.text
+                    : '',
+                onRemove: () async {
+                  try {
+                    final c = widget.controller?.value.searchController;
+                    if (c != null) c.text = '';
+                    if (widget.searchIconInside == true) {
+                      final t =
+                          widget.controller?.value.searchController.text ?? '';
+                      if (t.trim().isEmpty ||
+                          t.trim().length >= widget.minSearchChars) {
+                        await _doSearch();
+                      }
+                    }
+                  } catch (_) {}
+                },
+                suffixIcon: widget.searchIconInside
+                    ? (widget.searchIcon ?? const Icon(Icons.search))
+                    : null,
+                validator: (v) {
+                  if (v != null &&
+                      v.trim().isNotEmpty &&
+                      v.trim().length < widget.minSearchChars) {
+                    final raw = FormFieldsLocalizations.of(context)
+                        .get('searchMinChars');
+                    final msg = (raw.contains('{n}'))
+                        ? raw.replaceAll(
+                            '{n}', widget.minSearchChars.toString())
+                        : raw;
+                    if (msg.trim().isEmpty || msg == 'searchMinChars') {
+                      return 'Please enter at least ${widget.minSearchChars} characters';
+                    }
+                    return msg;
                   }
-                } catch (_) {}
-              },
-              label: '',
-              labelPosition: LabelPosition.none,
-              fieldSize: AppSize.medium,
-              currentValue: widget.controller != null
-                  ? widget.controller!.value.searchController.text
-                  : '',
-              onRemove: () async {
-                try {
-                  final c = widget.controller?.value.searchController;
-                  if (c != null) c.text = '';
-                  await _doSearch();
-                } catch (_) {}
-              },
+                  return null;
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          AppButton(
-            onPressed: () async => await _doSearch(),
-            type: AppButtonType.icon,
-            size: AppSize.medium,
-            useSafeArea: false,
-            icon: widget.searchIcon ?? const Icon(Icons.search),
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.primary,
+            const SizedBox(width: 8),
+            if (!widget.searchIconInside)
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                child: AppButton(
+                  onPressed: () async => await _doSearch(),
+                  type: AppButtonType.filled,
+                  size: AppSize.medium,
+                  useSafeArea: false,
+                  icon: widget.searchIcon ?? const Icon(Icons.search),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStatePropertyAll(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                    // fixedSize: WidgetStatePropertyAll(
+                    //   Size(kFieldHeightMedium + 5.0, kFieldHeightMedium + 5.0),
+                    // ),
+                    foregroundColor: WidgetStatePropertyAll(
+                      widget.searchStyle?.color ??
+                          Theme.of(context).colorScheme.surface,
+                    ),
+                    iconColor: WidgetStatePropertyAll(
+                      widget.searchStyle?.color ??
+                          Theme.of(context).colorScheme.surface,
+                    ),
+                    side: WidgetStatePropertyAll(BorderSide(
+                      color: widget.searchStyle?.color ??
+                          Theme.of(context).colorScheme.surface,
+                      width: 1,
+                    )),
+                    shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    )),
+                  ),
+                ),
               ),
-              foregroundColor: WidgetStatePropertyAll(
-                widget.searchStyle?.color ??
-                    Theme.of(context).colorScheme.surface,
-              ),
-              iconColor: WidgetStatePropertyAll(
-                widget.searchStyle?.color ??
-                    Theme.of(context).colorScheme.surface,
-              ),
-              side: WidgetStatePropertyAll(BorderSide(
-                color: widget.searchStyle?.color ??
-                    Theme.of(context).colorScheme.surface,
-                width: 1,
-              )),
-              shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              )),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

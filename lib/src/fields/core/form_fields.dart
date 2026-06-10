@@ -2502,12 +2502,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 return ValueListenableBuilder<double>(
                   valueListenable: _effectiveFieldExtraBottom,
                   builder: (ctx2, extra, _) {
+                    final effectiveExtra =
+                        singleLine ? _kExtraFieldBottom : extra;
                     final effectiveField = singleLine
                         ? SizedBox(
-                            height: fieldHeight +
-                                (widget.labelPosition == LabelPosition.none
-                                    ? 0
-                                    : extra),
+                            height: fieldHeight + effectiveExtra,
                             child: textField)
                         : textField;
                     return Container(

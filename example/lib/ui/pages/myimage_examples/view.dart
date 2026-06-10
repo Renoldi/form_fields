@@ -120,7 +120,13 @@ class View extends PresenterState {
                     // Payloads here are typed `DirectUploadPayload` objects.
                     // Convert to the older nested map format expected by the
                     // example app's persistence layer and retry logic.
-                    logger.w('payloads attached to failed images');
+                    logger.w(
+                        'payloads attached to failed images: ${payloads.length}');
+                    for (var i = 0; i < payloads.length; i++) {
+                      final p = payloads[i];
+                      logger.i(
+                          'payload[$i] correlation=${p.uploadCorrelationId} filePath=${p.filePath} fileName=${p.fileName} hasBase64=${p.base64 != null}');
+                    }
 
                     try {
                       final persisted = payloads.map((p) {

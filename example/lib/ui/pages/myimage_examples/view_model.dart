@@ -207,9 +207,15 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
         }
       }
 
+      // Debug: report incoming payloads
+      try {
+        print('handleDirectUploadPayload: incoming=${payloads.length}');
+      } catch (_) {}
+
       // Append new payloads but avoid duplicates. We consider a payload
-      // duplicate if an existing persisted entry has the same file.path
-      // or file.base64. Also avoid adding duplicate in-memory previews.
+      // duplicate if an existing persisted entry has the same file.base64
+      // or matching uploadCorrelationId. Also avoid adding duplicate
+      // in-memory previews.
       for (final payload in payloads) {
         try {
           // Normalize flat payload shapes into canonical nested form
@@ -282,14 +288,15 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
                 }
                 final existingFile = existing['file'];
                 if (existingFile is Map) {
-                  final existingPath = existingFile['path'] is String
-                      ? existingFile['path'] as String
-                      : null;
                   final existingBase64 = existingFile['base64'] is String
                       ? existingFile['base64'] as String
                       : null;
-                  if ((pPath != null && existingPath == pPath) ||
-                      (pBase64 != null && existingBase64 == pBase64)) {
+                  // Only treat as duplicate when both sides have base64 and they match.
+                  // Avoid deduping purely by path since some pickers may reuse
+                  // temporary file paths across picks.
+                  if (pBase64 != null &&
+                      existingBase64 != null &&
+                      existingBase64 == pBase64) {
                     alreadyPersisted = true;
                     break;
                   }
@@ -307,6 +314,10 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
           // could omit the correlation id and produce inconsistent
           // persisted entries (possible duplicates / matching issues).
           arr.add(normalized);
+          try {
+            print(
+                'handleDirectUploadPayload: appended uploadCorrelationId=${normalized['uploadCorrelationId']} path=${normalized['file'] is Map ? normalized['file']['path'] : ''} hasBase64=${normalized['file'] is Map && (normalized['file']['base64'] ?? '').toString().isNotEmpty}');
+          } catch (_) {}
 
           // Also keep a lightweight preview (path/base64) in memory so the UI
           // can immediately show the image that couldn't be uploaded.

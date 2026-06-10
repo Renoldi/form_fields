@@ -14,6 +14,8 @@ const Map<String, String> enUSStrings = {
   'selectPrefix': 'Select ',
   'enterPrefix': 'Enter ',
   'searchHint': 'Search...',
+  // Search validation
+  'searchMinChars': 'Please enter at least {n} characters',
 
   // Validation - Required
   'required': '{label} is required',

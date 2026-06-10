@@ -15,6 +15,9 @@ const Map<String, String> idIDStrings = {
   'enterPrefix': 'Masukkan ',
   'searchHint': 'Cari...',
 
+  // Search validation
+  'searchMinChars': 'Silakan masukkan minimal {n} karakter',
+
   // Validation - Required
   'required': '{label} wajib diisi',
   'selectRequired': 'Silakan pilih {label}',
