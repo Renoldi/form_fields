@@ -177,3 +177,60 @@ Validasi wajib setelah edit:
 
 Versi singkat:
 Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "Contoh Pengisian (JSON):" sebelum section berikutnya. Tambahkan jika belum ada, hapus jika duplikat, tempatkan setelah buildResultDisplay(...) terakhir, jangan ubah logic lain, jaga style existing, lalu pastikan analyzer clean.
+
+
+
+  Widget searchBoxWithFormFields() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: controlHeight(AppSize.medium),
+              child: FormFields<String>(
+                onChanged: (v) {
+                  try {
+                    final c = widget.controller?.value.searchController;
+                    if (c != null) c.text = v;
+                  } catch (_) {}
+                },
+                label: '',
+                labelPosition: LabelPosition.none,
+                fieldSize: AppSize.medium,
+                currentValue: widget.controller != null
+                    ? widget.controller!.value.searchController.text
+                    : '',
+                inputDecoration: InputDecoration(
+                  hintText: widget.searchHint ??
+                      FormFieldsLocalizations.of(context).searchHint,
+                  isDense: true,
+                  contentPadding: controlContentPadding(multiLine: false),
+                  filled: true,
+                  fillColor: widget.searchBackgroundColor ?? Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: controlHeight(AppSize.medium),
+            height: controlHeight(AppSize.medium),
+            child: AppButton(
+              onPressed: () async => await _doSearch(),
+              type: AppButtonType.icon,
+              size: AppSize.medium,
+              useSafeArea: false,
+              icon: const Icon(
+                Icons.search,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }

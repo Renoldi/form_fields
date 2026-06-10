@@ -158,10 +158,37 @@ class AppButton<T> extends StatelessWidget {
           break;
       }
     }
-    // Ensure a caller-provided `style` overrides theme styles.
-    // `ButtonStyle.merge` prefers the receiver's non-null fields, so
-    // calling `style.merge(themedStyle)` makes `style` take precedence.
-    final mergedStyle = style?.merge(themedStyle) ?? themedStyle;
+    // Resolve styles from multiple sources with this precedence (low->high):
+    // 1) Framework `ThemeData` button themes (e.g. Filled/Elevated/Text/Outlined)
+    // 2) Our `AppButtonThemeData` extension (`themedStyle`) if present
+    // 3) Caller-provided `style` (highest priority)
+    ButtonStyle? themeDataStyle;
+    final themeData = Theme.of(context);
+    switch (type) {
+      case AppButtonType.filled:
+      case AppButtonType.filledTonal:
+        themeDataStyle = themeData.filledButtonTheme.style;
+        break;
+      case AppButtonType.elevated:
+        themeDataStyle = themeData.elevatedButtonTheme.style;
+        break;
+      case AppButtonType.outlined:
+        themeDataStyle = themeData.outlinedButtonTheme.style;
+        break;
+      case AppButtonType.text:
+        themeDataStyle = themeData.textButtonTheme.style;
+        break;
+      default:
+        themeDataStyle = null;
+    }
+
+    // Merge AppButtonThemeData on top of ThemeData style when both present.
+    final baseThemeStyle = themedStyle != null
+        ? themedStyle.merge(themeDataStyle)
+        : themeDataStyle;
+
+    // Finally let caller `style` override the computed base theme style.
+    final mergedStyle = style?.merge(baseThemeStyle) ?? baseThemeStyle;
 
     // If the caller provided a `textStyle` with an explicit color but did
     // not provide `foregroundColor`, prefer the `textStyle` color for the
@@ -203,6 +230,31 @@ class AppButton<T> extends StatelessWidget {
     if (isIcon) {
       final double diameter = _heightBySize;
       final double iconSize = _iconSizeBySize;
+
+      // If the caller provided a ButtonStyle (or a themed style was
+      // resolved into `effectiveMergedStyle`), prefer rendering a
+      // material button that honors that style so properties like
+      // `shape`, `padding`, and `fixedSize` are applied.
+      final ButtonStyle? styleForIcon = effectiveMergedStyle != null
+          ? _buttonStyle().merge(effectiveMergedStyle)
+          : null;
+
+      if (styleForIcon != null) {
+        return Center(
+          child: FilledButton(
+            onPressed: effectiveOnPressed,
+            style: styleForIcon,
+            child: IconTheme(
+              data: IconThemeData(size: iconSize, color: iconColor),
+              child: icon ?? childWidget,
+            ),
+          ),
+        );
+      }
+
+      // Fallback: original circular tappable when no ButtonStyle was
+      // provided (preserves existing visual behavior and theme-based
+      // icon background handling).
       if (iconBgColor != null) {
         return Center(
           child: Material(
@@ -267,25 +319,50 @@ class AppButton<T> extends StatelessWidget {
               ),
             )
           : (icon ?? const Icon(Icons.add));
+
+      // Resolve FAB colors by merging (low->high): ThemeData.floatingActionButtonTheme
+      // -> AppButtonThemeData extension -> caller `style` (ButtonStyle).
+      final floatingFabTheme = Theme.of(context).floatingActionButtonTheme;
+      Color? resolvedFabBg = floatingFabTheme.backgroundColor;
+      Color? resolvedFabFg = floatingFabTheme.foregroundColor;
+
+      // extension-provided background (from earlier `fabBgColor`)
+      if (fabBgColor != null) resolvedFabBg = fabBgColor;
+
+      // allow caller ButtonStyle to override when present
+      final styleBg =
+          effectiveMergedStyle?.backgroundColor?.resolve(<WidgetState>{});
+      final styleFg =
+          effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{});
+      if (styleBg != null) resolvedFabBg = styleBg;
+      if (styleFg != null) resolvedFabFg = styleFg;
+
+      final iconWidget = IconTheme(
+        data: IconThemeData(
+            size: _iconSizeBySize,
+            color: resolvedFabFg ?? IconTheme.of(context).color),
+        child: fabChild,
+      );
+
       switch (size) {
         case AppSize.small:
           return FloatingActionButton.small(
             onPressed: effectiveOnPressed,
-            backgroundColor: fabBgColor,
-            child: fabChild,
+            backgroundColor: resolvedFabBg,
+            child: iconWidget,
           );
         case AppSize.large:
           return FloatingActionButton.large(
             onPressed: effectiveOnPressed,
-            backgroundColor: fabBgColor,
-            child: fabChild,
+            backgroundColor: resolvedFabBg,
+            child: iconWidget,
           );
         case AppSize.medium:
         case AppSize.custom:
           return FloatingActionButton(
             onPressed: effectiveOnPressed,
-            backgroundColor: fabBgColor,
-            child: fabChild,
+            backgroundColor: resolvedFabBg,
+            child: iconWidget,
           );
       }
     }
