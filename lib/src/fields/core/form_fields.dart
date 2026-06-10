@@ -1902,7 +1902,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // which uses a default `topPadding` of 12.
     if (widget.labelPosition == LabelPosition.none) {
       return Padding(
-        padding: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.only(top: 0),
         child: textField,
       );
     }
