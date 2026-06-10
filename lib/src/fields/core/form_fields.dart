@@ -384,6 +384,12 @@ class _ScannerOverlay extends StatelessWidget {
 
 class _FormFieldsState<T> extends State<FormFields<T>> {
   static const double _kExtraFieldBottom = 20.0;
+  // Merge caller-provided InputDecoration with ThemeData.inputDecorationTheme
+  InputDecoration _effectiveInputDecoration(InputDecoration? base) {
+    final theme = Theme.of(context).inputDecorationTheme;
+    return (base ?? const InputDecoration()).applyDefaults(theme);
+  }
+
   // Barcode scanner dialog for scanBarcode type
   Future<void> _showBarcodeScannerDialog({
     required ValueChanged<String> onScanned,
@@ -487,7 +493,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     return TextFormField(
       controller: model.controller,
       readOnly: widget.readOnly,
-      decoration: (widget.inputDecoration ?? const InputDecoration()).copyWith(
+      decoration: _effectiveInputDecoration(widget.inputDecoration).copyWith(
         labelText:
             widget.labelPosition == LabelPosition.inBorder ? label : null,
         errorText: errorText,
@@ -1970,7 +1976,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     // For each OTP digit, we want to show underline if focused/has input/error, else border
     // But since InputDecoration is per box, we handle in _buildOtpDigitBox
-    return (base ?? defaultDecoration).copyWith(
+    return _effectiveInputDecoration(base ?? defaultDecoration).copyWith(
       counterText: '',
       hintText: null,
       labelText: null,
@@ -2257,6 +2263,89 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     _isVerificationType() ||
                     widget.multiLine <= 1);
 
+                final baseDecoration = widget.inputDecoration ??
+                    InputDecoration(
+                      contentPadding: (widget.multiLine > 1)
+                          ? const EdgeInsets.symmetric(
+                              vertical: 22, horizontal: 16)
+                          : const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                      suffix: vm.formType == FormType.password ||
+                              (_isVerificationType() &&
+                                  widget.verificationHidden)
+                          ? null
+                          : widget.suffix,
+                      suffixIcon: vm.formType == FormType.password ||
+                              (_isVerificationType() &&
+                                  widget.verificationHidden)
+                          ? IconButton(
+                              splashRadius: 20,
+                              iconSize: 20,
+                              icon: Icon(
+                                vm.obscure
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                              ),
+                              onPressed: widget.readOnly
+                                  ? null
+                                  : () => _handleVisibilityToggleTap(vm),
+                            )
+                          : (_isDateTimeType() ||
+                                  _isTimeOfDayType() ||
+                                  _isDateTimeRangeType())
+                              ? IconButton(
+                                  constraints: const BoxConstraints.tightFor(
+                                      width: 36, height: 36),
+                                  iconSize: 20,
+                                  splashRadius: 20,
+                                  icon: Icon(_getPickerIcon()),
+                                  onPressed: widget.readOnly
+                                      ? null
+                                      : () async {
+                                          if (!mounted) return;
+                                          final ctx = context;
+                                          await _showPicker(ctx, vm);
+                                        },
+                                )
+                              : widget.suffixIcon ??
+                                  IconButton(
+                                    constraints: const BoxConstraints.tightFor(
+                                        width: 36, height: 36),
+                                    iconSize: 20,
+                                    splashRadius: 20,
+                                    icon: const Icon(Icons.close),
+                                    onPressed: widget.readOnly
+                                        ? null
+                                        : () => _handleClearIconTap(vm),
+                                  ),
+                      prefix: widget.prefix,
+                      prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
+                      hintText:
+                          '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}',
+                      labelText: widget.labelPosition == LabelPosition.inBorder
+                          ? '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}${widget.isRequired ? ' *' : ''}'
+                          : null,
+                      focusedErrorBorder: _buildBorderFromType(
+                          ctx, widget.borderType,
+                          radius: widget.radius,
+                          isError: true,
+                          isFocused: true),
+                      focusedBorder: _buildBorderFromType(
+                          ctx, widget.borderType,
+                          radius: widget.radius, isFocused: true),
+                      enabledBorder: _buildBorderFromType(
+                          ctx, widget.borderType,
+                          radius: widget.radius),
+                      border: _buildBorderFromType(ctx, widget.borderType,
+                          radius: widget.radius),
+                      disabledBorder: _buildBorderFromType(
+                          ctx, widget.borderType,
+                          radius: widget.radius),
+                    );
+
+                final effectiveDecoration =
+                    _effectiveInputDecoration(baseDecoration);
+
                 final textField = TextFormField(
                   textAlignVertical: singleLine
                       ? TextAlignVertical.center
@@ -2389,87 +2478,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     await _showPicker(ctx, vm);
                   },
                   autofocus: false,
-                  decoration: widget.inputDecoration ??
-                      InputDecoration(
-                        contentPadding: (widget.multiLine > 1)
-                            ? const EdgeInsets.symmetric(
-                                vertical: 22, horizontal: 16)
-                            : const EdgeInsets.symmetric(
-                                vertical: 12, horizontal: 16),
-                        suffix: vm.formType == FormType.password ||
-                                (_isVerificationType() &&
-                                    widget.verificationHidden)
-                            ? null
-                            : widget.suffix,
-                        suffixIcon: vm.formType == FormType.password ||
-                                (_isVerificationType() &&
-                                    widget.verificationHidden)
-                            ? IconButton(
-                                splashRadius: 20,
-                                iconSize: 20,
-                                icon: Icon(
-                                  vm.obscure
-                                      ? Icons.visibility_off_rounded
-                                      : Icons.visibility_rounded,
-                                ),
-                                onPressed: widget.readOnly
-                                    ? null
-                                    : () => _handleVisibilityToggleTap(vm),
-                              )
-                            : (_isDateTimeType() ||
-                                    _isTimeOfDayType() ||
-                                    _isDateTimeRangeType())
-                                ? IconButton(
-                                    constraints: const BoxConstraints.tightFor(
-                                        width: 36, height: 36),
-                                    iconSize: 20,
-                                    splashRadius: 20,
-                                    icon: Icon(_getPickerIcon()),
-                                    onPressed: widget.readOnly
-                                        ? null
-                                        : () async {
-                                            if (!mounted) return;
-                                            final ctx = context;
-                                            await _showPicker(ctx, vm);
-                                          },
-                                  )
-                                : widget.suffixIcon ??
-                                    IconButton(
-                                      constraints:
-                                          const BoxConstraints.tightFor(
-                                              width: 36, height: 36),
-                                      iconSize: 20,
-                                      splashRadius: 20,
-                                      icon: const Icon(Icons.close),
-                                      onPressed: widget.readOnly
-                                          ? null
-                                          : () => _handleClearIconTap(vm),
-                                    ),
-                        prefix: widget.prefix,
-                        prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
-                        hintText:
-                            '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}',
-                        labelText: widget.labelPosition ==
-                                LabelPosition.inBorder
-                            ? '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCase}${widget.isRequired ? ' *' : ''}'
-                            : null,
-                        focusedErrorBorder: _buildBorderFromType(
-                            ctx, widget.borderType,
-                            radius: widget.radius,
-                            isError: true,
-                            isFocused: true),
-                        focusedBorder: _buildBorderFromType(
-                            ctx, widget.borderType,
-                            radius: widget.radius, isFocused: true),
-                        enabledBorder: _buildBorderFromType(
-                            ctx, widget.borderType,
-                            radius: widget.radius),
-                        border: _buildBorderFromType(ctx, widget.borderType,
-                            radius: widget.radius),
-                        disabledBorder: _buildBorderFromType(
-                            ctx, widget.borderType,
-                            radius: widget.radius),
-                      ),
+                  decoration: effectiveDecoration,
                 );
 
                 double fieldHeight;

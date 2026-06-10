@@ -3,6 +3,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'app_button_enums.dart';
+import '../theme/app_button_theme.dart';
 
 class AppFabMenuItem {
   final String label;
@@ -139,23 +140,8 @@ class _AppFabMenuState extends State<AppFabMenu>
       _toggle();
     }
 
-    final fab = switch (widget.size) {
-      AppSize.small => FloatingActionButton.small(
-          heroTag: null,
-          onPressed: onPress,
-          child: item.icon,
-        ),
-      AppSize.large => FloatingActionButton.large(
-          heroTag: null,
-          onPressed: onPress,
-          child: item.icon,
-        ),
-      _ => FloatingActionButton(
-          heroTag: null,
-          onPressed: onPress,
-          child: item.icon,
-        ),
-    };
+    final fab =
+        _fabForSize(child: item.icon, onPressed: onPress, size: widget.size);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -166,11 +152,16 @@ class _AppFabMenuState extends State<AppFabMenu>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(item.label,
-                style: const TextStyle(fontWeight: FontWeight.w500)),
+            child: Text(
+              item.label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -191,23 +182,47 @@ class _AppFabMenuState extends State<AppFabMenu>
           : (widget.mainIcon ?? const Icon(Icons.add, key: ValueKey('open'))),
     );
 
-    return switch (widget.size) {
-      AppSize.small => FloatingActionButton.small(
+    return _fabForSize(child: icon, onPressed: _toggle, size: widget.size);
+  }
+
+  Widget _fabForSize(
+      {required Widget child,
+      required VoidCallback onPressed,
+      required AppSize size}) {
+    final theme = Theme.of(context);
+    final ext = context.appButtonTheme;
+
+    final Color resolvedBg = ext.fabBackgroundColor ??
+        theme.floatingActionButtonTheme.backgroundColor ??
+        theme.colorScheme.primary;
+    final Color? resolvedFg = theme.floatingActionButtonTheme.foregroundColor;
+
+    switch (size) {
+      case AppSize.small:
+        return FloatingActionButton.small(
           heroTag: null,
-          onPressed: _toggle,
-          child: icon,
-        ),
-      AppSize.large => FloatingActionButton.large(
+          onPressed: onPressed,
+          backgroundColor: resolvedBg,
+          foregroundColor: resolvedFg,
+          child: child,
+        );
+      case AppSize.large:
+        return FloatingActionButton.large(
           heroTag: null,
-          onPressed: _toggle,
-          child: icon,
-        ),
-      _ => FloatingActionButton(
+          onPressed: onPressed,
+          backgroundColor: resolvedBg,
+          foregroundColor: resolvedFg,
+          child: child,
+        );
+      default:
+        return FloatingActionButton(
           heroTag: null,
-          onPressed: _toggle,
-          child: icon,
-        ),
-    };
+          onPressed: onPressed,
+          backgroundColor: resolvedBg,
+          foregroundColor: resolvedFg,
+          child: child,
+        );
+    }
   }
 
   @override

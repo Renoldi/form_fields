@@ -41,8 +41,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
   // ── Signature pad ──────────────────────────────────────────────────────────
   final double height;
   final double width;
-  final Color backgroundColor;
-  final Color penColor;
+  final Color? backgroundColor;
+  final Color? penColor;
   final double penStrokeWidth;
 
   /// Jika null, export PNG transparan. Jika diisi, gunakan warna ini untuk background PNG.
@@ -238,8 +238,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     super.key,
     this.height = 200,
     this.width = double.infinity,
-    this.backgroundColor = Colors.white,
-    this.penColor = Colors.black,
+    this.backgroundColor,
+    this.penColor,
     this.penStrokeWidth = 3.0,
     this.onExported,
     this.onExportedResult,
@@ -328,15 +328,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     super.initState();
     _padProvider = FormFieldsSignaturePadProvider();
     _initCameraController();
-    _signatureController = SignatureController(
-      penStrokeWidth: widget.penStrokeWidth,
-      penColor: widget.penColor,
-      exportBackgroundColor:
-          widget.exportBackgroundColor ?? widget.backgroundColor,
-      onDrawStart: _onDrawStart,
-    );
-    _signatureController.addListener(_onSignatureChanged);
-    _bindSignaturePadController(widget.signaturePadController);
+    // SignatureController initialized in didChangeDependencies to allow
+    // resolving theme-aware default colors via Theme.of(context).
     // Acquire camera for silent background capture, but only after permission.
     if (widget.silentLiveCapture && !widget.showLiveCamera) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -356,6 +349,27 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncPreviewFromSignaturePadController();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize SignatureController here so Theme.of(context) is available
+    // and we can resolve theme-aware defaults when the widget didn't
+    // provide explicit colors.
+    final theme = Theme.of(context);
+    final resolvedPen = widget.penColor ?? theme.colorScheme.onSurface;
+    final resolvedBg = widget.exportBackgroundColor ??
+        widget.backgroundColor ??
+        theme.colorScheme.surface;
+    _signatureController = SignatureController(
+      penStrokeWidth: widget.penStrokeWidth,
+      penColor: resolvedPen,
+      exportBackgroundColor: resolvedBg,
+      onDrawStart: _onDrawStart,
+    );
+    _signatureController.addListener(_onSignatureChanged);
+    _bindSignaturePadController(widget.signaturePadController);
   }
 
   void _initCameraController() {
@@ -1239,7 +1253,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   ? _buildPreviewCanvas(provider)
                   : Signature(
                       controller: _signatureController,
-                      backgroundColor: widget.backgroundColor,
+                      backgroundColor: widget.backgroundColor ??
+                          Theme.of(context).colorScheme.surface,
                     ),
             ),
             // Upload loading overlay

@@ -215,7 +215,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 filled: true,
-                fillColor: widget.searchBackgroundColor ?? Colors.white,
+                fillColor: widget.searchBackgroundColor ??
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 suffixIcon: (widget.controller?.value.searchController.text
                             .isNotEmpty ==
                         true)
@@ -275,8 +276,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               icon: widget.searchIcon ??
-                  const Icon(Icons.search, color: Colors.white),
-              color: Colors.white,
+                  Icon(Icons.search,
+                      color: Theme.of(context).colorScheme.onPrimary),
               onPressed: () async => await _doSearch(),
               tooltip: widget.searchHint ??
                   FormFieldsLocalizations.of(context).searchHint,
@@ -425,7 +426,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                         children: [
                           Text(widget.showMoreText ??
                               FormFieldsLocalizations.of(context).showMore),
-                          const Icon(Icons.arrow_downward, size: 15),
+                          Icon(Icons.arrow_downward,
+                              size: 15,
+                              color: Theme.of(context).iconTheme.color),
                         ],
                       ),
                     ),
@@ -649,9 +652,10 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             height: 30,
             width: 30,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
-              border: Border.all(color: Colors.black),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(31)),
             ),
             child: Center(child: FittedBox(child: Text("$index"))),
           );
@@ -684,7 +688,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 50),
+          Icon(Icons.error_outline,
+              color: Theme.of(context).colorScheme.error, size: 50),
           const SizedBox(height: 10),
           !(widget.controller?.value.errorMessage ?? "").contains("<div")
               ? Text(

@@ -31,13 +31,17 @@ class AppSegmentedButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeDataStyle = Theme.of(context).segmentedButtonTheme.style;
+    final baseStyle = _sizeStyle.merge(themeDataStyle);
+    final effectiveStyle = style != null ? baseStyle.merge(style) : baseStyle;
+
     return SegmentedButton<T>(
       segments: segments,
       selected: selected,
       onSelectionChanged: onSelectionChanged,
       multiSelectionEnabled: multiSelectionEnabled,
       emptySelectionAllowed: emptySelectionAllowed,
-      style: _sizeStyle.merge(style),
+      style: effectiveStyle,
       showSelectedIcon: showSelectedIcon,
       selectedIcon: selectedIcon,
     );

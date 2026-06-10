@@ -16,7 +16,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
   final bool isRequired;
   final Axis direction;
   final BorderType borderType;
-  final Color activeColor;
+  final Color? activeColor;
   final TextStyle? textStyle;
   final EdgeInsets itemPadding;
   final double sectionSpacing;
@@ -53,7 +53,7 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
     this.isRequired = false,
     this.direction = Axis.vertical,
     this.borderType = BorderType.outlineInputBorder,
-    this.activeColor = Colors.blue,
+    this.activeColor,
     this.textStyle,
     this.itemPadding = const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
     this.sectionSpacing = 12,
@@ -173,7 +173,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
   final Widget Function(T item, bool selected)? itemBuilder;
   final Axis direction;
   final BorderType borderType;
-  final Color activeColor;
+  final Color? activeColor;
   final EdgeInsets itemPadding;
   final double sectionSpacing;
   final bool isRequired;
@@ -208,7 +208,7 @@ class _FormFieldsRadioButtonBody<T> extends StatefulWidget {
     this.itemBuilder,
     required this.direction,
     required this.borderType,
-    required this.activeColor,
+    this.activeColor,
     required this.itemPadding,
     required this.sectionSpacing,
     required this.isRequired,
@@ -443,10 +443,7 @@ class _FormFieldsRadioButtonBodyView<T>
   }
 
   Color _effectiveActiveColor(BuildContext context) {
-    final theme = Theme.of(context);
-    return (widget.activeColor == Colors.blue)
-        ? (widget.textStyle?.color ?? theme.colorScheme.primary)
-        : widget.activeColor;
+    return resolveActiveColor(context, widget.activeColor);
   }
 
   /// Build sections layout with horizontal items in each section

@@ -157,7 +157,10 @@ class _FormFieldsDropdownMultiState<T>
                                       decoration: InputDecoration(
                                         hintText: widget.filterHintText ??
                                             dialogL10n.searchHint,
-                                        prefixIcon: const Icon(Icons.search),
+                                        prefixIcon: Icon(Icons.search,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color),
                                         border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(8),
@@ -291,7 +294,7 @@ class _FormFieldsDropdownMultiState<T>
           enabledBorder: border,
           focusedBorder:
               _buildBorder(context, widget.borderType, isFocused: true),
-        );
+        ).applyDefaults(Theme.of(context).inputDecorationTheme);
 
         final fillColor = widget.backgroundColor ??
             Theme.of(context).colorScheme.surfaceContainerHighest;

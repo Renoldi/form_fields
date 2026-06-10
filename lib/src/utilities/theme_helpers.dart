@@ -25,3 +25,17 @@ Color resolveBorderColor(BuildContext context,
   if (focused) return theme.colorScheme.primary;
   return theme.dividerColor;
 }
+
+/// Resolve a ButtonStyle using precedence:
+/// 1. `themeStyle` (from ThemeData)
+/// 2. `extensionStyle` (package/theme extension)
+/// 3. `callerStyle` (explicit style passed by caller)
+ButtonStyle resolveButtonStyle(BuildContext context,
+    {ButtonStyle? themeStyle,
+    ButtonStyle? extensionStyle,
+    ButtonStyle? callerStyle}) {
+  // Use an empty ButtonStyle as neutral base so merge works predictably.
+  final base = themeStyle ?? const ButtonStyle();
+  final merged = base.merge(extensionStyle).merge(callerStyle);
+  return merged;
+}

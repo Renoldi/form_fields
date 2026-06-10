@@ -13,7 +13,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
   final bool isRequired;
   final Axis direction;
   final BorderType borderType;
-  final Color activeColor;
+  final Color? activeColor;
   final TextStyle? textStyle;
   final EdgeInsets itemPadding;
   final double itemMarginTop;
@@ -44,7 +44,7 @@ class FormFieldsCheckbox<T> extends StatefulWidget {
     this.isRequired = false,
     this.direction = Axis.vertical,
     this.borderType = BorderType.outlineInputBorder,
-    this.activeColor = Colors.blue,
+    this.activeColor,
     this.textStyle,
     this.itemPadding = const EdgeInsets.symmetric(vertical: 6),
     this.itemMarginTop = 4,
@@ -149,7 +149,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
   final ValueChanged<List<T>> onChanged;
   final Axis direction;
   final BorderType borderType;
-  final Color activeColor;
+  final Color? activeColor;
   final EdgeInsets itemPadding;
   final double itemMarginTop;
   final double itemMarginBottom;
@@ -178,7 +178,7 @@ class _FormFieldsCheckboxBody<T> extends StatefulWidget {
     required this.onChanged,
     required this.direction,
     required this.borderType,
-    required this.activeColor,
+    this.activeColor,
     required this.itemPadding,
     required this.itemMarginTop,
     required this.itemMarginBottom,

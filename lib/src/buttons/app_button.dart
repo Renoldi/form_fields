@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../utilities/theme_helpers.dart';
 
 /// A flexible, theme-aware button wrapper used across the app.
 ///
@@ -125,7 +126,6 @@ class AppButton<T> extends StatelessWidget {
     final theme = Theme.of(context).extension<AppButtonThemeData>();
 
     ButtonStyle? themedStyle;
-    Color? iconBgColor;
     Color? fabBgColor;
     if (theme != null) {
       switch (type) {
@@ -146,7 +146,6 @@ class AppButton<T> extends StatelessWidget {
           break;
         case AppButtonType.icon:
           themedStyle = theme.iconStyle;
-          iconBgColor = theme.iconBackgroundColor;
           break;
         case AppButtonType.fab:
           themedStyle = theme.fabStyle;
@@ -182,13 +181,13 @@ class AppButton<T> extends StatelessWidget {
         themeDataStyle = null;
     }
 
-    // Merge AppButtonThemeData on top of ThemeData style when both present.
-    final baseThemeStyle = themedStyle != null
-        ? themedStyle.merge(themeDataStyle)
-        : themeDataStyle;
-
-    // Finally let caller `style` override the computed base theme style.
-    final mergedStyle = style?.merge(baseThemeStyle) ?? baseThemeStyle;
+    // Resolve merged ButtonStyle with precedence: ThemeData <- extension <- caller
+    final mergedStyle = resolveButtonStyle(
+      context,
+      themeStyle: themeDataStyle,
+      extensionStyle: themedStyle,
+      callerStyle: style,
+    );
 
     // If the caller provided a `textStyle` with an explicit color but did
     // not provide `foregroundColor`, prefer the `textStyle` color for the
@@ -198,20 +197,17 @@ class AppButton<T> extends StatelessWidget {
     // create an adjusted style that sets `foregroundColor` from the
     // resolved `textStyle.color` when appropriate.
     ButtonStyle? effectiveMergedStyle = mergedStyle;
-    final resolvedTextStyle = mergedStyle?.textStyle?.resolve(<WidgetState>{});
+    final resolvedTextStyle = mergedStyle.textStyle?.resolve(<WidgetState>{});
     final resolvedTextColor = resolvedTextStyle?.color;
     final callerHasForeground = style?.foregroundColor != null;
-    if (mergedStyle != null &&
-        resolvedTextColor != null &&
-        style != null &&
-        !callerHasForeground) {
+    if (resolvedTextColor != null && style != null && !callerHasForeground) {
       effectiveMergedStyle = mergedStyle.copyWith(
         foregroundColor: WidgetStatePropertyAll(resolvedTextColor),
       );
     }
 
     final iconColor =
-        effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{}) ??
+        effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
             IconTheme.of(context).color;
 
     // Ensure icons inside non-icon buttons receive the button's foreground
@@ -220,7 +216,7 @@ class AppButton<T> extends StatelessWidget {
     // foreground color so plain `Text` widgets inside `AppButtonContent`
     // pick up caller `textStyle.color` when provided.
     final resolvedForegroundColor =
-        effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{});
+        effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
     final themedChild = DefaultTextStyle.merge(
       style: TextStyle(color: resolvedForegroundColor),
       child:
@@ -228,83 +224,25 @@ class AppButton<T> extends StatelessWidget {
     );
 
     if (isIcon) {
-      final double diameter = _heightBySize;
       final double iconSize = _iconSizeBySize;
 
       // If the caller provided a ButtonStyle (or a themed style was
       // resolved into `effectiveMergedStyle`), prefer rendering a
       // material button that honors that style so properties like
       // `shape`, `padding`, and `fixedSize` are applied.
-      final ButtonStyle? styleForIcon = effectiveMergedStyle != null
-          ? _buttonStyle().merge(effectiveMergedStyle)
-          : null;
+      final ButtonStyle styleForIcon =
+          _buttonStyle().merge(effectiveMergedStyle);
 
-      if (styleForIcon != null) {
-        return Center(
-          child: FilledButton(
-            onPressed: effectiveOnPressed,
-            style: styleForIcon,
-            child: IconTheme(
-              data: IconThemeData(size: iconSize, color: iconColor),
-              child: icon ?? childWidget,
-            ),
+      return Center(
+        child: FilledButton(
+          onPressed: effectiveOnPressed,
+          style: styleForIcon,
+          child: IconTheme(
+            data: IconThemeData(size: iconSize, color: iconColor),
+            child: icon ?? childWidget,
           ),
-        );
-      }
-
-      // Fallback: original circular tappable when no ButtonStyle was
-      // provided (preserves existing visual behavior and theme-based
-      // icon background handling).
-      if (iconBgColor != null) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: effectiveOnPressed,
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: diameter,
-                height: diameter,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: IconTheme(
-                    data: IconThemeData(size: iconSize, color: iconColor),
-                    child: icon ?? childWidget,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      } else {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: effectiveOnPressed,
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: diameter,
-                height: diameter,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: IconTheme(
-                    data: IconThemeData(size: iconSize, color: iconColor),
-                    child: icon ?? childWidget,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
+        ),
+      );
     }
 
     if (isFab) {
@@ -331,9 +269,9 @@ class AppButton<T> extends StatelessWidget {
 
       // allow caller ButtonStyle to override when present
       final styleBg =
-          effectiveMergedStyle?.backgroundColor?.resolve(<WidgetState>{});
+          effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
       final styleFg =
-          effectiveMergedStyle?.foregroundColor?.resolve(<WidgetState>{});
+          effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
       if (styleBg != null) resolvedFabBg = styleBg;
       if (styleFg != null) resolvedFabFg = styleFg;
 
@@ -368,11 +306,30 @@ class AppButton<T> extends StatelessWidget {
     }
 
     if (isExtendedFab) {
+      // Resolve FAB colors similarly to the regular FAB branch.
+      final floatingFabTheme = Theme.of(context).floatingActionButtonTheme;
+      Color? resolvedFabBgExt = floatingFabTheme.backgroundColor;
+      Color? resolvedFabFgExt = floatingFabTheme.foregroundColor;
+      if (fabBgColor != null) resolvedFabBgExt = fabBgColor;
+      final styleBgExt =
+          effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
+      final styleFgExt =
+          effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
+      if (styleBgExt != null) resolvedFabBgExt = styleBgExt;
+      if (styleFgExt != null) resolvedFabFgExt = styleFgExt;
+
+      final labelWidget = child ??
+          DefaultTextStyle(
+            style: TextStyle(
+                color: resolvedFabFgExt ?? IconTheme.of(context).color),
+            child: Text((text ?? 'Action').toTitleCase),
+          );
+
       return FloatingActionButton.extended(
         onPressed: effectiveOnPressed,
         icon: icon,
-        label: child ?? Text((text ?? 'Action').toTitleCase),
-        backgroundColor: fabBgColor,
+        label: labelWidget,
+        backgroundColor: resolvedFabBgExt,
       );
     }
 

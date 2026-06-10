@@ -147,14 +147,15 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
 
         final baseDecoration = (inputDecoration ??
                 InputDecoration(hintText: fieldLabel.toTitleCase))
+            .applyDefaults(Theme.of(context).inputDecorationTheme)
             .copyWith(
-          border: border,
-        );
+              border: border,
+            );
         InputDecoration effectiveDecoration;
         if (hideTrailingIcon) {
           effectiveDecoration = baseDecoration.copyWith(
             suffixIcon: IconButton(
-              icon: const Icon(Icons.clear),
+              icon: Icon(Icons.clear, color: Theme.of(context).iconTheme.color),
               onPressed: () {
                 controller.clear();
                 // Always pass null when clearing, for type safety

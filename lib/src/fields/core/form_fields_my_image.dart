@@ -315,7 +315,8 @@ class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
                   focusNode: _descFocusNode,
                   autofocus: true,
                   textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(labelText: dl.get('description')),
+                  decoration: InputDecoration(labelText: dl.get('description'))
+                      .applyDefaults(Theme.of(context).inputDecorationTheme),
                   autovalidateMode: widget.autovalidateMode,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -915,7 +916,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       } catch (_) {
         displayed = Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Icon(Icons.broken_image, color: Colors.grey),
+          child: Icon(
+            Icons.broken_image,
+            color: Theme.of(context).disabledColor,
+          ),
         );
       }
     } else if (image.link.trim().isNotEmpty) {

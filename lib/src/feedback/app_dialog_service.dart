@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
+import '../utilities/theme_helpers.dart';
 
 class AppDialogService {
   /// Example usage in UI or ViewModel:
@@ -419,6 +420,22 @@ class AppDialogService {
     final isWarning = dialogType == AppDialogType.validation && !isSuccess;
 
     final theme = Theme.of(context);
+    final appButtonExt = Theme.of(context).extension<AppButtonThemeData>();
+    final themeFilledStyle = Theme.of(context).filledButtonTheme.style;
+    final extensionFilledStyle = appButtonExt?.filledStyle;
+    final callerFilledStyle = ButtonStyle(
+      backgroundColor: WidgetStatePropertyAll(buttonColor),
+      foregroundColor: WidgetStatePropertyAll(isWarning
+          ? Theme.of(context).colorScheme.onError
+          : Theme.of(context).colorScheme.onPrimary),
+      padding: WidgetStatePropertyAll(const EdgeInsets.symmetric(vertical: 12)),
+    );
+    final dialogOkButtonStyle = resolveButtonStyle(
+      context,
+      themeStyle: themeFilledStyle,
+      extensionStyle: extensionFilledStyle,
+      callerStyle: callerFilledStyle,
+    );
     return _showProtectedDialog(
       alignment: _alignment(position),
       insetPadding: _inset(position),
@@ -458,13 +475,7 @@ class AppDialogService {
                 size: AppSize.medium,
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).pop(),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(buttonColor),
-                  foregroundColor: WidgetStatePropertyAll(
-                      isWarning ? Colors.orange.shade900 : Colors.white),
-                  padding: WidgetStatePropertyAll(
-                      const EdgeInsets.symmetric(vertical: 12)),
-                ),
+                style: dialogOkButtonStyle,
               ),
             ),
           ],

@@ -52,7 +52,7 @@ class FormFieldsDropdown<T> extends StatefulWidget {
     this.filterHintText,
     this.externalErrorText,
     this.readOnly = false,
-    this.backgroundColor = Colors.white,
+    this.backgroundColor,
     this.filled = true,
     this.textStyle,
     this.selectedItemBackgroundColor,
@@ -172,7 +172,8 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                             decoration: InputDecoration(
                               hintText:
                                   widget.filterHintText ?? l10n.searchHint,
-                              prefixIcon: const Icon(Icons.search),
+                              prefixIcon: Icon(Icons.search,
+                                  color: Theme.of(context).iconTheme.color),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -270,8 +271,9 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
       builder: (context, setStateDropdown) {
         final l10n = FormFieldsLocalizations.of(context);
 
-        final baseDecoration = widget.decoration ??
-            InputDecoration(
+        final baseDecoration = (widget.decoration ?? const InputDecoration())
+            .applyDefaults(Theme.of(context).inputDecorationTheme)
+            .copyWith(
               hintText:
                   widget.hintText ?? l10n.select(widget.label.toTitleCase),
               prefixIcon: widget.prefixIcon,

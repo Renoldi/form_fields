@@ -188,29 +188,32 @@ Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "
           Expanded(
             child: SizedBox(
               height: controlHeight(AppSize.medium),
-              child: FormFields<String>(
-                onChanged: (v) {
-                  try {
-                    final c = widget.controller?.value.searchController;
-                    if (c != null) c.text = v;
-                  } catch (_) {}
-                },
-                label: '',
-                labelPosition: LabelPosition.none,
-                fieldSize: AppSize.medium,
-                currentValue: widget.controller != null
-                    ? widget.controller!.value.searchController.text
-                    : '',
-                inputDecoration: InputDecoration(
-                  hintText: widget.searchHint ??
-                      FormFieldsLocalizations.of(context).searchHint,
-                  isDense: true,
-                  contentPadding: controlContentPadding(multiLine: false),
-                  filled: true,
-                  fillColor: widget.searchBackgroundColor ?? Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide.none,
+              child: Align(
+                alignment: Alignment.center,
+                child: FormFields<String>(
+                  onChanged: (v) {
+                    try {
+                      final c = widget.controller?.value.searchController;
+                      if (c != null) c.text = v;
+                    } catch (_) {}
+                  },
+                  label: '',
+                  labelPosition: LabelPosition.none,
+                  fieldSize: AppSize.medium,
+                  currentValue: widget.controller != null
+                      ? widget.controller!.value.searchController.text
+                      : '',
+                  inputDecoration: InputDecoration(
+                    hintText: widget.searchHint ??
+                        FormFieldsLocalizations.of(context).searchHint,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    filled: true,
+                    fillColor: widget.searchBackgroundColor ?? Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
@@ -220,13 +223,23 @@ Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "
           SizedBox(
             width: controlHeight(AppSize.medium),
             height: controlHeight(AppSize.medium),
-            child: AppButton(
-              onPressed: () async => await _doSearch(),
-              type: AppButtonType.icon,
-              size: AppSize.medium,
-              useSafeArea: false,
-              icon: const Icon(
-                Icons.search,
+            child: Center(
+              child: AppButton(
+                onPressed: () async => await _doSearch(),
+                type: AppButtonType.icon,
+                size: AppSize.medium,
+                useSafeArea: false,
+                icon: widget.searchIcon ?? const Icon(Icons.search),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                      widget.searchBackgroundColor ??
+                          Theme.of(context).colorScheme.primary),
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  )),
+                  // padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+                ),
               ),
             ),
           ),
@@ -234,3 +247,4 @@ Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "
       ),
     );
   }
+
