@@ -72,7 +72,7 @@ class View extends PresenterState {
                   showDesc: true,
                   descriptionField: 'description',
                   showUploadResultDialog: false,
-                  isDirectUpload: false,
+                  isDirectUpload: true,
                   // uploadFileFieldName: 'file',
                   // uploadIncludeReqType: false,
                   allowedImageSources: [MyImageSource.camera],

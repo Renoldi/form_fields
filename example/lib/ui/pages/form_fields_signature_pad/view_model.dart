@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
@@ -160,6 +161,17 @@ class ViewModel extends ChangeNotifier {
 
   Future<void> handleDirectUploadPayload(
       List<Map<String, dynamic>> payloads) async {
+    if (kDebugMode) {
+      debugPrint(
+          'ViewModel.handleDirectUploadPayload: received ${payloads.length} payload(s)');
+      if (payloads.isNotEmpty) {
+        try {
+          debugPrint(
+              'ViewModel: first payload keys=${payloads.first.keys.toList()}');
+        } catch (_) {}
+      }
+    }
+
     try {
       final file = File(
           '${Directory.systemTemp.path}/form_fields_offline_payloads_signature_pad.json');

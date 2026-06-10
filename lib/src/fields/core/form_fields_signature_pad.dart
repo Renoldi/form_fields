@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
@@ -319,6 +320,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   bool _hasCaptured = false;
 
   late FormFieldsSignaturePadProvider _padProvider;
+  // Buffer for payloads emitted by the embedded live camera so we can
+  // merge them with signature export payloads and emit a single combined
+  // callback to the caller.
+  final List<DirectUploadPayload> _embeddedQueuedPayloads = [];
 
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;
@@ -805,16 +810,43 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             fileFieldName: widget.uploadFileFieldName,
             includeReqType: widget.uploadIncludeReqType,
           );
-          if (payloads.isNotEmpty) {
-            widget.onFailDirectUploadPayload?.call(payloads);
-            // Also provide a per-payload queued notification for callers
-            // that prefer handling single sanitized payloads. At this point
-            // we treat the queue reason as network-related (`authExpired=false`).
+          if (payloads.isNotEmpty || _embeddedQueuedPayloads.isNotEmpty) {
+            // Merge payloads generated here with any buffered payloads
+            // emitted earlier by the embedded live camera. Dedupe by
+            // `uploadCorrelationId` to avoid duplicates.
+            final Map<String?, DirectUploadPayload> byId = {};
+            for (final p in _embeddedQueuedPayloads) {
+              byId[p.uploadCorrelationId] = p;
+            }
+            for (final p in payloads) {
+              byId[p.uploadCorrelationId] = p;
+            }
+            final merged = byId.values.toList(growable: false);
+            if (kDebugMode) {
+              debugPrint(
+                  'FormFieldsSignaturePad: onFailDirectUploadPayload -> ${merged.length} payload(s) (merged)');
+              for (var i = 0; i < merged.length; i++) {
+                try {
+                  final p = merged[i];
+                  debugPrint(
+                      'FormFieldsSignaturePad: merged payload[$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}');
+                } catch (_) {}
+              }
+            }
             try {
-              for (final p in payloads) {
+              widget.onFailDirectUploadPayload?.call(merged);
+            } catch (e, st) {
+              debugPrint(
+                  'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+            }
+            // Per-payload notification as queued (network). Only call once per
+            // payload and clear the embedded buffer afterwards.
+            try {
+              for (final p in merged) {
                 widget.onUploadQueued?.call(p, false);
               }
             } catch (_) {}
+            _embeddedQueuedPayloads.clear();
           }
         } catch (e, st) {
           debugPrint(
@@ -976,6 +1008,59 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         );
       }
       return null;
+    }
+    // Treat 401 as queueable (auth expired) so callers can persist payloads.
+    if (response.statusCode == 401) {
+      debugPrint(
+          '[FormFieldsSignaturePad._uploadImageDio] upload failed: 401 -> queueing payload');
+      MyImageResult? queuedImage;
+      try {
+        queuedImage = MyImageResult(
+          link: image.link,
+          base64: image.base64,
+          path: image.path,
+          imageId: image.imageId,
+          description: image.description,
+          payload: payload,
+          status: MyImageStatus.queued,
+        );
+        final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+          queuedImage,
+          defaultUrl: widget.uploadUrl,
+          fileFieldName: widget.uploadFileFieldName,
+          includeReqType: widget.uploadIncludeReqType,
+        );
+        if (direct != null) {
+          if (kDebugMode) {
+            try {
+              debugPrint(
+                  'FormFieldsSignaturePad: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+            } catch (_) {}
+          }
+          try {
+            widget.onUploadQueued?.call(direct, true);
+          } catch (e, st) {
+            debugPrint('FormFieldsSignaturePad.onUploadQueued threw: $e\n$st');
+          }
+          try {
+            widget.onFailDirectUploadPayload?.call([direct]);
+          } catch (e, st) {
+            debugPrint(
+                'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+          }
+        }
+      } catch (e, st) {
+        debugPrint(
+            'FormFieldsSignaturePad: error while building queued payload: $e\n$st');
+      }
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadFailedTitle,
+          message: uploadErrorMessage,
+          dialogType: AppDialogType.server,
+        );
+      }
+      return queuedImage;
     }
     try {
       if (response.statusCode != null &&
@@ -1347,14 +1432,24 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     // Forward payload-based failures from the live camera to the
     // signature pad's payload callback when provided. Use typed
     // `DirectUploadPayload` objects.
-    final void Function(List<DirectUploadPayload>)? failPayloadCb =
-        (widget.onFailDirectUploadPayload != null)
-            ? (List<DirectUploadPayload> list) {
-                try {
-                  widget.onFailDirectUploadPayload!.call(list);
-                } catch (_) {}
-              }
-            : null;
+    // When the live camera is embedded, buffer its queued payloads so the
+    // signature pad can later emit a single combined list. If the caller
+    // provided an `onFailDirectUploadPayload` for the whole pad, suppress
+    // immediate passthrough and merge later. Otherwise, forward directly.
+    void failPayloadCb(List<DirectUploadPayload> list) {
+      try {
+        if (widget.onFailDirectUploadPayload != null) {
+          // Merge into buffer, avoiding duplicates by correlation id.
+          for (final p in list) {
+            final exists = _embeddedQueuedPayloads
+                .any((e) => e.uploadCorrelationId == p.uploadCorrelationId);
+            if (!exists) _embeddedQueuedPayloads.add(p);
+          }
+        } else {
+          widget.onFailDirectUploadPayload?.call(list);
+        }
+      } catch (_) {}
+    }
 
     final preview = FormFieldsLiveCameraCapture(
       key: _liveCameraKey,

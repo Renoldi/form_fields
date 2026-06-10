@@ -74,6 +74,13 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   final void Function(List<DirectUploadPayload> payloads)?
       onFailDirectUploadPayload;
 
+  /// New callback invoked when an individual upload payload is queued by the
+  /// widget (e.g. auth expiry). Receives a sanitized `DirectUploadPayload`
+  /// and a boolean `authExpired` which is true when the library detected an
+  /// authentication expiry (401) situation.
+  final void Function(DirectUploadPayload payload, bool authExpired)?
+      onUploadQueued;
+
   // `onFailDirectUploadResult` removed — live camera reports single results
   // via `onFailDirectUpload` only.
 
@@ -124,6 +131,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.uploadFailedMessage,
     this.uploadErrorMessage,
     this.onFailDirectUploadPayload,
+    this.onUploadQueued,
     this.uploadFileUrlKey = 'fileUrl',
     this.uploadImageIdKey = 'imageId',
     this.uploadFileFieldName = 'file',
@@ -403,6 +411,14 @@ class FormFieldsLiveCameraCaptureState
           includeReqType: widget.uploadIncludeReqType,
         );
         if (direct != null) {
+          if (kDebugMode) {
+            try {
+              debugPrint(
+                  'FormFieldsLiveCameraCapture: onFailDirectUploadPayload -> 1 payload');
+              debugPrint(
+                  'FormFieldsLiveCameraCapture: payload[0] correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+            } catch (_) {}
+          }
           widget.onFailDirectUploadPayload?.call([direct]);
         }
       } catch (e, st) {
@@ -472,6 +488,62 @@ class FormFieldsLiveCameraCaptureState
         );
       }
       return null;
+    }
+    // Handle auth expiry (401) by building a queueable payload and
+    // notifying the caller so they can persist/retry later.
+    if (response.statusCode == 401) {
+      debugPrint(
+          '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: 401 -> queueing payload');
+      MyImageResult? queuedImage;
+      try {
+        queuedImage = MyImageResult(
+          link: image.link,
+          base64: image.base64,
+          path: image.path,
+          imageId: image.imageId,
+          description: image.description,
+          payload: payload,
+          status: MyImageStatus.queued,
+        );
+        final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+          queuedImage,
+          defaultUrl: widget.uploadUrl,
+          fileFieldName: widget.uploadFileFieldName,
+          includeReqType: widget.uploadIncludeReqType,
+        );
+        if (direct != null) {
+          if (kDebugMode) {
+            try {
+              debugPrint(
+                  'FormFieldsLiveCameraCapture: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+            } catch (_) {}
+          }
+          try {
+            widget.onUploadQueued?.call(direct, true);
+          } catch (e, st) {
+            debugPrint(
+                'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st');
+          }
+          try {
+            widget.onFailDirectUploadPayload?.call([direct]);
+          } catch (e, st) {
+            debugPrint(
+                'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
+          }
+          return queuedImage;
+        }
+      } catch (e, st) {
+        debugPrint(
+            'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st');
+      }
+      if (widget.showUploadResultDialog) {
+        await dialog.showError(
+          title: uploadFailedTitle,
+          message: uploadErrorMessage,
+          dialogType: AppDialogType.server,
+        );
+      }
+      return queuedImage;
     }
     try {
       if (response.statusCode != null &&

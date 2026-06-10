@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
@@ -96,8 +96,19 @@ class UploadService {
         uploadCorrelationId: payload.uploadCorrelationId,
       );
       try {
+        if (kDebugMode) {
+          debugPrint('UploadService: queueing payload (network error)');
+          try {
+            debugPrint(
+                'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
+          } catch (_) {}
+        }
         onUploadQueued?.call(sanitized, false);
-      } catch (_) {}
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('UploadService: onUploadQueued threw: $e\n$st');
+        }
+      }
       return UploadOutcome(
           success: false,
           response: response,
@@ -151,11 +162,27 @@ class UploadService {
           uploadCorrelationId: payload.uploadCorrelationId,
         );
         try {
+          if (kDebugMode) {
+            debugPrint(
+                'UploadService: auth expired -> queueing payload (auth)');
+            try {
+              debugPrint(
+                  'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
+            } catch (_) {}
+          }
           onUploadAuthExpired?.call();
-        } catch (_) {}
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('UploadService: onUploadAuthExpired threw: $e\n$st');
+          }
+        }
         try {
           onUploadQueued?.call(sanitized, true);
-        } catch (_) {}
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('UploadService: onUploadQueued threw: $e\n$st');
+          }
+        }
         return UploadOutcome(
             success: false,
             response: response,

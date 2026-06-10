@@ -134,8 +134,33 @@ class UploadHelper {
   /// Convenience wrapper to build payload from a `MyImageResult` instance.
   static Future<Map<String, dynamic>?> buildUploadPayloadFromImage(
       MyImageResult image) async {
-    if (image.payload.isEmpty) return null;
-    return buildUploadPayloadFromMap(Map<String, dynamic>.from(image.payload));
+    if (image.payload.isNotEmpty) {
+      return buildUploadPayloadFromMap(
+          Map<String, dynamic>.from(image.payload));
+    }
+
+    // If there's no persisted payload map attached to the image, attempt to
+    // construct a minimal persisted shape from the image fields so callers
+    // receive a usable payload (supports images with `path` or `base64`).
+    final m = <String, dynamic>{};
+    // Do not set url here — callers should provide `defaultUrl` when
+    // converting to a typed payload via `buildDirectUploadPayloadFromImage`.
+    final file = <String, dynamic>{};
+    try {
+      if (image.path.trim().isNotEmpty) file['path'] = image.path;
+    } catch (_) {}
+    try {
+      if (image.base64.trim().isNotEmpty) file['base64'] = image.base64;
+    } catch (_) {}
+    if (file.isNotEmpty) {
+      file['fileName'] = file['fileName'] ??
+          (file['path'] is String
+              ? (file['path'] as String).split(Platform.pathSeparator).last
+              : 'image');
+      m['file'] = file;
+    }
+    if (m.isEmpty) return null;
+    return buildUploadPayloadFromMap(m);
   }
 
   /// Build a typed `DirectUploadPayload` from a `MyImageResult`.
@@ -145,12 +170,33 @@ class UploadHelper {
       {String? defaultUrl,
       String fileFieldName = 'file',
       bool includeReqType = false}) async {
-    if (image.payload.isEmpty) return null;
-    final persisted = Map<String, dynamic>.from(image.payload);
+    // Support images that may not have a persisted `payload` map by
+    // constructing a minimal persisted map from the image fields.
+    final Map<String, dynamic> persisted = image.payload.isNotEmpty
+        ? Map<String, dynamic>.from(image.payload)
+        : <String, dynamic>{};
     if ((persisted['url'] == null ||
             persisted['url'].toString().trim().isEmpty) &&
         defaultUrl != null) {
       persisted['url'] = defaultUrl;
+    }
+
+    // If no nested file shape, synthesize it from image.path/base64.
+    if (persisted['file'] == null) {
+      final fm = <String, dynamic>{};
+      try {
+        if (image.path.trim().isNotEmpty) fm['path'] = image.path;
+      } catch (_) {}
+      try {
+        if (image.base64.trim().isNotEmpty) fm['base64'] = image.base64;
+      } catch (_) {}
+      if (fm.isNotEmpty) {
+        fm['fileName'] = fm['fileName'] ??
+            (fm['path'] is String
+                ? (fm['path'] as String).split(Platform.pathSeparator).last
+                : 'image');
+        persisted['file'] = fm;
+      }
     }
 
     final built = await buildUploadPayloadFromMap(persisted);
@@ -158,7 +204,7 @@ class UploadHelper {
 
     String? base64Val;
     try {
-      final fp = image.payload['file'];
+      final fp = persisted['file'];
       if (fp is Map &&
           fp['base64'] is String &&
           (fp['base64'] as String).trim().isNotEmpty) {

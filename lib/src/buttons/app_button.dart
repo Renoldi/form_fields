@@ -245,18 +245,16 @@ class AppButton<T> extends StatelessWidget {
       // Merge base button style and ensure a square fixed size matching
       // our configured height so icon-only buttons align with fields.
       final height = _heightBySize;
-      final ButtonStyle styleForIcon =
-          _buttonStyle().merge(effectiveMergedStyle).merge(ButtonStyle(
-                padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                fixedSize: WidgetStatePropertyAll(Size(height, height)),
-                backgroundColor: resolvedBg != null
-                    ? WidgetStatePropertyAll(resolvedBg)
-                    : null,
-                foregroundColor: WidgetStatePropertyAll(resolvedIcon),
-                side: resolvedSide != null
-                    ? WidgetStatePropertyAll(resolvedSide)
-                    : null,
-              ));
+      _buttonStyle().merge(effectiveMergedStyle).merge(ButtonStyle(
+            padding: WidgetStatePropertyAll(EdgeInsets.zero),
+            fixedSize: WidgetStatePropertyAll(Size(height, height)),
+            backgroundColor:
+                resolvedBg != null ? WidgetStatePropertyAll(resolvedBg) : null,
+            foregroundColor: WidgetStatePropertyAll(resolvedIcon),
+            side: resolvedSide != null
+                ? WidgetStatePropertyAll(resolvedSide)
+                : null,
+          ));
 
       // Use an Ink + InkWell wrapper so background color and border are
       // visible even when platform button styles interfere. This preserves

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
@@ -88,8 +89,6 @@ class View extends PresenterState {
                       backgroundColor: Colors.white,
                       exportBackgroundColor: Colors.transparent,
                       isDirectUpload: true,
-                      // uploadFileFieldName: 'file',
-                      // uploadIncludeReqType: false,
                       showLiveCamera: true,
                       uploadUrl:
                           'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
@@ -97,10 +96,23 @@ class View extends PresenterState {
                           "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA4MjI2MTYsImV4cCI6MTc4MDg2NTgxNiwiaWF0IjoxNzgwODIyNjE2fQ.ScZ4i-21ey7yhVbXt-vZvU1axEGmln1dFnPm4m2KIsU",
                       onFailDirectUploadPayload:
                           (List<DirectUploadPayload> payloads) {
+                        if (kDebugMode) {
+                          debugPrint(
+                              'ExampleView: onFailDirectUploadPayload -> ${payloads.length} payload(s)');
+                          for (var i = 0; i < payloads.length; i++) {
+                            try {
+                              debugPrint(
+                                  'ExampleView: payload[$i] = ${payloads[i].toJson()}');
+                            } catch (_) {}
+                          }
+                        }
                         try {
                           viewModel.handleDirectUploadPayload(
                               payloads.map((p) => p.toMap()).toList());
-                        } catch (_) {}
+                        } catch (e, st) {
+                          debugPrint(
+                              'ExampleView: handleDirectUploadPayload error: $e\n$st');
+                        }
                       },
                     ),
                   ),
@@ -180,10 +192,21 @@ class View extends PresenterState {
                                   return null;
                                 },
                                 onUploadQueued: (sanitized, authExpired) {
+                                  if (kDebugMode) {
+                                    debugPrint(
+                                        'ExampleView: onUploadQueued -> sanitized payload received');
+                                    try {
+                                      debugPrint(
+                                          'sanitized: ${sanitized.toJson()}');
+                                    } catch (_) {}
+                                  }
                                   try {
                                     viewModel.handleDirectUploadPayload(
                                         [sanitized.toJson()]);
-                                  } catch (_) {}
+                                  } catch (e, st) {
+                                    debugPrint(
+                                        'ExampleView: handleDirectUploadPayload error (onUploadQueued): $e\n$st');
+                                  }
                                   if (authExpired) {
                                     messenger?.showSnackBar(const SnackBar(
                                         content: Text(
@@ -224,7 +247,10 @@ class View extends PresenterState {
                                 // Fallback: queue prepared built map for retry
                                 try {
                                   viewModel.handleDirectUploadPayload([built]);
-                                } catch (_) {}
+                                } catch (e, st) {
+                                  debugPrint(
+                                      'ExampleView: handleDirectUploadPayload error (fallback built): $e\n$st');
+                                }
                                 messenger?.showSnackBar(const SnackBar(
                                     content: Text(
                                         'Upload failed — queued for retry')));
@@ -541,20 +567,37 @@ class View extends PresenterState {
                       },
                       onFailDirectUploadPayload:
                           (List<DirectUploadPayload> payloads) {
+                        if (kDebugMode) {
+                          debugPrint(
+                              'ExampleView: onFailDirectUploadPayload -> ${payloads.length} payload(s)');
+                        }
                         try {
                           viewModel.handleDirectUploadPayload(
                               payloads.map((p) => p.toMap()).toList());
-                        } catch (_) {}
+                        } catch (e, st) {
+                          debugPrint(
+                              'ExampleView: handleDirectUploadPayload error: $e\n$st');
+                        }
                       },
                       // NEW: onUploadQueued demonstrates how callers receive sanitized payloads
                       // when upload is queued due to network or auth issues.
                       onUploadQueued:
                           (DirectUploadPayload payload, bool authExpired) {
+                        if (kDebugMode) {
+                          debugPrint(
+                              'ExampleView: onUploadQueued -> payload queued, authExpired=$authExpired');
+                          try {
+                            debugPrint('payload: ${payload.toJson()}');
+                          } catch (_) {}
+                        }
                         try {
                           // persist queued payload into example VM
                           viewModel
                               .handleDirectUploadPayload([payload.toJson()]);
-                        } catch (_) {}
+                        } catch (e, st) {
+                          debugPrint(
+                              'ExampleView: handleDirectUploadPayload error (onUploadQueued): $e\n$st');
+                        }
                         final messenger = ScaffoldMessenger.maybeOf(context);
                         if (authExpired) {
                           messenger?.showSnackBar(const SnackBar(
@@ -610,10 +653,17 @@ class View extends PresenterState {
                       },
                       onFailDirectUploadPayload:
                           (List<DirectUploadPayload> payloads) {
+                        if (kDebugMode) {
+                          debugPrint(
+                              'ExampleView: onFailDirectUploadPayload -> ${payloads.length} payload(s)');
+                        }
                         try {
                           viewModel.handleDirectUploadPayload(
                               payloads.map((p) => p.toMap()).toList());
-                        } catch (_) {}
+                        } catch (e, st) {
+                          debugPrint(
+                              'ExampleView: handleDirectUploadPayload error: $e\n$st');
+                        }
                       },
                     ),
                   ),
