@@ -1684,11 +1684,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           } catch (_) {}
         }
 
-        final resolvedPath = (uploadedPath != null &&
-                uploadedPath.trim().isNotEmpty &&
-                uploadedPath.startsWith(Platform.pathSeparator))
-            ? uploadedPath
-            : images[index].path;
+        final resolvedPath =
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)
+                ? uploadedPath
+                : images[index].path;
 
         final updatedImage = MyImageResult(
           link: finalLink ?? images[index].link,

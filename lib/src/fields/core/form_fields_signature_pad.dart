@@ -1036,11 +1036,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           }
         }
 
-        final resolvedPath = (uploadedPath != null &&
-                uploadedPath.trim().isNotEmpty &&
-                uploadedPath.startsWith(Platform.pathSeparator))
-            ? uploadedPath
-            : image.path;
+        final resolvedPath =
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)
+                ? uploadedPath
+                : image.path;
 
         return MyImageResult(
           link: finalLink ?? image.link,

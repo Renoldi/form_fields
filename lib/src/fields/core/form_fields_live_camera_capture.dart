@@ -531,11 +531,10 @@ class FormFieldsLiveCameraCaptureState
           } catch (_) {}
         }
 
-        final resolvedPath = (uploadedPath != null &&
-                uploadedPath.trim().isNotEmpty &&
-                uploadedPath.startsWith(Platform.pathSeparator))
-            ? uploadedPath
-            : image.path;
+        final resolvedPath =
+            (uploadedPath != null && uploadedPath.trim().isNotEmpty)
+                ? uploadedPath
+                : image.path;
 
         final updatedImage = MyImageResult(
           link: finalLink ?? image.link,
