@@ -101,7 +101,6 @@ class ListDataComponent<T> extends StatefulWidget {
 
 class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   VoidCallback? _searchListener;
-  Timer? _autoSearchTimer;
   @override
   void initState() {
     widget.controller?.value.dataSource = widget.dataSource;
@@ -146,7 +145,6 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   @override
   void dispose() {
     _detachSearchListener(widget.controller?.value.searchController);
-    _autoSearchTimer?.cancel();
     super.dispose();
   }
 
@@ -206,21 +204,26 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
 
   Widget searchBoxWithFormFields() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      decoration: BoxDecoration(
+        color: widget.searchBackgroundColor ??
+            Theme.of(context)
+                .colorScheme
+                .surface
+                .withAlpha((0.08 * 255).round()),
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: FormFields<String>(
-              onChanged: (v) {
+              onChanged: (v) async {
                 try {
                   final c = widget.controller?.value.searchController;
                   if (c != null) c.text = v;
                   if (widget.autoSearch == true) {
-                    _autoSearchTimer?.cancel();
-                    _autoSearchTimer =
-                        Timer(const Duration(milliseconds: 400), () async {
-                      await _doSearch();
-                    });
+                    await _doSearch();
                   }
                 } catch (_) {}
               },
@@ -241,13 +244,24 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             icon: widget.searchIcon ?? const Icon(Icons.search),
             style: ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(
-                  widget.searchBackgroundColor ??
-                      Theme.of(context).colorScheme.primary),
-              foregroundColor: WidgetStatePropertyAll(Colors.white),
+                Theme.of(context).colorScheme.primary,
+              ),
+              foregroundColor: WidgetStatePropertyAll(
+                widget.searchStyle?.color ??
+                    Theme.of(context).colorScheme.surface,
+              ),
+              iconColor: WidgetStatePropertyAll(
+                widget.searchStyle?.color ??
+                    Theme.of(context).colorScheme.surface,
+              ),
+              side: WidgetStatePropertyAll(BorderSide(
+                color: widget.searchStyle?.color ??
+                    Theme.of(context).colorScheme.surface,
+                width: 1,
+              )),
               shape: WidgetStatePropertyAll(RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6),
               )),
-              // padding: const WidgetStatePropertyAll(EdgeInsets.zero),
             ),
           ),
         ],

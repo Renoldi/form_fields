@@ -207,7 +207,8 @@ class AppButton<T> extends StatelessWidget {
     }
 
     final iconColor =
-        effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
+        effectiveMergedStyle.iconColor?.resolve(<WidgetState>{}) ??
+            effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
             IconTheme.of(context).color;
 
     // Ensure icons inside non-icon buttons receive the button's foreground
@@ -226,20 +227,73 @@ class AppButton<T> extends StatelessWidget {
     if (isIcon) {
       final double iconSize = _iconSizeBySize;
 
-      // If the caller provided a ButtonStyle (or a themed style was
-      // resolved into `effectiveMergedStyle`), prefer rendering a
-      // material button that honors that style so properties like
-      // `shape`, `padding`, and `fixedSize` are applied.
+      // Resolve explicit colors and side from the merged style so callers
+      // can set `backgroundColor`, `iconColor`, `foregroundColor`, or
+      // `side` for borders.
+      // Prefer explicit caller-provided `style` values first, then
+      // fall back to the merged/effective style and finally theme values.
+      final resolvedBg = style?.backgroundColor?.resolve(<WidgetState>{}) ??
+          effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
+      final resolvedIcon = style?.iconColor?.resolve(<WidgetState>{}) ??
+          style?.foregroundColor?.resolve(<WidgetState>{}) ??
+          effectiveMergedStyle.iconColor?.resolve(<WidgetState>{}) ??
+          effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
+          IconTheme.of(context).color;
+      final resolvedSide = style?.side?.resolve(<WidgetState>{}) ??
+          effectiveMergedStyle.side?.resolve(<WidgetState>{});
+
+      // Merge base button style and ensure a square fixed size matching
+      // our configured height so icon-only buttons align with fields.
+      final height = _heightBySize;
       final ButtonStyle styleForIcon =
-          _buttonStyle().merge(effectiveMergedStyle);
+          _buttonStyle().merge(effectiveMergedStyle).merge(ButtonStyle(
+                padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                fixedSize: WidgetStatePropertyAll(Size(height, height)),
+                backgroundColor: resolvedBg != null
+                    ? WidgetStatePropertyAll(resolvedBg)
+                    : null,
+                foregroundColor: WidgetStatePropertyAll(resolvedIcon),
+                side: resolvedSide != null
+                    ? WidgetStatePropertyAll(resolvedSide)
+                    : null,
+              ));
+
+      // Use an Ink + InkWell wrapper so background color and border are
+      // visible even when platform button styles interfere. This preserves
+      // Material ink splashes and taps while guaranteeing the decoration.
+      final resolvedShape =
+          effectiveMergedStyle.shape?.resolve(<WidgetState>{});
+      BorderRadius? borderRadius;
+      if (resolvedShape is RoundedRectangleBorder) {
+        borderRadius = resolvedShape.borderRadius.resolve(TextDirection.ltr);
+      }
+      final shapeForDecoration = RoundedRectangleBorder(
+        borderRadius: borderRadius ?? BorderRadius.circular(8),
+        side: resolvedSide ?? BorderSide.none,
+      );
 
       return Center(
-        child: FilledButton(
-          onPressed: effectiveOnPressed,
-          style: styleForIcon,
-          child: IconTheme(
-            data: IconThemeData(size: iconSize, color: iconColor),
-            child: icon ?? childWidget,
+        child: Material(
+          color: Colors.transparent,
+          child: Ink(
+            decoration: ShapeDecoration(
+              color: resolvedBg ?? Colors.transparent,
+              shape: shapeForDecoration,
+            ),
+            child: InkWell(
+              onTap: effectiveOnPressed,
+              customBorder: shapeForDecoration,
+              child: SizedBox(
+                width: height,
+                height: height,
+                child: Center(
+                  child: IconTheme(
+                    data: IconThemeData(size: iconSize, color: resolvedIcon),
+                    child: icon ?? childWidget,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       );
