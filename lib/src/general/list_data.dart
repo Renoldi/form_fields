@@ -313,24 +313,21 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             ),
           ),
           const SizedBox(width: 8),
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: AppButton(
-              onPressed: () async => await _doSearch(),
-              type: AppButtonType.icon,
-              size: AppSize.medium,
-              useSafeArea: false,
-              icon: widget.searchIcon ?? const Icon(Icons.search),
-              style: ButtonStyle(
-                backgroundColor: WidgetStatePropertyAll(
-                    widget.searchBackgroundColor ??
-                        Theme.of(context).colorScheme.primary),
-                foregroundColor: WidgetStatePropertyAll(Colors.white),
-                shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                )),
-                // padding: const WidgetStatePropertyAll(EdgeInsets.zero),
-              ),
+          AppButton(
+            onPressed: () async => await _doSearch(),
+            type: AppButtonType.icon,
+            size: AppSize.medium,
+            useSafeArea: false,
+            icon: widget.searchIcon ?? const Icon(Icons.search),
+            style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(
+                  widget.searchBackgroundColor ??
+                      Theme.of(context).colorScheme.primary),
+              foregroundColor: WidgetStatePropertyAll(Colors.white),
+              shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              )),
+              // padding: const WidgetStatePropertyAll(EdgeInsets.zero),
             ),
           ),
         ],

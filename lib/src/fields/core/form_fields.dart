@@ -1901,10 +1901,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // the field aligns vertically with other controls like `AppButton`
     // which uses a default `topPadding` of 12.
     if (widget.labelPosition == LabelPosition.none) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 0),
-        child: textField,
-      );
+      return textField;
     }
 
     final label = _buildLabel(vm);
