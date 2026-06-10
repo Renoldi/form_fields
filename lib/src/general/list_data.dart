@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -100,6 +101,7 @@ class ListDataComponent<T> extends StatefulWidget {
 
 class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   VoidCallback? _searchListener;
+  Timer? _autoSearchTimer;
   @override
   void initState() {
     widget.controller?.value.dataSource = widget.dataSource;
@@ -144,6 +146,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   @override
   void dispose() {
     _detachSearchListener(widget.controller?.value.searchController);
+    _autoSearchTimer?.cancel();
     super.dispose();
   }
 
@@ -175,8 +178,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             children: [
               widget.header != null ? widget.header! : const SizedBox(),
               // Toolbar area: show search box, extra toolbar, or both.
-              widget.showSearchBox ? searchBox() : const SizedBox(),
-              searchBoxWithFormFields(),
+              widget.showSearchBox
+                  ? searchBoxWithFormFields()
+                  : const SizedBox(),
               Container(
                 // color: Colors.blue,
                 height: 8,
@@ -200,99 +204,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     } catch (_) {}
   }
 
-  Widget searchBox() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: widget.controller?.value.searchController,
-              style: widget.searchStyle,
-              decoration: InputDecoration(
-                hintText: widget.searchHint ??
-                    FormFieldsLocalizations.of(context).searchHint,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                filled: true,
-                fillColor: widget.searchBackgroundColor ??
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
-                suffixIcon: (widget.controller?.value.searchController.text
-                            .isNotEmpty ==
-                        true)
-                    ? GestureDetector(
-                        onTap: () {
-                          try {
-                            widget.controller?.value.searchController.clear();
-                            if (widget.autoSearch == true) {
-                              _doSearch();
-                            } else {
-                              setState(() {});
-                            }
-                          } catch (_) {}
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: widget.searchBackgroundColor ??
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              textInputAction: TextInputAction.search,
-              onFieldSubmitted: (_) async => await _doSearch(),
-            ),
-          ),
-          Container(
-            width: 40,
-            height: 40,
-            margin: const EdgeInsets.only(left: 8),
-            decoration: BoxDecoration(
-              color: widget.searchBackgroundColor ??
-                  Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: widget.searchIcon ??
-                  Icon(Icons.search,
-                      color: Theme.of(context).colorScheme.onPrimary),
-              onPressed: () async => await _doSearch(),
-              tooltip: widget.searchHint ??
-                  FormFieldsLocalizations.of(context).searchHint,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget searchBoxWithFormFields() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-      color: Colors.red,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -302,6 +215,13 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                 try {
                   final c = widget.controller?.value.searchController;
                   if (c != null) c.text = v;
+                  if (widget.autoSearch == true) {
+                    _autoSearchTimer?.cancel();
+                    _autoSearchTimer =
+                        Timer(const Duration(milliseconds: 400), () async {
+                      await _doSearch();
+                    });
+                  }
                 } catch (_) {}
               },
               label: '',

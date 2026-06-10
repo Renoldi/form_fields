@@ -2500,7 +2500,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   builder: (ctx2, extra, _) {
                     final effectiveField = singleLine
                         ? SizedBox(
-                            height: fieldHeight + extra, child: textField)
+                            height: fieldHeight +
+                                (widget.labelPosition == LabelPosition.none
+                                    ? 0
+                                    : extra),
+                            child: textField)
                         : textField;
                     return Container(
                       margin: widget.labelPosition == LabelPosition.none
