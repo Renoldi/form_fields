@@ -233,6 +233,13 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               currentValue: widget.controller != null
                   ? widget.controller!.value.searchController.text
                   : '',
+              onRemove: () async {
+                try {
+                  final c = widget.controller?.value.searchController;
+                  if (c != null) c.text = '';
+                  await _doSearch();
+                } catch (_) {}
+              },
             ),
           ),
           const SizedBox(width: 8),

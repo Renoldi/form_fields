@@ -110,6 +110,7 @@ class FormFields<T> extends StatefulWidget {
 
   /// Callback ketika countdown selesai
   final VoidCallback? onOtpCountdownComplete;
+  final VoidCallback? onRemove;
 
   /// Callback ketika tombol reload OTP ditekan
   final VoidCallback? onOtpCountdownReload;
@@ -325,6 +326,7 @@ class FormFields<T> extends StatefulWidget {
     this.verificationOtpAlphanumeric = false,
     this.externalErrorText,
     this.readOnly = false,
+    this.onRemove,
   })  : assert(verificationLength > 0),
         assert(otpBoxWidth > 0),
         assert(otpBoxSpacing >= 0);
@@ -1611,7 +1613,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   void _handleClearIconTap(FormFieldsController vm) {
     if (widget.readOnly) return;
-
+    if (widget.onRemove != null) {
+      widget.onRemove!();
+    }
     if (_isIntType()) {
       if (_isNullable()) {
         vm.setController = "";
