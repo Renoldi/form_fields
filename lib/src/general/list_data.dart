@@ -253,13 +253,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                   try {
                     final c = widget.controller?.value.searchController;
                     if (c != null) c.text = '';
-                    if (widget.searchIconInside == true) {
-                      final t =
-                          widget.controller?.value.searchController.text ?? '';
-                      if (t.trim().isEmpty ||
-                          t.trim().length >= widget.minSearchChars) {
-                        await _doSearch();
-                      }
+                    final t =
+                        widget.controller?.value.searchController.text ?? '';
+                    if (t.trim().isEmpty ||
+                        t.trim().length >= widget.minSearchChars) {
+                      await _doSearch();
                     }
                   } catch (_) {}
                 },
