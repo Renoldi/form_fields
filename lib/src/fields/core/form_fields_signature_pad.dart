@@ -1474,7 +1474,18 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);
     }
-    return _DefaultCameraSection(child: preview);
+
+    // Wrap the default camera section in a card with matching background
+    // and corner radius so the live camera preview visually matches the
+    // signature card (white card + rounded corners).
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.backgroundColor ?? Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(8),
+      child: _DefaultCameraSection(child: preview),
+    );
   }
 
   // ── build ──────────────────────────────────────────────────────────────────

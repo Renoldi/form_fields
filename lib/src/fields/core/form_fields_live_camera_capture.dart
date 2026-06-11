@@ -831,52 +831,43 @@ class FormFieldsLiveCameraCaptureState
                       ),
                     ),
                   Positioned(
-                    bottom: 8,
-                    right: 8,
+                    top: 6,
+                    left: 6,
                     child: provider.capturedResult == null
-                        ? _Badge(
-                            icon: Icons.camera_front,
-                            label: localizations.get('cameraReady'),
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                          )
+                        ? const SizedBox.shrink()
                         : Builder(builder: (ctx) {
                             final st = provider.capturedResult!.status;
-                            switch (st) {
-                              case MyImageStatus.queued:
-                                return _Badge(
-                                  icon: Icons.schedule,
-                                  label: localizations.get('cameraQueued'),
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                );
-                              case MyImageStatus.uploading:
-                                return _Badge(
-                                  icon: Icons.cloud_upload,
-                                  label: localizations.get('cameraUploading'),
-                                  color: resolveActiveColor(ctx, null),
-                                );
-                              case MyImageStatus.uploaded:
-                                return _Badge(
-                                  icon: Icons.check_circle_outline,
-                                  label: localizations.get('cameraCaptured'),
-                                  color: resolveActiveColor(ctx, null),
-                                );
-                              case MyImageStatus.failed:
-                                return _Badge(
-                                  icon: Icons.error_outline,
-                                  label: localizations.get('cameraFailed'),
-                                  color: Theme.of(context).colorScheme.error,
-                                );
-                              case MyImageStatus.idle:
-                                return _Badge(
-                                  icon: Icons.check_circle_outline,
-                                  label: localizations.get('cameraCaptured'),
-                                  color: resolveActiveColor(ctx, null),
-                                );
-                            }
+                            final icon = st == MyImageStatus.uploading
+                                ? Icons.cloud_upload
+                                : st == MyImageStatus.queued
+                                    ? Icons.schedule
+                                    : st == MyImageStatus.failed
+                                        ? Icons.error_outline
+                                        : Icons.check_circle;
+                            final iconColor = st == MyImageStatus.failed
+                                ? Theme.of(context).colorScheme.error
+                                : resolveTextColor(ctx);
+                            return Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Theme.of(context)
+                                        .shadowColor
+                                        .withValues(alpha: .18),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                icon,
+                                size: 14,
+                                color: iconColor,
+                              ),
+                            );
                           }),
                   ),
                 ],
@@ -1080,39 +1071,6 @@ class _CapturedPhoto extends StatelessWidget {
     return Center(
       child: Icon(Icons.broken_image_outlined,
           size: 32, color: resolveTextColor(context, muted: true)),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _Badge({required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onPrimary),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onPrimary,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
