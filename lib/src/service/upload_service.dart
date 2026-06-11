@@ -163,6 +163,48 @@ class UploadService {
           sanitizedPayload: sanitized);
     }
 
+    // For other server/client errors (4xx/5xx) treat similarly: do not
+    // attempt automatic retry here, instead produce a sanitized payload
+    // and notify caller so application-level code can decide to retry.
+    if (response != null && response.statusCode != null) {
+      final sc = response.statusCode!;
+      if (sc >= 400 && sc < 600 && sc != 401) {
+        final headersForPersist = Map<String, String>.from(headers);
+        headersForPersist.remove('Authorization');
+        final sanitized = DirectUploadPayload(
+          url: payload.url,
+          filePath: payload.filePath,
+          fileName: payload.fileName,
+          base64: payload.base64,
+          headers: headersForPersist,
+          fields: payload.fields,
+          fileFieldName: payload.fileFieldName,
+          includeReqType: payload.includeReqType,
+          uploadCorrelationId: payload.uploadCorrelationId,
+        );
+        try {
+          if (kDebugMode) {
+            debugPrint(
+                'UploadService: server error $sc -> queueing payload (server)');
+            try {
+              debugPrint(
+                  'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
+            } catch (_) {}
+          }
+          onUploadQueued?.call(sanitized, false);
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('UploadService: onUploadQueued threw: $e\n$st');
+          }
+        }
+        return UploadOutcome(
+            success: false,
+            response: response,
+            authExpiredQueued: false,
+            sanitizedPayload: sanitized);
+      }
+    }
+
     final ok = response != null &&
         UploadResponseMapper.isSuccessfulStatus(response.statusCode);
     return UploadOutcome(success: ok, response: response);

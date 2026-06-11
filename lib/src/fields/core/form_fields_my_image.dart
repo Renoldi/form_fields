@@ -1308,8 +1308,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
             context: context,
             builder: (ctx) => _ImageDescriptionSheet(),
           );
-          if (desc != null && desc.trim().isNotEmpty)
+          if (desc != null && desc.trim().isNotEmpty) {
             pickedDescription = desc.trim();
+          }
         } catch (_) {}
       }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -209,7 +210,9 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
 
       // Debug: report incoming payloads
       try {
-        print('handleDirectUploadPayload: incoming=${payloads.length}');
+        if (kDebugMode) {
+          print('handleDirectUploadPayload: incoming=${payloads.length}');
+        }
       } catch (_) {}
 
       // Append new payloads but avoid duplicates. We consider a payload
@@ -315,8 +318,10 @@ class FormFieldsExamplesViewModel extends ChangeNotifier {
           // persisted entries (possible duplicates / matching issues).
           arr.add(normalized);
           try {
-            print(
-                'handleDirectUploadPayload: appended uploadCorrelationId=${normalized['uploadCorrelationId']} path=${normalized['file'] is Map ? normalized['file']['path'] : ''} hasBase64=${normalized['file'] is Map && (normalized['file']['base64'] ?? '').toString().isNotEmpty}');
+            if (kDebugMode) {
+              print(
+                  'handleDirectUploadPayload: appended uploadCorrelationId=${normalized['uploadCorrelationId']} path=${normalized['file'] is Map ? normalized['file']['path'] : ''} hasBase64=${normalized['file'] is Map && (normalized['file']['base64'] ?? '').toString().isNotEmpty}');
+            }
           } catch (_) {}
 
           // Also keep a lightweight preview (path/base64) in memory so the UI

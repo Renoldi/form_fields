@@ -623,8 +623,51 @@ class FormFieldsLiveCameraCaptureState
 
         return updatedImage;
       } else {
+        // For server/client errors treat similarly to 401: build a
+        // queueable payload and notify caller so they can persist/retry.
+        final sc = response.statusCode ?? 0;
         debugPrint(
-            '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}');
+            '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=$sc, statusMessage=${response.statusMessage}, data=${response.data}');
+        try {
+          final queuedImage = MyImageResult(
+            link: image.link,
+            base64: image.base64,
+            path: image.path,
+            imageId: image.imageId,
+            description: image.description,
+            payload: payload,
+            status: MyImageStatus.queued,
+          );
+          final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+            queuedImage,
+            defaultUrl: widget.uploadUrl,
+            fileFieldName: widget.uploadFileFieldName,
+            includeReqType: widget.uploadIncludeReqType,
+          );
+          if (direct != null) {
+            if (kDebugMode) {
+              try {
+                debugPrint(
+                    'FormFieldsLiveCameraCapture: server queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+              } catch (_) {}
+            }
+            try {
+              widget.onUploadQueued?.call(direct, false);
+            } catch (e, st) {
+              debugPrint(
+                  'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st');
+            }
+            try {
+              widget.onFailDirectUploadPayload?.call([direct]);
+            } catch (e, st) {
+              debugPrint(
+                  'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
+            }
+          }
+        } catch (e, st) {
+          debugPrint(
+              'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st');
+        }
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,

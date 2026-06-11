@@ -289,11 +289,12 @@ class FormFieldsSignaturePad extends StatefulWidget {
           "For direct upload, uploadUrl must be provided and non-empty.",
         ) {
     // Warn developer about the conflicting combination at construction time.
-    assert(
-      !(showLiveCamera && silentLiveCapture),
-      'showLiveCamera and silentLiveCapture cannot both be true. '
-      'When showLiveCamera is true, silentLiveCapture is ignored.',
-    );
+    if (silentLiveCapture && showLiveCamera) {
+      if (kDebugMode) {
+        debugPrint(
+            'FormFieldsSignaturePad: silentLiveCapture ignored when showLiveCamera==true');
+      }
+    }
   }
 
   @override
@@ -301,15 +302,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
 }
 
 class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
-  late SignatureController _signatureController;
-  late FormFieldsMyImageController _cameraController;
-  bool _ownsCamera = false;
-
-  // Debounce timer used to detect end-of-drawing and trigger auto-export.
-  Timer? _autoExportTimer;
-  static const Duration _autoExportDebounce = Duration(milliseconds: 1200);
-
-  // Guard to avoid overlapping auto-export runs.
+  // State fields moved here from the widget area
   bool _autoExportInProgress = false;
 
   /// Key used to trigger capture/reset on the separated live-camera widget.
@@ -328,6 +321,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;
 
+  // Other internal state members
+  late SignatureController _signatureController;
+  late FormFieldsMyImageController _cameraController;
+  bool _ownsCamera = false;
+  Timer? _autoExportTimer;
+  final Duration _autoExportDebounce = const Duration(milliseconds: 700);
   @override
   void initState() {
     super.initState();
