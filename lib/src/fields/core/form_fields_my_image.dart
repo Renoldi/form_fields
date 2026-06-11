@@ -1300,7 +1300,21 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     if (!mounted) return;
     if (file != null) {
       int? uploadIdx;
-      MyImageResult result = await MyImageResult.fromFile(file!);
+      String? pickedDescription;
+      if (widget.showDesc) {
+        if (!context.mounted) return;
+        try {
+          final desc = await showAppModalBottomSheet<String>(
+            context: context,
+            builder: (ctx) => _ImageDescriptionSheet(),
+          );
+          if (desc != null && desc.trim().isNotEmpty)
+            pickedDescription = desc.trim();
+        } catch (_) {}
+      }
+
+      MyImageResult result =
+          await MyImageResult.fromFile(file!, description: pickedDescription);
       if (!mounted) return;
       if (widget.maxImages == 1) {
         bool isNew =
