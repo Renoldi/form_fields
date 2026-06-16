@@ -113,6 +113,13 @@ export 'src/service/upload_service.dart' show UploadService, UploadOutcome;
 export 'src/utilities/upload_helper.dart' show UploadHelper;
 export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 
+// Database, import/export, crypto, and background workmanager services
+export 'src/service/db_service.dart' show DBService;
+export 'src/service/import_export_service.dart' show ImportExportService;
+export 'src/service/crypto_utils.dart' show CryptoUtils;
+export 'src/service/workmanager_service.dart' show WorkmanagerService;
+export 'src/service/init_service.dart' show FormFieldsInitializer;
+
 export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';

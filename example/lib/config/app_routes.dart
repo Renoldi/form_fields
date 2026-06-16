@@ -49,6 +49,10 @@ enum AppRoute {
     name: 'responsive_menu_grid',
     title: 'Responsive Menu Grid',
   ),
+  sqlViewer(
+    name: 'sql_viewer',
+    title: 'Raw Tables',
+  ),
   barcodeScan(
     name: 'barcode_scan',
     title: 'Barcode Scan',

@@ -143,6 +143,13 @@ class ViewModel extends ChangeNotifier {
           routeName: 'form_fields_signature_pad',
         ),
         AppMenuItemData(
+          title: 'Raw Tables',
+          subtitle: 'Inspect SQLite tables and rows',
+          icon: Icons.table_chart,
+          color: Colors.lightGreen,
+          routeName: AppRoute.sqlViewer.name,
+        ),
+        AppMenuItemData(
           title: 'Responsive Grid',
           subtitle: 'ResponsiveMenuGrid Widget',
           icon: Icons.grid_view,

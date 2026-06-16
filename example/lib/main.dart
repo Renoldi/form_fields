@@ -31,7 +31,8 @@ final logger = Logger();
 // MAIN ENTRY POINT
 // ============================================================================
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // ========================================================================
   // ENVIRONMENT CONFIGURATION
   // ========================================================================
@@ -67,6 +68,20 @@ void main() {
 
   if (kDebugMode) {
     _printStartupInfo();
+  }
+
+  // Initialize package services (DB, logging, optional background worker)
+  try {
+    await FormFieldsInitializer.initAll(
+      dbName: 'form_fields.db',
+      enableWorkmanager: !kIsWeb,
+      registerPeriodic: true,
+      migrationAssetPaths: [
+        'migrations/migration.sql',
+      ],
+    );
+  } catch (e, st) {
+    logger.w('Startup initialization failed: $e\n$st');
   }
 
   // Start the app

@@ -88,6 +88,7 @@ Detailed documentation is available in the [`docs/`](docs/) folder:
 - **[CONFIGURATION_FLOW.md](docs/CONFIGURATION_FLOW.md)** - Configuration data flow
 - **[ENVIRONMENT_CONFIG.md](docs/ENVIRONMENT_CONFIG.md)** - Environment setup guide
 - **[MULTILANG_IMPLEMENTATION.md](docs/MULTILANG_IMPLEMENTATION.md)** - Internationalization guide
+- **[DB Import/Export](docs/components/db_import_export.md)** - Database export/import and background setup
 
 ## 🎓 Key Features to Try
 

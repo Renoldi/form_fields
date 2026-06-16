@@ -24,11 +24,19 @@ dependencies:
   permission_handler: any
   camera: any
   google_fonts: any
+  file_picker: ^11.0.2
+  # no interactive file picker: use asset-based import/export
+  workmanager: ^0.9.0+3
+  sqflite: ^2.4.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  sqflite_common_ffi: any
   flutter_lints: any
 
 flutter:
   uses-material-design: true
+  assets:
+    - migrations/migration.sql
+    - migrations/sample_inserts.sql

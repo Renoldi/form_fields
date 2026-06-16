@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "com.example.form_fields_example.debug"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    // Use highest required NDK version to satisfy plugins (backward compatible)
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

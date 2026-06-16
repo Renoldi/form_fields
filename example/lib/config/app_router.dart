@@ -11,6 +11,8 @@ import 'package:form_fields_example/ui/pages/icons_gallery/main.dart'
 import 'package:form_fields_example/ui/pages/menu/main.dart' as menu;
 import 'package:form_fields_example/ui/pages/form_fields_examples/main.dart'
     as form_fields_examples;
+import 'package:form_fields_example/ui/pages/sql_viewer/main.dart'
+    as sql_viewer;
 import 'package:form_fields_example/ui/pages/dropdown_examples/main.dart'
     as dropdown_examples;
 import 'package:form_fields_example/ui/pages/dropdown_multi_examples/main.dart'
@@ -197,6 +199,18 @@ GoRouter createAppRouter(
           child: ChangeNotifierProvider(
             create: (_) => form_fields_examples.FormFieldsExamplesViewModel(),
             child: const form_fields_examples.Presenter(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.sqlViewer.path,
+        name: AppRoute.sqlViewer.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.sqlViewer,
+          child: ChangeNotifierProvider(
+            create: (_) => sql_viewer.SqlViewerViewModel(),
+            child: const sql_viewer.Presenter(),
           ),
         ),
       ),
@@ -438,6 +452,8 @@ String _routeTitleKey(AppRoute route) {
       return 'formFieldsSignaturePad';
     case AppRoute.responsiveMenuGrid:
       return 'responsiveMenuGrid';
+    case AppRoute.sqlViewer:
+      return 'rawTables';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
   }
