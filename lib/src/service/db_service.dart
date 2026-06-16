@@ -51,6 +51,28 @@ class FileBackedColumnHandler implements ColumnHandler {
 
   @override
   Future<dynamic> onWrite(String table, String column, dynamic value) async {
+    // If caller passed an existing filename wrapper, overwrite the file.
+    if (value is Map &&
+        value.containsKey('__existing_filename') &&
+        value.containsKey('payload')) {
+      final existing = value['__existing_filename'];
+      final payload = value['payload'];
+      if (existing is String && existing.isNotEmpty) {
+        try {
+          final documents = await getApplicationDocumentsDirectory();
+          final dir = Directory(p.join(documents.path, _payloadDirName));
+          await dir.create(recursive: true);
+          final filePath = p.join(dir.path, existing);
+          final content = payload is String ? payload : json.encode(payload);
+          await File(filePath).writeAsString(content);
+          return existing;
+        } catch (e) {
+          _log.warning('FileBackedColumnHandler:overwrite failed: $e');
+          // fallthrough to create new file
+        }
+      }
+    }
+
     if (value is String) return value;
     final documents = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(documents.path, _payloadDirName));
