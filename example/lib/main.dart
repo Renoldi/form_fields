@@ -72,6 +72,18 @@ Future<void> main() async {
 
   // Initialize package services (DB, logging, optional background worker)
   try {
+    // One-time developer helper: reset DB and re-initialize from bundled
+    // migrations. REMOVE this call after the DB has been reset to avoid
+    // deleting user data on subsequent launches.
+    if (kDebugMode) {
+      try {
+        await DBService.instance.resetDatabase(reinit: true);
+        logger.i('Developer: resetDatabase completed');
+      } catch (e, st) {
+        logger.w('Developer: resetDatabase failed: $e\n$st');
+      }
+    }
+
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       enableWorkmanager: !kIsWeb,

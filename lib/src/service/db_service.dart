@@ -507,9 +507,27 @@ class DBService {
 
           // select rowid and columns
           final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
+
+          // Determine best identifier to update rows: prefer a declared
+          // PRIMARY KEY column (if any), otherwise fall back to rowid.
+          String pkName = 'rowid';
+          try {
+            final pragma = await db.rawQuery('PRAGMA table_info("$name")');
+            for (final col in pragma) {
+              final pk = col['pk'];
+              if (pk is int && pk > 0) {
+                final n = col['name'] as String?;
+                if (n != null && n.isNotEmpty) {
+                  pkName = n;
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
+
           for (final r in rows) {
-            final rowid = r['rowid'];
-            if (rowid == null) continue;
+            final idValue = r.containsKey(pkName) ? r[pkName] : r['rowid'];
+            if (idValue == null) continue;
             final updates = <String, dynamic>{};
             for (final c in cols) {
               if (!r.containsKey(c)) continue;
@@ -527,12 +545,16 @@ class DBService {
                   } catch (e) {
                     // not valid JSON, skip
                   }
+                } else {
+                  _log.warning('Failed to update statement:');
                 }
               }
             }
             if (updates.isNotEmpty) {
+              final whereClause =
+                  pkName == 'rowid' ? 'rowid = ?' : '"$pkName" = ?';
               await db.update(name, updates,
-                  where: 'rowid = ?', whereArgs: [rowid]);
+                  where: whereClause, whereArgs: [idValue]);
             }
           }
         }
@@ -566,6 +588,58 @@ class DBService {
       _log.warning(
           'Failed to import sample inserts asset $assetPath: $e', e, st);
       return null;
+    }
+  }
+
+  /// Run a migration SQL asset. By default only schema statements (CREATE,
+  /// ALTER, DROP, PRAGMA) are applied to avoid importing sample data. Set
+  /// [applyDml] to true to also execute DML statements (INSERT/UPDATE/DELETE)
+  /// from the asset.
+  Future<void> runMigrationAsset(String assetPath,
+      {bool applyDml = false}) async {
+    try {
+      final content = await rootBundle.loadString(assetPath);
+      if (content.trim().isEmpty) {
+        _log.info('Migration asset $assetPath is empty');
+        return;
+      }
+
+      final db = _db ?? await init();
+      final statements = content.split(';');
+      final allowedRe =
+          RegExp(r'^(CREATE|PRAGMA|DROP|ALTER)\b', caseSensitive: false);
+
+      await db.transaction((txn) async {
+        for (var stmt in statements) {
+          stmt = stmt.trim();
+          if (stmt.isEmpty) continue;
+          final up = stmt.toUpperCase();
+          if (up == 'BEGIN' ||
+              up.startsWith('BEGIN TRANSACTION') ||
+              up == 'COMMIT' ||
+              up.startsWith('COMMIT')) {
+            continue;
+          }
+          // If DML not allowed, only run schema statements.
+          if (!applyDml && !allowedRe.hasMatch(stmt)) {
+            _log.info(
+                'Skipping non-schema statement in $assetPath: ${stmt.length > 80 ? stmt.substring(0, 80) : stmt}');
+            continue;
+          }
+          try {
+            await txn.execute(stmt);
+          } catch (e, st) {
+            _log.warning(
+                'Failed to execute migration statement from $assetPath: $stmt\n$e',
+                e,
+                st);
+          }
+        }
+      });
+      _log.info('Applied migration asset: $assetPath (applyDml=$applyDml)');
+    } catch (e, st) {
+      _log.warning('Failed to apply migration asset $assetPath: $e', e, st);
+      rethrow;
     }
   }
 
