@@ -65,8 +65,7 @@ class _SqlViewState extends State<_SqlView> {
                             .toList(),
                         onChanged: (v) async {
                           if (v != null) {
-                            final vmRef = context.read<SqlViewerViewModel>();
-                            await vmRef.loadRows(v);
+                            await vm.loadRows(v);
                             if (!mounted) return;
                           }
                         },
@@ -82,11 +81,13 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(context);
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final localCtx = context;
+                              final vmRef = vm;
                               final path = await ImportExportService.instance
                                   .importFromAsset('assets/imports/sample.sql');
+                              if (!localCtx.mounted) return;
+                              final messenger =
+                                  ScaffoldMessenger.maybeOf(localCtx);
                               if (path != null) {
                                 messenger?.showSnackBar(SnackBar(
                                     content:
@@ -105,11 +106,13 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(context);
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final localCtx = context;
+                              final vmRef = vm;
                               final path = await ImportExportService.instance
                                   .pickFileAndImport();
+                              if (!localCtx.mounted) return;
+                              final messenger =
+                                  ScaffoldMessenger.maybeOf(localCtx);
                               if (path != null) {
                                 messenger?.showSnackBar(SnackBar(
                                     content:
@@ -128,10 +131,12 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(context);
+                              final localCtx = context;
                               final out = await ImportExportService.instance
                                   .pickFolderAndExport();
+                              if (!localCtx.mounted) return;
+                              final messenger =
+                                  ScaffoldMessenger.maybeOf(localCtx);
                               if (out != null) {
                                 messenger?.showSnackBar(SnackBar(
                                     content: Text('Exported to $out')));
@@ -173,18 +178,22 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (query == null || query.trim().isEmpty) return;
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(context);
+                              final localCtx = context;
+                              final vmRef = vm;
                               try {
                                 final res =
                                     await DBService.instance.executeSql(query);
+                                if (!localCtx.mounted) return;
+                                final messenger =
+                                    ScaffoldMessenger.maybeOf(localCtx);
                                 messenger?.showSnackBar(SnackBar(
                                     content:
                                         Text('SQL executed, result: $res')));
-                                await context
-                                    .read<SqlViewerViewModel>()
-                                    .loadTables();
+                                await vmRef.loadTables();
                               } catch (e) {
+                                if (!localCtx.mounted) return;
+                                final messenger =
+                                    ScaffoldMessenger.maybeOf(localCtx);
                                 messenger?.showSnackBar(SnackBar(
                                     content: Text('SQL execution failed: $e')));
                               }
@@ -196,11 +205,12 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final localCtx = context;
+                              final vmRef = vm;
                               final controller = TextEditingController();
                               final assetsController = TextEditingController();
                               final target = await showDialog<int?>(
-                                context: context,
+                                context: localCtx,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Upgrade database'),
                                   content: Column(
@@ -238,6 +248,7 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (target != null) {
+                                final localCtx = context;
                                 final assetsText = assetsController.text.trim();
                                 final assetsList = assetsText.isEmpty
                                     ? null
@@ -248,8 +259,9 @@ class _SqlViewState extends State<_SqlView> {
                                         .toList();
                                 await vmRef.upgradeAndCaptureTables(target,
                                     migrationAssetPaths: assetsList);
+                                if (!localCtx.mounted) return;
                                 await showDialog(
-                                  context: context,
+                                  context: localCtx,
                                   builder: (ctx) => AlertDialog(
                                     title: const Text('Tables: before → after'),
                                     content: SingleChildScrollView(
@@ -292,11 +304,12 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final localCtx = context;
+                              final vmRef = vm;
                               final controller = TextEditingController();
                               final assetsController = TextEditingController();
                               final target = await showDialog<int?>(
-                                context: context,
+                                context: localCtx,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Downgrade database'),
                                   content: Column(
@@ -344,8 +357,9 @@ class _SqlViewState extends State<_SqlView> {
                                         .toList();
                                 await vmRef.downgradeAndCaptureTables(target,
                                     migrationAssetPaths: assetsList);
+                                if (!localCtx.mounted) return;
                                 await showDialog(
-                                  context: context,
+                                  context: localCtx,
                                   builder: (ctx) => AlertDialog(
                                     title: const Text('Tables: before → after'),
                                     content: SingleChildScrollView(
@@ -388,7 +402,7 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final vmRef = vm;
                               final controller = TextEditingController();
                               final target = await showDialog<int?>(
                                 context: context,
@@ -416,18 +430,20 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (target != null) {
+                                final localCtx = context;
                                 await vmRef.setUserVersion(target);
+                                if (!localCtx.mounted) return;
+                                final messenger =
+                                    ScaffoldMessenger.maybeOf(localCtx);
                                 final ver = vmRef.dbVersion;
                                 if (vmRef.lastUpgradeError != null) {
-                                  ScaffoldMessenger.maybeOf(context)
-                                      ?.showSnackBar(SnackBar(
-                                          content: Text(
-                                              'Failed: ${vmRef.lastUpgradeError}')));
+                                  messenger?.showSnackBar(SnackBar(
+                                      content: Text(
+                                          'Failed: ${vmRef.lastUpgradeError}')));
                                 } else {
-                                  ScaffoldMessenger.maybeOf(context)
-                                      ?.showSnackBar(SnackBar(
-                                          content: Text(
-                                              'user_version set -> ${ver ?? 'unknown'}')));
+                                  messenger?.showSnackBar(SnackBar(
+                                      content: Text(
+                                          'user_version set -> ${ver ?? 'unknown'}')));
                                 }
                                 await vmRef.loadDbVersion();
                                 await vmRef.loadTables();
@@ -440,12 +456,11 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(context);
-                              final vmRef = context.read<SqlViewerViewModel>();
+                              final localCtx = context;
+                              final vmRef = vm;
                               final result =
                                   await showDialog<Map<String, dynamic>>(
-                                context: context,
+                                context: localCtx,
                                 builder: (ctx) {
                                   bool removeMigrations = false;
                                   bool removePayloads = false;
@@ -505,6 +520,9 @@ class _SqlViewState extends State<_SqlView> {
                                     reinit: false,
                                     removeMigrationsDir: removeMigrations,
                                     removePayloadsDir: removePayloads);
+                                if (!localCtx.mounted) return;
+                                final messenger =
+                                    ScaffoldMessenger.maybeOf(localCtx);
                                 messenger?.showSnackBar(const SnackBar(
                                     content: Text('Database reset')));
                                 // Do not call loadTables() here because that calls
@@ -545,7 +563,22 @@ class _SqlViewState extends State<_SqlView> {
                             children: [
                               Padding(
                                 padding: const EdgeInsets.all(12),
-                                child: Text(vm.rowToPrettyJson(row)),
+                                child: FutureBuilder<String>(
+                                  future: vm.rowToPrettyJson(row,
+                                      includePayloads: idx == 0),
+                                  builder: (context, snap) {
+                                    if (snap.connectionState !=
+                                        ConnectionState.done) {
+                                      return const SizedBox(
+                                          height: 24,
+                                          child: Center(
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2)));
+                                    }
+                                    final text = snap.data ?? '';
+                                    return SelectableText(text);
+                                  },
+                                ),
                               ),
                               OverflowBar(
                                 spacing: 8,
@@ -554,8 +587,10 @@ class _SqlViewState extends State<_SqlView> {
                                     onPressed: () async {
                                       final messenger =
                                           ScaffoldMessenger.maybeOf(context);
-                                      await Clipboard.setData(ClipboardData(
-                                          text: vm.rowToPrettyJson(row)));
+                                      final text = await vm.rowToPrettyJson(row,
+                                          includePayloads: idx == 0);
+                                      await Clipboard.setData(
+                                          ClipboardData(text: text));
                                       messenger?.showSnackBar(const SnackBar(
                                           content: Text('Copied JSON')));
                                     },
@@ -566,8 +601,7 @@ class _SqlViewState extends State<_SqlView> {
                                     onPressed: () async {
                                       final messenger =
                                           ScaffoldMessenger.maybeOf(context);
-                                      final vmRef =
-                                          context.read<SqlViewerViewModel>();
+                                      final vmRef = vm;
                                       final confirmed = await showDialog<bool>(
                                         context: context,
                                         builder: (ctx) => AlertDialog(
@@ -595,11 +629,13 @@ class _SqlViewState extends State<_SqlView> {
                                         if (id != null) {
                                           await vmRef.deleteRow(
                                               vm.selectedTable!, id);
+                                          if (!mounted) return;
                                           messenger?.showSnackBar(
                                               const SnackBar(
                                                   content:
                                                       Text('Row deleted')));
                                         } else {
+                                          if (!mounted) return;
                                           messenger?.showSnackBar(const SnackBar(
                                               content: Text(
                                                   'Unable to determine row id')));

@@ -852,17 +852,312 @@ class DBService {
   /// - for `INSERT`: the inserted row id (as returned by `rawInsert`)
   /// - for `UPDATE`/`DELETE`: the number of affected rows
   /// - for other statements: 0
-  Future<int> executeSql(String sql) async {
+  Future<int> executeSql(String sql, {bool isRaw = false}) async {
     final db = _db ?? await init();
     final stmt = sql.trim();
     try {
+      if (isRaw) {
+        final up = stmt.toUpperCase();
+        if (up.startsWith('INSERT')) return await db.rawInsert(sql);
+        if (up.startsWith('UPDATE')) return await db.rawUpdate(sql);
+        if (up.startsWith('DELETE')) return await db.rawDelete(sql);
+        await db.execute(sql);
+        return 0;
+      }
       final up = stmt.toUpperCase();
       if (up.startsWith('INSERT')) {
-        return await db.rawInsert(sql);
+        // Try to parse a simple single-row INSERT statement and route it
+        // through the high-level `insert` helper so ColumnHandlers run.
+        try {
+          // Find table name
+          final tableRe = RegExp(
+              r'INSERT\s+INTO\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+              caseSensitive: false);
+          final tableMatch = tableRe.firstMatch(stmt);
+          if (tableMatch == null) return await db.rawInsert(sql);
+          final table = tableMatch.group(1)!;
+
+          // Helper to find matching parenthesis starting at idx
+          int findMatching(String s, int start) {
+            var depth = 0;
+            for (var i = start; i < s.length; i++) {
+              final ch = s[i];
+              if (ch == '(') depth++;
+              if (ch == ')') {
+                depth--;
+                if (depth == 0) return i;
+              }
+            }
+            return -1;
+          }
+
+          // Parse optional columns list after table name
+          int pos = tableMatch.end;
+          while (pos < stmt.length && stmt[pos].trim().isEmpty) {
+            pos++;
+          }
+          List<String>? columns;
+          if (pos < stmt.length && stmt[pos] == '(') {
+            final end = findMatching(stmt, pos);
+            if (end > pos) {
+              final colsRaw = stmt.substring(pos + 1, end);
+              columns = colsRaw
+                  .split(',')
+                  .map((s) => s.trim().replaceAll('"', '').replaceAll('`', ''))
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+            }
+          }
+
+          // Find VALUES keyword
+          final valuesRe = RegExp(r"\bVALUES\b", caseSensitive: false);
+          final valuesMatch = valuesRe.firstMatch(stmt);
+          if (valuesMatch == null) return await db.rawInsert(sql);
+          var vpos = valuesMatch.end;
+          while (vpos < stmt.length && stmt[vpos].trim().isEmpty) {
+            vpos++;
+          }
+          if (vpos >= stmt.length || stmt[vpos] != '(') {
+            return await db.rawInsert(sql);
+          }
+          final vend = findMatching(stmt, vpos);
+          if (vend < 0) return await db.rawInsert(sql);
+          final valsRaw = stmt.substring(vpos + 1, vend);
+
+          // Split values at top-level commas (respect quotes/parentheses)
+          List<String> splitValues(String s) {
+            final out = <String>[];
+            var buf = StringBuffer();
+            var inSingle = false;
+            var inDouble = false;
+            var depth = 0;
+            for (var i = 0; i < s.length; i++) {
+              final ch = s[i];
+              if (ch == "'" && !inDouble) {
+                // handle escaped '' inside single quotes
+                final next = (i + 1 < s.length) ? s[i + 1] : null;
+                if (inSingle && next == "'") {
+                  buf.write("'");
+                  i++; // skip escaped quote
+                  continue;
+                }
+                inSingle = !inSingle;
+                buf.write(ch);
+                continue;
+              }
+              if (ch == '"' && !inSingle) {
+                inDouble = !inDouble;
+                buf.write(ch);
+                continue;
+              }
+              if (!inSingle && !inDouble) {
+                if (ch == '(') {
+                  depth++;
+                } else if (ch == ')') {
+                  depth--;
+                } else if (ch == ',' && depth == 0) {
+                  out.add(buf.toString().trim());
+                  buf = StringBuffer();
+                  continue;
+                }
+              }
+              buf.write(ch);
+            }
+            final last = buf.toString().trim();
+            if (last.isNotEmpty) out.add(last);
+            return out;
+          }
+
+          final vals = splitValues(valsRaw);
+          // If columns are present but counts mismatch, fall back
+          if (columns != null && columns.length != vals.length) {
+            return await db.rawInsert(sql);
+          }
+
+          dynamic parseValueToken(String t) {
+            final s = t.trim();
+            if (s.startsWith("'") && s.endsWith("'")) {
+              // unquote single-quoted SQL string and unescape doubled quotes
+              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
+              return inner;
+            }
+            // try int
+            final intVal = int.tryParse(s);
+            if (intVal != null) return intVal;
+            // try double
+            final dbl = double.tryParse(s);
+            if (dbl != null) return dbl;
+            // fallback to raw string
+            return s;
+          }
+
+          final valuesMap = <String, dynamic>{};
+          if (columns != null) {
+            for (var i = 0; i < columns.length; i++) {
+              valuesMap[columns[i]] = parseValueToken(vals[i]);
+            }
+            // call high-level insert to trigger handlers
+            return await insert(table, valuesMap);
+          } else {
+            // No columns specified; cannot safely map to insert helper.
+            return await db.rawInsert(sql);
+          }
+        } catch (e) {
+          // Parsing failed; fall back to rawInsert
+          return await db.rawInsert(sql);
+        }
       } else if (up.startsWith('UPDATE')) {
-        return await db.rawUpdate(sql);
+        // Try to parse simple UPDATE ... SET ... WHERE col = literal
+        try {
+          final tableRe = RegExp(r'UPDATE\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+              caseSensitive: false);
+          final tableMatch = tableRe.firstMatch(stmt);
+          if (tableMatch == null) return await db.rawUpdate(sql);
+          final table = tableMatch.group(1)!;
+
+          // find SET and optional WHERE
+          final setRe = RegExp(r'\bSET\b', caseSensitive: false);
+          final setMatch = setRe.firstMatch(stmt);
+          if (setMatch == null) return await db.rawUpdate(sql);
+          final setStart = setMatch.end;
+          final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
+          final whereMatch = whereRe.firstMatch(stmt);
+          final setRaw = whereMatch != null
+              ? stmt.substring(setStart, whereMatch.start)
+              : stmt.substring(setStart);
+          final whereRaw =
+              whereMatch != null ? stmt.substring(whereMatch.end).trim() : null;
+
+          // split assignments (respect quotes/parentheses)
+          List<String> splitAssignments(String s) {
+            final out = <String>[];
+            var buf = StringBuffer();
+            var inSingle = false;
+            var inDouble = false;
+            var depth = 0;
+            for (var i = 0; i < s.length; i++) {
+              final ch = s[i];
+              if (ch == "'" && !inDouble) {
+                final next = (i + 1 < s.length) ? s[i + 1] : null;
+                if (inSingle && next == "'") {
+                  buf.write("'");
+                  i++;
+                  continue;
+                }
+                inSingle = !inSingle;
+                buf.write(ch);
+                continue;
+              }
+              if (ch == '"' && !inSingle) {
+                inDouble = !inDouble;
+                buf.write(ch);
+                continue;
+              }
+              if (!inSingle && !inDouble) {
+                if (ch == '(') {
+                  depth++;
+                } else if (ch == ')') {
+                  depth--;
+                } else if (ch == ',' && depth == 0) {
+                  out.add(buf.toString().trim());
+                  buf = StringBuffer();
+                  continue;
+                }
+              }
+              buf.write(ch);
+            }
+            final last = buf.toString().trim();
+            if (last.isNotEmpty) out.add(last);
+            return out;
+          }
+
+          dynamic parseValueToken(String t) {
+            final s = t.trim();
+            if (s.startsWith("'") && s.endsWith("'")) {
+              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
+              return inner;
+            }
+            final intVal = int.tryParse(s);
+            if (intVal != null) return intVal;
+            final dbl = double.tryParse(s);
+            if (dbl != null) return dbl;
+            return s;
+          }
+
+          final assigns = splitAssignments(setRaw);
+          final valuesMap = <String, dynamic>{};
+          for (final a in assigns) {
+            final idx = a.indexOf('=');
+            if (idx <= 0) return await db.rawUpdate(sql);
+            final col = a
+                .substring(0, idx)
+                .trim()
+                .replaceAll('"', '')
+                .replaceAll('`', '');
+            final valToken = a.substring(idx + 1).trim();
+            valuesMap[col] = parseValueToken(valToken);
+          }
+
+          if (whereRaw == null) {
+            // No WHERE -> unsafe to map; fallback
+            return await db.rawUpdate(sql);
+          }
+
+          // support simple equality WHERE: col = literal
+          final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
+              caseSensitive: false);
+          final eqMatch = eqRe.firstMatch(whereRaw);
+          if (eqMatch == null) return await db.rawUpdate(sql);
+          final wcol = eqMatch.group(1)!;
+          final wvalToken = eqMatch.group(2)!.trim();
+          if (wvalToken == '?') return await db.rawUpdate(sql);
+          final wval = parseValueToken(wvalToken);
+          final whereClause = '$wcol = ?';
+          return await update(table, valuesMap, whereClause, [wval]);
+        } catch (e) {
+          return await db.rawUpdate(sql);
+        }
       } else if (up.startsWith('DELETE')) {
-        return await db.rawDelete(sql);
+        // Try to parse DELETE FROM table WHERE col = literal
+        try {
+          final tableRe = RegExp(
+              r'DELETE\s+FROM\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+              caseSensitive: false);
+          final tableMatch = tableRe.firstMatch(stmt);
+          if (tableMatch == null) return await db.rawDelete(sql);
+          final table = tableMatch.group(1)!;
+          final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
+          final whereMatch = whereRe.firstMatch(stmt);
+          if (whereMatch == null) return await db.rawDelete(sql);
+          final whereRaw = stmt.substring(whereMatch.end).trim();
+
+          final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
+              caseSensitive: false);
+          final eqMatch = eqRe.firstMatch(whereRaw);
+          if (eqMatch == null) return await db.rawDelete(sql);
+          final wcol = eqMatch.group(1)!;
+          final wvalToken = eqMatch.group(2)!.trim();
+          if (wvalToken == '?') return await db.rawDelete(sql);
+
+          dynamic parseValueToken(String t) {
+            final s = t.trim();
+            if (s.startsWith("'") && s.endsWith("'")) {
+              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
+              return inner;
+            }
+            final intVal = int.tryParse(s);
+            if (intVal != null) return intVal;
+            final dbl = double.tryParse(s);
+            if (dbl != null) return dbl;
+            return s;
+          }
+
+          final wval = parseValueToken(wvalToken);
+          final whereClause = '$wcol = ?';
+          return await delete(table, whereClause, [wval]);
+        } catch (e) {
+          return await db.rawDelete(sql);
+        }
       } else {
         await db.execute(sql);
         return 0;

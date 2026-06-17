@@ -221,8 +221,29 @@ class SqlViewerViewModel extends ChangeNotifier {
     }
   }
 
-  String rowToPrettyJson(Map<String, dynamic> row) {
+  /// Convert a DB row to pretty JSON. If [includePayloads] is true,
+  /// attempts to read any filename values ending with `.json` and inline
+  /// their decoded payloads.
+  Future<String> rowToPrettyJson(Map<String, dynamic> row,
+      {bool includePayloads = false}) async {
     final copy = Map<String, dynamic>.from(row);
+    if (includePayloads) {
+      final keys = copy.keys.toList();
+      for (final k in keys) {
+        final v = copy[k];
+        if (v is String) {
+          final s = v.trim();
+          if (s.endsWith('.json')) {
+            try {
+              final decoded = await _db.readPayloadJson(s);
+              if (decoded != null) copy[k] = decoded;
+            } catch (_) {
+              // ignore - leave filename as-is
+            }
+          }
+        }
+      }
+    }
     return const JsonEncoder.withIndent('  ').convert(copy);
   }
 }
