@@ -171,17 +171,17 @@ class FileBackedColumnHandler implements ColumnHandler {
 class DBService {
   DBService._() {
     // Register default file-backed handler for any `payload` column.
-    registerColumnHandler(
-        '*', 'payload', FileBackedColumnHandler(prefix: 'payload'));
-    // Register table-specific prefixes for common tables to produce nicer filenames.
-    registerColumnHandler(
-        'asset', 'payload', FileBackedColumnHandler(prefix: 'asset'));
-    registerColumnHandler('master_inspection_forms', 'payload',
-        FileBackedColumnHandler(prefix: 'master_inspection_forms'));
-    registerColumnHandler('master_inspections', 'payload',
-        FileBackedColumnHandler(prefix: 'master_inspections'));
-    registerColumnHandler('pending_inspections', 'payload',
-        FileBackedColumnHandler(prefix: 'pending_inspections'));
+    // registerColumnHandler(
+    //     '*', 'payload', FileBackedColumnHandler(prefix: 'payload'));
+    // // Register table-specific prefixes for common tables to produce nicer filenames.
+    // registerColumnHandler(
+    //     'asset', 'payload', FileBackedColumnHandler(prefix: 'asset'));
+    // registerColumnHandler('master_inspection_forms', 'payload',
+    //     FileBackedColumnHandler(prefix: 'master_inspection_forms'));
+    // registerColumnHandler('master_inspections', 'payload',
+    //     FileBackedColumnHandler(prefix: 'master_inspections'));
+    // registerColumnHandler('pending_inspections', 'payload',
+    //     FileBackedColumnHandler(prefix: 'pending_inspections'));
   }
   static final DBService instance = DBService._();
 
@@ -731,10 +731,29 @@ class DBService {
     if (autoHandlePayload && values.isNotEmpty) {
       final keys = values.keys.toList();
       for (final col in keys) {
-        final handler = _getHandler(table, col);
-        if (handler == null) continue;
+        var handler = _getHandler(table, col);
+        final originalVal = values[col];
+
+        // If no explicit handler was registered, apply a sensible fallback:
+        // - treat columns named `payload` or ending with `_payload` as file-backed
+        // - treat Map/List values or JSON-like strings as JSON payloads
+        //   to be written to disk
+        final looksLikeJsonString = originalVal is String &&
+            (originalVal.trim().startsWith('{') ||
+                originalVal.trim().startsWith('['));
+
+        if (col == 'payload' ||
+            col.endsWith('_payload') ||
+            originalVal is Map ||
+            originalVal is List ||
+            looksLikeJsonString) {
+          handler ??= FileBackedColumnHandler(prefix: table);
+        } else {
+          continue;
+        }
+
         try {
-          final newVal = await handler.onWrite(table, col, values[col]);
+          final newVal = await handler.onWrite(table, col, originalVal);
           values = Map<String, dynamic>.from(values);
           values[col] = newVal;
           // provide created_at convenience if present
@@ -759,14 +778,27 @@ class DBService {
     if (autoHandlePayload && values.isNotEmpty) {
       final keys = values.keys.toList();
       for (final col in keys) {
-        final handler = _getHandler(table, col);
-        if (handler == null) continue;
+        var handler = _getHandler(table, col);
+        final originalVal = values[col];
+
+        final looksLikeJsonString = originalVal is String &&
+            (originalVal.trim().startsWith('{') ||
+                originalVal.trim().startsWith('['));
+
+        if (col == 'payload' ||
+            col.endsWith('_payload') ||
+            originalVal is Map ||
+            originalVal is List ||
+            looksLikeJsonString) {
+          handler ??= FileBackedColumnHandler(prefix: table);
+        } else {
+          continue;
+        }
+
         try {
-          final newVal = await handler.onWrite(table, col, values[col]);
+          final newVal = await handler.onWrite(table, col, originalVal);
           values = Map<String, dynamic>.from(values);
           values[col] = newVal;
-          values['created_at'] =
-              values['created_at'] ?? DateTime.now().millisecondsSinceEpoch;
         } catch (e, st) {
           _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
         }
@@ -948,13 +980,10 @@ class DBService {
         for (final t in tables) {
           final name = t['name'] as String?;
           if (name == null) continue;
-          // determine handler columns for this table
-          final cols = <String>{};
-          final byTable = _columnHandlers[name];
-          if (byTable != null) cols.addAll(byTable.keys);
-          final wildcard = _columnHandlers['*'];
-          if (wildcard != null) cols.addAll(wildcard.keys);
-          if (cols.isEmpty) continue;
+          // No need to require pre-registered handlers here — we want to
+          // convert inline JSON in any column during import. Proceed to
+          // inspect all columns and use registered handlers when available,
+          // otherwise fall back to `FileBackedColumnHandler`.
 
           // select rowid and columns
           final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
@@ -978,33 +1007,47 @@ class DBService {
 
           for (final r in rows) {
             final idValue = r.containsKey(pkName) ? r[pkName] : r['rowid'];
-            if (idValue == null) {
-              continue;
-            }
+            if (idValue == null) continue;
             final updates = <String, dynamic>{};
-            for (final c in cols) {
-              if (!r.containsKey(c)) {
-                continue;
-              }
-              final val = r[c];
+
+            // Inspect every column in the row; if the value looks like
+            // inline JSON (string starting with '{' or '[') or is already
+            // a Map/List, write it out via a handler (registered or fallback)
+            for (final entry in r.entries) {
+              final c = entry.key;
+              if (c == 'rowid') continue;
+              final val = entry.value;
+
+              dynamic toWrite;
               if (val is String) {
                 final s = val.trim();
                 if (s.startsWith('{') || s.startsWith('[')) {
                   try {
-                    final decoded = json.decode(s);
-                    final handler = _getHandler(name, c);
-                    if (handler != null) {
-                      final newVal = await handler.onWrite(name, c, decoded);
-                      updates[c] = newVal;
-                    }
-                  } catch (e) {
-                    // not valid JSON, skip
+                    toWrite = json.decode(s);
+                  } catch (_) {
+                    continue; // not valid JSON
                   }
                 } else {
-                  _log.warning('Failed to update statement:');
+                  continue;
                 }
+              } else if (val is Map || val is List) {
+                toWrite = val;
+              } else {
+                continue;
+              }
+
+              var handler = _getHandler(name, c);
+              handler ??= FileBackedColumnHandler(prefix: name);
+
+              try {
+                final newVal = await handler.onWrite(name, c, toWrite);
+                updates[c] = newVal;
+              } catch (e) {
+                _log.warning(
+                    'Failed to write imported payload for $name.$c: $e');
               }
             }
+
             if (updates.isNotEmpty) {
               final whereClause =
                   pkName == 'rowid' ? 'rowid = ?' : '"$pkName" = ?';

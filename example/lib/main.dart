@@ -75,26 +75,26 @@ Future<void> main() async {
     // One-time developer helper: reset DB and re-initialize from bundled
     // migrations. REMOVE this call after the DB has been reset to avoid
     // deleting user data on subsequent launches.
-    if (kDebugMode) {
-      try {
-        await DBService.instance.resetDatabase(reinit: false);
-        logger.i('Developer: resetDatabase completed');
-      } catch (e, st) {
-        logger.w('Developer: resetDatabase failed: $e\n$st');
-      }
-    }
+    // if (kDebugMode) {
+    //   try {
+    //     await DBService.instance.resetDatabase(reinit: true);
+    //     logger.i('Developer: resetDatabase completed');
+    //   } catch (e, st) {
+    //     logger.w('Developer: resetDatabase failed: $e\n$st');
+    //   }
+    // }
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       enableWorkmanager: !kIsWeb,
       registerPeriodic: true,
       migrationAssetPaths: [
-        'migrations/migration.sql',
-        // 'migrations/v1.sql',
+        // 'migrations/migration.sql',
+        'migrations/v1.sql',
         // 'migrations/v2.sql',
         // 'migrations/v2_down.sql',
       ],
-      dbVersion: 0,
+      dbVersion: 1,
     );
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
