@@ -35,6 +35,30 @@ class SqlViewerViewModel extends ChangeNotifier {
       final results =
           await db.rawQuery('SELECT rowid, * FROM "$table" LIMIT 500');
       rows = results.map((r) => Map<String, dynamic>.from(r)).toList();
+
+      // Post-process rows: if a column looks like a payload filename (ends
+      // with .json), attempt to read and decode the payload and inline it.
+      for (final r in rows) {
+        final keys = r.keys.toList();
+        for (final k in keys) {
+          final v = r[k];
+          // Only attempt to inline payloads for columns that have a
+          // registered handler (eg. `payload`). Leave other string values
+          // untouched.
+          if (!_db.hasColumnHandler(table, k)) continue;
+          if (v is String) {
+            final s = v.trim();
+            if (s.endsWith('.json')) {
+              try {
+                final decoded = await _db.readPayloadJson(s);
+                if (decoded != null) r[k] = decoded;
+              } catch (_) {
+                // ignore - leave filename as-is
+              }
+            }
+          }
+        }
+      }
     } finally {
       loading = false;
       notifyListeners();

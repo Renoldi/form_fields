@@ -136,6 +136,11 @@ class DBService {
     return null;
   }
 
+  /// Public check whether a handler is registered for [table].[column].
+  bool hasColumnHandler(String table, String column) {
+    return _getHandler(table, column) != null;
+  }
+
   Future<Database> init(
       {String dbName = 'form_fields.db',
       List<String>? migrationAssetPaths}) async {
