@@ -768,6 +768,51 @@ class DBService {
     return await db.insert(table, values);
   }
 
+  /// Insert or update (upsert) a row into [table]. This mirrors `insert`
+  /// payload handling behavior, but uses SQLite conflict resolution to
+  /// replace an existing row when a unique/primary key conflict occurs.
+  ///
+  /// Returns the row id of the inserted row.
+  Future<int> insertOrUpdate(String table, Map<String, dynamic> values,
+      {bool autoHandlePayload = true,
+      ConflictAlgorithm conflictAlgorithm = ConflictAlgorithm.replace}) async {
+    final db = _db ?? await init();
+
+    if (autoHandlePayload && values.isNotEmpty) {
+      final keys = values.keys.toList();
+      for (final col in keys) {
+        var handler = _getHandler(table, col);
+        final originalVal = values[col];
+
+        final looksLikeJsonString = originalVal is String &&
+            (originalVal.trim().startsWith('{') ||
+                originalVal.trim().startsWith('['));
+
+        if (col == 'payload' ||
+            col.endsWith('_payload') ||
+            originalVal is Map ||
+            originalVal is List ||
+            looksLikeJsonString) {
+          handler ??= FileBackedColumnHandler(prefix: table);
+        } else {
+          continue;
+        }
+
+        try {
+          final newVal = await handler.onWrite(table, col, originalVal);
+          values = Map<String, dynamic>.from(values);
+          values[col] = newVal;
+          values['created_at'] =
+              values['created_at'] ?? DateTime.now().millisecondsSinceEpoch;
+        } catch (e, st) {
+          _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
+        }
+      }
+    }
+
+    return await db.insert(table, values, conflictAlgorithm: conflictAlgorithm);
+  }
+
   Future<int> update(String table, Map<String, dynamic> values, String where,
       List<dynamic> whereArgs,
       {bool autoHandlePayload = true}) async {
