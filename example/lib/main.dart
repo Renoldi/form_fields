@@ -77,7 +77,7 @@ Future<void> main() async {
     // deleting user data on subsequent launches.
     if (kDebugMode) {
       try {
-        await DBService.instance.resetDatabase(reinit: true);
+        await DBService.instance.resetDatabase(reinit: false);
         logger.i('Developer: resetDatabase completed');
       } catch (e, st) {
         logger.w('Developer: resetDatabase failed: $e\n$st');
@@ -90,7 +90,11 @@ Future<void> main() async {
       registerPeriodic: true,
       migrationAssetPaths: [
         'migrations/migration.sql',
+        // 'migrations/v1.sql',
+        // 'migrations/v2.sql',
+        // 'migrations/v2_down.sql',
       ],
+      dbVersion: 0,
     );
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');

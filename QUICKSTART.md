@@ -204,6 +204,30 @@ Form(
 )
 ```
 
+## 9. Database migrations (quick snippet)
+
+Use the package initializer to apply bundled migration assets or manage
+version changes programmatically.
+
+```dart
+// Version-less initialization: apply bundled migrations and let the
+// initializer set PRAGMA user_version and invoke lifecycle callbacks.
+await FormFieldsInitializer.initAll(
+  dbName: 'form_fields.db',
+  dbVersion: 0,
+  migrationAssetPaths: ['migrations/v1.sql', 'migrations/v2.sql'],
+  invokeOnUpgradeWhenDbVersionZero: true,
+  onCreate: (db, v) async { /* app setup */ },
+  onUpgrade: (db, oldV, newV) async { /* incremental upgrade */ },
+);
+
+// Programmatic migration: change DB version at runtime
+await FormFieldsInitializer.changeDbVersion(2,
+    migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql']);
+```
+
+````
+
 ## 9. Selection Widgets (Dropdown, Multi-Select, Radio, Checkbox)
 
 All selection widgets support both simple and custom class types, as well as nullable and non-nullable usage.
@@ -227,7 +251,7 @@ FormFieldsDropdown<String?>(
   initialValue: _selectedCountry, // String?
   onChanged: (value) => setState(() => _selectedCountry = value),
 )
-```
+````
 
 ### Multi-Select Dropdown
 

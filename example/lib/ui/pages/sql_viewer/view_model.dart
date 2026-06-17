@@ -9,6 +9,10 @@ class SqlViewerViewModel extends ChangeNotifier {
   List<String> tables = [];
   String? selectedTable;
   List<Map<String, dynamic>> rows = [];
+  List<String> tablesBeforeUpgrade = [];
+  List<String> tablesAfterUpgrade = [];
+  String? lastUpgradeError;
+  int? dbVersion;
 
   bool loading = false;
 
@@ -20,10 +24,44 @@ class SqlViewerViewModel extends ChangeNotifier {
       final results = await db.rawQuery(
           "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
       tables = results.map((r) => r['name'].toString()).toList();
+      try {
+        final pragma = await db.rawQuery('PRAGMA user_version;');
+        if (pragma.isNotEmpty) {
+          final first = pragma.first.values.first;
+          if (first is int) {
+            dbVersion = first;
+          } else {
+            dbVersion = int.tryParse(first.toString()) ?? 0;
+          }
+        }
+      } catch (_) {
+        dbVersion = null;
+      }
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  /// Load only the `PRAGMA user_version` into `dbVersion`.
+  Future<void> loadDbVersion() async {
+    try {
+      final db = await _db.init();
+      final pragma = await db.rawQuery('PRAGMA user_version;');
+      if (pragma.isNotEmpty) {
+        final first = pragma.first.values.first;
+        if (first is int) {
+          dbVersion = first;
+        } else {
+          dbVersion = int.tryParse(first.toString()) ?? 0;
+        }
+      } else {
+        dbVersion = null;
+      }
+    } catch (_) {
+      dbVersion = null;
+    }
+    notifyListeners();
   }
 
   Future<void> loadRows(String table) async {
@@ -73,12 +111,113 @@ class SqlViewerViewModel extends ChangeNotifier {
     await loadRows(table);
   }
 
+  /// Capture table list, change DB version (upgrade or downgrade), then
+  /// capture the table list again. Stores before/after lists in
+  /// `tablesBeforeUpgrade`/`tablesAfterUpgrade` and sets `lastUpgradeError`
+  /// on failure.
+  Future<void> changeDbVersionAndCaptureTables(int targetVersion,
+      {List<String>? migrationAssetPaths}) async {
+    loading = true;
+    notifyListeners();
+    lastUpgradeError = null;
+    try {
+      final db = await _db.init();
+      final before = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+      tablesBeforeUpgrade = before.map((r) => r['name'].toString()).toList();
+
+      try {
+        await _db.migrateTo(
+            targetVersion: targetVersion,
+            migrationAssetPaths: migrationAssetPaths);
+      } catch (e) {
+        lastUpgradeError = e.toString();
+      }
+
+      // Ensure PRAGMA user_version is set to targetVersion in case the
+      // migration flow did not update it automatically.
+      try {
+        await _db.setUserVersion(targetVersion);
+      } catch (e) {
+        lastUpgradeError = lastUpgradeError == null
+            ? 'Failed to set user_version: $e'
+            : '$lastUpgradeError\nFailed to set user_version: $e';
+      }
+
+      // Re-open DB (if needed) and read schema + PRAGMA from disk.
+      final freshDb = await _db.init();
+      final after = await freshDb.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+      tablesAfterUpgrade = after.map((r) => r['name'].toString()).toList();
+      try {
+        final pragma2 = await freshDb.rawQuery('PRAGMA user_version;');
+        if (pragma2.isNotEmpty) {
+          final first2 = pragma2.first.values.first;
+          if (first2 is int) {
+            dbVersion = first2;
+          } else {
+            dbVersion = int.tryParse(first2.toString()) ?? dbVersion;
+          }
+        }
+      } catch (_) {}
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Backwards-compatible wrapper named `upgradeAndCaptureTables`.
+  Future<void> upgradeAndCaptureTables(int targetVersion,
+          {List<String>? migrationAssetPaths}) async =>
+      await changeDbVersionAndCaptureTables(targetVersion,
+          migrationAssetPaths: migrationAssetPaths);
+
+  /// Explicit downgrade wrapper for clarity.
+  Future<void> downgradeAndCaptureTables(int targetVersion,
+          {List<String>? migrationAssetPaths}) async =>
+      await changeDbVersionAndCaptureTables(targetVersion,
+          migrationAssetPaths: migrationAssetPaths);
+
   /// Clear loaded tables/rows state without initializing the DB.
   void clearState() {
     tables = [];
     rows = [];
     selectedTable = null;
+    tablesBeforeUpgrade = [];
+    tablesAfterUpgrade = [];
+    lastUpgradeError = null;
     notifyListeners();
+  }
+
+  /// Set PRAGMA user_version directly.
+  Future<void> setUserVersion(int version) async {
+    loading = true;
+    notifyListeners();
+    try {
+      await _db.setUserVersion(version);
+      // Re-open DB (if needed) and read PRAGMA.
+      try {
+        final db = await _db.init();
+        final pragma = await db.rawQuery('PRAGMA user_version;');
+        if (pragma.isNotEmpty) {
+          final first = pragma.first.values.first;
+          if (first is int) {
+            dbVersion = first;
+          } else {
+            dbVersion = int.tryParse(first.toString()) ?? version;
+          }
+        } else {
+          dbVersion = version;
+        }
+      } catch (e) {
+        dbVersion = version;
+      }
+    } catch (e) {
+      lastUpgradeError = e.toString();
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
   }
 
   String rowToPrettyJson(Map<String, dynamic> row) {

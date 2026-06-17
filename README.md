@@ -520,6 +520,69 @@ flutter test --plain-name "fast unit"
 
 ## Additional References
 
+---
+
+**Database Migrations**
+
+- **Overview:**: The package ships a small migration runner that applies SQL migration assets bundled with the app and manages SQLite `user_version` (`PRAGMA user_version`). It supports:
+  - applying schema-only migrations from assets,
+  - programmatic upgrade/downgrade via helpers,
+  - a version-less initialization mode where the package applies bundled assets and then invokes lifecycle callbacks manually.
+
+- **Files & naming:**: Place migration SQL files under your app `assets` (for example include `migrations/` in `pubspec.yaml`). Filenames should include a version token like `v1`, `v2` (e.g. `migrations/v1.sql`, `migrations/v2.sql`). Downgrade assets may include `down` or `downgrade` in the name (e.g. `migrations/v2_down.sql`). If a file does not contain a parseable version, it will be assigned an incremental fallback version based on order.
+
+- **How initAll works:**: Use `FormFieldsInitializer.initAll(...)` to initialize package services. Key DB-related parameters:
+  - **`migrationAssetPaths`**: list of asset paths (order not important if files contain `vN`).
+  - **`dbVersion`**: numeric DB version passed to `sqflite` when opening. If > 0 the package passes lifecycle callbacks (`onCreate`, `onUpgrade`, `onDowngrade`) to `openDatabase` and `sqflite` will manage migrations.
+  - **`dbVersion == 0` behavior**: when `dbVersion` is 0 the package opens the DB without a numeric version (sqflite will not call `onCreate`/`onUpgrade`). In this mode the initializer will:
+    - apply the listed migration assets (schema-only by default),
+    - set `PRAGMA user_version` to the highest version discovered among assets,
+    - optionally invoke `onUpgrade` manually for each incremental step (1..maxVer) if `invokeOnUpgradeWhenDbVersionZero: true`,
+    - then invoke `onCreate(db, maxVer)` if provided.
+
+- **Configuring manual upgrade invocation:**: `initAll` includes parameter `invokeOnUpgradeWhenDbVersionZero` (default `true`). If set to `false`, the `onUpgrade` callback will not be invoked during the manual asset application flow for `dbVersion == 0`.
+
+- **Programmatic migration helpers:**: The package exposes convenience methods:
+  - `DBService.instance.migrateTo(targetVersion, ...)` — opens/reconciles DB and migrates to `targetVersion` (runs upgrades/downgrades as needed).
+  - `DBService.instance.upgradeTo(targetVersion, ...)` — shim for `migrateTo` to run upgrades.
+  - `DBService.instance.downgradeTo(targetVersion, ...)` — shim for downgrades.
+  - `FormFieldsInitializer.changeDbVersion(targetVersion, ...)` — higher-level wrapper you can call from your app to trigger the migration flow.
+
+- **Callback contract:**: Provide `onConfigure`, `onCreate`, `onUpgrade`, `onDowngrade`, `onOpen` exactly as you would for `openDatabase`. When using `dbVersion == 0` and `invokeOnUpgradeWhenDbVersionZero` is true, `onUpgrade` will be invoked manually in sequence: `onUpgrade(db, 0, 1)`, `onUpgrade(db, 1, 2)`, ..., `onUpgrade(db, maxVer-1, maxVer)`.
+
+- **Schema vs DML:**: By default the runner executes schema-related statements (`CREATE`, `ALTER`, `DROP`, `PRAGMA`) only. DML statements (INSERT/UPDATE/DELETE) are skipped unless specifically allowed by using `applyDml=true` when calling the migration APIs inside your own code.
+
+- **Example — version-less initialization (apply bundled migrations):**
+
+```dart
+await FormFieldsInitializer.initAll(
+  dbName: 'form_fields.db',
+  dbVersion: 0, // openDatabase without version
+  migrationAssetPaths: [
+    'migrations/v1.sql',
+    'migrations/v2.sql',
+  ],
+  // optional lifecycle callbacks
+  onCreate: (db, version) async { /* app-specific setup */ },
+  onUpgrade: (db, oldV, newV) async { /* incremental upgrade work */ },
+  invokeOnUpgradeWhenDbVersionZero: true,
+);
+```
+
+- **Example — programmatic upgrade/downgrade at runtime:**
+
+```dart
+// Upgrade to version 3 using migration assets
+await FormFieldsInitializer.changeDbVersion(3,
+    migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql','migrations/v3.sql']);
+
+// Downgrade to version 1 (requires downgrade assets e.g. v2_down.sql)
+await FormFieldsInitializer.changeDbVersion(1,
+    migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql','migrations/v2_down.sql']);
+```
+
+---
+
 | Document                                     | Description                |
 | -------------------------------------------- | -------------------------- |
 | [API.md](API.md)                             | Full API reference         |

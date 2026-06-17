@@ -142,6 +142,250 @@ class _SqlViewState extends State<_SqlView> {
                             },
                     ),
                     ElevatedButton.icon(
+                      icon: const Icon(Icons.system_update_alt),
+                      label: const Text('Upgrade DB'),
+                      onPressed: vm.loading
+                          ? null
+                          : () async {
+                              final vmRef = context.read<SqlViewerViewModel>();
+                              final controller = TextEditingController();
+                              final assetsController = TextEditingController();
+                              final target = await showDialog<int?>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Upgrade database'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(
+                                        controller: controller,
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                            labelText: 'Target version (int)'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextField(
+                                        controller: assetsController,
+                                        keyboardType: TextInputType.text,
+                                        decoration: const InputDecoration(
+                                            labelText:
+                                                'Migration asset paths (comma-separated)'),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, null),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () {
+                                          final v = int.tryParse(
+                                              controller.text.trim());
+                                          Navigator.pop(ctx, v);
+                                        },
+                                        child: const Text('Upgrade')),
+                                  ],
+                                ),
+                              );
+                              if (target != null) {
+                                final assetsText = assetsController.text.trim();
+                                final assetsList = assetsText.isEmpty
+                                    ? null
+                                    : assetsText
+                                        .split(',')
+                                        .map((s) => s.trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toList();
+                                await vmRef.upgradeAndCaptureTables(target,
+                                    migrationAssetPaths: assetsList);
+                                await showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Tables: before → after'),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('Before:'),
+                                          for (final t
+                                              in vmRef.tablesBeforeUpgrade)
+                                            Text(' • $t'),
+                                          const SizedBox(height: 8),
+                                          const Text('After:'),
+                                          for (final t
+                                              in vmRef.tablesAfterUpgrade)
+                                            Text(' • $t'),
+                                          if (vmRef.lastUpgradeError !=
+                                              null) ...[
+                                            const SizedBox(height: 8),
+                                            const Text('Error:'),
+                                            Text(vmRef.lastUpgradeError!),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Close'))
+                                    ],
+                                  ),
+                                );
+                                await vmRef.loadTables();
+                              }
+                            },
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.system_update_alt),
+                      label: const Text('Downgrade DB'),
+                      onPressed: vm.loading
+                          ? null
+                          : () async {
+                              final vmRef = context.read<SqlViewerViewModel>();
+                              final controller = TextEditingController();
+                              final assetsController = TextEditingController();
+                              final target = await showDialog<int?>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Downgrade database'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(
+                                        controller: controller,
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                            labelText: 'Target version (int)'),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextField(
+                                        controller: assetsController,
+                                        keyboardType: TextInputType.text,
+                                        decoration: const InputDecoration(
+                                            labelText:
+                                                'Migration asset paths (comma-separated)'),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, null),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () {
+                                          final v = int.tryParse(
+                                              controller.text.trim());
+                                          Navigator.pop(ctx, v);
+                                        },
+                                        child: const Text('Downgrade')),
+                                  ],
+                                ),
+                              );
+                              if (target != null) {
+                                final assetsText = assetsController.text.trim();
+                                final assetsList = assetsText.isEmpty
+                                    ? null
+                                    : assetsText
+                                        .split(',')
+                                        .map((s) => s.trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toList();
+                                await vmRef.downgradeAndCaptureTables(target,
+                                    migrationAssetPaths: assetsList);
+                                await showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Tables: before → after'),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('Before:'),
+                                          for (final t
+                                              in vmRef.tablesBeforeUpgrade)
+                                            Text(' • $t'),
+                                          const SizedBox(height: 8),
+                                          const Text('After:'),
+                                          for (final t
+                                              in vmRef.tablesAfterUpgrade)
+                                            Text(' • $t'),
+                                          if (vmRef.lastUpgradeError !=
+                                              null) ...[
+                                            const SizedBox(height: 8),
+                                            const Text('Error:'),
+                                            Text(vmRef.lastUpgradeError!),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Close'))
+                                    ],
+                                  ),
+                                );
+                                await vmRef.loadTables();
+                              }
+                            },
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Set DB version'),
+                      onPressed: vm.loading
+                          ? null
+                          : () async {
+                              final vmRef = context.read<SqlViewerViewModel>();
+                              final controller = TextEditingController();
+                              final target = await showDialog<int?>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Set DB version'),
+                                  content: TextField(
+                                    controller: controller,
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Version (int)'),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, null),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () {
+                                          final v = int.tryParse(
+                                              controller.text.trim());
+                                          Navigator.pop(ctx, v);
+                                        },
+                                        child: const Text('Set')),
+                                  ],
+                                ),
+                              );
+                              if (target != null) {
+                                await vmRef.setUserVersion(target);
+                                final ver = vmRef.dbVersion;
+                                if (vmRef.lastUpgradeError != null) {
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(SnackBar(
+                                          content: Text(
+                                              'Failed: ${vmRef.lastUpgradeError}')));
+                                } else {
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(SnackBar(
+                                          content: Text(
+                                              'user_version set -> ${ver ?? 'unknown'}')));
+                                }
+                                await vmRef.loadDbVersion();
+                                await vmRef.loadTables();
+                              }
+                            },
+                    ),
+                    ElevatedButton.icon(
                       icon: const Icon(Icons.delete_sweep),
                       label: const Text('Reset DB'),
                       onPressed: vm.loading
@@ -223,6 +467,15 @@ class _SqlViewState extends State<_SqlView> {
                     ),
                   ],
                 );
+              }),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Consumer<SqlViewerViewModel>(builder: (context, vm, _) {
+                final verText =
+                    vm.dbVersion != null ? vm.dbVersion.toString() : 'unknown';
+                return Text('DB version: $verText');
               }),
             ),
             const SizedBox(height: 8),

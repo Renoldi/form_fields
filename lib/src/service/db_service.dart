@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:convert' show utf8;
 
 import 'crypto_utils.dart';
 
@@ -116,51 +115,56 @@ class FileBackedColumnHandler implements ColumnHandler {
     }
 
     if (value is String) return value;
-    final documents = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(documents.path, _payloadDirName));
-    await dir.create(recursive: true);
-    final content = value is String ? value : json.encode(value);
-
-    // Use SHA-256 of the content to produce a deterministic filename and
-    // avoid creating duplicate files for identical payloads.
-    final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
-    final name = '${prefix}_${table}_$hash.json';
-    final filePath = p.join(dir.path, name);
-    final file = File(filePath);
-
-    if (await file.exists()) {
-      _log.info('Payload dedupe: file already exists: $name');
-      return name;
-    }
-
-    // Atomic write: write to temp then rename to final name. If another
-    // writer created the file in the meantime, prefer the existing file.
-    final tmpPath = p.join(dir.path,
-        '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-    final tmpFile = File(tmpPath);
-    await tmpFile.writeAsString(content);
     try {
-      // If target was created by a concurrent writer, prefer it and remove tmp.
+      final documents = await getApplicationDocumentsDirectory();
+      final dir = Directory(p.join(documents.path, _payloadDirName));
+      await dir.create(recursive: true);
+      final content = value is String ? value : json.encode(value);
+
+      // Use SHA-256 of the content to produce a deterministic filename and
+      // avoid creating duplicate files for identical payloads.
+      final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
+      final name = '${prefix}_${table}_$hash.json';
+      final filePath = p.join(dir.path, name);
+      final file = File(filePath);
+
       if (await file.exists()) {
-        _log.info('Concurrent writer created $name; discarding tmp file');
-        await tmpFile.delete();
+        _log.info('Payload dedupe: file already exists: $name');
         return name;
       }
-      await tmpFile.rename(filePath);
-    } catch (e) {
-      // Best-effort fallback: try to copy and delete temp.
+
+      // Atomic write: write to temp then rename to final name. If another
+      // writer created the file in the meantime, prefer the existing file.
+      final tmpPath = p.join(dir.path,
+          '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+      final tmpFile = File(tmpPath);
+      await tmpFile.writeAsString(content);
       try {
-        if (!await file.exists()) {
-          await tmpFile.copy(filePath);
+        // If target was created by a concurrent writer, prefer it and remove tmp.
+        if (await file.exists()) {
+          _log.info('Concurrent writer created $name; discarding tmp file');
+          await tmpFile.delete();
+          return name;
         }
-        await tmpFile.delete();
-      } catch (e2) {
-        _log.warning('Failed to write payload file $filePath: $e / $e2');
-        rethrow;
+        await tmpFile.rename(filePath);
+      } catch (e) {
+        // Best-effort fallback: try to copy and delete temp.
+        try {
+          if (!await file.exists()) {
+            await tmpFile.copy(filePath);
+          }
+          await tmpFile.delete();
+        } catch (e2) {
+          _log.warning('Failed to write payload file $filePath: $e / $e2');
+          rethrow;
+        }
       }
+      _log.info('Wrote payload file: $name');
+      return name;
+    } catch (e) {
+      _log.warning('FileBackedColumnHandler:onWrite failed: $e');
+      rethrow;
     }
-    _log.info('Wrote payload file: $name');
-    return name;
   }
 }
 
@@ -184,6 +188,7 @@ class DBService {
   // Per-call flags control automatic payload handling; global toggle removed.
 
   Database? _db;
+  Completer<Database>? _initCompleter;
 
   // Column handlers registry: table -> column -> handler.
   final Map<String, Map<String, ColumnHandler>> _columnHandlers = {};
@@ -220,98 +225,349 @@ class DBService {
 
   Future<Database> init(
       {String dbName = 'form_fields.db',
-      List<String>? migrationAssetPaths}) async {
-    if (_db != null) return _db!;
-    final documents = await getApplicationDocumentsDirectory();
-    final path = p.join(documents.path, dbName);
-    _log.info('Opening database at $path');
-    _db = await openDatabase(path, version: 1, onCreate: (db, v) async {
-      try {
-        // Initialize DB from bundled migration SQL (assets/migrations/migration.sql)
-        final sql = await rootBundle.loadString('migrations/migration.sql');
-        final statements = sql.split(';');
-        // Execute only schema-related statements from the bundled migration SQL.
-        // Some migration assets may include sample data (INSERTs) which should
-        // not be applied automatically during DB creation. Allow only CREATE,
-        // PRAGMA, and DROP statements here and skip DML (INSERT/UPDATE/DELETE).
-        final allowedRe =
-            RegExp(r'^(CREATE|PRAGMA|DROP|ALTER)\b', caseSensitive: false);
-        for (var stmt in statements) {
-          stmt = stmt.trim();
-          if (stmt.isEmpty) continue;
-          final up = stmt.toUpperCase();
-          // Skip transaction markers if present in the bundled SQL.
-          if (up == 'BEGIN' ||
-              up.startsWith('BEGIN TRANSACTION') ||
-              up == 'COMMIT' ||
-              up.startsWith('COMMIT')) {
-            continue;
+      List<String>? migrationAssetPaths,
+      int dbVersion = 0,
+      OnDatabaseConfigureFn? onConfigure,
+      OnDatabaseCreateFn? onCreate,
+      OnDatabaseVersionChangeFn? onUpgrade,
+      OnDatabaseVersionChangeFn? onDowngrade,
+      OnDatabaseOpenFn? onOpen}) async {
+    // Ensure only one init runs at a time; concurrent callers await the same
+    // initialization to avoid racing open/close operations on `_db`.
+    if (_initCompleter != null) return await _initCompleter!.future;
+    _initCompleter = Completer<Database>();
+
+    try {
+      // Build migration maps from provided assets. The maps contain "up"
+      // migration assets keyed by target version and optional "down" assets
+      // for downgrades if present in filenames (containing 'down' or
+      // 'downgrade'). If no parseable version is found, assets are assigned
+      // incremental versions starting at 1 in the provided order.
+      final migrationAssets = <int, String>{};
+      final downgradeAssets = <int, String>{};
+      if (migrationAssetPaths != null && migrationAssetPaths.isNotEmpty) {
+        int fallbackIndex = 1;
+        for (final asset in migrationAssetPaths) {
+          final basename = p.basename(asset);
+          final verMatch = RegExp(r'v?(\d+)').firstMatch(basename);
+          int ver;
+          if (verMatch != null) {
+            ver = int.parse(verMatch.group(1)!);
+          } else {
+            ver = fallbackIndex++;
           }
-          // Only run allowed schema statements during init.
-          if (!allowedRe.hasMatch(stmt)) {
-            _log.info(
-                'Skipping non-schema statement in migration.sql: ${stmt.substring(0, min(80, stmt.length)).replaceAll('\n', ' ')}');
-            continue;
-          }
-          try {
-            await db.execute(stmt);
-          } catch (e) {
-            _log.warning('Failed to execute init statement: $stmt\n$e');
+          final isDown = RegExp(r'down|downgrade', caseSensitive: false)
+              .hasMatch(basename);
+          if (isDown) {
+            downgradeAssets[ver] = asset;
+          } else {
+            migrationAssets[ver] = asset;
           }
         }
-        _log.info('Database initialized from migrations/migration.sql');
+      }
 
-        // If additional migration assets were provided, execute their schema
-        // statements directly against the `db` instance. Do NOT call
-        // `importFromSqlFile` here because that helper may call `init()` and
-        // cause recursive initialization while we're still in `onCreate`.
-        if (migrationAssetPaths != null && migrationAssetPaths.isNotEmpty) {
-          for (final assetPath in migrationAssetPaths) {
-            if (assetPath.trim().isEmpty) continue;
-            try {
-              _log.info('Loading migration asset: $assetPath');
-              final content = await rootBundle.loadString(assetPath);
-              final statements = content.split(';');
-              for (var stmt in statements) {
-                stmt = stmt.trim();
-                if (stmt.isEmpty) continue;
-                final up = stmt.toUpperCase();
-                if (up == 'BEGIN' ||
-                    up.startsWith('BEGIN TRANSACTION') ||
-                    up == 'COMMIT' ||
-                    up.startsWith('COMMIT')) {
-                  continue;
+      Future<void> applyMigrationForVersion(Database db, int version,
+          {bool applyDml = false}) async {
+        final asset = migrationAssets[version];
+        if (asset == null) {
+          _log.info('No migration asset for version $version');
+          return;
+        }
+        _log.info('Applying migration for version $version from $asset');
+        try {
+          final content = await rootBundle.loadString(asset);
+          final statements = content.split(';');
+          await db.transaction((txn) async {
+            for (var stmt in statements) {
+              stmt = stmt.trim();
+              if (stmt.isEmpty) {
+                continue;
+              }
+              if (stmt.toUpperCase().contains('CREATE TABLE')) {
+                final createRe = RegExp(r'CREATE\s+TABLE[\s\S]*?\)\s*;?',
+                    caseSensitive: false);
+                final matches = createRe.allMatches(stmt);
+                for (final m in matches) {
+                  final createStmt = m.group(0)!.trim();
+                  try {
+                    _log.fine(
+                        'Executing extracted CREATE stmt: ${createStmt.length > 200 ? "${createStmt.substring(0, 200)}..." : createStmt}');
+                    await txn.execute(createStmt);
+                  } catch (e, st) {
+                    _log.warning(
+                        'Failed to execute extracted CREATE stmt: $createStmt\n$e',
+                        e,
+                        st);
+                  }
                 }
-                // Only apply schema statements during initialization.
-                if (!allowedRe.hasMatch(stmt)) {
-                  _log.info(
-                      'Skipping non-schema statement in $assetPath: ${stmt.substring(0, min(80, stmt.length)).replaceAll('\n', ' ')}');
+                continue;
+              }
+              // Remove any leading single-line SQL comments so we can detect the
+              // actual statement token (e.g. CREATE, PRAGMA). Comments like
+              // "-- V1: ..." often precede CREATE and would otherwise prevent
+              // schema detection when multiple statements are bundled together.
+              final cleaned = stmt
+                  .replaceAll(RegExp(r'^\s*--.*\r?\n', multiLine: true), '')
+                  .trim();
+              if (cleaned.isEmpty) continue;
+              final up = cleaned.toUpperCase();
+              if (up == 'BEGIN' ||
+                  up.startsWith('BEGIN TRANSACTION') ||
+                  up == 'COMMIT' ||
+                  up.startsWith('COMMIT')) {
+                continue;
+              }
+              if (!applyDml) {
+                final upclean = cleaned.toUpperCase();
+                if (!(upclean.contains('CREATE') ||
+                    upclean.contains('PRAGMA') ||
+                    upclean.contains('DROP') ||
+                    upclean.contains('ALTER'))) {
+                  _log.fine('Skipping non-schema statement in $asset: $stmt');
                   continue;
-                }
-                try {
-                  await db.execute(stmt);
-                } catch (e) {
-                  _log.warning(
-                      'Failed to execute migration asset statement from $assetPath: $stmt\n$e');
                 }
               }
-              _log.info('Imported migration asset: $assetPath');
-            } catch (e, st) {
-              _log.warning(
-                  'Failed to import migration asset [$assetPath]: $e\n$st');
+              try {
+                _log.fine(
+                    'Executing migration stmt: ${cleaned.length > 200 ? "${cleaned.substring(0, 200)}..." : cleaned}');
+                await txn.execute(cleaned);
+              } catch (e, st) {
+                _log.warning(
+                    'Failed to execute migration stmt: $cleaned\n$e', e, st);
+              }
+            }
+          });
+          _log.info('Applied migration asset for version $version');
+        } catch (e, st) {
+          _log.warning('Failed to apply migration asset $asset: $e', e, st);
+          rethrow;
+        }
+      }
+
+      Future<void> applyDowngradeForVersion(Database db, int version) async {
+        final asset = downgradeAssets[version];
+        if (asset == null) {
+          _log.warning(
+              'No downgrade asset found for version $version; skipping');
+          return;
+        }
+        _log.info('Applying downgrade for version $version from $asset');
+        try {
+          final content = await rootBundle.loadString(asset);
+          final statements = content.split(';');
+          await db.transaction((txn) async {
+            for (var stmt in statements) {
+              stmt = stmt.trim();
+              if (stmt.isEmpty) {
+                continue;
+              }
+              final cleaned = stmt
+                  .replaceAll(RegExp(r'^\s*--.*\r?\n', multiLine: true), '')
+                  .trim();
+              if (cleaned.isEmpty) continue;
+              final up = cleaned.toUpperCase();
+              if (up == 'BEGIN' ||
+                  up.startsWith('BEGIN TRANSACTION') ||
+                  up == 'COMMIT' ||
+                  up.startsWith('COMMIT')) {
+                continue;
+              }
+              try {
+                _log.fine(
+                    'Executing downgrade stmt: ${cleaned.length > 200 ? "${cleaned.substring(0, 200)}..." : cleaned}');
+                await txn.execute(cleaned);
+              } catch (e, st) {
+                _log.warning(
+                    'Failed to execute downgrade stmt: $cleaned\n$e', e, st);
+              }
+            }
+          });
+          _log.info('Applied downgrade asset for version $version');
+        } catch (e, st) {
+          _log.warning('Failed to apply downgrade asset $asset: $e', e, st);
+          rethrow;
+        }
+      }
+
+      if (_db != null) {
+        try {
+          final pragma = await _db!.rawQuery('PRAGMA user_version;');
+          var curVersion = 0;
+          if (pragma.isNotEmpty) {
+            final first = pragma.first.values.first;
+            if (first is int) {
+              curVersion = first;
+            } else {
+              curVersion = int.tryParse(first.toString()) ?? 0;
             }
           }
+          if (curVersion == dbVersion) return _db!;
+          // If caller did not request a target version (dbVersion <= 0),
+          // treat this as a no-op: do not attempt upgrades or downgrades.
+          if (dbVersion <= 0) {
+            _log.info(
+                'No target dbVersion requested (dbVersion=$dbVersion); leaving open DB at $curVersion');
+            return _db!;
+          }
+          if (dbVersion > curVersion) {
+            _log.info(
+                'Detected open DB version $curVersion, upgrading to $dbVersion');
+            final versions = migrationAssets.keys.toList()..sort();
+            for (final ver in versions) {
+              if (ver > curVersion && ver <= dbVersion) {
+                await applyMigrationForVersion(_db!, ver, applyDml: false);
+              }
+            }
+            try {
+              await _db!.execute('PRAGMA user_version = $dbVersion');
+            } catch (_) {}
+            try {
+              if (onUpgrade != null) onUpgrade(_db!, curVersion, dbVersion);
+            } catch (e, st) {
+              _log.warning('onUpgrade callback threw: $e', e, st);
+            }
+            return _db!;
+          }
+          _log.info(
+              'Detected open DB version $curVersion, downgrading to $dbVersion');
+          final versionsDown = downgradeAssets.keys.toList()
+            ..sort((a, b) => b - a);
+          for (final ver in versionsDown) {
+            if (ver <= curVersion && ver > dbVersion) {
+              await applyDowngradeForVersion(_db!, ver);
+            }
+          }
+          try {
+            await _db!.execute('PRAGMA user_version = $dbVersion');
+          } catch (_) {}
+          try {
+            if (onDowngrade != null) onDowngrade(_db!, curVersion, dbVersion);
+          } catch (e, st) {
+            _log.warning('onDowngrade callback threw: $e', e, st);
+          }
+          return _db!;
+        } catch (e, st) {
+          _log.warning('Failed to reconcile open DB version: $e', e, st);
+          try {
+            await _db!.close();
+          } catch (_) {}
+          _db = null;
         }
-
-        // Note: sample/demo inserts are no longer run automatically here.
-        // If example/demo data is desired, call a dedicated helper to import
-        // `migrations/sample_inserts.sql` so the host can control when it runs.
-      } catch (e, st) {
-        _log.warning(
-            'Failed to initialize DB from asset migration.sql: $e', e, st);
       }
-    });
-    return _db!;
+
+      final documents = await getApplicationDocumentsDirectory();
+      final path = p.join(documents.path, dbName);
+      _log.info('Opening database at $path');
+
+      _db = await openDatabase(
+        path,
+        version: dbVersion > 0 ? dbVersion : null,
+        onConfigure: onConfigure,
+        onCreate: dbVersion > 0
+            ? (Database db, int v) async {
+                _log.info('onCreate: creating DB up to version $v');
+                try {
+                  try {
+                    final base =
+                        await rootBundle.loadString('migrations/migration.sql');
+                    if (base.trim().isNotEmpty) {
+                      final statements = base.split(';');
+                      final allowedRe = RegExp(r'^(CREATE|PRAGMA|DROP|ALTER)',
+                          caseSensitive: false);
+                      for (var stmt in statements) {
+                        stmt = stmt.trim();
+                        if (stmt.isEmpty) {
+                          continue;
+                        }
+                        final up = stmt.toUpperCase();
+                        if (up == 'BEGIN' ||
+                            up.startsWith('BEGIN TRANSACTION') ||
+                            up == 'COMMIT' ||
+                            up.startsWith('COMMIT')) {
+                          continue;
+                        }
+                        if (!allowedRe.hasMatch(stmt)) {
+                          continue;
+                        }
+                        try {
+                          await db.execute(stmt);
+                        } catch (e) {
+                          _log.warning('Failed to execute init statement: $e');
+                        }
+                      }
+                      _log.info(
+                          'Database initialized from migrations/migration.sql');
+                    }
+                  } catch (_) {}
+
+                  final versions = migrationAssets.keys.toList()..sort();
+                  for (final ver in versions) {
+                    if (ver <= v) {
+                      await applyMigrationForVersion(db, ver, applyDml: false);
+                    }
+                  }
+                  try {
+                    if (onCreate != null) onCreate(db, v);
+                  } catch (e, st) {
+                    _log.warning('onCreate callback threw: $e', e, st);
+                  }
+                } catch (e, st) {
+                  _log.warning('Failed during onCreate migrations: $e', e, st);
+                }
+              }
+            : null,
+        onUpgrade: dbVersion > 0
+            ? (Database db, int oldV, int newV) async {
+                _log.info('onUpgrade: $oldV -> $newV');
+                final versions = migrationAssets.keys.toList()..sort();
+                for (final ver in versions) {
+                  if (ver > oldV && ver <= newV) {
+                    await applyMigrationForVersion(db, ver, applyDml: false);
+                  }
+                }
+                try {
+                  if (onUpgrade != null) onUpgrade(db, oldV, newV);
+                } catch (e, st) {
+                  _log.warning('onUpgrade callback threw: $e', e, st);
+                }
+              }
+            : null,
+        onDowngrade: dbVersion > 0
+            ? (Database db, int oldV, int newV) async {
+                _log.info('onDowngrade: $oldV -> $newV');
+                final versions = downgradeAssets.keys.toList()
+                  ..sort((a, b) => b - a);
+                for (final ver in versions) {
+                  if (ver <= oldV && ver > newV) {
+                    await applyDowngradeForVersion(db, ver);
+                  }
+                }
+                try {
+                  if (onDowngrade != null) onDowngrade(db, oldV, newV);
+                } catch (e, st) {
+                  _log.warning('onDowngrade callback threw: $e', e, st);
+                }
+              }
+            : null,
+        onOpen: (db) async {
+          try {
+            if (onOpen != null) await onOpen(db);
+          } catch (e, st) {
+            _log.warning('onOpen callback threw: $e', e, st);
+          }
+        },
+      );
+      return _db!;
+    } catch (e) {
+      // Propagate error to any waiters
+      if (!_initCompleter!.isCompleted) _initCompleter!.completeError(e);
+      rethrow;
+    } finally {
+      if (_initCompleter != null && !_initCompleter!.isCompleted) {
+        _initCompleter!.complete(_db!);
+      }
+      _initCompleter = null;
+    }
   }
 
   Future<void> close() async => await _db?.close();
@@ -376,6 +632,95 @@ class DBService {
       await init(dbName: dbName);
     }
   }
+
+  /// Set SQLite `user_version` PRAGMA. Ensures DB is open before setting.
+  Future<void> setUserVersion(int version) async {
+    // Open a transient connection to the DB file to set PRAGMA directly.
+    try {
+      final documents = await getApplicationDocumentsDirectory();
+      final path = p.join(documents.path, 'form_fields.db');
+      final transient = await openDatabase(path);
+      try {
+        await transient.execute('PRAGMA user_version = $version');
+        _log.info('Set PRAGMA user_version = $version (transient)');
+      } finally {
+        try {
+          await transient.close();
+        } catch (_) {}
+      }
+
+      // Clear cached connection so future operations reopen a fresh one.
+      try {
+        await close();
+      } catch (_) {}
+      _db = null;
+      return;
+    } catch (e, st) {
+      _log.warning('Failed to set PRAGMA user_version = $version: $e', e, st);
+      rethrow;
+    }
+  }
+
+  /// Migrate the open (or on-disk) database to [targetVersion]. This is a
+  /// convenience wrapper around `init` that forwards migration assets and
+  /// lifecycle callbacks. If the DB is already open it will attempt to
+  /// reconcile the current version with [targetVersion] (running upgrades or
+  /// downgrades as needed).
+  Future<Database> migrateTo({
+    String dbName = 'form_fields.db',
+    required int targetVersion,
+    List<String>? migrationAssetPaths,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseVersionChangeFn? onDowngrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async {
+    return await init(
+      dbName: dbName,
+      migrationAssetPaths: migrationAssetPaths,
+      dbVersion: targetVersion,
+      onConfigure: onConfigure,
+      onCreate: onCreate,
+      onUpgrade: onUpgrade,
+      onDowngrade: onDowngrade,
+      onOpen: onOpen,
+    );
+  }
+
+  /// Convenience wrapper to migrate up to [targetVersion].
+  Future<Database> upgradeTo(int targetVersion,
+          {String dbName = 'form_fields.db',
+          List<String>? migrationAssetPaths,
+          OnDatabaseConfigureFn? onConfigure,
+          OnDatabaseCreateFn? onCreate,
+          OnDatabaseVersionChangeFn? onUpgrade,
+          OnDatabaseOpenFn? onOpen}) async =>
+      await migrateTo(
+          dbName: dbName,
+          targetVersion: targetVersion,
+          migrationAssetPaths: migrationAssetPaths,
+          onConfigure: onConfigure,
+          onCreate: onCreate,
+          onUpgrade: onUpgrade,
+          onOpen: onOpen);
+
+  /// Convenience wrapper to migrate down to [targetVersion].
+  Future<Database> downgradeTo(int targetVersion,
+          {String dbName = 'form_fields.db',
+          List<String>? migrationAssetPaths,
+          OnDatabaseConfigureFn? onConfigure,
+          OnDatabaseCreateFn? onCreate,
+          OnDatabaseVersionChangeFn? onDowngrade,
+          OnDatabaseOpenFn? onOpen}) async =>
+      await migrateTo(
+          dbName: dbName,
+          targetVersion: targetVersion,
+          migrationAssetPaths: migrationAssetPaths,
+          onConfigure: onConfigure,
+          onCreate: onCreate,
+          onDowngrade: onDowngrade,
+          onOpen: onOpen);
 
   Future<int> insert(String table, Map<String, dynamic> values,
       {bool autoHandlePayload = true}) async {
@@ -510,7 +855,9 @@ class DBService {
     for (final row in tables) {
       final name = row['name'] as String?;
       final createSql = row['sql'] as String?;
-      if (name == null || createSql == null) continue;
+      if (name == null || createSql == null) {
+        continue;
+      }
       sb.writeln('$createSql;');
 
       if (inlinePayloads) {
@@ -631,10 +978,14 @@ class DBService {
 
           for (final r in rows) {
             final idValue = r.containsKey(pkName) ? r[pkName] : r['rowid'];
-            if (idValue == null) continue;
+            if (idValue == null) {
+              continue;
+            }
             final updates = <String, dynamic>{};
             for (final c in cols) {
-              if (!r.containsKey(c)) continue;
+              if (!r.containsKey(c)) {
+                continue;
+              }
               final val = r[c];
               if (val is String) {
                 final s = val.trim();
@@ -716,7 +1067,32 @@ class DBService {
       await db.transaction((txn) async {
         for (var stmt in statements) {
           stmt = stmt.trim();
-          if (stmt.isEmpty) continue;
+          if (stmt.isEmpty) {
+            continue;
+          }
+          // If the chunk contains CREATE TABLE blocks mixed with comments,
+          // extract and execute each CREATE statement individually. This
+          // handles bundled migration files where comments precede CREATEs
+          // in the same semicolon-delimited chunk.
+          if (!applyDml && stmt.toUpperCase().contains('CREATE TABLE')) {
+            final createRe =
+                RegExp(r'CREATE\s+TABLE[\s\S]*?\)\s*;?', caseSensitive: false);
+            final matches = createRe.allMatches(stmt);
+            for (final m in matches) {
+              final createStmt = m.group(0)!.trim();
+              try {
+                _log.fine(
+                    'Executing extracted CREATE stmt: ${createStmt.length > 200 ? "${createStmt.substring(0, 200)}..." : createStmt}');
+                await txn.execute(createStmt);
+              } catch (e, st) {
+                _log.warning(
+                    'Failed to execute extracted CREATE stmt: $createStmt\n$e',
+                    e,
+                    st);
+              }
+            }
+            continue;
+          }
           final up = stmt.toUpperCase();
           if (up == 'BEGIN' ||
               up.startsWith('BEGIN TRANSACTION') ||
@@ -726,7 +1102,7 @@ class DBService {
           }
           // If DML not allowed, only run schema statements.
           if (!applyDml && !allowedRe.hasMatch(stmt)) {
-            _log.info(
+            _log.fine(
                 'Skipping non-schema statement in $assetPath: ${stmt.length > 80 ? stmt.substring(0, 80) : stmt}');
             continue;
           }
