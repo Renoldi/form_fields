@@ -76,31 +76,6 @@ class _SqlViewState extends State<_SqlView> {
                         onPressed: vm.loading ? null : () => vm.loadTables(),
                         child: const Text('Refresh')),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.file_upload),
-                      label: const Text('Import sample asset'),
-                      onPressed: vm.loading
-                          ? null
-                          : () async {
-                              final localCtx = context;
-                              final vmRef = vm;
-                              final path = await ImportExportService.instance
-                                  .importFromAsset('assets/imports/sample.sql');
-                              if (!localCtx.mounted) return;
-                              final messenger =
-                                  ScaffoldMessenger.maybeOf(localCtx);
-                              if (path != null) {
-                                messenger?.showSnackBar(SnackBar(
-                                    content:
-                                        Text('Imported from asset: $path')));
-                                // Reload tables after import
-                                await vmRef.loadTables();
-                              } else {
-                                messenger?.showSnackBar(const SnackBar(
-                                    content: Text('Import failed')));
-                              }
-                            },
-                    ),
-                    ElevatedButton.icon(
                       icon: const Icon(Icons.insert_drive_file),
                       label: const Text('Import from file'),
                       onPressed: vm.loading
