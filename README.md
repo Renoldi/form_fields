@@ -450,6 +450,67 @@ final result = MyimageResult(
 
 ## Validation & External Errors
 
+**Database Usage (Debug vs Release)**
+
+- **Overview:**: `DBService` menyediakan helper tingkat-tinggi untuk membuka, memigrasi, membaca, dan menulis database SQLite. Gunakan `DBService` agar lifecycle hooks dan `ColumnHandler` (mis. `FileBackedColumnHandler`) dijalankan otomatis saat `insert`, `update`, atau `delete`.
+- **File locations:**: Database file default berada di lokasi yang dikembalikan oleh `getApplicationDocumentsDirectory()`.
+  - Android (device/emulator): `/data/data/<package>/files/form_fields.db` (akses via `adb shell run-as <package> ...` untuk build debug). Contoh:
+
+```bash
+adb shell run-as com.example.form_fields_example.debug ls -l /data/data/com.example.form_fields_example.debug/files
+adb shell run-as com.example.form_fields_example.debug cat /data/data/com.example.form_fields_example.debug/files/form_fields.db
+```
+
+- iOS Simulator / macOS: dokumen app di folder simulator; buka melalui Finder atau gunakan `sqlite3` di terminal ke path `Documents/form_fields.db`.
+
+- **Debug vs Release differences:**: Pada build debug biasanya package id berakhiran `.debug` (example app). Path file dan izin ADB berbeda untuk release. Selain itu, debug builds menjalankan aplikasi dalam mode observability sehingga log console (print, logger) akan terlihat di IDE — gunakan ini untuk memverifikasi operasi DB dan handler.
+
+- **Use `DBService` helpers (recommended):**: Untuk memastikan `ColumnHandler.onWrite` dan `onDelete` dieksekusi (contoh: penulisan/ penghapusan file JSON payload), jangan jalankan SQL mentah `rawInsert` / `rawUpdate` / `rawDelete` langsung. Gunakan API berikut:
+  - `await DBService.instance.insert(table, values);` — akan menjalankan handler `onWrite` untuk kolom seperti `payload`.
+  - `await DBService.instance.update(table, values, where, whereArgs);`
+  - `await DBService.instance.delete(table, where, whereArgs);` — akan memanggil `onDelete` pada `ColumnHandler` sehingga file payload (.json) dihapus.
+  - `await DBService.instance.executeSql(sql);` — mengeksekusi SQL mentah; catatan: `INSERT` via `executeSql` TIDAK akan memicu `onWrite`.
+
+- **Contoh: insert yang memicu handler (gunakan `insert`):**
+
+```dart
+final values = {
+  'assetId': '97502c88-9703-4712-a957-1d0985b3db65-3',
+  'payload': '{"assetId":"97502c88...","assetName":"laptop-3"}',
+  'updated_at': 1781586828002,
+};
+await DBService.instance.insert('asset', values);
+```
+
+- **Contoh: hapus baris dan pastikan file payload ikut terhapus:**
+
+```dart
+await DBService.instance.delete('asset', 'rowid = ?', [rowid]);
+```
+
+- **Mengeksekusi file SQL (sample inserts / migrations):**: contoh asset [example/migrations/sample_inserts.sql](example/migrations/sample_inserts.sql) bisa diimpor melalui UI (Import sample asset) atau dengan API `DBService.importFromSqlFile(path)`.
+
+- **Melihat/membuka DB dari shell (Android debug):**
+
+```bash
+adb shell run-as com.example.form_fields_example.debug
+cd files
+sqlite3 form_fields.db
+sqlite> .tables
+sqlite> SELECT name FROM sqlite_master WHERE type='table';
+```
+
+- **Set PRAGMA user_version / migrasi:**: gunakan `DBService.setUserVersion(int)` untuk men-set PRAGMA langsung, atau `DBService.migrateTo(targetVersion, migrationAssetPaths: [...])` untuk menjalankan asset migration yang dikemas di `example/migrations/`.
+
+- **Export / Import SQL:**: gunakan UI `Export to folder` atau `Import from file` pada viewer SQL di aplikasi contoh. Programatik gunakan `DBService.exportToSqlFile(destPath)` dan `DBService.importFromSqlFile(path)`.
+
+- **Debugging tips:**
+  - Jalankan app dengan `flutter run` atau dari IDE (debug) untuk melihat log.
+  - Jika ingin memeriksa isi payload files, periksa folder payload yang dikelola oleh `FileBackedColumnHandler` (default ada di Documents/`payloads` atau sesuai `_payloadDirName` pada `DBService`).
+  - Untuk masalah permission di device fisik Android release, gunakan export via UI dan copy file dari storage eksternal.
+
+- **Keamanan & produksi:**: pastikan payload sensitif dienkripsi atau disimpan di lokasi yang sesuai sebelum rilis. Untuk produksi, paths dan package id berbeda — perintah `adb shell run-as` mungkin tidak bekerja tanpa akses, gunakan mekanisme export di aplikasi untuk mengambil salinan DB.
+
 All fields support `externalErrorText` to display backend validation errors directly under the field:
 
 ```dart
