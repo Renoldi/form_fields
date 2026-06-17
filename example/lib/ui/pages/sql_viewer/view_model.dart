@@ -38,13 +38,15 @@ class SqlViewerViewModel extends ChangeNotifier {
 
       // Post-process rows: if a column looks like a payload filename (ends
       // with .json), attempt to read and decode the payload and inline it.
-      for (final r in rows) {
+      for (var i = 0; i < rows.length; i++) {
+        final r = rows[i];
+        final shouldInline = i == 0; // only inline for first row
         final keys = r.keys.toList();
         for (final k in keys) {
           final v = r[k];
           // Only attempt to inline payloads for columns that have a
-          // registered handler (eg. `payload`). Leave other string values
-          // untouched.
+          // registered handler (eg. `payload`) and only for the first row.
+          if (!shouldInline) continue;
           if (!_db.hasColumnHandler(table, k)) continue;
           if (v is String) {
             final s = v.trim();

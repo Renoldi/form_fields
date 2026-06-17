@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:convert' show utf8;
+
+import 'crypto_utils.dart';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -59,15 +62,54 @@ class FileBackedColumnHandler implements ColumnHandler {
       final payload = value['payload'];
       if (existing is String && existing.isNotEmpty) {
         try {
+          // Normalize to basename to avoid path traversal and ensure files
+          // are written inside the payloads directory only.
+          final safeName = p.basename(existing);
+          // Restrict allowed characters in filenames to a conservative set.
+          final filenameRe = RegExp(r'^[A-Za-z0-9._-]+$');
+          if (!filenameRe.hasMatch(safeName)) {
+            _log.warning('Rejected unsafe existing filename: $existing');
+            // fallthrough to creating a new deterministic file
+            throw Exception('unsafe_filename');
+          }
+
           final documents = await getApplicationDocumentsDirectory();
           final dir = Directory(p.join(documents.path, _payloadDirName));
           await dir.create(recursive: true);
-          final filePath = p.join(dir.path, existing);
+          final filePath = p.join(dir.path, safeName);
           final content = payload is String ? payload : json.encode(payload);
-          await File(filePath).writeAsString(content);
-          return existing;
+
+          // Atomic write: write to a temp file then rename into place.
+          final tmpPath = p.join(dir.path,
+              '$safeName.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+          final tmpFile = File(tmpPath);
+          await tmpFile.writeAsString(content);
+          final targetFile = File(filePath);
+          try {
+            if (await targetFile.exists()) {
+              // Replace atomically: remove target then rename temp.
+              await targetFile.delete();
+            }
+            await tmpFile.rename(filePath);
+          } catch (e) {
+            // Best-effort fallback: try overwriting directly.
+            try {
+              await tmpFile.copy(filePath);
+              await tmpFile.delete();
+            } catch (e2) {
+              _log.warning(
+                  'Failed to atomically overwrite $filePath: $e / $e2');
+              rethrow;
+            }
+          }
+          _log.info('Overwrote payload file: $safeName');
+          return safeName;
         } catch (e) {
-          _log.warning('FileBackedColumnHandler:overwrite failed: $e');
+          if (e.toString().contains('unsafe_filename')) {
+            // continue to deterministic creation below
+          } else {
+            _log.warning('FileBackedColumnHandler:overwrite failed: $e');
+          }
           // fallthrough to create new file
         }
       }
@@ -77,12 +119,47 @@ class FileBackedColumnHandler implements ColumnHandler {
     final documents = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(documents.path, _payloadDirName));
     await dir.create(recursive: true);
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final rnd = Random().nextInt(1 << 32).toRadixString(16);
-    final name = '${prefix}_${table}_${ts}_$rnd.json';
-    final filePath = p.join(dir.path, name);
     final content = value is String ? value : json.encode(value);
-    await File(filePath).writeAsString(content);
+
+    // Use SHA-256 of the content to produce a deterministic filename and
+    // avoid creating duplicate files for identical payloads.
+    final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
+    final name = '${prefix}_${table}_$hash.json';
+    final filePath = p.join(dir.path, name);
+    final file = File(filePath);
+
+    if (await file.exists()) {
+      _log.info('Payload dedupe: file already exists: $name');
+      return name;
+    }
+
+    // Atomic write: write to temp then rename to final name. If another
+    // writer created the file in the meantime, prefer the existing file.
+    final tmpPath = p.join(dir.path,
+        '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+    final tmpFile = File(tmpPath);
+    await tmpFile.writeAsString(content);
+    try {
+      // If target was created by a concurrent writer, prefer it and remove tmp.
+      if (await file.exists()) {
+        _log.info('Concurrent writer created $name; discarding tmp file');
+        await tmpFile.delete();
+        return name;
+      }
+      await tmpFile.rename(filePath);
+    } catch (e) {
+      // Best-effort fallback: try to copy and delete temp.
+      try {
+        if (!await file.exists()) {
+          await tmpFile.copy(filePath);
+        }
+        await tmpFile.delete();
+      } catch (e2) {
+        _log.warning('Failed to write payload file $filePath: $e / $e2');
+        rethrow;
+      }
+    }
+    _log.info('Wrote payload file: $name');
     return name;
   }
 }
