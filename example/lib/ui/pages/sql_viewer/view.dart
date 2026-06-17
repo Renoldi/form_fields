@@ -142,6 +142,55 @@ class _SqlViewState extends State<_SqlView> {
                             },
                     ),
                     ElevatedButton.icon(
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Run SQL'),
+                      onPressed: vm.loading
+                          ? null
+                          : () async {
+                              final controller = TextEditingController();
+                              final query = await showDialog<String?>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Run SQL'),
+                                  content: TextField(
+                                    controller: controller,
+                                    keyboardType: TextInputType.multiline,
+                                    maxLines: 8,
+                                    decoration: const InputDecoration(
+                                        labelText: 'SQL query',
+                                        hintText: 'Paste SQL here...'),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, null),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, controller.text),
+                                        child: const Text('Execute')),
+                                  ],
+                                ),
+                              );
+                              if (query == null || query.trim().isEmpty) return;
+                              final messenger =
+                                  ScaffoldMessenger.maybeOf(context);
+                              try {
+                                final res =
+                                    await DBService.instance.executeSql(query);
+                                messenger?.showSnackBar(SnackBar(
+                                    content:
+                                        Text('SQL executed, result: $res')));
+                                await context
+                                    .read<SqlViewerViewModel>()
+                                    .loadTables();
+                              } catch (e) {
+                                messenger?.showSnackBar(SnackBar(
+                                    content: Text('SQL execution failed: $e')));
+                              }
+                            },
+                    ),
+                    ElevatedButton.icon(
                       icon: const Icon(Icons.system_update_alt),
                       label: const Text('Upgrade DB'),
                       onPressed: vm.loading

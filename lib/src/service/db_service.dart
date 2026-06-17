@@ -846,6 +846,33 @@ class DBService {
     return await db.delete(table, where: where, whereArgs: whereArgs);
   }
 
+  /// Execute a raw SQL statement (INSERT / UPDATE / DELETE / others).
+  ///
+  /// Returns:
+  /// - for `INSERT`: the inserted row id (as returned by `rawInsert`)
+  /// - for `UPDATE`/`DELETE`: the number of affected rows
+  /// - for other statements: 0
+  Future<int> executeSql(String sql) async {
+    final db = _db ?? await init();
+    final stmt = sql.trim();
+    try {
+      final up = stmt.toUpperCase();
+      if (up.startsWith('INSERT')) {
+        return await db.rawInsert(sql);
+      } else if (up.startsWith('UPDATE')) {
+        return await db.rawUpdate(sql);
+      } else if (up.startsWith('DELETE')) {
+        return await db.rawDelete(sql);
+      } else {
+        await db.execute(sql);
+        return 0;
+      }
+    } catch (e, st) {
+      _log.warning('Failed to execute SQL: $e', e, st);
+      rethrow;
+    }
+  }
+
   /// Read payload file content as string. Returns null if file does not exist.
   Future<String?> readPayloadString(String filename) async {
     try {

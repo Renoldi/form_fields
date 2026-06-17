@@ -106,8 +106,9 @@ class SqlViewerViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteRow(String table, int rowid) async {
-    final db = await _db.init();
-    await db.delete(table, where: 'rowid = ?', whereArgs: [rowid]);
+    // final db = await _db.init();
+    // await db.delete(table, where: 'rowid = ?', whereArgs: [rowid]);
+    await _db.delete(table, 'rowid = ?', [rowid]);
     await loadRows(table);
   }
 
