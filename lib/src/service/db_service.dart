@@ -1,178 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
-import 'dart:math';
-
-import 'crypto_utils.dart';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'payload_utils.dart';
+import 'column_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
 final _log = Logger('DBService');
 
 const String _payloadDirName = 'payloads';
-
-/// ColumnHandler defines how to process a column's value on write and how to
-/// cleanup when rows are deleted.
-abstract class ColumnHandler {
-  /// Called before insert/update. Should return the value to be stored
-  /// in the database (e.g., a filename) and may perform side-effects like
-  /// writing files.
-  Future<dynamic> onWrite(String table, String column, dynamic value);
-
-  /// Called before the row is deleted. [row] contains the full row values as
-  /// returned from the DB query. Implementations should cleanup any side
-  /// effects (e.g., delete files).
-  Future<void> onDelete(String table, String column, Map<String, dynamic> row);
-}
-
-/// Default implementation that writes JSON payloads to disk and returns the
-/// filename as the stored value.
-class FileBackedColumnHandler implements ColumnHandler {
-  final String prefix;
-
-  FileBackedColumnHandler({required this.prefix});
-
-  @override
-  Future<void> onDelete(
-      String table, String column, Map<String, dynamic> row) async {
-    final val = row[column];
-    if (val is String && val.isNotEmpty) {
-      try {
-        final documents = await getApplicationDocumentsDirectory();
-        final file = File(p.join(documents.path, _payloadDirName, val));
-        if (await file.exists()) await file.delete();
-      } catch (e) {
-        _log.warning('FileBackedColumnHandler:onDelete failed: $e');
-      }
-    }
-  }
-
-  @override
-  Future<dynamic> onWrite(String table, String column, dynamic value) async {
-    // If caller passed an existing filename wrapper, overwrite the file.
-    if (value is Map &&
-        value.containsKey('__existing_filename') &&
-        value.containsKey('payload')) {
-      final existing = value['__existing_filename'];
-      final payload = value['payload'];
-      if (existing is String && existing.isNotEmpty) {
-        try {
-          // Normalize to basename to avoid path traversal and ensure files
-          // are written inside the payloads directory only.
-          final safeName = p.basename(existing);
-          // Restrict allowed characters in filenames to a conservative set.
-          final filenameRe = RegExp(r'^[A-Za-z0-9._-]+$');
-          if (!filenameRe.hasMatch(safeName)) {
-            _log.warning('Rejected unsafe existing filename: $existing');
-            // fallthrough to creating a new deterministic file
-            throw Exception('unsafe_filename');
-          }
-
-          final documents = await getApplicationDocumentsDirectory();
-          final dir = Directory(p.join(documents.path, _payloadDirName));
-          await dir.create(recursive: true);
-          final filePath = p.join(dir.path, safeName);
-          final content = payload is String ? payload : json.encode(payload);
-
-          // Atomic write: write to a temp file then rename into place.
-          final tmpPath = p.join(dir.path,
-              '$safeName.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-          final tmpFile = File(tmpPath);
-          await tmpFile.writeAsString(content);
-          final targetFile = File(filePath);
-          try {
-            if (await targetFile.exists()) {
-              // Replace atomically: remove target then rename temp.
-              await targetFile.delete();
-            }
-            await tmpFile.rename(filePath);
-          } catch (e) {
-            // Best-effort fallback: try overwriting directly.
-            try {
-              await tmpFile.copy(filePath);
-              await tmpFile.delete();
-            } catch (e2) {
-              _log.warning(
-                  'Failed to atomically overwrite $filePath: $e / $e2');
-              rethrow;
-            }
-          }
-          _log.info('Overwrote payload file: $safeName');
-          return safeName;
-        } catch (e) {
-          if (e.toString().contains('unsafe_filename')) {
-            // continue to deterministic creation below
-          } else {
-            _log.warning('FileBackedColumnHandler:overwrite failed: $e');
-          }
-          // fallthrough to create new file
-        }
-      }
-    }
-
-    if (value is String) return value;
-    try {
-      final documents = await getApplicationDocumentsDirectory();
-      final dir = Directory(p.join(documents.path, _payloadDirName));
-      await dir.create(recursive: true);
-      final content = value is String ? value : json.encode(value);
-
-      // Use SHA-256 of the content to produce a deterministic filename and
-      // avoid creating duplicate files for identical payloads. Avoid
-      // repeating the table name when `prefix` already contains it
-      // (some callers pass a prefix that includes the table name).
-      final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
-      final safePrefix = (prefix == table || prefix.contains(table))
-          ? prefix
-          : '${prefix}_$table';
-      final name = '${safePrefix}_$hash.json';
-      final filePath = p.join(dir.path, name);
-      final file = File(filePath);
-
-      if (await file.exists()) {
-        _log.info('Payload dedupe: file already exists: $name');
-        return name;
-      }
-
-      // Atomic write: write to temp then rename to final name. If another
-      // writer created the file in the meantime, prefer the existing file.
-      final tmpPath = p.join(dir.path,
-          '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-      final tmpFile = File(tmpPath);
-      await tmpFile.writeAsString(content);
-      try {
-        // If target was created by a concurrent writer, prefer it and remove tmp.
-        if (await file.exists()) {
-          _log.info('Concurrent writer created $name; discarding tmp file');
-          await tmpFile.delete();
-          return name;
-        }
-        await tmpFile.rename(filePath);
-      } catch (e) {
-        // Best-effort fallback: try to copy and delete temp.
-        try {
-          if (!await file.exists()) {
-            await tmpFile.copy(filePath);
-          }
-          await tmpFile.delete();
-        } catch (e2) {
-          _log.warning('Failed to write payload file $filePath: $e / $e2');
-          rethrow;
-        }
-      }
-      _log.info('Wrote payload file: $name');
-      return name;
-    } catch (e) {
-      _log.warning('FileBackedColumnHandler:onWrite failed: $e');
-      rethrow;
-    }
-  }
-}
 
 class DBService {
   DBService._() {
@@ -964,9 +804,292 @@ class DBService {
     try {
       if (isRaw) {
         final up = stmt.toUpperCase();
-        if (up.startsWith('INSERT')) return await db.rawInsert(sql);
-        if (up.startsWith('UPDATE')) return await db.rawUpdate(sql);
-        if (up.startsWith('DELETE')) return await db.rawDelete(sql);
+        if (up.startsWith('INSERT')) {
+          // Attempt to parse a simple single-row INSERT and route through
+          // the high-level `insert` helper so any registered ColumnHandler
+          // `onWrite` hooks run. Fall back to rawInsert when parsing fails.
+          try {
+            final tableRe = RegExp(
+                r'INSERT\s+INTO\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+                caseSensitive: false);
+            final tableMatch = tableRe.firstMatch(stmt);
+            if (tableMatch == null) return await db.rawInsert(sql);
+            final table = tableMatch.group(1)!;
+
+            int findMatching(String s, int start) {
+              var depth = 0;
+              for (var i = start; i < s.length; i++) {
+                final ch = s[i];
+                if (ch == '(') depth++;
+                if (ch == ')') {
+                  depth--;
+                  if (depth == 0) return i;
+                }
+              }
+              return -1;
+            }
+
+            int pos = tableMatch.end;
+            while (pos < stmt.length && stmt[pos].trim().isEmpty) {
+              pos++;
+            }
+            List<String>? columns;
+            if (pos < stmt.length && stmt[pos] == '(') {
+              final end = findMatching(stmt, pos);
+              if (end > pos) {
+                final colsRaw = stmt.substring(pos + 1, end);
+                columns = colsRaw
+                    .split(',')
+                    .map(
+                        (s) => s.trim().replaceAll('"', '').replaceAll('`', ''))
+                    .where((s) => s.isNotEmpty)
+                    .toList();
+              }
+            }
+
+            final valuesRe = RegExp(r"\bVALUES\b", caseSensitive: false);
+            final valuesMatch = valuesRe.firstMatch(stmt);
+            if (valuesMatch == null) return await db.rawInsert(sql);
+            var vpos = valuesMatch.end;
+            while (vpos < stmt.length && stmt[vpos].trim().isEmpty) {
+              vpos++;
+            }
+            if (vpos >= stmt.length || stmt[vpos] != '(') {
+              return await db.rawInsert(sql);
+            }
+            final vend = findMatching(stmt, vpos);
+            if (vend < 0) return await db.rawInsert(sql);
+            final valsRaw = stmt.substring(vpos + 1, vend);
+
+            List<String> splitValues(String s) {
+              final out = <String>[];
+              var buf = StringBuffer();
+              var inSingle = false;
+              var inDouble = false;
+              var depth = 0;
+              for (var i = 0; i < s.length; i++) {
+                final ch = s[i];
+                if (ch == "'" && !inDouble) {
+                  final next = (i + 1 < s.length) ? s[i + 1] : null;
+                  if (inSingle && next == "'") {
+                    buf.write("'");
+                    i++;
+                    continue;
+                  }
+                  inSingle = !inSingle;
+                  buf.write(ch);
+                  continue;
+                }
+                if (ch == '"' && !inSingle) {
+                  inDouble = !inDouble;
+                  buf.write(ch);
+                  continue;
+                }
+                if (!inSingle && !inDouble) {
+                  if (ch == '(') {
+                    depth++;
+                  } else if (ch == ')') {
+                    depth--;
+                  } else if (ch == ',' && depth == 0) {
+                    out.add(buf.toString().trim());
+                    buf = StringBuffer();
+                    continue;
+                  }
+                }
+                buf.write(ch);
+              }
+              final last = buf.toString().trim();
+              if (last.isNotEmpty) out.add(last);
+              return out;
+            }
+
+            final vals = splitValues(valsRaw);
+            if (columns != null && columns.length != vals.length) {
+              return await db.rawInsert(sql);
+            }
+
+            dynamic parseValueToken(String t) {
+              final s = t.trim();
+              if (s.startsWith("'") && s.endsWith("'")) {
+                final inner =
+                    s.substring(1, s.length - 1).replaceAll("''", "'");
+                return inner;
+              }
+              final intVal = int.tryParse(s);
+              if (intVal != null) return intVal;
+              final dbl = double.tryParse(s);
+              if (dbl != null) return dbl;
+              return s;
+            }
+
+            final valuesMap = <String, dynamic>{};
+            if (columns != null) {
+              for (var i = 0; i < columns.length; i++) {
+                valuesMap[columns[i]] = parseValueToken(vals[i]);
+              }
+              // Use high-level insert so handlers run.
+              return await insert(table, valuesMap);
+            } else {
+              return await db.rawInsert(sql);
+            }
+          } catch (e) {
+            return await db.rawInsert(sql);
+          }
+        }
+        if (up.startsWith('UPDATE')) {
+          // Parse simple UPDATE ... SET ... WHERE col = literal and route
+          // through `update` to ensure ColumnHandler.onWrite runs.
+          try {
+            final tableRe = RegExp(
+                r'UPDATE\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+                caseSensitive: false);
+            final tableMatch = tableRe.firstMatch(stmt);
+            if (tableMatch == null) return await db.rawUpdate(sql);
+            final table = tableMatch.group(1)!;
+
+            final setRe = RegExp(r'\bSET\b', caseSensitive: false);
+            final setMatch = setRe.firstMatch(stmt);
+            if (setMatch == null) return await db.rawUpdate(sql);
+            final setStart = setMatch.end;
+            final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
+            final whereMatch = whereRe.firstMatch(stmt);
+            final setRaw = whereMatch != null
+                ? stmt.substring(setStart, whereMatch.start)
+                : stmt.substring(setStart);
+            final whereRaw = whereMatch != null
+                ? stmt.substring(whereMatch.end).trim()
+                : null;
+
+            List<String> splitAssignments(String s) {
+              final out = <String>[];
+              var buf = StringBuffer();
+              var inSingle = false;
+              var inDouble = false;
+              var depth = 0;
+              for (var i = 0; i < s.length; i++) {
+                final ch = s[i];
+                if (ch == "'" && !inDouble) {
+                  final next = (i + 1 < s.length) ? s[i + 1] : null;
+                  if (inSingle && next == "'") {
+                    buf.write("'");
+                    i++;
+                    continue;
+                  }
+                  inSingle = !inSingle;
+                  buf.write(ch);
+                  continue;
+                }
+                if (ch == '"' && !inSingle) {
+                  inDouble = !inDouble;
+                  buf.write(ch);
+                  continue;
+                }
+                if (!inSingle && !inDouble) {
+                  if (ch == '(') {
+                    depth++;
+                  } else if (ch == ')') {
+                    depth--;
+                  } else if (ch == ',' && depth == 0) {
+                    out.add(buf.toString().trim());
+                    buf = StringBuffer();
+                    continue;
+                  }
+                }
+                buf.write(ch);
+              }
+              final last = buf.toString().trim();
+              if (last.isNotEmpty) out.add(last);
+              return out;
+            }
+
+            dynamic parseValueToken(String t) {
+              final s = t.trim();
+              if (s.startsWith("'") && s.endsWith("'")) {
+                final inner =
+                    s.substring(1, s.length - 1).replaceAll("''", "'");
+                return inner;
+              }
+              final intVal = int.tryParse(s);
+              if (intVal != null) return intVal;
+              final dbl = double.tryParse(s);
+              if (dbl != null) return dbl;
+              return s;
+            }
+
+            final assigns = splitAssignments(setRaw);
+            final valuesMap = <String, dynamic>{};
+            for (final a in assigns) {
+              final idx = a.indexOf('=');
+              if (idx <= 0) return await db.rawUpdate(sql);
+              final col = a
+                  .substring(0, idx)
+                  .trim()
+                  .replaceAll('"', '')
+                  .replaceAll('`', '');
+              final valToken = a.substring(idx + 1).trim();
+              valuesMap[col] = parseValueToken(valToken);
+            }
+
+            if (whereRaw == null) {
+              return await db.rawUpdate(sql);
+            }
+
+            final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
+                caseSensitive: false);
+            final eqMatch = eqRe.firstMatch(whereRaw);
+            if (eqMatch == null) return await db.rawUpdate(sql);
+            final wcol = eqMatch.group(1)!;
+            final wvalToken = eqMatch.group(2)!.trim();
+            if (wvalToken == '?') return await db.rawUpdate(sql);
+            final wval = parseValueToken(wvalToken);
+            final whereClause = '$wcol = ?';
+            return await update(table, valuesMap, whereClause, [wval]);
+          } catch (e) {
+            return await db.rawUpdate(sql);
+          }
+        }
+        if (up.startsWith('DELETE')) {
+          try {
+            final tableRe = RegExp(
+                r'DELETE\s+FROM\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+                caseSensitive: false);
+            final tableMatch = tableRe.firstMatch(stmt);
+            if (tableMatch == null) return await db.rawDelete(sql);
+            final table = tableMatch.group(1)!;
+            final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
+            final whereMatch = whereRe.firstMatch(stmt);
+            if (whereMatch == null) return await db.rawDelete(sql);
+            final whereRaw = stmt.substring(whereMatch.end).trim();
+
+            final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
+                caseSensitive: false);
+            final eqMatch = eqRe.firstMatch(whereRaw);
+            if (eqMatch == null) return await db.rawDelete(sql);
+            final wcol = eqMatch.group(1)!;
+            final wvalToken = eqMatch.group(2)!.trim();
+            if (wvalToken == '?') return await db.rawDelete(sql);
+
+            dynamic parseValueToken(String t) {
+              final s = t.trim();
+              if (s.startsWith("'") && s.endsWith("'")) {
+                final inner =
+                    s.substring(1, s.length - 1).replaceAll("''", "'");
+                return inner;
+              }
+              final intVal = int.tryParse(s);
+              if (intVal != null) return intVal;
+              final dbl = double.tryParse(s);
+              if (dbl != null) return dbl;
+              return s;
+            }
+
+            final wval = parseValueToken(wvalToken);
+            final whereClause = '$wcol = ?';
+            return await delete(table, whereClause, [wval]);
+          } catch (e) {
+            return await db.rawDelete(sql);
+          }
+        }
         await db.execute(sql);
         return 0;
       }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'db_service.dart';
+import 'column_handler.dart';
 
 /// Optional decoder used to resolve payload columns. Receives the raw
 /// stored string, table and column and should return the decoded value

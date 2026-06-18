@@ -76,7 +76,18 @@ class _SqlViewState extends State<_SqlView> {
                       ),
                     ),
                     ElevatedButton(
-                        onPressed: vm.loading ? null : () => vm.loadTables(),
+                        onPressed: vm.loading
+                            ? null
+                            : () async {
+                                final vmRef = vm;
+                                await vmRef.loadTables();
+                                if (!context.mounted) return;
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                  if (!context.mounted) return;
+                                }
+                              },
                         child: const Text('Refresh')),
                     // Row(
                     //   mainAxisSize: MainAxisSize.min,
@@ -117,6 +128,10 @@ class _SqlViewState extends State<_SqlView> {
                                     content:
                                         Text('Imported from file: $path')));
                                 await vmRef.loadTables();
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                }
                               } else {
                                 messenger?.showSnackBar(const SnackBar(
                                     content:
@@ -187,6 +202,10 @@ class _SqlViewState extends State<_SqlView> {
                                     content:
                                         Text('SQL executed, result: $res')));
                                 await vmRef.loadTables();
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                }
                               } catch (e) {
                                 if (!context.mounted) return;
                                 final messenger =
@@ -502,6 +521,10 @@ class _SqlViewState extends State<_SqlView> {
                                   ),
                                 );
                                 await vmRef.loadTables();
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                }
                               }
                             },
                     ),
@@ -599,6 +622,10 @@ class _SqlViewState extends State<_SqlView> {
                                   ),
                                 );
                                 await vmRef.loadTables();
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                }
                               }
                             },
                     ),
@@ -652,6 +679,10 @@ class _SqlViewState extends State<_SqlView> {
                                 }
                                 await vmRef.loadDbVersion();
                                 await vmRef.loadTables();
+                                if (vmRef.selectedTable != null) {
+                                  await vmRef.loadRows(vmRef.selectedTable!,
+                                      inlinePayloads: inlinePayloadsInList);
+                                }
                               }
                             },
                     ),
