@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'payload_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 final _log = Logger('DBService');
@@ -763,53 +764,12 @@ class DBService {
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
 
-      if (!inlinePayloads || rows.isEmpty) return rows;
-
-      for (final r in rows) {
-        for (final entry in List<MapEntry<String, dynamic>>.from(r.entries)) {
-          final c = entry.key;
-          final v = entry.value;
-          if (v is! String) continue;
-
-          final handler = _getHandler(table, c);
-
-          // If a handler is registered, prefer reading payload via file.
-          if (handler != null) {
-            try {
-              final decoded = await readPayloadJson(v);
-              if (decoded != null) {
-                r[c] = decoded;
-                continue;
-              }
-            } catch (_) {}
-          } else {
-            // No explicit handler: attempt to read payload file if the
-            // column name suggests a payload, or the stored value itself
-            // looks like a filename (eg. "something.json"). This allows
-            // inlining even when the column isn't named `payload`.
-            try {
-              final s = v.trim();
-              final fnRe =
-                  RegExp(r'^[A-Za-z0-9._-]+\.json$', caseSensitive: false);
-              final looksLikeFilename = fnRe.hasMatch(s);
-              if (isColumnFileBacked(table, c) || looksLikeFilename) {
-                final decoded = await readPayloadJson(v);
-                if (decoded != null) {
-                  r[c] = decoded;
-                  continue;
-                }
-              }
-            } catch (_) {}
-          }
-
-          try {
-            final s = v.trim();
-            if (s.startsWith('{') || s.startsWith('[')) {
-              r[c] = json.decode(s);
-            }
-          } catch (_) {}
-        }
-      }
+      await PayloadUtils.inlinePayloadsForRows(table, rows,
+          inlinePayloads: inlinePayloads,
+          payloadDecoder: null,
+          getHandler: (t, c) => _getHandler(t, c),
+          isColumnFileBacked: (t, c) => isColumnFileBacked(t, c),
+          readPayloadJson: (fn) => readPayloadJson(fn));
 
       return rows;
     } catch (e, st) {
