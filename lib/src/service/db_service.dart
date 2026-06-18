@@ -1280,63 +1280,85 @@ class DBService {
   }
 
   Future<void> exportToSqlFile(String destPath,
-      {bool inlinePayloads = true}) async {
-    final db = _db ?? await init();
-    final sb = StringBuffer();
+      {String? dbName, bool inlinePayloads = true}) async {
+    final effective = _effectiveDbName(dbName);
 
-    final tables = await db.rawQuery(
-        "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';");
-
-    for (final row in tables) {
-      final name = row['name'] as String?;
-      final createSql = row['sql'] as String?;
-      if (name == null || createSql == null) {
-        continue;
-      }
-      sb.writeln('$createSql;');
-
-      if (inlinePayloads) {
-        final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
-        for (final r in rows) {
-          // For columns that have handlers (eg. payload), inline file content
-          final outRow = Map<String, dynamic>.from(r);
-          // remove rowid from columns list when generating INSERT
-          outRow.remove('rowid');
-
-          final cols = outRow.keys.toList();
-          final vals = <String>[];
-          for (final c in cols) {
-            final handler = _getHandler(name, c);
-            final v = outRow[c];
-            if (handler != null && v is String) {
-              // If this looks like a filename in our migrations dir, read it
-              final payload = await readPayloadString(v);
-              if (payload != null) {
-                vals.add(_valueToSqlLiteral(payload));
-                continue;
-              }
-            }
-            vals.add(_valueToSqlLiteral(v));
-          }
-          final columns = cols.map((c) => '"$c"').join(', ');
-          final values = vals.join(', ');
-          sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
-        }
-      } else {
-        final rows = await db.query(name);
-        for (final r in rows) {
-          final columns = r.keys.map((c) => '"$c"').join(', ');
-          final values = r.values.map((v) => _valueToSqlLiteral(v)).join(', ');
-          sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
-        }
-      }
-      sb.writeln();
+    Database db;
+    var transient = false;
+    if (_db == null || effective != _defaultDbName) {
+      // Open a transient connection to the requested DB file.
+      transient = true;
+      final documents = await getApplicationDocumentsDirectory();
+      final path = p.join(documents.path, effective);
+      db = await openDatabase(path);
+    } else {
+      db = _db!;
     }
 
-    final file = File(destPath);
-    await file.create(recursive: true);
-    await file.writeAsString(sb.toString());
-    _log.info('Exported SQL to $destPath');
+    try {
+      final sb = StringBuffer();
+
+      final tables = await db.rawQuery(
+          "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';");
+
+      for (final row in tables) {
+        final name = row['name'] as String?;
+        final createSql = row['sql'] as String?;
+        if (name == null || createSql == null) {
+          continue;
+        }
+        sb.writeln('$createSql;');
+
+        if (inlinePayloads) {
+          final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
+          for (final r in rows) {
+            // For columns that have handlers (eg. payload), inline file content
+            final outRow = Map<String, dynamic>.from(r);
+            // remove rowid from columns list when generating INSERT
+            outRow.remove('rowid');
+
+            final cols = outRow.keys.toList();
+            final vals = <String>[];
+            for (final c in cols) {
+              final handler = _getHandler(name, c);
+              final v = outRow[c];
+              if (handler != null && v is String) {
+                // If this looks like a filename in our payloads dir, read it
+                final payload = await readPayloadString(v);
+                if (payload != null) {
+                  vals.add(_valueToSqlLiteral(payload));
+                  continue;
+                }
+              }
+              vals.add(_valueToSqlLiteral(v));
+            }
+            final columns = cols.map((c) => '"$c"').join(', ');
+            final values = vals.join(', ');
+            sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
+          }
+        } else {
+          final rows = await db.query(name);
+          for (final r in rows) {
+            final columns = r.keys.map((c) => '"$c"').join(', ');
+            final values =
+                r.values.map((v) => _valueToSqlLiteral(v)).join(', ');
+            sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
+          }
+        }
+        sb.writeln();
+      }
+
+      final file = File(destPath);
+      await file.create(recursive: true);
+      await file.writeAsString(sb.toString());
+      _log.info('Exported SQL to $destPath');
+    } finally {
+      if (transient) {
+        try {
+          await db.close();
+        } catch (_) {}
+      }
+    }
   }
 
   Future<void> importFromSqlFile(String filePath,

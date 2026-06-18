@@ -47,6 +47,48 @@ FormFields<String>(
 
 ---
 
+## Exporting and Importing Database
+
+The package exposes helpers to export the on-disk SQLite database to a SQL
+file and to import SQL files. These are useful for backups, debugging, or
+transferring data between devices.
+
+Usage examples:
+
+- Export current/default DB to a file (inlines payload files as JSON by default):
+
+```dart
+await DBService.instance.init(dbName: 'form_fields.db');
+await DBService.instance.exportToSqlFile('/path/to/out.sql');
+```
+
+- Export a different DB file without changing the initialized default:
+
+```dart
+await DBService.instance.exportToSqlFile('/path/to/other.sql', dbName: 'other.db');
+```
+
+- Control whether payload files are inlined (set `inlinePayloads: false` to keep filenames):
+
+```dart
+await DBService.instance.exportToSqlFile('/path/to/out.sql', inlinePayloads: false);
+```
+
+- Import an SQL file into the current DB (optionally convert inline JSON into payload files):
+
+```dart
+await DBService.instance.importFromSqlFile('/path/to/out.sql');
+```
+
+Notes:
+
+- `init(dbName: ...)` sets the runtime default DB name used when other
+  APIs are called without an explicit `dbName` (or passed `null`/empty).
+- `exportToSqlFile` will open a transient connection when a different
+  `dbName` is supplied and close it after exporting.
+
+---
+
 ## Components
 
 All components are accessible from a single import. Detailed docs are in [`docs/components/`](docs/components/).

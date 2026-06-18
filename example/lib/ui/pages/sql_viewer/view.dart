@@ -4,6 +4,8 @@ import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
 import 'view_model.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 class View extends PresenterState {
   @override
@@ -159,6 +161,29 @@ class _SqlViewState extends State<_SqlView> {
                               }
                             },
                     ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.save_alt),
+                        label: const Text('Export SQL File'),
+                        onPressed: vm.loading
+                            ? null
+                            : () async {
+                                final tmpDir = await getTemporaryDirectory();
+                                final out = p.join(tmpDir.path,
+                                    'export_${DateTime.now().millisecondsSinceEpoch}.sql');
+                                try {
+                                  await DBService.instance.exportToSqlFile(out);
+                                  if (!context.mounted) return;
+                                  final messenger = ScaffoldMessenger.maybeOf(context);
+                                  messenger?.showSnackBar(SnackBar(
+                                      content: Text('Exported SQL to $out')));
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  final messenger = ScaffoldMessenger.maybeOf(context);
+                                  messenger?.showSnackBar(SnackBar(
+                                      content: Text('Export failed: $e')));
+                                }
+                              },
+                      ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Run SQL'),
