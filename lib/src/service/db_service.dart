@@ -623,6 +623,33 @@ class DBService {
     }
   }
 
+  /// Select a single row from [table] using the same options as `selectFrom`.
+  /// Returns `null` when no row matches.
+  Future<Map<String, dynamic>?> selectOneForm(String table,
+      {bool? distinct,
+      List<String>? columns,
+      String? where,
+      List<Object?>? whereArgs,
+      String? groupBy,
+      String? having,
+      String? orderBy,
+      int? offset,
+      bool inlinePayloads = true}) async {
+    final rows = await selectFrom(table,
+        distinct: distinct,
+        columns: columns,
+        where: where,
+        whereArgs: whereArgs,
+        groupBy: groupBy,
+        having: having,
+        orderBy: orderBy,
+        limit: 1,
+        offset: offset,
+        inlinePayloads: inlinePayloads);
+    if (rows.isEmpty) return null;
+    return rows.first;
+  }
+
   /// Return rows from `sqlite_master` (database schema table).
   ///
   /// When [includeInternal] is false (default) rows whose `name` starts
