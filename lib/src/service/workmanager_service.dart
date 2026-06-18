@@ -10,30 +10,54 @@ final _log = Logger('WorkmanagerService');
 const String _backgroundTaskName = 'form_fields_background_task';
 
 /// Top-level callback dispatcher required by `workmanager`.
+@pragma('vm:entry-point')
 void workmanagerCallbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    _log.info('Workmanager running task: $task, input: $inputData');
-    try {
-      // Example background job: export the DB to a temp SQL file so it can be
-      // inspected or uploaded by other processes. Keep this minimal and
-      // resilient — failures are logged but do not crash the worker.
-      final tmpDir = await getTemporaryDirectory();
-      final out = p.join(tmpDir.path,
-          'form_fields_bg_export_${DateTime.now().toIso8601String()}.sql');
-      await DBService.instance.exportToSqlFile(out);
-      _log.info('Workmanager exported DB to $out');
-    } catch (e, st) {
-      _log.severe('Background task failed: $e', e, st);
-      return Future.value(false);
-    }
+  Workmanager().executeTask(_workmanagerTaskHandler);
+}
 
-    return Future.value(true);
-  });
+@pragma('vm:entry-point')
+Future<bool> _workmanagerTaskHandler(dynamic task, dynamic inputData) async {
+  _log.info('Workmanager running task: $task, input: $inputData');
+  try {
+    // Example background job: export the DB to a temp SQL file so it can be
+    // inspected or uploaded by other processes. Keep this minimal and
+    // resilient — failures are logged but do not crash the worker.
+    final tmpDir = await getTemporaryDirectory();
+    final out = p.join(tmpDir.path,
+        'form_fields_bg_export_${DateTime.now().toIso8601String()}.sql');
+    await DBService.instance.exportToSqlFile(out);
+    _log.info('Workmanager exported DB to $out');
+  } catch (e, st) {
+    _log.severe('Background task failed: $e', e, st);
+    return false;
+  }
+
+  return true;
 }
 
 class WorkmanagerService {
   WorkmanagerService._();
   static final WorkmanagerService instance = WorkmanagerService._();
+
+  /// Cancel the registered periodic background task (if any).
+  Future<void> cancelPeriodic() async {
+    try {
+      await Workmanager().cancelByUniqueName(_backgroundTaskName);
+      _log.info('Cancelled periodic background task ($_backgroundTaskName)');
+    } catch (e, st) {
+      _log.warning('Failed to cancel periodic task: $e', e, st);
+    }
+  }
+
+  /// Run the background task logic once immediately (for demo/testing).
+  Future<bool> runOnceNow() async {
+    try {
+      return await _workmanagerTaskHandler(_backgroundTaskName, null);
+    } catch (e, st) {
+      _log.warning('runOnceNow failed: $e', e, st);
+      return false;
+    }
+  }
 
   Future<void> initialize() async {
     // `isInDebugMode` is deprecated; initialize without that parameter.
