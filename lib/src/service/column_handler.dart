@@ -31,8 +31,9 @@ abstract class ColumnHandler {
 /// filename as the stored value.
 class FileBackedColumnHandler implements ColumnHandler {
   final String prefix;
-
-  FileBackedColumnHandler({required this.prefix});
+  final bool overwriteOnDedupe;
+  FileBackedColumnHandler(
+      {required this.prefix, this.overwriteOnDedupe = true});
 
   @override
   Future<void> onDelete(
@@ -142,6 +143,35 @@ class FileBackedColumnHandler implements ColumnHandler {
       final file = File(filePath);
 
       if (await file.exists()) {
+        if (overwriteOnDedupe) {
+          try {
+            // Overwrite existing deterministic file atomically.
+            final tmpPath2 = p.join(dir.path,
+                '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+            final tmpFile2 = File(tmpPath2);
+            await tmpFile2.writeAsString(content);
+            try {
+              // replace target
+              await file.delete();
+              await tmpFile2.rename(filePath);
+            } catch (e) {
+              try {
+                await tmpFile2.copy(filePath);
+                await tmpFile2.delete();
+              } catch (e2) {
+                _chLog.warning(
+                    'Failed to overwrite existing $filePath: $e / $e2');
+                rethrow;
+              }
+            }
+            _chLog.info('Overwrote payload file (dedupe overwrite): $name');
+            return name;
+          } catch (e) {
+            _chLog.warning('Failed to overwrite existing payload $name: $e');
+            // fall back to returning existing file name
+            return name;
+          }
+        }
         _chLog.info('Payload dedupe: file already exists: $name');
         return name;
       }
@@ -153,8 +183,30 @@ class FileBackedColumnHandler implements ColumnHandler {
       final tmpFile = File(tmpPath);
       await tmpFile.writeAsString(content);
       try {
-        // If target was created by a concurrent writer, prefer it and remove tmp.
+        // If target was created by a concurrent writer, either overwrite it
+        // (when enabled) or prefer the existing file and discard tmp.
         if (await file.exists()) {
+          if (overwriteOnDedupe) {
+            try {
+              await file.delete();
+              await tmpFile.rename(filePath);
+              _chLog.info('Overwrote payload file (concurrent writer): $name');
+              return name;
+            } catch (e) {
+              try {
+                if (!await file.exists()) {
+                  await tmpFile.copy(filePath);
+                }
+                await tmpFile.delete();
+                _chLog.info('Wrote payload file after concurrent race: $name');
+                return name;
+              } catch (e2) {
+                _chLog.warning(
+                    'Failed to write payload file $filePath: $e / $e2');
+                rethrow;
+              }
+            }
+          }
           _chLog.info('Concurrent writer created $name; discarding tmp file');
           await tmpFile.delete();
           return name;
