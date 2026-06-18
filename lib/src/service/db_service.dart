@@ -123,9 +123,14 @@ class FileBackedColumnHandler implements ColumnHandler {
       final content = value is String ? value : json.encode(value);
 
       // Use SHA-256 of the content to produce a deterministic filename and
-      // avoid creating duplicate files for identical payloads.
+      // avoid creating duplicate files for identical payloads. Avoid
+      // repeating the table name when `prefix` already contains it
+      // (some callers pass a prefix that includes the table name).
       final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
-      final name = '${prefix}_${table}_$hash.json';
+      final safePrefix = (prefix == table || prefix.contains(table))
+          ? prefix
+          : '${prefix}_$table';
+      final name = '${safePrefix}_$hash.json';
       final filePath = p.join(dir.path, name);
       final file = File(filePath);
 
