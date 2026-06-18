@@ -625,7 +625,7 @@ class DBService {
 
   /// Select a single row from [table] using the same options as `selectFrom`.
   /// Returns `null` when no row matches.
-  Future<Map<String, dynamic>?> selectOneForm(String table,
+  Future<Map<String, dynamic>?> selectOneFrom(String table,
       {bool? distinct,
       List<String>? columns,
       String? where,
