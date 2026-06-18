@@ -38,6 +38,48 @@ class DBService {
 
   // Column handlers registry: table -> column -> handler.
   final Map<String, Map<String, ColumnHandler>> _columnHandlers = {};
+  // Cache of table -> set of column names to avoid repeated PRAGMA queries.
+  final Map<String, Set<String>> _tableColumnsCache = {};
+
+  /// Returns true when the given [table] has a column named [column].
+  /// Uses an in-memory cache populated from `PRAGMA table_info(table)`.
+  Future<bool> _tableHasColumn(Database db, String table, String column) async {
+    var cols = _tableColumnsCache[table];
+    if (cols == null) {
+      try {
+        final info = await db.rawQuery('PRAGMA table_info($table);');
+        cols = info
+            .map((r) => r['name']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toSet();
+        _tableColumnsCache[table] = cols;
+      } catch (e) {
+        return false;
+      }
+    }
+    return cols.contains(column);
+  }
+
+  /// Ensure `created_at`/`updated_at` keys are present in [values] when the
+  /// target table actually has those columns. `setCreated` controls whether
+  /// to attempt setting `created_at` (useful for inserts), and `setUpdated`
+  /// controls `updated_at` (useful for updates). The function is tolerant
+  /// of PRAGMA failures and will silently ignore errors.
+  Future<void> _ensureTimestamps(
+      Database db, String table, Map<String, dynamic> values,
+      {bool setCreated = false, bool setUpdated = true}) async {
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (setCreated && await _tableHasColumn(db, table, 'created_at')) {
+        values['created_at'] = values['created_at'] ?? now;
+      }
+      if (setUpdated && await _tableHasColumn(db, table, 'updated_at')) {
+        values['updated_at'] = values['updated_at'] ?? now;
+      }
+    } catch (_) {
+      // ignore PRAGMA failures
+    }
+  }
 
   /// Register a handler for a specific `table` and `column`.
   /// Use table = '*' to register for all tables.
@@ -194,6 +236,12 @@ class DBService {
             }
           });
           _log.info('Applied migration asset for version $version');
+          // Schema changed; clear cached table column info so subsequent
+          // `_tableHasColumn` queries reflect the updated schema.
+          try {
+            _tableColumnsCache.clear();
+            _log.fine('Cleared table columns cache after migration v$version');
+          } catch (_) {}
         } catch (e, st) {
           _log.warning('Failed to apply migration asset $asset: $e', e, st);
           rethrow;
@@ -239,6 +287,11 @@ class DBService {
             }
           });
           _log.info('Applied downgrade asset for version $version');
+          // Schema changed due to downgrade; clear cache so PRAGMA info is refreshed.
+          try {
+            _tableColumnsCache.clear();
+            _log.fine('Cleared table columns cache after downgrade v$version');
+          } catch (_) {}
         } catch (e, st) {
           _log.warning('Failed to apply downgrade asset $asset: $e', e, st);
           rethrow;
@@ -731,9 +784,8 @@ class DBService {
           final newVal = await handler.onWrite(table, col, originalVal);
           values = Map<String, dynamic>.from(values);
           values[col] = newVal;
-          // provide created_at convenience if present
-          values['created_at'] =
-              values['created_at'] ?? DateTime.now().millisecondsSinceEpoch;
+          await _ensureTimestamps(db, table, values,
+              setCreated: true, setUpdated: false);
         } catch (e, st) {
           _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
         }
@@ -777,8 +829,8 @@ class DBService {
           final newVal = await handler.onWrite(table, col, originalVal);
           values = Map<String, dynamic>.from(values);
           values[col] = newVal;
-          values['created_at'] =
-              values['created_at'] ?? DateTime.now().millisecondsSinceEpoch;
+          await _ensureTimestamps(db, table, values,
+              setCreated: true, setUpdated: true);
         } catch (e, st) {
           _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
         }
@@ -819,6 +871,8 @@ class DBService {
           final newVal = await handler.onWrite(table, col, originalVal);
           values = Map<String, dynamic>.from(values);
           values[col] = newVal;
+          await _ensureTimestamps(db, table, values,
+              setCreated: false, setUpdated: true);
         } catch (e, st) {
           _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
         }
@@ -1008,6 +1062,8 @@ class DBService {
             for (var i = 0; i < columns.length; i++) {
               valuesMap[columns[i]] = parseValueToken(vals[i]);
             }
+            await _ensureTimestamps(db, table, valuesMap,
+                setCreated: true, setUpdated: true);
             // call high-level insert to trigger handlers
             return await insert(table, valuesMap);
           } else {
@@ -1125,6 +1181,8 @@ class DBService {
           if (wvalToken == '?') return await db.rawUpdate(sql);
           final wval = parseValueToken(wvalToken);
           final whereClause = '$wcol = ?';
+          await _ensureTimestamps(db, table, valuesMap,
+              setCreated: false, setUpdated: true);
           return await update(table, valuesMap, whereClause, [wval]);
         } catch (e) {
           return await db.rawUpdate(sql);
