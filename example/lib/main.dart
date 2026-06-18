@@ -90,11 +90,12 @@ Future<void> main() async {
       registerPeriodic: true,
       migrationAssetPaths: [
         // 'migrations/migration.sql',
-        'migrations/v1.sql',
+        'migrations/migration_json_file.sql',
+        // 'migrations/v1.sql',
         // 'migrations/v2.sql',
         // 'migrations/v2_down.sql',
       ],
-      dbVersion: 1,
+      dbVersion: 0,
     );
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');

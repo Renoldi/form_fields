@@ -173,7 +173,7 @@ class DBService {
     // Register default file-backed handler for any `payload` column.
     // registerColumnHandler(
     //     '*', 'payload', FileBackedColumnHandler(prefix: 'payload'));
-    // // Register table-specific prefixes for common tables to produce nicer filenames.
+    // Register table-specific prefixes for common tables to produce nicer filenames.
     // registerColumnHandler(
     //     'asset', 'payload', FileBackedColumnHandler(prefix: 'asset'));
     // registerColumnHandler('master_inspection_forms', 'payload',
@@ -221,6 +221,16 @@ class DBService {
   /// Public check whether a handler is registered for [table].[column].
   bool hasColumnHandler(String table, String column) {
     return _getHandler(table, column) != null;
+  }
+
+  /// Returns true when a column should be treated as file-backed even when
+  /// no explicit ColumnHandler was registered. This covers common names
+  /// like `payload` or columns ending with `_payload` to provide a sensible
+  /// default without requiring manual registration.
+  bool isColumnFileBacked(String table, String column) {
+    if (_getHandler(table, column) != null) return true;
+    if (column == 'payload' || column.endsWith('_payload')) return true;
+    return false;
   }
 
   Future<Database> init(
@@ -762,15 +772,35 @@ class DBService {
           if (v is! String) continue;
 
           final handler = _getHandler(table, c);
-          if (handler == null) continue;
 
-          try {
-            final decoded = await readPayloadJson(v);
-            if (decoded != null) {
-              r[c] = decoded;
-              continue;
-            }
-          } catch (_) {}
+          // If a handler is registered, prefer reading payload via file.
+          if (handler != null) {
+            try {
+              final decoded = await readPayloadJson(v);
+              if (decoded != null) {
+                r[c] = decoded;
+                continue;
+              }
+            } catch (_) {}
+          } else {
+            // No explicit handler: attempt to read payload file if the
+            // column name suggests a payload, or the stored value itself
+            // looks like a filename (eg. "something.json"). This allows
+            // inlining even when the column isn't named `payload`.
+            try {
+              final s = v.trim();
+              final fnRe =
+                  RegExp(r'^[A-Za-z0-9._-]+\.json$', caseSensitive: false);
+              final looksLikeFilename = fnRe.hasMatch(s);
+              if (isColumnFileBacked(table, c) || looksLikeFilename) {
+                final decoded = await readPayloadJson(v);
+                if (decoded != null) {
+                  r[c] = decoded;
+                  continue;
+                }
+              }
+            } catch (_) {}
+          }
 
           try {
             final s = v.trim();

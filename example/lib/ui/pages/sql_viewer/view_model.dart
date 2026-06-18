@@ -64,7 +64,7 @@ class SqlViewerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadRows(String table) async {
+  Future<void> loadRows(String table, {bool inlinePayloads = false}) async {
     loading = true;
     notifyListeners();
     try {
@@ -75,27 +75,42 @@ class SqlViewerViewModel extends ChangeNotifier {
       rows = results.map((r) => Map<String, dynamic>.from(r)).toList();
 
       // Post-process rows: if a column looks like a payload filename (ends
-      // with .json), attempt to read and decode the payload and inline it.
+      // with .json) or has a registered handler, attempt to read and decode
+      // the payload and inline it. Allow inlinePayloads toggle or fallback
+      // to only first row when inlinePayloads == false.
       for (var i = 0; i < rows.length; i++) {
         final r = rows[i];
-        final shouldInline = i == 0; // only inline for first row
+        final shouldInline = inlinePayloads ? true : (i == 0);
         final keys = r.keys.toList();
         for (final k in keys) {
           final v = r[k];
-          // Only attempt to inline payloads for columns that have a
-          // registered handler (eg. `payload`) and only for the first row.
           if (!shouldInline) continue;
-          if (!_db.hasColumnHandler(table, k)) continue;
           if (v is String) {
             final s = v.trim();
-            if (s.endsWith('.json')) {
-              try {
+            try {
+              // If there's a handler, or column naming suggests a payload,
+              // or the stored value itself looks like a filename, attempt
+              // to read the payload file.
+              final fnRe =
+                  RegExp(r'^[A-Za-z0-9._-]+\.json$', caseSensitive: false);
+              final looksLikeFilename = fnRe.hasMatch(s);
+              if (_db.hasColumnHandler(table, k) ||
+                  _db.isColumnFileBacked(table, k) ||
+                  looksLikeFilename) {
                 final decoded = await _db.readPayloadJson(s);
-                if (decoded != null) r[k] = decoded;
-              } catch (_) {
-                // ignore - leave filename as-is
+                if (decoded != null) {
+                  r[k] = decoded;
+                  continue;
+                }
               }
-            }
+            } catch (_) {}
+
+            // Fallback: if stored value itself is JSON text, decode it.
+            try {
+              if (s.startsWith('{') || s.startsWith('[')) {
+                r[k] = json.decode(s);
+              }
+            } catch (_) {}
           }
         }
       }

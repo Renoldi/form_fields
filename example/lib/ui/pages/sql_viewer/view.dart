@@ -21,10 +21,13 @@ class _SqlView extends StatefulWidget {
 }
 
 class _SqlViewState extends State<_SqlView> {
+  bool inlinePayloadsInList = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<SqlViewerViewModel>().loadTables();
     });
   }
@@ -64,7 +67,8 @@ class _SqlViewState extends State<_SqlView> {
                             .toList(),
                         onChanged: (v) async {
                           if (v != null) {
-                            await vm.loadRows(v);
+                            await vm.loadRows(v,
+                                inlinePayloads: inlinePayloadsInList);
                             if (!mounted) return;
                           }
                         },
@@ -74,19 +78,40 @@ class _SqlViewState extends State<_SqlView> {
                     ElevatedButton(
                         onPressed: vm.loading ? null : () => vm.loadTables(),
                         child: const Text('Refresh')),
+                    // Row(
+                    //   mainAxisSize: MainAxisSize.min,
+                    //   children: [
+                    //     Checkbox(
+                    //       value: _inlinePayloadsInList,
+                    //       onChanged: vm.loading
+                    //           ? null
+                    //           : (v) async {
+                    //               final newVal = v ?? false;
+                    //               setState(() {
+                    //                 _inlinePayloadsInList = newVal;
+                    //               });
+                    //               if (vm.selectedTable != null) {
+                    //                 await vm.loadRows(vm.selectedTable!,
+                    //                     inlinePayloads: newVal);
+                    //                 if (!mounted) return;
+                    //               }
+                    //             },
+                    //     ),
+                    //     const Text('Inline payloads'),
+                    //   ],
+                    // ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.insert_drive_file),
                       label: const Text('Import from file'),
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final localCtx = context;
                               final vmRef = vm;
                               final path = await ImportExportService.instance
                                   .pickFileAndImport();
-                              if (!localCtx.mounted) return;
+                              if (!context.mounted) return;
                               final messenger =
-                                  ScaffoldMessenger.maybeOf(localCtx);
+                                  ScaffoldMessenger.maybeOf(context);
                               if (path != null) {
                                 messenger?.showSnackBar(SnackBar(
                                     content:
@@ -105,12 +130,11 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final localCtx = context;
                               final out = await ImportExportService.instance
                                   .pickFolderAndExport();
-                              if (!localCtx.mounted) return;
+                              if (!context.mounted) return;
                               final messenger =
-                                  ScaffoldMessenger.maybeOf(localCtx);
+                                  ScaffoldMessenger.maybeOf(context);
                               if (out != null) {
                                 messenger?.showSnackBar(SnackBar(
                                     content: Text('Exported to $out')));
@@ -152,24 +176,235 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (query == null || query.trim().isEmpty) return;
-                              final localCtx = context;
                               final vmRef = vm;
                               try {
                                 final res = await DBService.instance
                                     .executeSqlInsUpDel(query);
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 final messenger =
-                                    ScaffoldMessenger.maybeOf(localCtx);
+                                    ScaffoldMessenger.maybeOf(context);
                                 messenger?.showSnackBar(SnackBar(
                                     content:
                                         Text('SQL executed, result: $res')));
                                 await vmRef.loadTables();
                               } catch (e) {
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 final messenger =
-                                    ScaffoldMessenger.maybeOf(localCtx);
+                                    ScaffoldMessenger.maybeOf(context);
                                 messenger?.showSnackBar(SnackBar(
                                     content: Text('SQL execution failed: $e')));
+                              }
+                            },
+                    ),
+                    // Detailed example usage of DBService.selectFrom
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.table_chart),
+                      label: const Text('Select From (detailed)'),
+                      onPressed: vm.loading
+                          ? null
+                          : () async {
+                              final tableCtrl = TextEditingController(
+                                  text: vm.selectedTable ?? '');
+                              final colsCtrl = TextEditingController();
+                              final whereCtrl = TextEditingController();
+                              final orderCtrl = TextEditingController();
+                              final limitCtrl = TextEditingController();
+                              final offsetCtrl = TextEditingController();
+                              bool inlinePayloads = inlinePayloadsInList;
+
+                              final params =
+                                  await showDialog<Map<String, dynamic>>(
+                                context: context,
+                                builder: (ctx) => StatefulBuilder(
+                                  builder: (ctx, setState) => AlertDialog(
+                                    title: const Text('Select From parameters'),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextField(
+                                            controller: tableCtrl,
+                                            decoration: const InputDecoration(
+                                                labelText: 'Table name'),
+                                          ),
+                                          TextField(
+                                            controller: colsCtrl,
+                                            decoration: const InputDecoration(
+                                                labelText:
+                                                    'Columns (comma-separated, optional)'),
+                                          ),
+                                          TextField(
+                                            controller: whereCtrl,
+                                            decoration: const InputDecoration(
+                                                labelText:
+                                                    'WHERE clause (e.g. id = 1) optional'),
+                                          ),
+                                          TextField(
+                                            controller: orderCtrl,
+                                            decoration: const InputDecoration(
+                                                labelText:
+                                                    'ORDER BY (optional)'),
+                                          ),
+                                          Row(children: [
+                                            Expanded(
+                                              child: TextField(
+                                                controller: limitCtrl,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        labelText:
+                                                            'Limit (optional)'),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: TextField(
+                                                controller: offsetCtrl,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                decoration:
+                                                    const InputDecoration(
+                                                        labelText:
+                                                            'Offset (optional)'),
+                                              ),
+                                            ),
+                                          ]),
+                                          CheckboxListTile(
+                                            contentPadding: EdgeInsets.zero,
+                                            value: inlinePayloads,
+                                            onChanged: (v) => setState(() =>
+                                                inlinePayloads = v ?? true),
+                                            title: const Text(
+                                                'Inline payload files as JSON'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, null),
+                                          child: const Text('Cancel')),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx, {
+                                              'table': tableCtrl.text.trim(),
+                                              'columns': colsCtrl.text.trim(),
+                                              'where': whereCtrl.text.trim(),
+                                              'orderBy': orderCtrl.text.trim(),
+                                              'limit': limitCtrl.text.trim(),
+                                              'offset': offsetCtrl.text.trim(),
+                                              'inline': inlinePayloads,
+                                            });
+                                          },
+                                          child: const Text('Execute')),
+                                    ],
+                                  ),
+                                ),
+                              );
+
+                              if (params == null) return;
+                              final table =
+                                  (params['table'] as String?)?.trim();
+                              if (table == null || table.isEmpty) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.maybeOf(context)
+                                    ?.showSnackBar(const SnackBar(
+                                        content: Text('Table required')));
+                                return;
+                              }
+
+                              List<String>? columns;
+                              final colsText = params['columns'] as String?;
+                              if (colsText != null && colsText.isNotEmpty) {
+                                columns = colsText
+                                    .split(',')
+                                    .map((s) => s.trim())
+                                    .where((s) => s.isNotEmpty)
+                                    .toList();
+                              }
+
+                              final where =
+                                  (params['where'] as String?)?.trim();
+                              final orderBy =
+                                  (params['orderBy'] as String?)?.trim();
+                              final limit = int.tryParse(
+                                  (params['limit'] as String?) ?? '');
+                              final offset = int.tryParse(
+                                  (params['offset'] as String?) ?? '');
+                              final inline = params['inline'] == true;
+
+                              try {
+                                final rows =
+                                    await DBService.instance.selectFrom(
+                                  table,
+                                  columns: columns,
+                                  where:
+                                      where?.isNotEmpty == true ? where : null,
+                                  orderBy: orderBy?.isNotEmpty == true
+                                      ? orderBy
+                                      : null,
+                                  limit: limit,
+                                  offset: offset,
+                                  inlinePayloads: inline,
+                                );
+
+                                if (!context.mounted) return;
+
+                                if (rows.isEmpty) {
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(const SnackBar(
+                                          content: Text('No rows')));
+                                  return;
+                                }
+
+                                // Build header order from union of keys
+                                final headers = <String>{};
+                                for (final r in rows) {
+                                  headers
+                                      .addAll(r.keys.map((k) => k.toString()));
+                                }
+                                final headerList = headers.toList();
+
+                                await showDialog<void>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text('Rows (${rows.length})'),
+                                    content: SizedBox(
+                                      width: double.maxFinite,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: SingleChildScrollView(
+                                          child: DataTable(
+                                            columns: headerList
+                                                .map((h) =>
+                                                    DataColumn(label: Text(h)))
+                                                .toList(),
+                                            rows: rows.map((r) {
+                                              return DataRow(
+                                                  cells: headerList
+                                                      .map((h) => DataCell(Text(
+                                                          r[h]?.toString() ??
+                                                              'NULL')))
+                                                      .toList());
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Close'))
+                                    ],
+                                  ),
+                                );
+                              } catch (e) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.maybeOf(context)
+                                    ?.showSnackBar(SnackBar(
+                                        content: Text('Select failed: $e')));
                               }
                             },
                     ),
@@ -179,12 +414,11 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final localCtx = context;
                               final vmRef = vm;
                               final controller = TextEditingController();
                               final assetsController = TextEditingController();
                               final target = await showDialog<int?>(
-                                context: localCtx,
+                                context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Upgrade database'),
                                   content: Column(
@@ -222,7 +456,6 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (target != null) {
-                                final localCtx = context;
                                 final assetsText = assetsController.text.trim();
                                 final assetsList = assetsText.isEmpty
                                     ? null
@@ -233,9 +466,9 @@ class _SqlViewState extends State<_SqlView> {
                                         .toList();
                                 await vmRef.upgradeAndCaptureTables(target,
                                     migrationAssetPaths: assetsList);
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 await showDialog(
-                                  context: localCtx,
+                                  context: context,
                                   builder: (ctx) => AlertDialog(
                                     title: const Text('Tables: before → after'),
                                     content: SingleChildScrollView(
@@ -278,12 +511,11 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final localCtx = context;
                               final vmRef = vm;
                               final controller = TextEditingController();
                               final assetsController = TextEditingController();
                               final target = await showDialog<int?>(
-                                context: localCtx,
+                                context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Downgrade database'),
                                   content: Column(
@@ -331,9 +563,9 @@ class _SqlViewState extends State<_SqlView> {
                                         .toList();
                                 await vmRef.downgradeAndCaptureTables(target,
                                     migrationAssetPaths: assetsList);
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 await showDialog(
-                                  context: localCtx,
+                                  context: context,
                                   builder: (ctx) => AlertDialog(
                                     title: const Text('Tables: before → after'),
                                     content: SingleChildScrollView(
@@ -404,11 +636,10 @@ class _SqlViewState extends State<_SqlView> {
                                 ),
                               );
                               if (target != null) {
-                                final localCtx = context;
                                 await vmRef.setUserVersion(target);
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 final messenger =
-                                    ScaffoldMessenger.maybeOf(localCtx);
+                                    ScaffoldMessenger.maybeOf(context);
                                 final ver = vmRef.dbVersion;
                                 if (vmRef.lastUpgradeError != null) {
                                   messenger?.showSnackBar(SnackBar(
@@ -430,11 +661,10 @@ class _SqlViewState extends State<_SqlView> {
                       onPressed: vm.loading
                           ? null
                           : () async {
-                              final localCtx = context;
                               final vmRef = vm;
                               final result =
                                   await showDialog<Map<String, dynamic>>(
-                                context: localCtx,
+                                context: context,
                                 builder: (ctx) {
                                   bool removeMigrations = false;
                                   bool removePayloads = false;
@@ -494,9 +724,9 @@ class _SqlViewState extends State<_SqlView> {
                                     reinit: false,
                                     removeMigrationsDir: removeMigrations,
                                     removePayloadsDir: removePayloads);
-                                if (!localCtx.mounted) return;
+                                if (!context.mounted) return;
                                 final messenger =
-                                    ScaffoldMessenger.maybeOf(localCtx);
+                                    ScaffoldMessenger.maybeOf(context);
                                 messenger?.showSnackBar(const SnackBar(
                                     content: Text('Database reset')));
                                 // Do not call loadTables() here because that calls
@@ -559,12 +789,13 @@ class _SqlViewState extends State<_SqlView> {
                                 children: [
                                   TextButton.icon(
                                     onPressed: () async {
-                                      final messenger =
-                                          ScaffoldMessenger.maybeOf(context);
                                       final text = await vm.rowToPrettyJson(row,
                                           includePayloads: idx == 0);
                                       await Clipboard.setData(
                                           ClipboardData(text: text));
+                                      if (!context.mounted) return;
+                                      final messenger =
+                                          ScaffoldMessenger.maybeOf(context);
                                       messenger?.showSnackBar(const SnackBar(
                                           content: Text('Copied JSON')));
                                     },
@@ -573,8 +804,6 @@ class _SqlViewState extends State<_SqlView> {
                                   ),
                                   TextButton.icon(
                                     onPressed: () async {
-                                      final messenger =
-                                          ScaffoldMessenger.maybeOf(context);
                                       final vmRef = vm;
                                       final confirmed = await showDialog<bool>(
                                         context: context,
@@ -603,13 +832,19 @@ class _SqlViewState extends State<_SqlView> {
                                         if (id != null) {
                                           await vmRef.deleteRow(
                                               vm.selectedTable!, id);
-                                          if (!mounted) return;
+                                          if (!context.mounted) return;
+                                          final messenger =
+                                              ScaffoldMessenger.maybeOf(
+                                                  context);
                                           messenger?.showSnackBar(
                                               const SnackBar(
                                                   content:
                                                       Text('Row deleted')));
                                         } else {
-                                          if (!mounted) return;
+                                          if (!context.mounted) return;
+                                          final messenger =
+                                              ScaffoldMessenger.maybeOf(
+                                                  context);
                                           messenger?.showSnackBar(const SnackBar(
                                               content: Text(
                                                   'Unable to determine row id')));
