@@ -122,10 +122,12 @@ class SqlViewerViewModel extends ChangeNotifier {
     notifyListeners();
     lastUpgradeError = null;
     try {
-      final db = await _db.init();
-      final before = await db.rawQuery(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
-      tablesBeforeUpgrade = before.map((r) => r['name'].toString()).toList();
+      // Use DBService helper to read schema before migration.
+      final beforeRows = await _db.selectSqliteMaster();
+      tablesBeforeUpgrade = beforeRows
+          .where((r) => (r['type']?.toString() ?? '') == 'table')
+          .map((r) => r['name'].toString())
+          .toList();
 
       try {
         await _db.migrateTo(
@@ -145,21 +147,15 @@ class SqlViewerViewModel extends ChangeNotifier {
             : '$lastUpgradeError\nFailed to set user_version: $e';
       }
 
-      // Re-open DB (if needed) and read schema + PRAGMA from disk.
-      final freshDb = await _db.init();
-      final after = await freshDb.rawQuery(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
-      tablesAfterUpgrade = after.map((r) => r['name'].toString()).toList();
+      // Re-open DB (if needed) and read schema + PRAGMA from disk using helpers.
+      final afterRows = await _db.selectSqliteMaster();
+      tablesAfterUpgrade = afterRows
+          .where((r) => (r['type']?.toString() ?? '') == 'table')
+          .map((r) => r['name'].toString())
+          .toList();
       try {
-        final pragma2 = await freshDb.rawQuery('PRAGMA user_version;');
-        if (pragma2.isNotEmpty) {
-          final first2 = pragma2.first.values.first;
-          if (first2 is int) {
-            dbVersion = first2;
-          } else {
-            dbVersion = int.tryParse(first2.toString()) ?? dbVersion;
-          }
-        }
+        final v2 = await _db.selectDbVersion();
+        if (v2 != null) dbVersion = v2;
       } catch (_) {}
     } finally {
       loading = false;

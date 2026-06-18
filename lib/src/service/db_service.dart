@@ -662,6 +662,14 @@ class DBService {
     }
   }
 
+  /// Return the full filesystem path to the database file stored in the
+  /// application's documents directory. This is useful for diagnostics
+  /// or when an external tool needs to access the DB file directly.
+  Future<String> getDbPath({String dbName = 'form_fields.db'}) async {
+    final documents = await getApplicationDocumentsDirectory();
+    return p.join(documents.path, dbName);
+  }
+
   Future<int> insert(String table, Map<String, dynamic> values,
       {bool autoHandlePayload = true}) async {
     final db = _db ?? await init();
