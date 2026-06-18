@@ -130,7 +130,7 @@ class _SqlViewState extends State<_SqlView> {
                               final query = await showDialog<String?>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  title: const Text('Run SQL'),
+                                  title: const Text('Run SQL InsUpDel'),
                                   content: TextField(
                                     controller: controller,
                                     keyboardType: TextInputType.multiline,
@@ -155,8 +155,8 @@ class _SqlViewState extends State<_SqlView> {
                               final localCtx = context;
                               final vmRef = vm;
                               try {
-                                final res =
-                                    await DBService.instance.executeSql(query);
+                                final res = await DBService.instance
+                                    .executeSqlInsUpDel(query);
                                 if (!localCtx.mounted) return;
                                 final messenger =
                                     ScaffoldMessenger.maybeOf(localCtx);

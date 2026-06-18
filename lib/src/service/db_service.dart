@@ -722,6 +722,72 @@ class DBService {
           onDowngrade: onDowngrade,
           onOpen: onOpen);
 
+  /// Structured SELECT helper for a single table. This is a more
+  /// professional/typed alternative to `select(sql, params: ...)` and
+  /// leverages sqflite's `query` API. When [inlinePayloads] is true any
+  /// columns with registered handlers will attempt to inline JSON payloads
+  /// from payload files or decode inline JSON strings.
+  Future<List<Map<String, dynamic>>> selectFrom(String table,
+      {bool? distinct,
+      List<String>? columns,
+      String? where,
+      List<Object?>? whereArgs,
+      String? groupBy,
+      String? having,
+      String? orderBy,
+      int? limit,
+      int? offset,
+      bool inlinePayloads = true}) async {
+    final db = _db ?? await init();
+    try {
+      final rows = (await db.query(table,
+              distinct: distinct ?? false,
+              columns: columns,
+              where: where,
+              whereArgs: whereArgs,
+              groupBy: groupBy,
+              having: having,
+              orderBy: orderBy,
+              limit: limit,
+              offset: offset))
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      if (!inlinePayloads || rows.isEmpty) return rows;
+
+      for (final r in rows) {
+        for (final entry in List<MapEntry<String, dynamic>>.from(r.entries)) {
+          final c = entry.key;
+          final v = entry.value;
+          if (v is! String) continue;
+
+          final handler = _getHandler(table, c);
+          if (handler == null) continue;
+
+          try {
+            final decoded = await readPayloadJson(v);
+            if (decoded != null) {
+              r[c] = decoded;
+              continue;
+            }
+          } catch (_) {}
+
+          try {
+            final s = v.trim();
+            if (s.startsWith('{') || s.startsWith('[')) {
+              r[c] = json.decode(s);
+            }
+          } catch (_) {}
+        }
+      }
+
+      return rows;
+    } catch (e, st) {
+      _log.warning('selectFrom failed: $e', e, st);
+      rethrow;
+    }
+  }
+
   Future<int> insert(String table, Map<String, dynamic> values,
       {bool autoHandlePayload = true}) async {
     final db = _db ?? await init();
@@ -897,7 +963,7 @@ class DBService {
   /// - for `INSERT`: the inserted row id (as returned by `rawInsert`)
   /// - for `UPDATE`/`DELETE`: the number of affected rows
   /// - for other statements: 0
-  Future<int> executeSql(String sql, {bool isRaw = false}) async {
+  Future<int> executeSqlInsUpDel(String sql, {bool isRaw = false}) async {
     final db = _db ?? await init();
     final stmt = sql.trim();
     try {
@@ -1236,11 +1302,6 @@ class DBService {
       _log.warning('Failed to decode JSON in payload $filename: $e');
       return null;
     }
-  }
-
-  Future<List<Map<String, dynamic>>> queryAll(String table) async {
-    final db = _db ?? await init();
-    return await db.query(table);
   }
 
   Future<void> exportToSqlFile(String destPath,
