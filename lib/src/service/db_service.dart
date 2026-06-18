@@ -14,6 +14,15 @@ final _log = Logger('DBService');
 
 const String _payloadDirName = 'payloads';
 
+// Mutable default database name. `init(dbName: ...)` will update this
+// when a non-empty value is provided so other APIs can fall back to it.
+String _defaultDbName = 'form_fields.db';
+
+String _effectiveDbName(String? dbName) {
+  if (dbName == null || dbName.isEmpty) return _defaultDbName;
+  return dbName;
+}
+
 class DBService {
   DBService._() {
     // Register default file-backed handler for any `payload` column.
@@ -122,7 +131,7 @@ class DBService {
   }
 
   Future<Database> init(
-      {String dbName = 'form_fields.db',
+      {String? dbName,
       List<String>? migrationAssetPaths,
       int dbVersion = 0,
       OnDatabaseConfigureFn? onConfigure,
@@ -136,6 +145,11 @@ class DBService {
     _initCompleter = Completer<Database>();
 
     try {
+      // Resolve effective DB name and update global default if caller
+      // provided a non-empty name.
+      final effectiveDb = _effectiveDbName(dbName);
+      _defaultDbName = effectiveDb;
+
       // Build migration maps from provided assets. The maps contain "up"
       // migration assets keyed by target version and optional "down" assets
       // for downgrades if present in filenames (containing 'down' or
@@ -365,7 +379,7 @@ class DBService {
       }
 
       final documents = await getApplicationDocumentsDirectory();
-      final path = p.join(documents.path, dbName);
+      final path = p.join(documents.path, effectiveDb);
       _log.info('Opening database at $path');
 
       _db = await openDatabase(
@@ -484,7 +498,7 @@ class DBService {
   /// Delete the on-disk database file and optionally the `migrations` folder.
   /// This will also close any open DB connection and clear the cached instance.
   Future<void> deleteDatabaseFile(
-      {String dbName = 'form_fields.db',
+      {String? dbName,
       bool removeMigrationsDir = false,
       bool removePayloadsDir = false}) async {
     try {
@@ -493,7 +507,8 @@ class DBService {
     _db = null;
     try {
       final documents = await getApplicationDocumentsDirectory();
-      final dbPath = p.join(documents.path, dbName);
+      final effective = _effectiveDbName(dbName);
+      final dbPath = p.join(documents.path, effective);
       // Prefer using sqflite's deleteDatabase to properly remove any internal
       // state before deleting files.
       try {
@@ -504,9 +519,9 @@ class DBService {
       final dbFile = File(dbPath);
       if (await dbFile.exists()) await dbFile.delete();
       // Also remove SQLite companion files that may hold WAL/SHM journal data.
-      final wal = File(p.join(documents.path, '$dbName-wal'));
-      final shm = File(p.join(documents.path, '$dbName-shm'));
-      final journal = File(p.join(documents.path, '$dbName-journal'));
+      final wal = File(p.join(documents.path, '${effective}-wal'));
+      final shm = File(p.join(documents.path, '${effective}-shm'));
+      final journal = File(p.join(documents.path, '${effective}-journal'));
       if (await wal.exists()) await wal.delete();
       if (await shm.exists()) await shm.delete();
       if (await journal.exists()) await journal.delete();
@@ -518,7 +533,7 @@ class DBService {
         final dir = Directory(p.join(documents.path, _payloadDirName));
         if (await dir.exists()) await dir.delete(recursive: true);
       }
-      _log.info('Deleted database file: ${p.join(dbName)}');
+      _log.info('Deleted database file: ${p.join(effective)}');
     } catch (e, st) {
       _log.warning('Failed to delete DB file: $e', e, st);
     }
@@ -529,7 +544,7 @@ class DBService {
   /// is true.
 
   Future<void> resetDatabase(
-      {String dbName = 'form_fields.db',
+      {String? dbName,
       bool removeMigrationsDir = false,
       bool removePayloadsDir = false,
       bool reinit = true}) async {
@@ -543,11 +558,12 @@ class DBService {
   }
 
   /// Set SQLite `user_version` PRAGMA. Ensures DB is open before setting.
-  Future<void> setUserVersion(int version) async {
+  Future<void> setUserVersion(int version, {String? dbName}) async {
     // Open a transient connection to the DB file to set PRAGMA directly.
     try {
       final documents = await getApplicationDocumentsDirectory();
-      final path = p.join(documents.path, 'form_fields.db');
+      final effective = _effectiveDbName(dbName);
+      final path = p.join(documents.path, effective);
       final transient = await openDatabase(path);
       try {
         await transient.execute('PRAGMA user_version = $version');
@@ -576,7 +592,7 @@ class DBService {
   /// reconcile the current version with [targetVersion] (running upgrades or
   /// downgrades as needed).
   Future<Database> migrateTo({
-    String dbName = 'form_fields.db',
+    String? dbName,
     required int targetVersion,
     List<String>? migrationAssetPaths,
     OnDatabaseConfigureFn? onConfigure,
@@ -599,7 +615,7 @@ class DBService {
 
   /// Convenience wrapper to migrate up to [targetVersion].
   Future<Database> upgradeTo(int targetVersion,
-          {String dbName = 'form_fields.db',
+          {String? dbName,
           List<String>? migrationAssetPaths,
           OnDatabaseConfigureFn? onConfigure,
           OnDatabaseCreateFn? onCreate,
@@ -616,7 +632,7 @@ class DBService {
 
   /// Convenience wrapper to migrate down to [targetVersion].
   Future<Database> downgradeTo(int targetVersion,
-          {String dbName = 'form_fields.db',
+          {String? dbName,
           List<String>? migrationAssetPaths,
           OnDatabaseConfigureFn? onConfigure,
           OnDatabaseCreateFn? onCreate,
@@ -745,9 +761,9 @@ class DBService {
   /// Return the full filesystem path to the database file stored in the
   /// application's documents directory. This is useful for diagnostics
   /// or when an external tool needs to access the DB file directly.
-  Future<String> getDbPath({String dbName = 'form_fields.db'}) async {
+  Future<String> getDbPath({String? dbName}) async {
     final documents = await getApplicationDocumentsDirectory();
-    return p.join(documents.path, dbName);
+    return p.join(documents.path, _effectiveDbName(dbName));
   }
 
   Future<int> insert(String table, Map<String, dynamic> values,
@@ -1553,9 +1569,9 @@ class DBService {
     }
   }
 
-  Future<String> copyDatabaseFile(String destPath) async {
+  Future<String> copyDatabaseFile(String destPath, {String? dbName}) async {
     final documents = await getApplicationDocumentsDirectory();
-    final dbFile = File(p.join(documents.path, 'form_fields.db'));
+    final dbFile = File(p.join(documents.path, _effectiveDbName(dbName)));
     final dest = File(destPath);
     await dest.create(recursive: true);
     await dbFile.copy(dest.path);
