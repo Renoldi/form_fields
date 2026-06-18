@@ -623,6 +623,45 @@ class DBService {
     }
   }
 
+  /// Return rows from `sqlite_master` (database schema table).
+  ///
+  /// When [includeInternal] is false (default) rows whose `name` starts
+  /// with `sqlite_` are excluded to avoid returning internal SQLite objects.
+  Future<List<Map<String, dynamic>>> selectSqliteMaster(
+      {bool includeInternal = false}) async {
+    final db = _db ?? await init();
+    try {
+      final q = includeInternal
+          ? "SELECT * FROM sqlite_master"
+          : "SELECT * FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name";
+      final rows = (await db.rawQuery(q))
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      return rows;
+    } catch (e, st) {
+      _log.warning('selectSqliteMaster failed: $e', e, st);
+      rethrow;
+    }
+  }
+
+  /// Read the database `user_version` PRAGMA and return it as an `int`.
+  /// Returns `null` when the PRAGMA cannot be read.
+  Future<int?> selectDbVersion() async {
+    final db = _db ?? await init();
+    try {
+      final pragma = await db.rawQuery('PRAGMA user_version;');
+      if (pragma.isNotEmpty) {
+        final first = pragma.first.values.first;
+        if (first is int) return first;
+        return int.tryParse(first.toString());
+      }
+      return null;
+    } catch (e, st) {
+      _log.warning('selectDbVersion failed: $e', e, st);
+      rethrow;
+    }
+  }
+
   Future<int> insert(String table, Map<String, dynamic> values,
       {bool autoHandlePayload = true}) async {
     final db = _db ?? await init();

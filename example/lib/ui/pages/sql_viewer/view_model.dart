@@ -20,20 +20,16 @@ class SqlViewerViewModel extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      final db = await _db.init();
-      final results = await db.rawQuery(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
-      tables = results.map((r) => r['name'].toString()).toList();
+      // Use DBService helpers to read schema and PRAGMA.
+      final masterRows = await _db.selectSqliteMaster();
+      // Filter for tables and extract the name column.
+      tables = masterRows
+          .where((r) => (r['type']?.toString() ?? '') == 'table')
+          .map((r) => r['name'].toString())
+          .toList();
+
       try {
-        final pragma = await db.rawQuery('PRAGMA user_version;');
-        if (pragma.isNotEmpty) {
-          final first = pragma.first.values.first;
-          if (first is int) {
-            dbVersion = first;
-          } else {
-            dbVersion = int.tryParse(first.toString()) ?? 0;
-          }
-        }
+        dbVersion = await _db.selectDbVersion();
       } catch (_) {
         dbVersion = null;
       }
@@ -46,18 +42,7 @@ class SqlViewerViewModel extends ChangeNotifier {
   /// Load only the `PRAGMA user_version` into `dbVersion`.
   Future<void> loadDbVersion() async {
     try {
-      final db = await _db.init();
-      final pragma = await db.rawQuery('PRAGMA user_version;');
-      if (pragma.isNotEmpty) {
-        final first = pragma.first.values.first;
-        if (first is int) {
-          dbVersion = first;
-        } else {
-          dbVersion = int.tryParse(first.toString()) ?? 0;
-        }
-      } else {
-        dbVersion = null;
-      }
+      dbVersion = await _db.selectDbVersion();
     } catch (_) {
       dbVersion = null;
     }
@@ -211,21 +196,11 @@ class SqlViewerViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _db.setUserVersion(version);
-      // Re-open DB (if needed) and read PRAGMA.
+      // Read PRAGMA using DBService helper to keep behavior consistent.
       try {
-        final db = await _db.init();
-        final pragma = await db.rawQuery('PRAGMA user_version;');
-        if (pragma.isNotEmpty) {
-          final first = pragma.first.values.first;
-          if (first is int) {
-            dbVersion = first;
-          } else {
-            dbVersion = int.tryParse(first.toString()) ?? version;
-          }
-        } else {
-          dbVersion = version;
-        }
-      } catch (e) {
+        final v = await _db.selectDbVersion();
+        dbVersion = v ?? version;
+      } catch (_) {
         dbVersion = version;
       }
     } catch (e) {
