@@ -56,12 +56,14 @@ Future<bool> processPendingSubmissions() async {
   });
 }
 
+@pragma('vm:entry-point')
 Future<bool> backgroundFlushHandler(
     String task, Map<String, dynamic>? inputData) async {
   return await processPendingSubmissions();
 }
 
 /// Top-level dispatcher that Workmanager background isolate will call.
+@pragma('vm:entry-point')
 void workmanagerCallbackDispatcher() {
   Workmanager()
       .executeTask((String task, Map<String, dynamic>? inputData) async {
@@ -151,10 +153,17 @@ Future<void> main() async {
       try {
         WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
       } catch (_) {}
+      // Ensure the foreground flush handler is set so UI actions like
+      // "Run worker now" can call the flush handler immediately.
+      try {
+        WorkmanagerService.instance.flushPendingHandler = () async {
+          await processPendingSubmissions();
+        };
+      } catch (_) {}
     }
 
     // Use platform-appropriate minimum for periodic work (15 minutes).
-    final wmFreq = const Duration(minutes: 15);
+    final wmFreq = const Duration(seconds: 120);
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
@@ -203,14 +212,48 @@ Future<void> main() async {
       try {
         void startCountdown(Duration freq) {
           DateTime next = DateTime.now().add(freq);
-          Timer.periodic(const Duration(seconds: 1), (t) {
+          Timer.periodic(const Duration(seconds: 1), (t) async {
             final rem = next.difference(DateTime.now());
             if (rem.inMilliseconds <= 0) {
               try {
                 WorkmanagerService.instance.lastLogListenable.value =
-                    'next scheduled run now; resetting countdown';
+                    'next scheduled run now; triggering flush and resetting countdown';
               } catch (_) {}
-              next = next.add(freq);
+              // Log start
+              try {
+                WorkmanagerService.instance.lastLogListenable.value =
+                    'countdown-trigger: calling processPendingSubmissions()';
+              } catch (_) {}
+
+              try {
+                final success = await processPendingSubmissions();
+                try {
+                  WorkmanagerService.instance.lastLogListenable.value =
+                      'countdown-triggered flush: ${success ? 'success' : 'failure'}';
+                } catch (_) {}
+              } catch (e) {
+                try {
+                  WorkmanagerService.instance.lastLogListenable.value =
+                      'countdown-triggered flush threw: $e';
+                } catch (_) {}
+              }
+
+              // Also attempt to schedule a one-off background run as a fallback
+              try {
+                final err = await WorkmanagerService.instance
+                    .runOnceNowDetailed(taskName: 'dbg_countdown');
+                try {
+                  WorkmanagerService.instance.lastLogListenable.value =
+                      'scheduled one-off dbg_countdown -> ${err ?? 'ok'}';
+                } catch (_) {}
+              } catch (e) {
+                try {
+                  WorkmanagerService.instance.lastLogListenable.value =
+                      'failed scheduling dbg_countdown: $e';
+                } catch (_) {}
+              }
+
+              next = DateTime.now().add(freq);
               return;
             }
             final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');

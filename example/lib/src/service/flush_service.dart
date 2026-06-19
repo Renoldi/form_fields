@@ -64,6 +64,9 @@ Future<bool> flushPendingSubmissions(
       if (success && id != null) {
         await DBService.instance.delete('pending_submissions', 'id = ?', [id]);
         try {
+          WorkmanagerService.instance.notifyPendingChanged();
+        } catch (_) {}
+        try {
           WorkmanagerService.instance.lastLogListenable.value =
               'example.flushed pending id=$id';
         } catch (_) {}

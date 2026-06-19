@@ -281,6 +281,10 @@ class View extends PresenterState {
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
                                       'runNow: foreground flush completed';
+                                  // Reload pending items to reflect any deletions
+                                  try {
+                                    await vm.loadPending();
+                                  } catch (_) {}
                                 } catch (e) {
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
@@ -311,6 +315,10 @@ class View extends PresenterState {
                                       ?.call();
                                   WorkmanagerService.instance.lastLogListenable
                                       .value = 'foregroundFlush completed';
+                                  // Refresh pending list after a foreground flush
+                                  try {
+                                    await vm.loadPending();
+                                  } catch (_) {}
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
                                       ?.showSnackBar(const SnackBar(
