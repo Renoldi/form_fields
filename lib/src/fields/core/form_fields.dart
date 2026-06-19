@@ -489,7 +489,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // and disposal issues).
     final current = value ?? '';
     if (model.controller.text != current) {
-      model.setControllerSilent(current);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        model.setControllerSilent(current);
+      });
     }
 
     return TextFormField(
@@ -2465,10 +2468,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     final hasText =
                         (value != null && value.trim().isNotEmpty) ||
                             vm.controller.text.trim().isNotEmpty;
-                    _effectiveFieldExtraBottom.value = (error != null ||
-                            (hasText && _effectiveFocusNode.hasFocus))
-                        ? _kExtraFieldBottom
-                        : 0.0;
+                    // Avoid updating ValueNotifier synchronously during build
+                    // which can call markNeedsBuild. Defer update to next frame.
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      _effectiveFieldExtraBottom.value = (error != null ||
+                              (hasText && _effectiveFocusNode.hasFocus))
+                          ? _kExtraFieldBottom
+                          : 0.0;
+                    });
                     return error;
                   },
                   controller: vm.controller,

@@ -1405,7 +1405,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     provider.setUploadProgress(index, 0.02);
     final headers = <String, String>{};
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
-      headers['Authorization'] = widget.uploadToken!;
+      headers[HttpHeaders.authorizationHeader] = widget.uploadToken!;
     }
     // Determine effective description (prefer explicit param, fallback to image.description)
     final imgDesc = (image.description).trim();

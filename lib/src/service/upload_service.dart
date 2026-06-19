@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
@@ -83,7 +84,7 @@ class UploadService {
     if (looksLikeNetworkError(response)) {
       // Build sanitized payload without Authorization for persistence/queueing.
       final headersForPersist = Map<String, String>.from(headers);
-      headersForPersist.remove('Authorization');
+      headersForPersist.remove(HttpHeaders.authorizationHeader);
       final sanitized = DirectUploadPayload(
         url: payload.url,
         filePath: payload.filePath,
@@ -123,7 +124,7 @@ class UploadService {
     if (response != null && response.statusCode == 401) {
       // Build sanitized payload without Authorization for persistence.
       final headersForPersist = Map<String, String>.from(headers);
-      headersForPersist.remove('Authorization');
+      headersForPersist.remove(HttpHeaders.authorizationHeader);
       final sanitized = DirectUploadPayload(
         url: payload.url,
         filePath: payload.filePath,
@@ -170,7 +171,7 @@ class UploadService {
       final sc = response.statusCode!;
       if (sc >= 400 && sc < 600 && sc != 401) {
         final headersForPersist = Map<String, String>.from(headers);
-        headersForPersist.remove('Authorization');
+        headersForPersist.remove(HttpHeaders.authorizationHeader);
         final sanitized = DirectUploadPayload(
           url: payload.url,
           filePath: payload.filePath,

@@ -74,8 +74,9 @@ class View extends PresenterState {
                                 CircleAvatar(
                                   backgroundColor: const Color(0xFF1F2937),
                                   child: Text(
-                                    viewModel.displayName.isNotEmpty
-                                        ? viewModel.displayName[0].toUpperCase()
+                                    viewModel.user?.displayName != null
+                                        ? viewModel
+                                            .user!.displayName.toTitleCase
                                         : '?',
                                     style: const TextStyle(color: Colors.white),
                                   ),
@@ -87,7 +88,7 @@ class View extends PresenterState {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        viewModel.displayName,
+                                        viewModel.user?.displayName ?? '',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -95,7 +96,7 @@ class View extends PresenterState {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        viewModel.email,
+                                        viewModel.user?.email ?? '',
                                         style: TextStyle(
                                           color: Colors.grey.shade600,
                                           fontSize: 12,

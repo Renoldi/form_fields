@@ -43,17 +43,100 @@ class DioUtil {
     }
   }
 
-  static final Dio _dio = Dio()
-    ..interceptors.add(LogInterceptor(
+  // Dio instance is created via `_createDio` so it can be recreated/configured.
+  static Dio _dio = _createDio();
+
+  static final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 120,
+      colors: false,
+      printEmojis: false,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
+
+  /// Create a configured Dio instance used by this utility.
+  static Dio _createDio({
+    String? baseUrl,
+    Duration? connectTimeout,
+    Duration? sendTimeout,
+    Duration? receiveTimeout,
+    Map<String, dynamic>? headers,
+  }) {
+    final timeStamp = DateTime.now();
+    final newHeaders = <String, dynamic>{};
+    newHeaders.addAll({
+      HttpHeaders.acceptHeader: "application/json",
+      HttpHeaders.contentMD5Header: "application/json",
+      "Content-Type": "application/json",
+      "Client-Timestamp": timeStamp.toIso8601String(),
+      'Access-Control-Allow-Origin': '*', // Replace your domain
+      'Access-Control-Allow-Methods': 'POST, GET, DELETE, HEAD, OPTIONS',
+      "deviceOs": Platform.isAndroid ? "A" : "I",
+      "deviiceOsVersion": Platform.operatingSystemVersion,
+    });
+
+    final mergedHeaders = <String, dynamic>{};
+    mergedHeaders.addAll(newHeaders);
+    if (headers != null) {
+      mergedHeaders.addAll(headers);
+    }
+
+    final dio = Dio(BaseOptions(
+      baseUrl: baseUrl ?? '',
+      connectTimeout: connectTimeout,
+      sendTimeout: sendTimeout,
+      receiveTimeout: receiveTimeout,
+      headers: mergedHeaders,
+    ));
+
+    dio.interceptors.add(LogInterceptor(
       request: true,
       requestHeader: true,
       requestBody: true,
       responseHeader: true,
       responseBody: true,
       error: true,
+      logPrint: (object) => _logger.d(object),
     ));
 
-  static final Logger _logger = Logger();
+    dio.interceptors.add(InterceptorsWrapper(
+      onError: (DioException error, ErrorInterceptorHandler handler) {
+        final request = error.requestOptions;
+        final statusCode = error.response?.statusCode;
+        _logger.e('[DioUtil] HTTP error ${request.method} ${request.uri}');
+        _logger.e(
+            '[DioUtil] type=${error.type} status=${statusCode ?? '-'} message=${error.message ?? '-'}');
+        if (error.response?.data != null) {
+          _logger.e('[DioUtil] response=${error.response!.data}');
+        }
+        handler.next(error);
+      },
+    ));
+
+    return dio;
+  }
+
+  /// Reconfigure the underlying Dio instance. Call this at app startup
+  /// or when you need a different base URL / timeouts / headers.
+  static void configure({
+    String? baseUrl,
+    Duration? connectTimeout,
+    Duration? sendTimeout,
+    Duration? receiveTimeout,
+    Map<String, dynamic>? headers,
+  }) {
+    _dio = _createDio(
+      baseUrl: baseUrl,
+      connectTimeout: connectTimeout,
+      sendTimeout: sendTimeout,
+      receiveTimeout: receiveTimeout,
+      headers: headers,
+    );
+    _logger.i('[DioUtil] configured baseUrl=${baseUrl ?? ''}');
+  }
 
   /// Downloads a file from the given URL and saves it to a temp path.
   static Future<String?> downloadFile(String url) async {
@@ -69,6 +152,193 @@ class DioUtil {
       return file.path;
     }
     return null;
+  }
+
+  // =============================================================
+  // Reusable HTTP helpers (get/post/put/download)
+  // These methods provide a consistent, reusable surface similar
+  // to HttpService but kept inside this utility for package reuse.
+  // =============================================================
+
+  static Dio get dio => _dio;
+
+  static void setBaseUrl(String baseUrl) {
+    _dio.options.baseUrl = baseUrl;
+    _logger.i('🔧 Base URL changed: $baseUrl');
+  }
+
+  static void setAuthToken(String token, {String prefix = 'Bearer'}) {
+    _dio.options.headers[HttpHeaders.authorizationHeader] = '$prefix $token';
+    _logger.i('🔐 Auth token set successfully');
+  }
+
+  static void clearAuthToken() {
+    _dio.options.headers.remove(HttpHeaders.authorizationHeader);
+    _logger.i('🔓 Auth token cleared');
+  }
+
+  static void setHeader(String key, dynamic value) {
+    _dio.options.headers[key] = value;
+  }
+
+  static Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
+    _logger.i('🌐 GET Request: ${_dio.options.baseUrl}$path');
+    try {
+      Options? requestOptions;
+      if (headers != null) {
+        final merged = <String, dynamic>{};
+        merged.addAll(_dio.options.headers);
+        merged.addAll(headers);
+        requestOptions = Options(headers: merged);
+      }
+
+      final response = await _dio.get<T>(
+        path,
+        queryParameters: queryParameters,
+        options: requestOptions,
+      );
+      return response;
+    } on DioException catch (e) {
+      _logger.e('❌ GET Failed: ${_dio.options.baseUrl}$path');
+      if (e.response != null) {
+        return e.response as Response<T>;
+      }
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Network/server error',
+        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
+      ) as Response<T>;
+    } catch (e) {
+      _logger.e('❌ GET Failed (unknown): ${_dio.options.baseUrl}$path');
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Unknown error',
+        data: {'error': e.toString()},
+      ) as Response<T>;
+    }
+  }
+
+  static Future<Response<T>> post<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
+    _logger.i('🌐 POST Request: ${_dio.options.baseUrl}$path');
+    try {
+      Options? requestOptions;
+      if (headers != null) {
+        final merged = <String, dynamic>{};
+        merged.addAll(_dio.options.headers);
+        merged.addAll(headers);
+        requestOptions = Options(headers: merged);
+      }
+
+      final response = await _dio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: requestOptions,
+      );
+      return response;
+    } on DioException catch (e) {
+      _logger.e('❌ POST Failed: ${_dio.options.baseUrl}$path');
+      if (e.response != null) {
+        return e.response as Response<T>;
+      }
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Network/server error',
+        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
+      ) as Response<T>;
+    } catch (e) {
+      _logger.e('❌ POST Failed (unknown): ${_dio.options.baseUrl}$path');
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Unknown error',
+        data: {'error': e.toString()},
+      ) as Response<T>;
+    }
+  }
+
+  static Future<Response<T>> put<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
+    _logger.i('🌐 PUT Request: ${_dio.options.baseUrl}$path');
+    try {
+      Options? requestOptions;
+      if (headers != null) {
+        final merged = <String, dynamic>{};
+        merged.addAll(_dio.options.headers);
+        merged.addAll(headers);
+        requestOptions = Options(headers: merged);
+      }
+
+      final response = await _dio.put<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: requestOptions,
+      );
+      return response;
+    } on DioException catch (e) {
+      _logger.e('❌ PUT Failed: ${_dio.options.baseUrl}$path');
+      if (e.response != null) {
+        return e.response as Response<T>;
+      }
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Network/server error',
+        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
+      ) as Response<T>;
+    } catch (e) {
+      _logger.e('❌ PUT Failed (unknown): ${_dio.options.baseUrl}$path');
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 500,
+        statusMessage: 'Unknown error',
+        data: {'error': e.toString()},
+      ) as Response<T>;
+    }
+  }
+
+  /// Download file to specified path with progress callback
+  static Future<void> download(
+    String urlPath,
+    String savePath, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    void Function(int received, int total)? onProgress,
+    CancelToken? cancelToken,
+  }) async {
+    _logger.i('📥 Download Request: ${_dio.options.baseUrl}$urlPath');
+    _logger.d('💾 Save to: $savePath');
+    try {
+      await _dio.download(
+        urlPath,
+        savePath,
+        queryParameters: queryParameters,
+        options: options,
+        onReceiveProgress: onProgress,
+        cancelToken: cancelToken,
+      );
+      _logger.d('✅ Download Success: $savePath');
+    } catch (e) {
+      _logger.e('❌ Download Failed: $urlPath');
+      rethrow;
+    }
   }
 
   /// Uploads a file to the given URL with optional headers and progress callback.
@@ -137,7 +407,9 @@ class DioUtil {
         );
 
         // If we received a valid response object, return it.
-        if (resp != null) return resp;
+        if (resp != null) {
+          return resp;
+        }
 
         // Otherwise, treat as transient and retry (unless last attempt).
         if (attempt < maxAttempts) {

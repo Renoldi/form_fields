@@ -5,8 +5,13 @@ import 'package:path/path.dart' as p;
 
 import 'db_service.dart';
 import 'workmanager_service.dart';
+import 'package:workmanager/workmanager.dart';
 
 final _log = Logger('FormFieldsInitializer');
+
+/// Default initial delay used for scheduling periodic Workmanager tasks.
+/// Hosts can override this by passing `workmanagerInitialDelay` to `initAll`.
+const Duration kWorkmanagerInitialDelayDefault = Duration(minutes: 15);
 
 /// Single initializer to bootstrap package services from host app.
 class FormFieldsInitializer {
@@ -19,6 +24,56 @@ class FormFieldsInitializer {
     String dbName = 'form_fields.db',
     bool enableWorkmanager = true,
     bool registerPeriodic = false,
+
+    /// If true the initializer will call `WorkmanagerService.instance.start()`
+    /// after initialization. Use this to opt-in to automatic scheduling from
+    /// `initAll`. If `registerPeriodic` is true this parameter is ignored
+    /// because it preserves the previous behavior.
+    bool autoStartWorkmanager = false,
+
+    /// Optional task name for the registered workmanager task. If omitted
+    /// the service default is used.
+    String? workmanagerTaskName,
+
+    /// Frequency used when starting a periodic task.
+    Duration workmanagerFrequency = const Duration(hours: 1),
+
+    /// Optional initial delay before the first run of a periodic task.
+    /// Passed through to `WorkmanagerService.start` as `initialDelay`.
+    /// Defaults to 15 minutes to match typical background scheduling minimums.
+    Duration workmanagerInitialDelay = kWorkmanagerInitialDelayDefault,
+
+    /// Whether the auto-start should register a periodic task (true) or
+    /// simply mark the service as started without scheduling (false).
+    bool workmanagerPeriodic = true,
+
+    /// Optional input data passed to the background task when scheduled.
+    Map<String, dynamic>? workmanagerInputData,
+
+    /// Optional foreground flush handler that will be invoked when
+    /// network connectivity is restored. This handler runs in the
+    /// foreground isolate and should perform DB/network work. If
+    /// provided `initAll` will register it on `WorkmanagerService`.
+    Future<void> Function()? workmanagerFlushPendingHandler,
+
+    /// Optional handler to register for background tasks.
+    ///
+    /// Usage notes:
+    /// - The handler should be a top-level function (not a closure or
+    ///   instance method) so background isolates can locate and invoke it.
+    /// - When provided, `initAll` will register it for foreground usage
+    ///   via `WorkmanagerService.instance.setHandler(...)` and will also
+    ///   attempt to register it as the package-level background handler
+    ///   so scheduling code can include a callback handle that background
+    ///   isolates can resolve.
+    /// - If the host app initializes `Workmanager()` itself (for example
+    ///   to install a custom dispatcher), pass `enableWorkmanager: false`
+    ///   to `initAll` to avoid double-initialization.
+    ///
+    /// See also: `WorkmanagerService.setBackgroundTaskHandler` and
+    /// `PluginUtilities.getCallbackHandle` for inter-isolate callback
+    /// resolution.
+    BackgroundTaskHandler? workmanagerHandler,
     Level logLevel = Level.INFO,
     List<String>? migrationAssetPaths,
     int dbVersion = 0,
@@ -135,8 +190,50 @@ class FormFieldsInitializer {
     if (enableWorkmanager && !kIsWeb) {
       _log.info('Initializing WorkmanagerService');
       await WorkmanagerService.instance.initialize();
+
+      // If the host provided a handler, register it for foreground usage.
+      // Note: background isolates require a top-level handler via
+      // `setBackgroundTaskHandler(...)`.
+      if (workmanagerHandler != null) {
+        // Register handler for foreground usage (backwards-compatible).
+        WorkmanagerService.instance.setHandler(workmanagerHandler);
+        // Also register as the top-level background handler so the
+        // provided top-level function is available to background isolates.
+        // The handler must be a top-level function from the host app.
+        try {
+          WorkmanagerService.setBackgroundTaskHandler(workmanagerHandler);
+        } catch (e, st) {
+          _log.warning('Failed to set background task handler: $e', e, st);
+        }
+      }
+
+      // If the host provided a foreground flush handler, register it so
+      // the service can invoke it on connectivity changes.
+      if (workmanagerFlushPendingHandler != null) {
+        try {
+          WorkmanagerService.instance.flushPendingHandler =
+              workmanagerFlushPendingHandler;
+        } catch (e, st) {
+          _log.warning('Failed to set flushPendingHandler: $e', e, st);
+        }
+      }
+
+      // Backwards-compatible behavior: if registerPeriodic was requested
+      // preserve the previous convenience. Otherwise respect autoStartWorkmanager.
       if (registerPeriodic) {
-        await WorkmanagerService.instance.registerPeriodic();
+        await WorkmanagerService.instance.start(
+            taskName: workmanagerTaskName,
+            frequency: workmanagerFrequency,
+            periodic: true,
+            inputData: workmanagerInputData,
+            initialDelay: workmanagerInitialDelay);
+      } else if (autoStartWorkmanager) {
+        await WorkmanagerService.instance.start(
+            taskName: workmanagerTaskName,
+            frequency: workmanagerFrequency,
+            periodic: workmanagerPeriodic,
+            inputData: workmanagerInputData,
+            initialDelay: workmanagerInitialDelay);
       }
     }
 

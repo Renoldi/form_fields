@@ -1,22 +1,24 @@
-import 'package:dio/dio.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:form_fields_example/data/services/http_service.dart';
+import 'dart:io';
+import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/config/environment.dart';
 
 part 'user.g.dart';
 
 @JsonSerializable()
 class User {
-  final int? id;
-  final String? username;
-  final String? email;
-  final String? firstName;
-  final String? lastName;
-  final String? image;
-  final String? accessToken;
-  final String? refreshToken;
+  int? id;
+  String? username;
+  String? email;
+  String? firstName;
+  String? lastName;
+  String? image;
+  String? accessToken;
+  String? refreshToken;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  FormFieldsMyImageController? imageController;
 
-  const User({
+  User({
     this.id,
     this.username,
     this.email,
@@ -25,7 +27,16 @@ class User {
     this.image,
     this.accessToken,
     this.refreshToken,
-  });
+    this.imageController,
+  }) {
+    if (image != null && image!.isNotEmpty) {
+      imageController = FormFieldsMyImageController.fromImages(
+        [MyImageResult(link: image!)],
+      );
+    } else {
+      imageController = FormFieldsMyImageController();
+    }
+  }
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
@@ -72,7 +83,7 @@ class User {
     required String username,
     required String password,
   }) async {
-    final response = await HttpService.instance.post<Map<String, dynamic>>(
+    final response = await DioUtil.post<Map<String, dynamic>>(
       EnvironmentConfig.authLoginUrl,
       data: {
         'username': username,
@@ -91,13 +102,11 @@ class User {
   static Future<User> getMe({
     required String accessToken,
   }) async {
-    final response = await HttpService.instance.get<Map<String, dynamic>>(
+    final response = await DioUtil.get<Map<String, dynamic>>(
       EnvironmentConfig.authMeUrl,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-        },
-      ),
+      headers: {
+        HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+      },
     );
 
     return User.fromJson(response.data ?? <String, dynamic>{});
@@ -122,14 +131,12 @@ class User {
     data.remove('refreshToken');
     data.remove('id');
 
-    final response = await HttpService.instance.put<Map<String, dynamic>>(
+    final response = await DioUtil.put<Map<String, dynamic>>(
       '${EnvironmentConfig.userUpdateUrl}/${user.id}',
       data: data,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-        },
-      ),
+      headers: {
+        HttpHeaders.authorizationHeader: 'Bearer $accessToken',
+      },
     );
 
     return User.fromJson(response.data ?? <String, dynamic>{});

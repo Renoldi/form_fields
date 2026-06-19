@@ -53,6 +53,7 @@ enum AppRoute {
     name: 'sql_viewer',
     title: 'Raw Tables',
   ),
+  workerDemo(name: 'worker_demo', title: 'Worker Demo'),
   barcodeScan(
     name: 'barcode_scan',
     title: 'Barcode Scan',

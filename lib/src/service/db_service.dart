@@ -519,9 +519,9 @@ class DBService {
       final dbFile = File(dbPath);
       if (await dbFile.exists()) await dbFile.delete();
       // Also remove SQLite companion files that may hold WAL/SHM journal data.
-      final wal = File(p.join(documents.path, '${effective}-wal'));
-      final shm = File(p.join(documents.path, '${effective}-shm'));
-      final journal = File(p.join(documents.path, '${effective}-journal'));
+      final wal = File(p.join(documents.path, '$effective-wal'));
+      final shm = File(p.join(documents.path, '$effective-shm'));
+      final journal = File(p.join(documents.path, '$effective-journal'));
       if (await wal.exists()) await wal.delete();
       if (await shm.exists()) await shm.delete();
       if (await journal.exists()) await journal.delete();

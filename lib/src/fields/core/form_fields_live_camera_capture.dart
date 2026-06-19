@@ -350,7 +350,7 @@ class FormFieldsLiveCameraCaptureState
     if (widget.uploadUrl == null) return null;
     final headers = <String, String>{};
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
-      headers['Authorization'] = widget.uploadToken!;
+      headers[HttpHeaders.authorizationHeader] = widget.uploadToken!;
     }
 
     // Prepare payload for offline enqueueing
@@ -779,7 +779,8 @@ class FormFieldsLiveCameraCaptureState
                       headers: (widget.uploadToken != null &&
                               widget.uploadToken!.isNotEmpty)
                           ? <String, String>{
-                              'Authorization': widget.uploadToken!
+                              HttpHeaders.authorizationHeader:
+                                  widget.uploadToken!
                             }
                           : null,
                     ),

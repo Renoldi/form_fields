@@ -13,6 +13,15 @@ CREATE TABLE IF NOT EXISTS pending_inspections (
   created_at INTEGER NOT NULL
 );
 
+-- Pending submissions table: used by the worker_demo example to queue
+-- failed HTTP submissions for background retry.
+CREATE TABLE IF NOT EXISTS pending_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  payload TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 -- V2: ensure master_inspections index table exists
 CREATE TABLE IF NOT EXISTS master_inspections (
   hseFormId TEXT PRIMARY KEY,

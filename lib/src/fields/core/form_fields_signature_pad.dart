@@ -910,7 +910,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     if (widget.uploadUrl == null) return null;
     final headers = <String, String>{};
     if (widget.uploadToken != null && widget.uploadToken!.isNotEmpty) {
-      headers['Authorization'] = widget.uploadToken!;
+      headers[HttpHeaders.authorizationHeader] = widget.uploadToken!;
     }
 
     // Prepare payload for offline enqueueing
@@ -1165,10 +1165,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   Widget _buildPreviewImage(MyImageResult result,
       {BoxFit fit = BoxFit.contain}) {
     Widget imageWidget;
-    final tokenHeader =
-        (widget.uploadToken != null && widget.uploadToken!.isNotEmpty)
-            ? <String, String>{'Authorization': widget.uploadToken!}
-            : null;
+    final tokenHeader = (widget.uploadToken != null &&
+            widget.uploadToken!.isNotEmpty)
+        ? <String, String>{HttpHeaders.authorizationHeader: widget.uploadToken!}
+        : null;
 
     // Prefer local preview (file -> base64) to avoid forcing a network GET
     // immediately after upload. Only fall back to NetworkImage when no

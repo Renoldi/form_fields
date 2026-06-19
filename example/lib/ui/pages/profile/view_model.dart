@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:form_fields_example/data/models/user.dart';
-import 'package:form_fields_example/data/services/http_service.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 
 final Logger _logger = Logger();

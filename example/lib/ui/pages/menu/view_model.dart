@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:form_fields_example/config/app_routes.dart';
-import 'package:form_fields_example/config/error_type.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/data/models/user.dart';
-import 'package:form_fields_example/data/services/http_service.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 
 final Logger _logger = Logger();
@@ -33,8 +32,7 @@ class ViewModel extends ChangeNotifier {
 
   AppStateNotifier get appState => _appState;
 
-  String get displayName => _appState.currentUser?.displayName ?? '';
-  String get email => _appState.currentUser?.email ?? '';
+  User? get user => _appState.currentUser;
 
   List<AppMenuItemData> get menuItems => [
         AppMenuItemData(
@@ -155,6 +153,13 @@ class ViewModel extends ChangeNotifier {
           icon: Icons.grid_view,
           color: Colors.lightBlue,
           routeName: AppRoute.responsiveMenuGrid.name,
+        ),
+        AppMenuItemData(
+          title: 'Worker Demo',
+          subtitle: 'Background worker demo',
+          icon: Icons.work,
+          color: Colors.tealAccent,
+          routeName: AppRoute.workerDemo.name,
         ),
       ];
 

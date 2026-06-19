@@ -25,11 +25,9 @@ dependencies:
   camera: any
   google_fonts: any
   file_picker: ^11.0.2
-  # no interactive file picker: use asset-based import/export
-  workmanager: ^0.9.0+3
-  sqflite: ^2.4.3
-  path_provider: ^2.1.6
-  path: ^1.9.1
+  workmanager: any
+  path_provider: any
+  path: any
 
 dev_dependencies:
   flutter_test:

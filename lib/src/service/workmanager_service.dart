@@ -1,74 +1,343 @@
-import 'package:logging/logging.dart';
+import 'dart:async';
+import 'dart:ui';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
-import 'db_service.dart';
+/// Top-level helper to register a background handler from the host app.
+/// Provided for backward compatibility with example usage.
+void setBackgroundTaskHandler(BackgroundTaskHandler handler) =>
+    WorkmanagerService.setBackgroundTaskHandler(handler);
 
-final _log = Logger('WorkmanagerService');
-
-const String _backgroundTaskName = 'form_fields_background_task';
-
-/// Top-level callback dispatcher required by `workmanager`.
-@pragma('vm:entry-point')
-void workmanagerCallbackDispatcher() {
-  Workmanager().executeTask(_workmanagerTaskHandler);
-}
-
-@pragma('vm:entry-point')
-Future<bool> _workmanagerTaskHandler(dynamic task, dynamic inputData) async {
-  _log.info('Workmanager running task: $task, input: $inputData');
-  try {
-    // Example background job: export the DB to a temp SQL file so it can be
-    // inspected or uploaded by other processes. Keep this minimal and
-    // resilient — failures are logged but do not crash the worker.
-    final tmpDir = await getTemporaryDirectory();
-    final out = p.join(tmpDir.path,
-        'form_fields_bg_export_${DateTime.now().toIso8601String()}.sql');
-    await DBService.instance.exportToSqlFile(out);
-    _log.info('Workmanager exported DB to $out');
-  } catch (e, st) {
-    _log.severe('Background task failed: $e', e, st);
-    return false;
-  }
-
-  return true;
-}
-
+/// A small, reusable wrapper around the `workmanager` plugin that exposes
+/// a simple start/stop API and accepts `VoidCallback` handlers from
+/// outside the plugin for foreground start/stop notifications.
+///
+/// Note: background tasks run in a separate isolate and cannot directly
+/// call closures provided from the app's UI isolate. The provided
+/// `onStart` / `onStop` callbacks are executed in the foreground when
+/// `start()` / `stop()` are called.
 class WorkmanagerService {
-  WorkmanagerService._();
-  static final WorkmanagerService instance = WorkmanagerService._();
+  WorkmanagerService._internal();
+  bool _suppressListener = false;
 
-  /// Cancel the registered periodic background task (if any).
-  Future<void> cancelPeriodic() async {
-    try {
-      await Workmanager().cancelByUniqueName(_backgroundTaskName);
-      _log.info('Cancelled periodic background task ($_backgroundTaskName)');
-    } catch (e, st) {
-      _log.warning('Failed to cancel periodic task: $e', e, st);
-    }
+  // Initialize listener to capture direct writes to `lastLogListenable`.
+  // Many places in the code set `lastLogListenable.value = '...'` directly;
+  // this listener ensures those messages are recorded in `_logs`.
+  void _attachLastLogListener() {
+    lastLogListenable.addListener(() {
+      try {
+        if (_suppressListener) return;
+        final v = lastLogListenable.value;
+        if (v != null) {
+          _logs.add(v);
+          if (_logs.length > 50) _logs.removeAt(0);
+        }
+      } catch (_) {}
+    });
   }
 
-  /// Run the background task logic once immediately (for demo/testing).
-  Future<bool> runOnceNow() async {
-    try {
-      return await _workmanagerTaskHandler(_backgroundTaskName, null);
-    } catch (e, st) {
-      _log.warning('runOnceNow failed: $e', e, st);
-      return false;
-    }
-  }
+  static final WorkmanagerService _instance = WorkmanagerService._internal()
+    .._attachLastLogListener();
+  factory WorkmanagerService() => _instance;
 
+  /// Backward-compatible accessor used throughout the package.
+  static WorkmanagerService get instance => _instance;
+
+  bool _initialized = false;
+  StreamSubscription<dynamic>? _connectivitySub;
+
+  static const String _defaultTaskName = 'form_fields_background_task';
+
+  /// Public status notifier and last-run timestamp used by example UI.
+  final ValueNotifier<String?> statusListenable = ValueNotifier(null);
+  DateTime? lastRunAt;
+
+  /// Last log message and registered task count for UI introspection.
+  final ValueNotifier<String?> lastLogListenable = ValueNotifier(null);
+  final ValueNotifier<int> registeredCountListenable = ValueNotifier(0);
+  final List<String> _logs = <String>[];
+  final Set<String> _registeredTasks = <String>{};
+
+  /// `setHandler` is kept for API compatibility but foreground handlers
+  /// are not used by this service. Background handlers must be registered
+  /// with `setBackgroundTaskHandler`.
+
+  /// Background handler registered via top-level `setBackgroundTaskHandler`.
+  static BackgroundTaskHandler? _backgroundHandler;
+
+  /// Optional handler provided by the host app to flush pending submissions
+  /// when network connectivity is available. This callback runs in the
+  /// foreground isolate and should handle DB access and network calls.
+  Future<void> Function()? flushPendingHandler;
+
+  /// Initialize the underlying Workmanager plugin once.
+  ///
+  /// Note: the `isInDebugMode` flag is deprecated — debug behavior should
+  /// be handled via native `WorkmanagerDebug` handlers configured on the
+  /// platform side (see plugin docs). This method no longer accepts that
+  /// parameter and will ignore any debug mode toggles.
   Future<void> initialize() async {
-    // `isInDebugMode` is deprecated; initialize without that parameter.
-    await Workmanager().initialize(workmanagerCallbackDispatcher);
-    _log.info('Workmanager initialized');
+    if (_initialized) return;
+    try {
+      await Workmanager().initialize(_callbackDispatcher);
+      _initialized = true;
+      // Listen for connectivity changes in the foreground isolate and
+      // invoke the host-provided flush handler when network becomes
+      // available.
+      try {
+        _connectivitySub =
+            Connectivity().onConnectivityChanged.listen((_) async {
+          try {
+            final current = await Connectivity().checkConnectivity();
+            // Determine network availability via string representation
+            final curStr = current.toString().toLowerCase();
+            final hasNetwork = !curStr.contains('none');
+            if (hasNetwork) {
+              _addLog('connectivity: $current -> attempting flush');
+              try {
+                await flushPendingHandler?.call();
+              } catch (e) {
+                _addLog('flush handler error: $e');
+              }
+            }
+          } catch (_) {}
+        });
+      } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Workmanager initialize failed: $e');
+      }
+    }
   }
 
-  Future<void> registerPeriodic() async {
-    await Workmanager().registerPeriodicTask(
-        _backgroundTaskName, _backgroundTaskName,
-        frequency: const Duration(hours: 1));
-    _log.info('Registered periodic background task');
+  /// Register a foreground handler callable from the UI isolate.
+  void setHandler(BackgroundTaskHandler handler) {
+    // No-op: foreground handlers are intentionally not invoked here.
+  }
+
+  /// Register a top-level background handler so it can be invoked from
+  /// background isolates. This is provided as a top-level convenience
+  /// to match the package example usage.
+  static void setBackgroundTaskHandler(BackgroundTaskHandler handler) {
+    _backgroundHandler = handler;
+  }
+
+  /// Start the worker. Backwards-compatible signature used by examples.
+  Future<void> start({
+    String? taskName,
+    Duration? frequency,
+    bool periodic = false,
+    Map<String, dynamic>? inputData,
+    Duration? initialDelay,
+  }) async {
+    await initialize();
+
+    final name = taskName ?? _defaultTaskName;
+    try {
+      // Ensure callback handle is included so background isolates can
+      // resolve the original top-level handler via PluginUtilities.
+      final data = inputData != null
+          ? Map<String, dynamic>.from(inputData)
+          : <String, dynamic>{};
+      try {
+        if (_backgroundHandler != null) {
+          final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
+          if (handle != null) {
+            data['callback_handle'] = handle.toRawHandle();
+          }
+        }
+      } catch (_) {}
+
+      if (periodic) {
+        await Workmanager().registerPeriodicTask(
+          name,
+          name,
+          frequency: frequency,
+          inputData: data,
+          initialDelay: initialDelay,
+        );
+      } else {
+        await Workmanager().registerOneOffTask(name, name, inputData: data);
+      }
+      statusListenable.value =
+          periodic ? 'registered_periodic' : 'registered_once';
+      // Track registration for UI.
+      _registeredTasks.add(name);
+      registeredCountListenable.value = _registeredTasks.length;
+      _addLog('registered ${periodic ? 'periodic' : 'one-off'}: $name');
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Workmanager register task failed: $e');
+      }
+      statusListenable.value = 'register_failed';
+      statusListenable.value = 'register_failed';
+      _addLog('register_failed: $e');
+    }
+  }
+
+  /// Run a one-off task immediately and return an error string on failure,
+  /// otherwise null on success.
+  Future<String?> runOnceNowDetailed(
+      {String? taskName, Map<String, dynamic>? inputData}) async {
+    final name =
+        taskName ?? 'run_once_${DateTime.now().millisecondsSinceEpoch}';
+    try {
+      final data = inputData != null
+          ? Map<String, dynamic>.from(inputData)
+          : <String, dynamic>{};
+      try {
+        if (_backgroundHandler != null) {
+          final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
+          if (handle != null) data['callback_handle'] = handle.toRawHandle();
+        }
+      } catch (_) {}
+
+      await Workmanager().registerOneOffTask(name, name, inputData: data);
+      // Record one-off registration
+      _registeredTasks.add(name);
+      registeredCountListenable.value = _registeredTasks.length;
+      _addLog('registered one-off (run now): $name');
+      return null;
+    } catch (e) {
+      _addLog('runOnceNowDetailed failed: $e');
+      return e.toString();
+    }
+  }
+
+  /// Stop the service and cancel any registered tasks.
+  Future<void> stop({VoidCallback? onStop, String? taskName}) async {
+    // Call the provided foreground callback right away.
+    try {
+      onStop?.call();
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('onStop callback threw: $e');
+      }
+    }
+
+    // If a specific taskName is provided, cancel only that task.
+    // Otherwise, cancel all tracked registered tasks so `stop()` acts
+    // as a blanket shutdown when called without arguments.
+    final namesToCancel = taskName != null
+        ? <String>[taskName]
+        : _registeredTasks.toList(growable: false);
+    for (final name in namesToCancel) {
+      try {
+        await Workmanager().cancelByUniqueName(name);
+        _registeredTasks.remove(name);
+        _addLog('cancelled: $name');
+      } catch (e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('cancelByUniqueName failed for $name: $e');
+        }
+        _addLog('cancel_failed: $name -> $e');
+      }
+    }
+
+    // Ensure public count/status reflect current state.
+    registeredCountListenable.value = _registeredTasks.length;
+    if (_registeredTasks.isEmpty) {
+      statusListenable.value = 'stopped';
+    }
+    // Cancel connectivity listener so auto-send stops when service is stopped.
+    try {
+      await _connectivitySub?.cancel();
+      _connectivitySub = null;
+      flushPendingHandler = null;
+      _addLog(
+          'stopped: connectivity listener cancelled and flush handler cleared');
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('failed to cancel connectivity subscription: $e');
+      }
+    }
+  }
+
+  void _addLog(String msg) {
+    try {
+      _logs.add(msg);
+      if (_logs.length > 50) _logs.removeAt(0);
+      _suppressListener = true;
+      lastLogListenable.value = msg;
+      _suppressListener = false;
+    } catch (_) {}
+  }
+
+  /// Public accessor for recent logs (oldest -> newest).
+  List<String> get recentLogs => List.unmodifiable(_logs);
+
+  /// Clear recent logs and notify listeners.
+  void clearLogs() {
+    try {
+      _logs.clear();
+      _suppressListener = true;
+      lastLogListenable.value = null;
+      _suppressListener = false;
+    } catch (_) {}
+  }
+
+  /// A lightweight helper to check whether Workmanager has been initialized.
+  bool get isInitialized => _initialized;
+
+  /// The callback dispatcher used by the `workmanager` plugin. This must be
+  /// a top-level or static function reference as required by the plugin.
+  static void _callbackDispatcher() {
+    Workmanager().executeTask((task, inputData) async {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Workmanager executeTask: $task, inputData: $inputData');
+      }
+
+      // Update last run timestamp and notify listeners in the UI isolate
+      // via platform channels isn't possible here; we update a simple
+      // timestamp variable for the isolate that invoked this code path.
+      try {
+        // First, attempt to find a callback handle provided in the task's
+        // inputData. Hosts can schedule tasks with a `callback_handle`
+        // entry (raw handle) so background isolates can resolve the
+        // original top-level function via PluginUtilities.
+        if (inputData != null && inputData['callback_handle'] != null) {
+          try {
+            final raw = inputData['callback_handle'];
+            final rawHandle = raw is int ? raw : int.parse(raw.toString());
+            final cbHandle = CallbackHandle.fromRawHandle(rawHandle);
+            final cb = PluginUtilities.getCallbackFromHandle(cbHandle);
+            if (cb is BackgroundTaskHandler) {
+              final res = await cb(task, inputData);
+              return Future.value(res);
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print('failed to resolve callback_handle: $e');
+            }
+          }
+        }
+
+        // Fallback: attempt to use the static background handler if set
+        // in this isolate (may be null in background isolates).
+        if (_backgroundHandler != null) {
+          try {
+            final res = await _backgroundHandler!(task, inputData);
+            return Future.value(res);
+          } catch (e) {
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print('background handler threw: $e');
+            }
+            return Future.value(false);
+          }
+        }
+      } catch (_) {}
+
+      return Future.value(true);
+    });
   }
 }

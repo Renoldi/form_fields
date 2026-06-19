@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:form_fields_example/data/models/user.dart';
-import 'package:form_fields_example/data/services/http_service.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/config/error_position.dart';
 
 /// Manages global app state including locale preference and authentication
@@ -16,8 +16,7 @@ class AppStateNotifier extends ChangeNotifier {
   bool _isInitialized = false;
   ErrorPosition _errorPosition = ErrorPosition.top;
 
-  /// Global HTTP service instance
-  final HttpService httpClient = HttpService.instance;
+  /// Use package-level `DioUtil` for HTTP helpers
 
   // SharedPreferences keys
   static const String _keyAccessToken = 'access_token';
@@ -44,7 +43,7 @@ class AppStateNotifier extends ChangeNotifier {
 
       // Verify token if logged in
       if (_isLoggedIn && _accessToken.isNotEmpty) {
-        httpClient.setAuthToken(_accessToken);
+        DioUtil.setAuthToken(_accessToken);
 
         // Try to verify the token by fetching user data
         try {
@@ -57,7 +56,7 @@ class AppStateNotifier extends ChangeNotifier {
           _accessToken = '';
           _refreshToken = '';
           _currentUser = null;
-          httpClient.clearAuthToken();
+          DioUtil.clearAuthToken();
           await _clearAuthState();
         }
       }
@@ -138,7 +137,7 @@ class AppStateNotifier extends ChangeNotifier {
 
     // Set auth token in global HTTP service
     if (_accessToken.isNotEmpty) {
-      httpClient.setAuthToken(_accessToken);
+      DioUtil.setAuthToken(_accessToken);
     }
 
     // Save auth state to persistent storage
@@ -155,7 +154,7 @@ class AppStateNotifier extends ChangeNotifier {
     // Update tokens if provided
     if (user.accessToken != null && user.accessToken!.isNotEmpty) {
       _accessToken = user.accessToken!;
-      httpClient.setAuthToken(_accessToken);
+      DioUtil.setAuthToken(_accessToken);
     }
     if (user.refreshToken != null && user.refreshToken!.isNotEmpty) {
       _refreshToken = user.refreshToken!;
@@ -186,7 +185,7 @@ class AppStateNotifier extends ChangeNotifier {
 
       // Set auth token in global HTTP service
       if (_accessToken.isNotEmpty) {
-        httpClient.setAuthToken(_accessToken);
+        DioUtil.setAuthToken(_accessToken);
       }
 
       _accessToken = user.accessToken ?? '';
@@ -222,7 +221,7 @@ class AppStateNotifier extends ChangeNotifier {
 
       // Update auth token in global HTTP service
       if (_accessToken.isNotEmpty) {
-        httpClient.setAuthToken(_accessToken);
+        DioUtil.setAuthToken(_accessToken);
       }
 
       if (user.accessToken != null && user.accessToken!.isNotEmpty) {
@@ -242,7 +241,7 @@ class AppStateNotifier extends ChangeNotifier {
       _currentUser = null;
 
       // Clear auth token from global HTTP service and storage
-      httpClient.clearAuthToken();
+      DioUtil.clearAuthToken();
       await _clearAuthState();
 
       return false;
@@ -259,7 +258,7 @@ class AppStateNotifier extends ChangeNotifier {
     _refreshToken = '';
 
     // Clear auth token from global HTTP service
-    httpClient.clearAuthToken();
+    DioUtil.clearAuthToken();
 
     // Clear auth state from persistent storage
     _clearAuthState();

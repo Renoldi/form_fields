@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:form_fields_example/data/models/user.dart';
-import 'package:form_fields_example/config/error_type.dart';
+import 'package:form_fields/form_fields.dart';
 
 class ViewModel extends ChangeNotifier {
   String? _errorMessage;

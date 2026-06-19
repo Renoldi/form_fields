@@ -32,6 +32,8 @@ import 'package:form_fields_example/ui/pages/loading_progress_examples/main.dart
 import 'package:form_fields_example/ui/pages/app_dialog_service_examples/main.dart'
     as app_dialog_service_examples;
 import 'package:form_fields_example/ui/pages/profile/main.dart' as profile;
+import 'package:form_fields_example/ui/pages/worker_demo/main.dart'
+    as worker_demo;
 import 'package:form_fields_example/ui/pages/change_password/main.dart'
     as change_password;
 import 'package:form_fields_example/ui/pages/settings/main.dart' as settings;
@@ -159,6 +161,16 @@ GoRouter createAppRouter(
         name: AppRoute.profile.name,
         builder: (context, state) => profile.Presenter(
           onBack: () => context.pop(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.workerDemo.path,
+        name: AppRoute.workerDemo.name,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => worker_demo.ViewModel(),
+          child: worker_demo.Presenter(
+            onBack: () => context.pop(),
+          ),
         ),
       ),
       GoRoute(
@@ -454,6 +466,8 @@ String _routeTitleKey(AppRoute route) {
       return 'responsiveMenuGrid';
     case AppRoute.sqlViewer:
       return 'rawTables';
+    case AppRoute.workerDemo:
+      return 'workerDemo';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
   }

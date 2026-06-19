@@ -5,9 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:form_fields_example/config/error_position.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
-import 'package:form_fields_example/config/error_type.dart';
+// Use ErrorType and HttpException from package export
 import 'package:form_fields_example/data/models/user.dart';
-import 'package:form_fields_example/data/services/http_service.dart';
 import 'view_model.dart';
 import 'view.dart';
 

@@ -3,6 +3,7 @@
 // ============================================================================
 
 // Flutter & Material Design
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,8 +12,11 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
+// example-local flush helper
+import 'src/service/flush_service.dart';
 
 // Local configuration & state management
 import 'config/app_router.dart';
@@ -20,16 +24,63 @@ import 'config/environment.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
-
-// ============================================================================
-// GLOBAL LOGGER INSTANCE
-// ============================================================================
+import 'data/models/post.dart';
 
 final logger = Logger();
 
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
+
+/// Top-level background handler invoked by Workmanager in background
+/// isolates. Must be a top-level function to be reachable from the
+/// background isolate. Returns `true` on success.
+/// Process pending submissions from DB and attempt to POST them.
+///
+/// Returns true on success, false on error. This helper is top-level so it
+/// can be reused by both the background isolate handler and the foreground
+/// flush callback without duplicating logic.
+Future<bool> processPendingSubmissions() async {
+  return await flushPendingSubmissions(submitHandler: (payload, id) async {
+    try {
+      final post = Post.fromJson(payload);
+      final res = await Post.add(post: post);
+      return res != null;
+    } catch (e) {
+      try {
+        WorkmanagerService.instance.lastLogListenable.value =
+            'flush handler threw for id=${id ?? '-'}: $e';
+      } catch (_) {}
+      return false;
+    }
+  });
+}
+
+Future<bool> backgroundFlushHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  return await processPendingSubmissions();
+}
+
+/// Top-level dispatcher that Workmanager background isolate will call.
+void workmanagerCallbackDispatcher() {
+  Workmanager()
+      .executeTask((String task, Map<String, dynamic>? inputData) async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Workmanager executeTask: $task, inputData: $inputData');
+    }
+    try {
+      final res = await backgroundFlushHandler(task, inputData);
+      return Future.value(res);
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('background dispatcher error: $e');
+      }
+      return Future.value(false);
+    }
+  });
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +100,13 @@ Future<void> main() async {
 
   // Option 1: DEBUG Environment (default)
   EnvironmentConfig.current = AppEnvironment.debug;
+
+  DioUtil.configure(
+    baseUrl: EnvironmentConfig.currentBaseUrl,
+    connectTimeout: Duration(seconds: EnvironmentConfig.config.connectTimeout),
+    sendTimeout: Duration(seconds: EnvironmentConfig.config.sendTimeout),
+    receiveTimeout: Duration(seconds: EnvironmentConfig.config.receiveTimeout),
+  );
 
   // Option 2: BETA Environment (uncomment to use)
   // EnvironmentConfig.current = AppEnvironment.debug;
@@ -84,19 +142,97 @@ Future<void> main() async {
     //   }
     // }
 
+    // Initialize Workmanager with a top-level dispatcher so background
+    // isolates can reach the app's top-level `backgroundFlushHandler`.
+    if (!kIsWeb) {
+      await Workmanager().initialize(workmanagerCallbackDispatcher);
+      // Also inform the package-level service about the handler so it can
+      // include callback handles when scheduling tasks from the foreground.
+      try {
+        WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
+      } catch (_) {}
+    }
+
+    // Use platform-appropriate minimum for periodic work (15 minutes).
+    final wmFreq = const Duration(minutes: 15);
+
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
-      enableWorkmanager: !kIsWeb,
+      // We've initialized Workmanager above; prevent the package from
+      // initializing it again to avoid duplicate dispatcher registration.
+      enableWorkmanager: false,
       registerPeriodic: true,
+      workmanagerHandler: backgroundFlushHandler,
+      // Example: override periodic scheduling values from host app.
+      // Run every 15 minutes (minimum recommended by Android JobScheduler).
+      workmanagerFrequency: wmFreq,
+      workmanagerInitialDelay: Duration.zero,
+      // Register a foreground flush handler so the WorkmanagerService can
+      // invoke it when connectivity is restored. This handler reads the
+      // example DB table `pending_submissions` and attempts to POST each
+      // pending entry to the server. Successful submissions are removed.
+      workmanagerFlushPendingHandler: () async {
+        await processPendingSubmissions();
+      },
       migrationAssetPaths: [
-        // 'migrations/migration.sql',
-        'migrations/migration_json_file.sql',
+        'migrations/migration.sql',
+        // 'migrations/migration_json_file.sql',
         // 'migrations/v1.sql',
         // 'migrations/v2.sql',
         // 'migrations/v2_down.sql',
       ],
       dbVersion: 0,
     );
+
+    // Debug helper: schedule a one-off run immediately to verify dispatcher
+    if (kDebugMode && !kIsWeb) {
+      try {
+        final err = await WorkmanagerService.instance
+            .runOnceNowDetailed(taskName: 'dbg_now');
+        logger.i('Debug: runOnceNowDetailed -> $err');
+        // give a short delay for logs to populate
+        await Future.delayed(const Duration(seconds: 2));
+        logger.i('Debug recentLogs: ${WorkmanagerService.instance.recentLogs}');
+      } catch (e, st) {
+        logger.w('Debug runOnceNow failed: $e\n$st');
+      }
+    }
+
+    // Start a countdown display for the configured Workmanager frequency.
+    if (!kIsWeb) {
+      try {
+        void startCountdown(Duration freq) {
+          DateTime next = DateTime.now().add(freq);
+          Timer.periodic(const Duration(seconds: 1), (t) {
+            final rem = next.difference(DateTime.now());
+            if (rem.inMilliseconds <= 0) {
+              try {
+                WorkmanagerService.instance.lastLogListenable.value =
+                    'next scheduled run now; resetting countdown';
+              } catch (_) {}
+              next = next.add(freq);
+              return;
+            }
+            final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
+            final ss = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
+            final msg = 'countdown to next run: $mm:$ss';
+            try {
+              WorkmanagerService.instance.lastLogListenable.value = msg;
+            } catch (_) {}
+            logger.i(msg);
+          });
+        }
+
+        startCountdown(wmFreq);
+      } catch (e, st) {
+        logger.w('Failed to start countdown: $e\n$st');
+      }
+    }
+
+    // flushPendingHandler is registered via the `workmanagerFlushPendingHandler`
+    // parameter passed to `FormFieldsInitializer.initAll` above.
+    // Background handler is registered via FormFieldsInitializer.initAll
+    // (workmanagerHandler parameter) so no manual registration is needed here.
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
   }

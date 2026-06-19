@@ -5,21 +5,22 @@ A singleton HTTP service for making API requests throughout the app.
 ## Quick Start
 
 ### 1. Import the service
+
 ```dart
-import 'services/http_service.dart';
+import 'package:form_fields/form_fields.dart';
 ```
 
 ### 2. Make requests anywhere in your app
 
 ```dart
 // Simple GET request
-final posts = await http.get<List>(
+final posts = await DioUtil.get<List>(
   '/posts',
   parser: (data) => (data as List).map((e) => Post.fromJson(e)).toList(),
 );
 
 // POST with data
-final newPost = await http.post<Post>(
+final newPost = await DioUtil.post<Post>(
   '/posts/add',
   data: {
     'title': 'My Post',
@@ -30,14 +31,14 @@ final newPost = await http.post<Post>(
 );
 
 // PUT to update
-final updated = await http.put<Post>(
+final updated = await DioUtil.put<Post>(
   '/posts/1',
   data: {'title': 'Updated Title'},
   parser: (data) => Post.fromJson(data),
 );
 
 // Download file with progress
-await http.download(
+await DioUtil.download(
   '/images/photo.jpg',
   '/storage/photo.jpg',
   onProgress: (received, total) {
@@ -50,43 +51,49 @@ await http.download(
 ## Configuration
 
 ### Change Base URL
+
 ```dart
-http.setBaseUrl('https://api.myapp.com');
+DioUtil.setBaseUrl('https://api.myapp.com');
 ```
 
 ### Set Authorization Token
+
 ```dart
-http.setAuthToken('your-jwt-token');
+DioUtil.setAuthToken('your-jwt-token');
 // Or with custom prefix
-http.setAuthToken('your-token', prefix: 'Token');
+DioUtil.setAuthToken('your-token', prefix: 'Token');
 ```
 
 ### Add Custom Headers
+
 ```dart
-http.setHeader('X-Custom-Header', 'value');
+DioUtil.setHeader('X-Custom-Header', 'value');
 ```
 
 ### Clear Auth Token
+
 ```dart
-http.clearAuthToken();
+DioUtil.clearAuthToken();
 ```
 
 ## Advanced Usage
 
 ### Access Dio Instance Directly
-```dart
-import 'services/http_service.dart';
 
-final dio = HttpService.instance.dio;
+```dart
+final dio = DioUtil.dio;
 // Use dio directly for advanced features
 ```
 
 ### Custom Instance
+
 ```dart
-final customService = HttpService(
-  baseUrl: 'https://api.custom.com',
-  connectTimeout: Duration(seconds: 5),
-  headers: {'X-API-Key': 'secret'},
+final customService = Dio(
+  BaseOptions(
+    baseUrl: 'https://api.custom.com',
+    connectTimeout: Duration(seconds: 5),
+    headers: {'X-API-Key': 'secret'},
+  ),
 );
 ```
 
@@ -102,6 +109,7 @@ final customService = HttpService(
 ## Retry Logic
 
 The service automatically retries failed requests with exponential backoff:
+
 - Initial delay: 300ms
 - Max retries: 2 (3 total attempts)
 - Delay multiplier: 2x
@@ -142,13 +150,13 @@ class _ProductsPageState extends State<ProductsPage> {
 
   Future<void> _loadProducts() async {
     setState(() => isLoading = true);
-    
+
     try {
       final result = await http.get<Map<String, dynamic>>('/products');
       final productList = (result['products'] as List)
           .map((json) => Product.fromJson(json))
           .toList();
-      
+
       setState(() {
         products = productList;
         isLoading = false;
@@ -165,7 +173,7 @@ class _ProductsPageState extends State<ProductsPage> {
   Widget build(BuildContext context) {
     if (isLoading) return CircularProgressIndicator();
     if (error != null) return Text(error!);
-    
+
     return ListView.builder(
       itemCount: products.length,
       itemBuilder: (context, index) => ProductTile(products[index]),
