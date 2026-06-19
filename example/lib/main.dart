@@ -145,32 +145,18 @@ Future<void> main() async {
     //   }
     // }
 
-    // Initialize Workmanager with a top-level dispatcher so background
-    // isolates can reach the app's top-level `backgroundFlushHandler`.
-    if (!kIsWeb) {
-      await Workmanager().initialize(workmanagerCallbackDispatcher);
-      // Also inform the package-level service about the handler so it can
-      // include callback handles when scheduling tasks from the foreground.
-      try {
-        WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
-      } catch (_) {}
-      // Ensure the foreground flush handler is set so UI actions like
-      // "Run worker now" can call the flush handler immediately.
-      try {
-        WorkmanagerService.instance.flushPendingHandler = () async {
-          await processPendingSubmissions();
-        };
-      } catch (_) {}
-    }
+    // Workmanager initialization and handler registration is performed by
+    // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true` is
+    // passed along with a `workmanagerCallbackDispatcher`.
 
     // Use platform-appropriate minimum for periodic work (15 minutes).
     final wmFreq = const Duration(seconds: 30);
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
-      // We've initialized Workmanager above; prevent the package from
-      // initializing it again to avoid duplicate dispatcher registration.
-      enableWorkmanager: false,
+      // Let `initAll` initialize Workmanager and register handlers.
+      enableWorkmanager: true,
+      workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
       registerPeriodic: true,
       workmanagerHandler: backgroundFlushHandler,
       // Example: override periodic scheduling values from host app.
@@ -184,6 +170,10 @@ Future<void> main() async {
       workmanagerFlushPendingHandler: () async {
         await processPendingSubmissions();
       },
+      flushAll: ({SubmitHandler? submitHandler}) async =>
+          await flushPendingSubmissions(submitHandler: submitHandler),
+      flushOne: (int id, {SubmitHandler? submitHandler}) async =>
+          await flushPendingSubmissionById(id, submitHandler: submitHandler),
       migrationAssetPaths: [
         'migrations/migration.sql',
         // 'migrations/migration_json_file.sql',
@@ -274,20 +264,9 @@ Future<void> main() async {
     }
 
     // flushPendingHandler is registered via the `workmanagerFlushPendingHandler`
-    // parameter passed to `FormFieldsInitializer.initAll` above.
-    // Background handler is registered via FormFieldsInitializer.initAll
-    // (workmanagerHandler parameter) so no manual registration is needed here.
-    // Register example flush implementations with the plugin-level API so
-    // callers using the public package API can invoke flush helpers that are
-    // implemented in the example app.
-    try {
-      FlushApi.register(
-        flushAll: ({SubmitHandler? submitHandler}) async =>
-            await flushPendingSubmissions(submitHandler: submitHandler),
-        flushOne: (int id, {SubmitHandler? submitHandler}) async =>
-            await flushPendingSubmissionById(id, submitHandler: submitHandler),
-      );
-    } catch (_) {}
+    // parameter passed to `FormFieldsInitializer.initAll` above. Background
+    // handler is registered via FormFieldsInitializer.initAll as well so no
+    // further registration is needed here.
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
   }

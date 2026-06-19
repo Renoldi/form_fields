@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'db_service.dart';
 import 'workmanager_service.dart';
 import 'package:workmanager/workmanager.dart';
+import 'flush_api.dart';
 
 final _log = Logger('FormFieldsInitializer');
 
@@ -74,6 +75,12 @@ class FormFieldsInitializer {
     /// `PluginUtilities.getCallbackHandle` for inter-isolate callback
     /// resolution.
     BackgroundTaskHandler? workmanagerHandler,
+
+    /// Optional top-level callback dispatcher to register with `Workmanager()`
+    /// in the host app. If provided and `enableWorkmanager` is true, `initAll`
+    /// will call `Workmanager().initialize(workmanagerCallbackDispatcher)` so
+    /// background isolates can reach the host's top-level dispatcher.
+    void Function()? workmanagerCallbackDispatcher,
     Level logLevel = Level.INFO,
     List<String>? migrationAssetPaths,
     int dbVersion = 0,
@@ -87,6 +94,11 @@ class FormFieldsInitializer {
     OnDatabaseVersionChangeFn? onUpgrade,
     OnDatabaseVersionChangeFn? onDowngrade,
     OnDatabaseOpenFn? onOpen,
+    // Optional host-provided flush handlers that will be registered on
+    // package startup so callers can invoke host-provided flush logic via
+    // `FlushApi.flushPendingSubmissions` / `FlushApi.flushPendingSubmissionById`.
+    FlushAllHandler? flushAll,
+    FlushOneHandler? flushOne,
   }) async {
     // Setup logging
     Logger.root.level = logLevel;
@@ -189,6 +201,22 @@ class FormFieldsInitializer {
 
     if (enableWorkmanager && !kIsWeb) {
       _log.info('Initializing WorkmanagerService');
+      // If the host provided a top-level callback dispatcher, initialize the
+      // Workmanager plugin with it so background isolates can reach the
+      // app's dispatcher/handler. Hosts that already call
+      // `Workmanager().initialize(...)` should pass `enableWorkmanager: false`
+      // to avoid double-initialization.
+      if (workmanagerCallbackDispatcher != null) {
+        try {
+          await Workmanager().initialize(workmanagerCallbackDispatcher);
+        } catch (e, st) {
+          _log.warning(
+              'Failed to initialize Workmanager with callback dispatcher: $e',
+              e,
+              st);
+        }
+      }
+
       await WorkmanagerService.instance.initialize();
 
       // If the host provided a handler, register it for foreground usage.
@@ -235,6 +263,15 @@ class FormFieldsInitializer {
             inputData: workmanagerInputData,
             initialDelay: workmanagerInitialDelay);
       }
+    }
+
+    // Register optional host-provided Flush handlers so the package-level
+    // FlushApi can call back into the host/example app. This preserves the
+    // previous behavior where hosts registered implementations themselves.
+    try {
+      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
+    } catch (e, st) {
+      _log.warning('Failed to register FlushApi handlers: $e', e, st);
     }
 
     _log.info('FormFields initialized');
