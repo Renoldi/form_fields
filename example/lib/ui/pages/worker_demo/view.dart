@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
+import '../../../src/service/flush_service.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'view_model.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -467,13 +468,47 @@ class View extends PresenterState {
                                     title: Text(payload),
                                     subtitle: Text(
                                         'status: ${status.isNotEmpty ? status : '-'} • id: ${id ?? '-'}'),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: id == null
-                                          ? null
-                                          : () async {
-                                              await vm.removePending(id);
-                                            },
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.play_arrow),
+                                          tooltip: 'Run this pending now',
+                                          onPressed: id == null
+                                              ? null
+                                              : () async {
+                                                  try {
+                                                    WorkmanagerService
+                                                            .instance
+                                                            .lastLogListenable
+                                                            .value =
+                                                        'runPending: id=$id';
+                                                  } catch (_) {}
+                                                  try {
+                                                    await flushPendingSubmissionById(
+                                                        id);
+                                                    // Reload pending list after attempt
+                                                    await vm.loadPending();
+                                                  } catch (e) {
+                                                    try {
+                                                      WorkmanagerService
+                                                              .instance
+                                                              .lastLogListenable
+                                                              .value =
+                                                          'runPending threw: $e';
+                                                    } catch (_) {}
+                                                  }
+                                                },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete),
+                                          onPressed: id == null
+                                              ? null
+                                              : () async {
+                                                  await vm.removePending(id);
+                                                },
+                                        ),
+                                      ],
                                     ),
                                   );
                                 }).toList(),

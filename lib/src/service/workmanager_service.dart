@@ -60,6 +60,10 @@ class WorkmanagerService {
   final List<String> _logs = <String>[];
   final Set<String> _registeredTasks = <String>{};
 
+  /// Notifier incremented when pending submissions change (rows deleted/added).
+  /// Example UI can listen to this to refresh pending lists without parsing logs.
+  final ValueNotifier<int> pendingChangedListenable = ValueNotifier<int>(0);
+
   /// `setHandler` is kept for API compatibility but foreground handlers
   /// are not used by this service. Background handlers must be registered
   /// with `setBackgroundTaskHandler`.
@@ -267,6 +271,13 @@ class WorkmanagerService {
       _suppressListener = true;
       lastLogListenable.value = msg;
       _suppressListener = false;
+    } catch (_) {}
+  }
+
+  /// Call this to notify listeners that pending items changed.
+  void notifyPendingChanged() {
+    try {
+      pendingChangedListenable.value = pendingChangedListenable.value + 1;
     } catch (_) {}
   }
 
