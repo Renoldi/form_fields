@@ -121,6 +121,8 @@ export 'src/service/crypto_utils.dart' show CryptoUtils;
 export 'src/service/workmanager_service.dart'
     show WorkmanagerService, setBackgroundTaskHandler;
 export 'src/service/init_service.dart' show FormFieldsInitializer;
+export 'src/service/flush_api.dart' show FlushApi, SubmitHandler;
+export 'src/service/flush_state.dart' show FlushState;
 
 export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';

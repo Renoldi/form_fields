@@ -12,6 +12,10 @@ import '../../data/models/post.dart';
 Future<bool> flushPendingSubmissions(
     {Future<bool> Function(Map<String, dynamic> payload, int? id)?
         submitHandler}) async {
+  // Prevent concurrent flushes from running in parallel (foreground + background).
+  // If a flush is already in progress, return false to indicate no-op.
+  // if (FlushState.isFlushing) return false;
+  // FlushState.isFlushing = true;
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: "status = ?", whereArgs: ['pending'], orderBy: 'created_at ASC');
@@ -81,6 +85,8 @@ Future<bool> flushPendingSubmissions(
           'example.flushPendingSubmissions threw: $e';
     } catch (_) {}
     return false;
+  } finally {
+    // FlushState.isFlushing = false;
   }
 }
 
@@ -88,6 +94,9 @@ Future<bool> flushPendingSubmissions(
 Future<bool> flushPendingSubmissionById(int id,
     {Future<bool> Function(Map<String, dynamic> payload, int? id)?
         submitHandler}) async {
+  // Prevent concurrent flushes from running in parallel.
+  // if (FlushState.isFlushing) return false;
+  // FlushState.isFlushing = true;
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: 'id = ? AND status = ?', whereArgs: [id, 'pending']);
@@ -154,5 +163,7 @@ Future<bool> flushPendingSubmissionById(int id,
           'flushPendingSubmissionById threw: $e';
     } catch (_) {}
     return false;
+  } finally {
+    // FlushState.isFlushing = false;
   }
 }

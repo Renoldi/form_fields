@@ -45,6 +45,68 @@ FormFields<String>(
 )
 ```
 
+**Background Worker (Workmanager) — Usage**
+
+This package includes example tooling to schedule and run background flushes (processing queued/pending submissions). The example app shows how to wire a top-level background handler, register a foreground flush handler, and trigger one-off/background runs from the UI.
+
+- **Top-level background handler**: background isolates require a top-level (non-closure) function. Annotate it for AOT entry-point resolution:
+
+  ```dart
+  @pragma('vm:entry-point')
+  Future<bool> backgroundFlushHandler(String task, Map<String,dynamic>? inputData) async {
+    // process pending rows and return true on success
+    return await processPendingSubmissions();
+  }
+  ```
+
+- **Initialize / register handlers**: you can either let the package initialize Workmanager for you via `FormFieldsInitializer.initAll(...)` or initialize it manually and register handlers. Example (from the example app):
+
+  ```dart
+  // manual initialize (example/main.dart)
+  await Workmanager().initialize(workmanagerCallbackDispatcher);
+  WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
+
+  // ensure a foreground flush handler is set so UI can call it immediately
+  WorkmanagerService.instance.flushPendingHandler = () async {
+    await processPendingSubmissions();
+  };
+
+  // or let initAll register handlers for you:
+  await FormFieldsInitializer.initAll(
+    enableWorkmanager: true,
+    workmanagerHandler: backgroundFlushHandler,
+    workmanagerFlushPendingHandler: () async => await processPendingSubmissions(),
+  );
+  ```
+
+- **Constants and scheduling**: `FormFieldsInitializer` exposes `workmanagerInitialDelay` (default `kWorkmanagerInitialDelayDefault = Duration(minutes:15)`) and `workmanagerFrequency` when starting periodic tasks. Pass `initialDelay` to `WorkmanagerService.start(...)` if you need a custom delay before the first run.
+
+- **Triggering a one-off run from UI**: use `WorkmanagerService.instance.runOnceNowDetailed()` to register a one-off task immediately. Note that the background one-off will run via the OS scheduling; to process immediately in the foreground, call `WorkmanagerService.instance.flushPendingHandler?.call()` (if set) or invoke your flush helper directly.
+
+  ```dart
+  // register a one-off background run
+  await WorkmanagerService.instance.runOnceNowDetailed();
+
+  // also perform an immediate foreground flush (for testing)
+  await WorkmanagerService.instance.flushPendingHandler?.call();
+  ```
+
+- **Per-row manual run (example UI)**: the example app provides `flushPendingSubmissionById(id)` in `example/lib/src/service/flush_service.dart` to process a single pending row and delete it on success. The Worker Demo UI adds a Play button per row that calls this helper and reloads the pending list.
+
+  Files of interest:
+  - [example/lib/main.dart](example/lib/main.dart)
+  - [example/lib/src/service/flush_service.dart](example/lib/src/service/flush_service.dart)
+  - [example/lib/ui/pages/worker_demo/view.dart](example/lib/ui/pages/worker_demo/view.dart)
+
+- **UI synchronisation**: the package exposes `WorkmanagerService.instance.pendingChangedListenable` (a `ValueNotifier<int>`) and `notifyPendingChanged()` — call `notifyPendingChanged()` after you delete pending rows so the example UI refreshes without parsing logs.
+
+- **Debug helpers in example**: the example app includes a countdown display that calls `processPendingSubmissions()` when the timer expires and schedules one-off fallbacks (`dbg_countdown`) and a debug immediate run (`dbg_now`) in debug mode. See [example/lib/main.dart](example/lib/main.dart).
+
+Notes
+
+- Background execution semantics depend on platform OS scheduling (Android JobScheduler / iOS BackgroundFetch). A one-off registration does not always run instantly — for immediate verification call the foreground flush handler.
+- Ensure your submit logic is robust to retries; the example uses `flushPendingSubmissions` in `example/lib/src/service/flush_service.dart` and will delete rows only on successful submission.
+
 ---
 
 ## Exporting and Importing Database

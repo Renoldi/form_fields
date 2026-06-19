@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
-import '../../../src/service/flush_service.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'view_model.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -264,24 +263,15 @@ class View extends PresenterState {
                               label: const Text('Run worker now'),
                               onPressed: () async {
                                 vm.setLoading(true);
-                                final err = await WorkmanagerService.instance
-                                    .runOnceNowDetailed();
-                                // Also attempt a foreground flush (for testing).
+                                // Perform an immediate foreground flush. We avoid
+                                // scheduling a one-off background run here to
+                                // prevent duplicate processing.
+                                var ok = false;
                                 try {
-                                  final present = WorkmanagerService
-                                          .instance.flushPendingHandler !=
-                                      null;
+                                  ok = await FlushApi.flushPendingSubmissions();
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
-                                      'runNow: flushPendingHandler present=$present';
-                                } catch (_) {}
-                                try {
-                                  await WorkmanagerService
-                                      .instance.flushPendingHandler
-                                      ?.call();
-                                  WorkmanagerService
-                                          .instance.lastLogListenable.value =
-                                      'runNow: foreground flush completed';
+                                      'runNow: foreground flush completed -> $ok';
                                   // Reload pending items to reflect any deletions
                                   try {
                                     await vm.loadPending();
@@ -296,9 +286,9 @@ class View extends PresenterState {
                                 ScaffoldMessenger.maybeOf(context)
                                     ?.showSnackBar(
                                   SnackBar(
-                                    content: Text(err == null
+                                    content: Text(ok
                                         ? 'Worker ran successfully'
-                                        : 'Worker run failed: $err'),
+                                        : 'Worker run failed'),
                                     duration: const Duration(seconds: 4),
                                   ),
                                 );
@@ -311,9 +301,7 @@ class View extends PresenterState {
                                 try {
                                   WorkmanagerService.instance.lastLogListenable
                                       .value = 'foregroundFlush invoked';
-                                  await WorkmanagerService
-                                      .instance.flushPendingHandler
-                                      ?.call();
+                                  await FlushApi.flushPendingSubmissions();
                                   WorkmanagerService.instance.lastLogListenable
                                       .value = 'foregroundFlush completed';
                                   // Refresh pending list after a foreground flush
@@ -485,8 +473,9 @@ class View extends PresenterState {
                                                         'runPending: id=$id';
                                                   } catch (_) {}
                                                   try {
-                                                    await flushPendingSubmissionById(
-                                                        id);
+                                                    await FlushApi
+                                                        .flushPendingSubmissionById(
+                                                            id);
                                                     // Reload pending list after attempt
                                                     await vm.loadPending();
                                                   } catch (e) {

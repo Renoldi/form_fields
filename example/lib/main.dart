@@ -41,7 +41,8 @@ final logger = Logger();
 /// can be reused by both the background isolate handler and the foreground
 /// flush callback without duplicating logic.
 Future<bool> processPendingSubmissions() async {
-  return await flushPendingSubmissions(submitHandler: (payload, id) async {
+  return await FlushApi.flushPendingSubmissions(
+      submitHandler: (payload, id) async {
     try {
       final post = Post.fromJson(payload);
       final res = await Post.add(post: post);
@@ -163,7 +164,7 @@ Future<void> main() async {
     }
 
     // Use platform-appropriate minimum for periodic work (15 minutes).
-    final wmFreq = const Duration(seconds: 120);
+    final wmFreq = const Duration(seconds: 30);
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
@@ -276,6 +277,17 @@ Future<void> main() async {
     // parameter passed to `FormFieldsInitializer.initAll` above.
     // Background handler is registered via FormFieldsInitializer.initAll
     // (workmanagerHandler parameter) so no manual registration is needed here.
+    // Register example flush implementations with the plugin-level API so
+    // callers using the public package API can invoke flush helpers that are
+    // implemented in the example app.
+    try {
+      FlushApi.register(
+        flushAll: ({SubmitHandler? submitHandler}) async =>
+            await flushPendingSubmissions(submitHandler: submitHandler),
+        flushOne: (int id, {SubmitHandler? submitHandler}) async =>
+            await flushPendingSubmissionById(id, submitHandler: submitHandler),
+      );
+    } catch (_) {}
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
   }

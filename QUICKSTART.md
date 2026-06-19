@@ -221,6 +221,15 @@ await FormFieldsInitializer.initAll(
   onUpgrade: (db, oldV, newV) async { /* incremental upgrade */ },
 );
 
+// If you need a background Workmanager handler use `workmanagerHandler`.
+// The handler must be a top-level function (so it's reachable from
+// background isolates). `initAll` will register it for both foreground
+// convenience and as the background task handler for the package:
+
+// Example:
+// Future<bool> myBackgroundHandler(String task, Map<String, dynamic>? data) async { ... }
+// await FormFieldsInitializer.initAll(..., workmanagerHandler: myBackgroundHandler);
+
 // Programmatic migration: change DB version at runtime
 await FormFieldsInitializer.changeDbVersion(2,
     migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql']);
