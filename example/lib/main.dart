@@ -7,19 +7,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_fields_example/src/service/flush_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:workmanager/workmanager.dart';
-// Workmanager is initialized by FormFieldsInitializer when requested.
-// Avoid importing the plugin here so the example keeps only the
-// foreground/top-level flush routine (`processPendingSubmissions`).
+// Workmanager is initialized by `FormFieldsInitializer.initAll(...)` when
+// requested. The package will initialize the plugin and wire background
+// handlers for you when you pass `workmanagerHandler` to `initAll` or
+// register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
-// example-local flush helper
-import 'src/service/flush_service.dart';
+// example-local service helpers (flush, handlers)
 
 // Local configuration & state management
 import 'config/app_router.dart';
@@ -34,56 +34,17 @@ final logger = Logger();
 // MAIN ENTRY POINT
 // ============================================================================
 
-// Top-level callback dispatcher used by Workmanager in background isolates.
-// Ensures Flutter bindings and DB are initialized in the background isolate
-// before invoking the app's background task handler.
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  Workmanager().executeTask((task, inputData) async {
-    try {
-      final res = await backgroundTaskHandler(task, inputData);
-      return Future.value(res);
-    } catch (e) {
-      return Future.value(false);
-    }
-  });
-}
-
-/// Top-level background handler invoked by Workmanager in background
-/// isolates. Must be a top-level function to be reachable from the
-/// background isolate. Returns `true` on success.
-/// Process pending submissions from DB and attempt to POST them.
-///
-/// Returns true on success, false on error. This helper is top-level so it
-/// can be reused by both the background isolate handler and the foreground
-/// flush callback without duplicating logic.
-/// Process pending submissions from DB and attempt to POST them.
-///
-/// This is a top-level, entry-point-safe function intended to be used by
-/// foreground code and by background isolates (if the host app chooses to
-/// register it as the background handler). It logs errors via the shared
-/// `logger` and also updates `WorkmanagerService`'s last-log listenable when
-/// available so the example UI can surface recent flush activity.
+// Background dispatching: the package can initialize Workmanager and wire
+// background handlers when `enableWorkmanager: true` is passed to
+// `FormFieldsInitializer.initAll(...)`. Register a top-level handler via
+// the `workmanagerHandler` argument to `initAll`, or call
+// `WorkmanagerService.setBackgroundTaskHandler(myHandler)` before
+// scheduling tasks. Handlers must be top-level/static so they can be
+// resolved from background isolates.
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ========================================================================
-  // ENVIRONMENT CONFIGURATION
-  // ========================================================================
-  // Set the environment BEFORE starting the app.
-  // All API endpoints will automatically use the configured environment.
-  //
-  // Available options:
-  //   🐛 DEBUG      - Development with detailed logging
-  //   🧪 BETA       - Feature testing
-  //   🚀 PRODUCTION - Stable release
-  //
-  // ⚙️ This is automatically set by: dart run tool/configure_build.dart
-  // ========================================================================
-
-  // Option 1: DEBUG Environment (default)
+  // ENVIRONMENT: set before startup (change via tool/configure_build.dart)
   EnvironmentConfig.current = AppEnvironment.debug;
 
   DioUtil.configure(
@@ -99,15 +60,8 @@ Future<void> main() async {
   // Option 3: PRODUCTION Environment (uncomment to use)
   // EnvironmentConfig.current = AppEnvironment.debug;
 
-  // ========================================================================
-  // BUILD CONFIGURATION
-  // ========================================================================
-  // BuildConfig is automatically synced with EnvironmentConfig and provides
-  // platform-specific settings (namespace, SDK versions, API keys, etc.).
-  //
-  // All configuration values are stored in: lib/config/build_settings.dart
-  // To change configuration: dart run tool/configure_build.dart
-  // ========================================================================
+  // BUILD CONFIGURATION: see lib/config/build_settings.dart and
+  // run `dart run tool/configure_build.dart` to update settings.
 
   if (kDebugMode) {
     _printStartupInfo();
@@ -128,8 +82,22 @@ Future<void> main() async {
     // }
 
     // Workmanager initialization and handler registration is performed by
-    // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true` is
-    // passed along with a `workmanagerCallbackDispatcher`.
+    // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true`.
+    // Example: register a top-level background handler (choose one):
+    //
+    // 1) Register the handler on the service before init:
+    //    WorkmanagerService.setBackgroundTaskHandler(myHandler);
+    //    await FormFieldsInitializer.initAll(..., enableWorkmanager: true);
+    //
+    // 2) Or pass the handler into initAll directly:
+    //    await FormFieldsInitializer.initAll(
+    //      ...,
+    //      enableWorkmanager: true,
+    //      workmanagerHandler: myHandler,
+    //    );
+    //
+    // Note: `myHandler` must be a top-level/static function so it can be
+    // resolved from background isolates.
 
     // Use platform-appropriate minimum for periodic work (15 minutes).
     final wmFreq = const Duration(seconds: 30);
@@ -143,24 +111,11 @@ Future<void> main() async {
       // Run every 15 minutes (minimum recommended by Android JobScheduler).
       workmanagerFrequency: wmFreq,
       workmanagerInitialDelay: Duration.zero,
-      // Register a foreground flush handler so the WorkmanagerService can
-      // invoke it when connectivity is restored. This handler reads the
-      // example DB table `pending_submissions` and attempts to POST each
-      // pending entry to the server. Successful submissions are removed.
-      // Register a foreground flush handler so the `WorkmanagerService` can
-      // invoke it when connectivity is restored. Use the shared,
-      // top-level `processPendingSubmissions` implementation.
-      // Use a top-level background handler that calls the example
-      // implementation directly so background isolates don't rely on
-      // FlushApi static registration.
-      // Provide top-level handlers and callback dispatcher so background
-      // isolates can resolve and run them.
-      workmanagerCallbackDispatcher: callbackDispatcher,
+      // Foreground flush handler: attempts to submit pending DB entries
+      // when connectivity resumes. Must be a top-level function.
       workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
-      workmanagerHandler: backgroundTaskHandler,
 
-      // Ensure the top-level background handler is registered so the
-      // background isolate can resolve the callback handle.
+      // Flush helpers (implemented below) are provided for the example.
       flushAll: ({SubmitHandler? submitHandler}) async =>
           await flushPendingSubmissions(submitHandler: submitHandler),
       flushOne: (int id, {SubmitHandler? submitHandler}) async =>
@@ -168,11 +123,11 @@ Future<void> main() async {
       migrationAssetPaths: [
         'migrations/migration.sql',
         // 'migrations/migration_json_file.sql',
-        'migrations/v1.sql',
+        // 'migrations/v1.sql',
         // 'migrations/v2.sql',
         // 'migrations/v2_down.sql',
       ],
-      dbVersion: 1,
+      dbVersion: 0,
     );
 
     // // Debug helper: schedule a one-off run immediately to verify dispatcher
@@ -199,10 +154,6 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-// ============================================================================
-// STARTUP DIAGNOSTICS
-// ============================================================================
-
 void _printStartupInfo() {
   final config = BuildConfig.current;
   final divider = '=' * 60;
@@ -211,7 +162,6 @@ void _printStartupInfo() {
   logger.i('🚀 APP STARTUP');
   logger.i(divider);
 
-  // Environment Info
   logger.i('\n📍 ENVIRONMENT: ${EnvironmentConfig.currentName.toUpperCase()}');
   logger.i('   Base URL: ${EnvironmentConfig.currentBaseUrl}');
 
@@ -292,61 +242,36 @@ abstract class PresenterState extends State<MyApp> {
   }
 
   Future<void> _requestStartupPermissions() async {
-    // Skip permission requests for web and desktop platforms
     if (kIsWeb) return;
     if (defaultTargetPlatform != TargetPlatform.android &&
         defaultTargetPlatform != TargetPlatform.iOS) {
       return;
     }
 
-    // Get enabled permissions from BuildConfig
     final config = BuildConfig.current;
     final permissions = <Permission>[];
 
-    // Only request permissions that are enabled in build configuration
     if (config.hasAndroidPermission('android.permission.CAMERA')) {
       permissions.add(Permission.camera);
-      logger.i('📷 Requesting Camera permission...');
     }
-
     if (config.hasAndroidPermission('android.permission.READ_MEDIA_IMAGES') ||
         config
             .hasAndroidPermission('android.permission.READ_EXTERNAL_STORAGE')) {
       permissions.add(Permission.photos);
-      logger.i('🖼️  Requesting Gallery permission...');
     }
-
     if (config.hasAndroidPermission('android.permission.POST_NOTIFICATIONS')) {
       permissions.add(Permission.notification);
-      logger.i('🔔 Requesting Notification permission...');
     }
 
-    // If no permissions configured, skip
     if (permissions.isEmpty) {
-      logger.i('ℹ️  No runtime permissions configured');
       return;
     }
 
-    // Request all configured permissions
     final statuses = await permissions.request();
-
-    logger.i('\n📋 Permission Results:');
-    for (final entry in statuses.entries) {
-      final icon = entry.value.isGranted
-          ? '✅'
-          : entry.value.isDenied
-              ? '❌'
-              : '⚠️';
-      logger.i(
-          '   $icon ${entry.key.toString().split('.').last}: ${entry.value}');
-    }
-
-    // Check for permanently denied permissions
     final permanentlyDenied = statuses.entries
         .where((e) => e.value.isPermanentlyDenied)
         .map((e) => e.key)
         .toList();
-
     if (permanentlyDenied.isNotEmpty && mounted) {
       await _showPermissionSettingsDialog(permanentlyDenied);
     }

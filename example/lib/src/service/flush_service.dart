@@ -1,12 +1,49 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:form_fields_example/data/models/post.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:form_fields/form_fields.dart';
-import '../../data/models/post.dart';
-import '../../main.dart';
+import 'package:logger/logger.dart';
+
+// Local logger for example service helpers (avoid circular import with main)
+final logger = Logger();
+
+// Background dispatch entry-point used by Workmanager. Keep it top-level
+// and entry-point-safe so background isolates can resolve the callback.
+@pragma('vm:entry-point')
+Future<void> workmanagerFlushPendingHandler() async {
+  if (kDebugMode) {
+    // ignore: avoid_print
+    print('workmanagerFlushPendingHandler invoked in isolate');
+  }
+  await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
+}
+
+// Top-level background helper that can be invoked from the UI isolate
+// or from background isolates via a callback handle.
+@pragma('vm:entry-point')
+Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
+  final handler = submitHandler ?? defaultSubmitHandler;
+
+  try {
+    logger.i('Invoking flushPendingSubmissions');
+    final result =
+        await FlushApi.flushPendingSubmissions(submitHandler: handler);
+
+    final statusMsg = result ? 'success' : 'failure';
+    logger.i('processPendingSubmissions -> $statusMsg');
+    _setLastLog('processPendingSubmissions -> $statusMsg');
+
+    return result;
+  } catch (e, st) {
+    logger.w('processPendingSubmissions threw: $e\n$st');
+    _setLastLog('processPendingSubmissions threw: $e');
+    return false;
+  }
+}
 
 // Top-level default submit handler: safe to call from background isolates
 @pragma('vm:entry-point')
@@ -81,57 +118,6 @@ Future<bool> _invokeHandler(
     }
     return res;
   } catch (_) {
-    return false;
-  }
-}
-
-// Top-level helper used by Workmanager's callback dispatcher
-@pragma('vm:entry-point')
-Future<void> workmanagerFlushPendingHandler() async {
-  if (kDebugMode) {
-    // ignore: avoid_print
-    print('workmanagerFlushPendingHandler invoked in isolate');
-  }
-  // In background isolate we must NOT rely on FlushApi.register (that's
-  // registered in the UI isolate). Call the concrete implementation that
-  // reads DB rows and invokes the submit handler directly.
-  await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
-}
-
-// Top-level background task handler matching Workmanager's signature.
-// This is registered as the background handler so WorkmanagerService can
-// obtain a callback handle and include it with scheduled tasks. The
-// background isolate will resolve this handler and invoke it directly.
-@pragma('vm:entry-point')
-Future<bool> backgroundTaskHandler(
-    String task, Map<String, dynamic>? inputData) async {
-  try {
-    // Directly call the implementation that accesses DB in this isolate.
-    await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-@pragma('vm:entry-point')
-Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
-  // Use injected handler if provided, otherwise use top-level default.
-  final handler = submitHandler ?? defaultSubmitHandler;
-
-  try {
-    logger.i('Invoking flushPendingSubmissions');
-    final result =
-        await FlushApi.flushPendingSubmissions(submitHandler: handler);
-
-    final statusMsg = result ? 'success' : 'failure';
-    logger.i('processPendingSubmissions -> $statusMsg');
-    _setLastLog('processPendingSubmissions -> $statusMsg');
-
-    return result;
-  } catch (e, st) {
-    logger.w('processPendingSubmissions threw: $e\n$st');
-    _setLastLog('processPendingSubmissions threw: $e');
     return false;
   }
 }

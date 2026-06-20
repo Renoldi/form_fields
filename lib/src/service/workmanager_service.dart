@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 import 'flush_api.dart';
 
@@ -103,10 +104,10 @@ class WorkmanagerService {
   /// be handled via native `WorkmanagerDebug` handlers configured on the
   /// platform side (see plugin docs). This method no longer accepts that
   /// parameter and will ignore any debug mode toggles.
-  Future<void> initialize() async {
+  Future<void> initialize({void Function()? callbackDispatcher}) async {
     if (_initialized) return;
     try {
-      await Workmanager().initialize(_callbackDispatcher);
+      await Workmanager().initialize(callbackDispatcher ?? _callbackDispatcher);
       _initialized = true;
       // Listen for connectivity changes in the foreground isolate and
       // invoke the host-provided flush handler when network becomes
@@ -450,6 +451,8 @@ class WorkmanagerService {
   /// The callback dispatcher used by the `workmanager` plugin. This must be
   /// a top-level or static function reference as required by the plugin.
   static void _callbackDispatcher() {
+    WidgetsFlutterBinding.ensureInitialized();
+
     Workmanager().executeTask((task, inputData) async {
       if (kDebugMode) {
         // ignore: avoid_print

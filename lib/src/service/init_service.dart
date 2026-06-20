@@ -102,18 +102,8 @@ class FormFieldsInitializer {
 
     _log.info('Initializing WorkmanagerService');
 
-    if (workmanagerCallbackDispatcher != null) {
-      try {
-        await Workmanager().initialize(workmanagerCallbackDispatcher);
-      } catch (e, st) {
-        _log.warning(
-            'Failed to initialize Workmanager with callback dispatcher: $e',
-            e,
-            st);
-      }
-    }
-
-    await WorkmanagerService.instance.initialize();
+    await WorkmanagerService.instance
+        .initialize(callbackDispatcher: workmanagerCallbackDispatcher);
 
     if (workmanagerHandler != null) {
       WorkmanagerService.instance.setHandler(workmanagerHandler);
