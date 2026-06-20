@@ -12,7 +12,9 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:workmanager/workmanager.dart';
+// Workmanager is initialized by FormFieldsInitializer when requested.
+// Avoid importing the plugin here so the example keeps only the
+// foreground/top-level flush routine (`processPendingSubmissions`).
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 // example-local flush helper
@@ -40,49 +42,54 @@ final logger = Logger();
 /// Returns true on success, false on error. This helper is top-level so it
 /// can be reused by both the background isolate handler and the foreground
 /// flush callback without duplicating logic.
-Future<bool> processPendingSubmissions() async {
-  return await FlushApi.flushPendingSubmissions(
-      submitHandler: (payload, id) async {
+/// Process pending submissions from DB and attempt to POST them.
+///
+/// This is a top-level, entry-point-safe function intended to be used by
+/// foreground code and by background isolates (if the host app chooses to
+/// register it as the background handler). It logs errors via the shared
+/// `logger` and also updates `WorkmanagerService`'s last-log listenable when
+/// available so the example UI can surface recent flush activity.
+@pragma('vm:entry-point')
+Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
+  // Provide a default submit handler if the caller doesn't inject one.
+  Future<bool> defaultHandler(dynamic payload, int? id) async {
     try {
       final post = Post.fromJson(payload);
       final res = await Post.add(post: post);
       return res != null;
-    } catch (e) {
+    } catch (e, st) {
+      logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
       try {
         WorkmanagerService.instance.lastLogListenable.value =
             'flush handler threw for id=${id ?? '-'}: $e';
       } catch (_) {}
       return false;
     }
-  });
-}
+  }
 
-@pragma('vm:entry-point')
-Future<bool> backgroundFlushHandler(
-    String task, Map<String, dynamic>? inputData) async {
-  return await processPendingSubmissions();
-}
+  final handler = submitHandler ?? defaultHandler;
 
-/// Top-level dispatcher that Workmanager background isolate will call.
-@pragma('vm:entry-point')
-void workmanagerCallbackDispatcher() {
-  Workmanager()
-      .executeTask((String task, Map<String, dynamic>? inputData) async {
-    if (kDebugMode) {
-      // ignore: avoid_print
-      print('Workmanager executeTask: $task, inputData: $inputData');
-    }
+  try {
+    logger.i('Invoking flushPendingSubmissions');
+    final result =
+        await FlushApi.flushPendingSubmissions(submitHandler: handler);
+
+    final statusMsg = result ? 'success' : 'failure';
+    logger.i('processPendingSubmissions -> $statusMsg');
     try {
-      final res = await backgroundFlushHandler(task, inputData);
-      return Future.value(res);
-    } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('background dispatcher error: $e');
-      }
-      return Future.value(false);
-    }
-  });
+      WorkmanagerService.instance.lastLogListenable.value =
+          'processPendingSubmissions -> $statusMsg';
+    } catch (_) {}
+
+    return result;
+  } catch (e, st) {
+    logger.w('processPendingSubmissions threw: $e\n$st');
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'processPendingSubmissions threw: $e';
+    } catch (_) {}
+    return false;
+  }
 }
 
 Future<void> main() async {
@@ -136,14 +143,14 @@ Future<void> main() async {
     // One-time developer helper: reset DB and re-initialize from bundled
     // migrations. REMOVE this call after the DB has been reset to avoid
     // deleting user data on subsequent launches.
-    // if (kDebugMode) {
-    //   try {
-    //     await DBService.instance.resetDatabase(reinit: true);
-    //     logger.i('Developer: resetDatabase completed');
-    //   } catch (e, st) {
-    //     logger.w('Developer: resetDatabase failed: $e\n$st');
-    //   }
-    // }
+    if (kDebugMode) {
+      try {
+        await DBService.instance.resetDatabase(reinit: true);
+        logger.i('Developer: resetDatabase completed');
+      } catch (e, st) {
+        logger.w('Developer: resetDatabase failed: $e\n$st');
+      }
+    }
 
     // Workmanager initialization and handler registration is performed by
     // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true` is
@@ -156,9 +163,7 @@ Future<void> main() async {
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
       enableWorkmanager: true,
-      workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
       registerPeriodic: true,
-      workmanagerHandler: backgroundFlushHandler,
       // Example: override periodic scheduling values from host app.
       // Run every 15 minutes (minimum recommended by Android JobScheduler).
       workmanagerFrequency: wmFreq,
@@ -167,9 +172,11 @@ Future<void> main() async {
       // invoke it when connectivity is restored. This handler reads the
       // example DB table `pending_submissions` and attempts to POST each
       // pending entry to the server. Successful submissions are removed.
-      workmanagerFlushPendingHandler: () async {
-        await processPendingSubmissions();
-      },
+      // Register a foreground flush handler so the `WorkmanagerService` can
+      // invoke it when connectivity is restored. Use the shared,
+      // top-level `processPendingSubmissions` implementation.
+      workmanagerFlushPendingHandler: () async =>
+          await processPendingSubmissions(),
       flushAll: ({SubmitHandler? submitHandler}) async =>
           await flushPendingSubmissions(submitHandler: submitHandler),
       flushOne: (int id, {SubmitHandler? submitHandler}) async =>

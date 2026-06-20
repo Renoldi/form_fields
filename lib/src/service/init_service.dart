@@ -15,8 +15,142 @@ final _log = Logger('FormFieldsInitializer');
 const Duration kWorkmanagerInitialDelayDefault = Duration(minutes: 15);
 
 /// Single initializer to bootstrap package services from host app.
+///
+/// Responsibilities:
+/// - Initialize DB (apply optional migrations)
+/// - Initialize Workmanager (optional)
+/// - Register package-level Flush handlers
 class FormFieldsInitializer {
   FormFieldsInitializer._();
+
+  /// Apply migration assets when the DB is opened without a numeric version.
+  /// Receives the already-opened [db] instance to invoke host callbacks.
+  static Future<void> _applyMigrationAssetsIfNeeded(
+      {required Database db,
+      required int dbVersion,
+      required List<String>? migrationAssetPaths,
+      required bool invokeOnUpgradeWhenDbVersionZero,
+      OnDatabaseVersionChangeFn? onUpgrade,
+      OnDatabaseCreateFn? onCreate}) async {
+    if (dbVersion != 0 ||
+        migrationAssetPaths == null ||
+        migrationAssetPaths.isEmpty) {
+      return;
+    }
+
+    int maxVer = 0;
+    for (final asset in migrationAssetPaths) {
+      try {
+        _log.info('Applying migration asset via initAll: $asset');
+        await DBService.instance.runMigrationAsset(asset);
+        final basename = p.basename(asset);
+        final m = RegExp(r'v?(\d+)').firstMatch(basename);
+        if (m != null) {
+          final v = int.tryParse(m.group(1) ?? '0') ?? 0;
+          if (v > maxVer) maxVer = v;
+        }
+      } catch (e, st) {
+        _log.warning('Failed to apply migration asset $asset: $e', e, st);
+      }
+    }
+
+    if (maxVer > 0) {
+      try {
+        await DBService.instance.setUserVersion(maxVer);
+      } catch (e, st) {
+        _log.warning('Failed to set user_version to $maxVer: $e', e, st);
+      }
+    }
+
+    if (invokeOnUpgradeWhenDbVersionZero && onUpgrade != null && maxVer > 0) {
+      try {
+        for (var v = 1; v <= maxVer; v++) {
+          await onUpgrade(db, v - 1, v);
+        }
+      } catch (e, st) {
+        _log.warning(
+            'onUpgrade callback threw during manual invocation: $e', e, st);
+      }
+    }
+
+    if (onCreate != null) {
+      try {
+        await onCreate(db, maxVer);
+      } catch (e, st) {
+        _log.warning(
+            'onCreate callback threw during manual invocation: $e', e, st);
+      }
+    }
+  }
+
+  /// Initialize Workmanager plugin and register provided handlers when
+  /// appropriate. This is intentionally isolated so hosts may reuse parts.
+  static Future<void> _initWorkmanagerIfNeeded({
+    required bool enableWorkmanager,
+    required void Function()? workmanagerCallbackDispatcher,
+    required BackgroundTaskHandler? workmanagerHandler,
+    required Future<void> Function()? workmanagerFlushPendingHandler,
+    required bool registerPeriodic,
+    required bool autoStartWorkmanager,
+    required Duration workmanagerFrequency,
+    required Duration workmanagerInitialDelay,
+    required bool workmanagerPeriodic,
+    required Map<String, dynamic>? workmanagerInputData,
+    String? workmanagerTaskName,
+  }) async {
+    if (!enableWorkmanager || kIsWeb) return;
+
+    _log.info('Initializing WorkmanagerService');
+
+    if (workmanagerCallbackDispatcher != null) {
+      try {
+        await Workmanager().initialize(workmanagerCallbackDispatcher);
+      } catch (e, st) {
+        _log.warning(
+            'Failed to initialize Workmanager with callback dispatcher: $e',
+            e,
+            st);
+      }
+    }
+
+    await WorkmanagerService.instance.initialize();
+
+    if (workmanagerHandler != null) {
+      WorkmanagerService.instance.setHandler(workmanagerHandler);
+      try {
+        WorkmanagerService.setBackgroundTaskHandler(workmanagerHandler);
+      } catch (e, st) {
+        _log.warning('Failed to set background task handler: $e', e, st);
+      }
+    }
+
+    if (workmanagerFlushPendingHandler != null) {
+      try {
+        WorkmanagerService.instance.flushPendingHandler =
+            workmanagerFlushPendingHandler;
+      } catch (e, st) {
+        _log.warning('Failed to set flushPendingHandler: $e', e, st);
+      }
+    }
+
+    if (registerPeriodic) {
+      await WorkmanagerService.instance.start(
+        taskName: workmanagerTaskName,
+        frequency: workmanagerFrequency,
+        periodic: true,
+        inputData: workmanagerInputData,
+        initialDelay: workmanagerInitialDelay,
+      );
+    } else if (autoStartWorkmanager) {
+      await WorkmanagerService.instance.start(
+        taskName: workmanagerTaskName,
+        frequency: workmanagerFrequency,
+        periodic: workmanagerPeriodic,
+        inputData: workmanagerInputData,
+        initialDelay: workmanagerInitialDelay,
+      );
+    }
+  }
 
   /// Initialize DB, logging, workmanager and any other services the package
   /// requires. Designed to be called from app `main()` so the host app
@@ -58,22 +192,6 @@ class FormFieldsInitializer {
     Future<void> Function()? workmanagerFlushPendingHandler,
 
     /// Optional handler to register for background tasks.
-    ///
-    /// Usage notes:
-    /// - The handler should be a top-level function (not a closure or
-    ///   instance method) so background isolates can locate and invoke it.
-    /// - When provided, `initAll` will register it for foreground usage
-    ///   via `WorkmanagerService.instance.setHandler(...)` and will also
-    ///   attempt to register it as the package-level background handler
-    ///   so scheduling code can include a callback handle that background
-    ///   isolates can resolve.
-    /// - If the host app initializes `Workmanager()` itself (for example
-    ///   to install a custom dispatcher), pass `enableWorkmanager: false`
-    ///   to `initAll` to avoid double-initialization.
-    ///
-    /// See also: `WorkmanagerService.setBackgroundTaskHandler` and
-    /// `PluginUtilities.getCallbackHandle` for inter-isolate callback
-    /// resolution.
     BackgroundTaskHandler? workmanagerHandler,
 
     /// Optional top-level callback dispatcher to register with `Workmanager()`
@@ -103,8 +221,6 @@ class FormFieldsInitializer {
     // Setup logging
     Logger.root.level = logLevel;
     Logger.root.onRecord.listen((rec) {
-      // Simple console logging for example apps; host apps can configure
-      // their own logging handlers if desired.
       final msg = '${rec.level.name}: ${rec.time.toIso8601String()} '
           '${rec.loggerName} - ${rec.message}';
       // ignore: avoid_print
@@ -119,13 +235,12 @@ class FormFieldsInitializer {
       }
     });
 
-    // Note: when `dbVersion == 0` openDatabase is called without a numeric
-    // version so sqflite cannot invoke `onCreate`/`onUpgrade`/`onDowngrade`.
-    // We'll still accept `onCreate` and invoke it manually after applying
-    // provided `migrationAssetPaths` so hosts can supply a migration asset
-    // list while using a version-less DB. `onDowngrade` remains not
-    // applicable in this mode; `onUpgrade` can be invoked manually to
-    // simulate incremental upgrades starting from version 0.
+    // Validate inputs to catch common misconfiguration early.
+    if (workmanagerFrequency <= Duration.zero) {
+      throw ArgumentError.value(workmanagerFrequency, 'workmanagerFrequency',
+          'must be > Duration.zero');
+    }
+
     if (dbVersion == 0 && onDowngrade != null) {
       _log.warning(
           'onDowngrade provided but will be ignored when dbVersion == 0');
@@ -142,128 +257,28 @@ class FormFieldsInitializer {
       onOpen: onOpen,
     );
 
-    // When `dbVersion` is 0 we open the database without a numeric version
-    // (sqflite will not invoke onCreate/onUpgrade). For that usage pattern
-    // allow the host to provide migration assets via `migrationAssetPaths`.
-    // Apply them now as schema-only migrations so the DB is prepared.
-    if (dbVersion == 0 &&
-        migrationAssetPaths != null &&
-        migrationAssetPaths.isNotEmpty) {
-      int maxVer = 0;
-      for (final asset in migrationAssetPaths) {
-        try {
-          _log.info('Applying migration asset via initAll: $asset');
-          await DBService.instance.runMigrationAsset(asset);
-          final basename = p.basename(asset);
-          final m = RegExp(r'v?(\d+)').firstMatch(basename);
-          if (m != null) {
-            final v = int.tryParse(m.group(1) ?? '0') ?? 0;
-            if (v > maxVer) maxVer = v;
-          }
-        } catch (e, st) {
-          _log.warning('Failed to apply migration asset $asset: $e', e, st);
-        }
-      }
-      if (maxVer > 0) {
-        try {
-          await DBService.instance.setUserVersion(maxVer);
-        } catch (e, st) {
-          _log.warning('Failed to set user_version to $maxVer: $e', e, st);
-        }
-      }
+    await _applyMigrationAssetsIfNeeded(
+      db: db,
+      dbVersion: dbVersion,
+      migrationAssetPaths: migrationAssetPaths,
+      invokeOnUpgradeWhenDbVersionZero: invokeOnUpgradeWhenDbVersionZero,
+      onUpgrade: onUpgrade,
+      onCreate: onCreate,
+    );
 
-      // If the host provided an `onUpgrade` callback, invoke it sequentially
-      // to simulate incremental upgrades starting from DB version 0 up to
-      // the computed `maxVer`. This mirrors how sqflite would call
-      // `onUpgrade` for each step when opening with a numeric version.
-      if (invokeOnUpgradeWhenDbVersionZero && onUpgrade != null && maxVer > 0) {
-        try {
-          for (var v = 1; v <= maxVer; v++) {
-            await onUpgrade(db, v - 1, v);
-          }
-        } catch (e, st) {
-          _log.warning(
-              'onUpgrade callback threw during manual invocation: $e', e, st);
-        }
-      }
-
-      // Manually invoke onCreate if the caller provided one. Pass the
-      // computed max version (or 0) so the host knows what was applied.
-      if (onCreate != null) {
-        try {
-          await onCreate(db, maxVer);
-        } catch (e, st) {
-          _log.warning(
-              'onCreate callback threw during manual invocation: $e', e, st);
-        }
-      }
-    }
-
-    if (enableWorkmanager && !kIsWeb) {
-      _log.info('Initializing WorkmanagerService');
-      // If the host provided a top-level callback dispatcher, initialize the
-      // Workmanager plugin with it so background isolates can reach the
-      // app's dispatcher/handler. Hosts that already call
-      // `Workmanager().initialize(...)` should pass `enableWorkmanager: false`
-      // to avoid double-initialization.
-      if (workmanagerCallbackDispatcher != null) {
-        try {
-          await Workmanager().initialize(workmanagerCallbackDispatcher);
-        } catch (e, st) {
-          _log.warning(
-              'Failed to initialize Workmanager with callback dispatcher: $e',
-              e,
-              st);
-        }
-      }
-
-      await WorkmanagerService.instance.initialize();
-
-      // If the host provided a handler, register it for foreground usage.
-      // Note: background isolates require a top-level handler via
-      // `setBackgroundTaskHandler(...)`.
-      if (workmanagerHandler != null) {
-        // Register handler for foreground usage (backwards-compatible).
-        WorkmanagerService.instance.setHandler(workmanagerHandler);
-        // Also register as the top-level background handler so the
-        // provided top-level function is available to background isolates.
-        // The handler must be a top-level function from the host app.
-        try {
-          WorkmanagerService.setBackgroundTaskHandler(workmanagerHandler);
-        } catch (e, st) {
-          _log.warning('Failed to set background task handler: $e', e, st);
-        }
-      }
-
-      // If the host provided a foreground flush handler, register it so
-      // the service can invoke it on connectivity changes.
-      if (workmanagerFlushPendingHandler != null) {
-        try {
-          WorkmanagerService.instance.flushPendingHandler =
-              workmanagerFlushPendingHandler;
-        } catch (e, st) {
-          _log.warning('Failed to set flushPendingHandler: $e', e, st);
-        }
-      }
-
-      // Backwards-compatible behavior: if registerPeriodic was requested
-      // preserve the previous convenience. Otherwise respect autoStartWorkmanager.
-      if (registerPeriodic) {
-        await WorkmanagerService.instance.start(
-            taskName: workmanagerTaskName,
-            frequency: workmanagerFrequency,
-            periodic: true,
-            inputData: workmanagerInputData,
-            initialDelay: workmanagerInitialDelay);
-      } else if (autoStartWorkmanager) {
-        await WorkmanagerService.instance.start(
-            taskName: workmanagerTaskName,
-            frequency: workmanagerFrequency,
-            periodic: workmanagerPeriodic,
-            inputData: workmanagerInputData,
-            initialDelay: workmanagerInitialDelay);
-      }
-    }
+    await _initWorkmanagerIfNeeded(
+      enableWorkmanager: enableWorkmanager,
+      workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
+      workmanagerHandler: workmanagerHandler,
+      workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
+      registerPeriodic: registerPeriodic,
+      autoStartWorkmanager: autoStartWorkmanager,
+      workmanagerFrequency: workmanagerFrequency,
+      workmanagerInitialDelay: workmanagerInitialDelay,
+      workmanagerPeriodic: workmanagerPeriodic,
+      workmanagerInputData: workmanagerInputData,
+      workmanagerTaskName: workmanagerTaskName,
+    );
 
     // Register optional host-provided Flush handlers so the package-level
     // FlushApi can call back into the host/example app. This preserves the
