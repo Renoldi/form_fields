@@ -5,6 +5,50 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:form_fields/form_fields.dart';
 import '../../data/models/post.dart';
+import '../../main.dart';
+
+@pragma('vm:entry-point')
+Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
+  // Provide a default submit handler if the caller doesn't inject one.
+  Future<bool> defaultHandler(dynamic payload, int? id) async {
+    try {
+      final post = Post.fromJson(payload);
+      final res = await Post.add(post: post);
+      return res != null;
+    } catch (e, st) {
+      logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
+      try {
+        WorkmanagerService.instance.lastLogListenable.value =
+            'flush handler threw for id=${id ?? '-'}: $e';
+      } catch (_) {}
+      return false;
+    }
+  }
+
+  final handler = submitHandler ?? defaultHandler;
+
+  try {
+    logger.i('Invoking flushPendingSubmissions');
+    final result =
+        await FlushApi.flushPendingSubmissions(submitHandler: handler);
+
+    final statusMsg = result ? 'success' : 'failure';
+    logger.i('processPendingSubmissions -> $statusMsg');
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'processPendingSubmissions -> $statusMsg';
+    } catch (_) {}
+
+    return result;
+  } catch (e, st) {
+    logger.w('processPendingSubmissions threw: $e\n$st');
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'processPendingSubmissions threw: $e';
+    } catch (_) {}
+    return false;
+  }
+}
 
 /// Example-only helper: Process pending submissions stored in the
 /// `pending_submissions` table. Host app controls how each resolved

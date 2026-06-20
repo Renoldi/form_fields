@@ -49,48 +49,6 @@ final logger = Logger();
 /// register it as the background handler). It logs errors via the shared
 /// `logger` and also updates `WorkmanagerService`'s last-log listenable when
 /// available so the example UI can surface recent flush activity.
-@pragma('vm:entry-point')
-Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
-  // Provide a default submit handler if the caller doesn't inject one.
-  Future<bool> defaultHandler(dynamic payload, int? id) async {
-    try {
-      final post = Post.fromJson(payload);
-      final res = await Post.add(post: post);
-      return res != null;
-    } catch (e, st) {
-      logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
-      try {
-        WorkmanagerService.instance.lastLogListenable.value =
-            'flush handler threw for id=${id ?? '-'}: $e';
-      } catch (_) {}
-      return false;
-    }
-  }
-
-  final handler = submitHandler ?? defaultHandler;
-
-  try {
-    logger.i('Invoking flushPendingSubmissions');
-    final result =
-        await FlushApi.flushPendingSubmissions(submitHandler: handler);
-
-    final statusMsg = result ? 'success' : 'failure';
-    logger.i('processPendingSubmissions -> $statusMsg');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'processPendingSubmissions -> $statusMsg';
-    } catch (_) {}
-
-    return result;
-  } catch (e, st) {
-    logger.w('processPendingSubmissions threw: $e\n$st');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'processPendingSubmissions threw: $e';
-    } catch (_) {}
-    return false;
-  }
-}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
