@@ -99,6 +99,14 @@ Future<void> main() async {
     // Note: `myHandler` must be a top-level/static function so it can be
     // resolved from background isolates.
 
+    // if (kDebugMode) {
+    //   try {
+    //     await DBService.instance.resetDatabase(reinit: true);
+    //     logger.i('Developer: resetDatabase completed');
+    //   } catch (e, st) {
+    //     logger.w('Developer: resetDatabase failed: $e\n$st');
+    //   }
+    // }
     // Use platform-appropriate minimum for periodic work (15 minutes).
     final wmFreq = const Duration(seconds: 30);
 
