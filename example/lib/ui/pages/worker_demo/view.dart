@@ -193,14 +193,19 @@ class View extends PresenterState {
                               label: const Text('Start periodic'),
                               onPressed: () async {
                                 vm.setLoading(true);
-                                await WorkmanagerService.instance.start(
-                                    periodic: true,
-                                    frequency: const Duration(hours: 1));
+                                // Reuse previously scheduled frequency if available,
+                                // otherwise fall back to 1 hour default.
+                                final freq = WorkmanagerService
+                                        .instance.configuredFrequency ??
+                                    const Duration(hours: 1);
+                                await WorkmanagerService.instance
+                                    .start(periodic: true, frequency: freq);
                                 vm.setLoading(false);
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.maybeOf(context)
-                                    ?.showSnackBar(const SnackBar(
-                                        content: Text('Started periodic')));
+                                    ?.showSnackBar(SnackBar(
+                                        content: Text(
+                                            'Started periodic (${freq.inMinutes}m)')));
                               },
                             ),
                             ElevatedButton.icon(
