@@ -217,7 +217,7 @@ sqlite> SELECT name FROM sqlite_master WHERE type='table';
 
 - **Debugging tips:**
   - Jalankan app dengan `flutter run` atau dari IDE (debug) untuk melihat log.
-  - Jika ingin memeriksa isi payload files, periksa folder payload yang dikelola oleh `FileBackedColumnHandler` (default ada di Documents/`payloads` atau sesuai `_payloadDirName` pada `DBService`).
+  - Jika ingin memeriksa isi payload files, periksa folder payload yang dikelola oleh `FileBackedColumnHandler` (default ada di Documents/`payloads` atau sesuai `payloadDirName` pada `DBService`).
   - Untuk masalah permission di device fisik Android release, gunakan export via UI dan copy file dari storage eksternal.
 
 - **Keamanan & produksi:**: pastikan payload sensitif dienkripsi atau disimpan di lokasi yang sesuai sebelum rilis. Untuk produksi, paths dan package id berbeda — perintah `adb shell run-as` mungkin tidak bekerja tanpa akses, gunakan mekanisme export di aplikasi untuk mengambil salinan DB.

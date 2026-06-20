@@ -168,11 +168,11 @@ Future<void> main() async {
       migrationAssetPaths: [
         'migrations/migration.sql',
         // 'migrations/migration_json_file.sql',
-        // 'migrations/v1.sql',
+        'migrations/v1.sql',
         // 'migrations/v2.sql',
         // 'migrations/v2_down.sql',
       ],
-      dbVersion: 0,
+      dbVersion: 1,
     );
 
     // // Debug helper: schedule a one-off run immediately to verify dispatcher
@@ -189,19 +189,8 @@ Future<void> main() async {
     //   }
     // }
 
-    // Small guard: ensure FlushApi handlers are registered (idempotent)
-    try {
-      logger.i('Post-init: registering FlushApi handlers (guard)');
-      FlushApi.register(
-        flushAll: ({SubmitHandler? submitHandler}) async =>
-            await flushPendingSubmissions(submitHandler: submitHandler),
-        flushOne: (int id, {SubmitHandler? submitHandler}) async =>
-            await flushPendingSubmissionById(id, submitHandler: submitHandler),
-      );
-      logger.i('Post-init: FlushApi handlers registered');
-    } catch (e, st) {
-      logger.w('Post-init: failed to register FlushApi handlers: $e\n$st');
-    }
+    // No post-init FlushApi registration required; registration happens
+    // inside FormFieldsInitializer.initAll to avoid duplicate/late registration.
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
   }

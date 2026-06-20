@@ -8,11 +8,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'payload_utils.dart';
 import 'column_handler.dart';
+import 'payload_handler.dart' as payload_handler;
 import 'package:sqflite/sqflite.dart';
 
 final _log = Logger('DBService');
-
-const String _payloadDirName = 'payloads';
 
 // Mutable default database name. `init(dbName: ...)` will update this
 // when a non-empty value is provided so other APIs can fall back to it.
@@ -128,6 +127,47 @@ class DBService {
     if (_getHandler(table, column) != null) return true;
     if (column == 'payload' || column.endsWith('_payload')) return true;
     return false;
+  }
+
+  bool _looksLikeJsonString(dynamic v) {
+    if (v is! String) return false;
+    final s = v.trim();
+    return s.startsWith('{') || s.startsWith('[');
+  }
+
+  /// Internal helper to process payload-like columns consistently across
+  /// `insert`, `insertOrUpdate`, and `update`. Returns a copy of `values`
+  /// with payloads converted (via handlers) and timestamps ensured.
+  Future<Map<String, dynamic>> _processPayloadColumns(
+      Database db, String table, Map<String, dynamic> values,
+      {bool setCreated = false, bool setUpdated = true}) async {
+    if (values.isEmpty) return values;
+    var result = Map<String, dynamic>.from(values);
+    final keys = values.keys.toList();
+    for (final col in keys) {
+      var handler = _getHandler(table, col);
+      final originalVal = values[col];
+
+      if (!(col == 'payload' ||
+          col.endsWith('_payload') ||
+          originalVal is Map ||
+          originalVal is List ||
+          _looksLikeJsonString(originalVal))) {
+        continue;
+      }
+
+      handler ??= payload_handler.FileBackedColumnHandler(prefix: table);
+      try {
+        final newVal = await handler.onWrite(table, col, originalVal);
+        result = Map<String, dynamic>.from(result);
+        result[col] = newVal;
+        await _ensureTimestamps(db, table, result,
+            setCreated: setCreated, setUpdated: setUpdated);
+      } catch (e, st) {
+        _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
+      }
+    }
+    return result;
   }
 
   Future<Database> init(
@@ -530,10 +570,11 @@ class DBService {
         if (await dir.exists()) await dir.delete(recursive: true);
       }
       if (removePayloadsDir) {
-        final dir = Directory(p.join(documents.path, _payloadDirName));
+        final dir =
+            Directory(p.join(documents.path, payload_handler.payloadDirName));
         if (await dir.exists()) await dir.delete(recursive: true);
       }
-      _log.info('Deleted database file: ${p.join(effective)}');
+      Directory(p.join(documents.path, payload_handler.payloadDirName));
     } catch (e, st) {
       _log.warning('Failed to delete DB file: $e', e, st);
     }
@@ -772,43 +813,12 @@ class DBService {
 
     // If per-call handlers are enabled, run registered `onWrite` handlers for each
     // column present in `values`.
-    if (autoHandlePayload && values.isNotEmpty) {
-      final keys = values.keys.toList();
-      for (final col in keys) {
-        var handler = _getHandler(table, col);
-        final originalVal = values[col];
+    final prepared = autoHandlePayload
+        ? await _processPayloadColumns(db, table, values,
+            setCreated: true, setUpdated: false)
+        : values;
 
-        // If no explicit handler was registered, apply a sensible fallback:
-        // - treat columns named `payload` or ending with `_payload` as file-backed
-        // - treat Map/List values or JSON-like strings as JSON payloads
-        //   to be written to disk
-        final looksLikeJsonString = originalVal is String &&
-            (originalVal.trim().startsWith('{') ||
-                originalVal.trim().startsWith('['));
-
-        if (col == 'payload' ||
-            col.endsWith('_payload') ||
-            originalVal is Map ||
-            originalVal is List ||
-            looksLikeJsonString) {
-          handler ??= FileBackedColumnHandler(prefix: table);
-        } else {
-          continue;
-        }
-
-        try {
-          final newVal = await handler.onWrite(table, col, originalVal);
-          values = Map<String, dynamic>.from(values);
-          values[col] = newVal;
-          await _ensureTimestamps(db, table, values,
-              setCreated: true, setUpdated: false);
-        } catch (e, st) {
-          _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
-        }
-      }
-    }
-
-    return await db.insert(table, values);
+    return await db.insert(table, prepared);
   }
 
   /// Insert or update (upsert) a row into [table]. This mirrors `insert`
@@ -821,39 +831,13 @@ class DBService {
       ConflictAlgorithm conflictAlgorithm = ConflictAlgorithm.replace}) async {
     final db = _db ?? await init();
 
-    if (autoHandlePayload && values.isNotEmpty) {
-      final keys = values.keys.toList();
-      for (final col in keys) {
-        var handler = _getHandler(table, col);
-        final originalVal = values[col];
+    final prepared = autoHandlePayload
+        ? await _processPayloadColumns(db, table, values,
+            setCreated: true, setUpdated: true)
+        : values;
 
-        final looksLikeJsonString = originalVal is String &&
-            (originalVal.trim().startsWith('{') ||
-                originalVal.trim().startsWith('['));
-
-        if (col == 'payload' ||
-            col.endsWith('_payload') ||
-            originalVal is Map ||
-            originalVal is List ||
-            looksLikeJsonString) {
-          handler ??= FileBackedColumnHandler(prefix: table);
-        } else {
-          continue;
-        }
-
-        try {
-          final newVal = await handler.onWrite(table, col, originalVal);
-          values = Map<String, dynamic>.from(values);
-          values[col] = newVal;
-          await _ensureTimestamps(db, table, values,
-              setCreated: true, setUpdated: true);
-        } catch (e, st) {
-          _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
-        }
-      }
-    }
-
-    return await db.insert(table, values, conflictAlgorithm: conflictAlgorithm);
+    return await db.insert(table, prepared,
+        conflictAlgorithm: conflictAlgorithm);
   }
 
   Future<int> update(String table, Map<String, dynamic> values, String where,
@@ -863,39 +847,12 @@ class DBService {
 
     // Table-agnostic handling: if `payload` is Map/List, write file and replace
     // payload with filename before updating. Honor the per-call `autoHandlePayload` flag.
-    if (autoHandlePayload && values.isNotEmpty) {
-      final keys = values.keys.toList();
-      for (final col in keys) {
-        var handler = _getHandler(table, col);
-        final originalVal = values[col];
+    final prepared = autoHandlePayload
+        ? await _processPayloadColumns(db, table, values,
+            setCreated: false, setUpdated: true)
+        : values;
 
-        final looksLikeJsonString = originalVal is String &&
-            (originalVal.trim().startsWith('{') ||
-                originalVal.trim().startsWith('['));
-
-        if (col == 'payload' ||
-            col.endsWith('_payload') ||
-            originalVal is Map ||
-            originalVal is List ||
-            looksLikeJsonString) {
-          handler ??= FileBackedColumnHandler(prefix: table);
-        } else {
-          continue;
-        }
-
-        try {
-          final newVal = await handler.onWrite(table, col, originalVal);
-          values = Map<String, dynamic>.from(values);
-          values[col] = newVal;
-          await _ensureTimestamps(db, table, values,
-              setCreated: false, setUpdated: true);
-        } catch (e, st) {
-          _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
-        }
-      }
-    }
-
-    return await db.update(table, values, where: where, whereArgs: whereArgs);
+    return await db.update(table, prepared, where: where, whereArgs: whereArgs);
   }
 
   Future<int> delete(String table, String where, List<dynamic> whereArgs,
@@ -1256,27 +1213,12 @@ class DBService {
 
   /// Read payload file content as string. Returns null if file does not exist.
   Future<String?> readPayloadString(String filename) async {
-    try {
-      final documents = await getApplicationDocumentsDirectory();
-      final file = File(p.join(documents.path, _payloadDirName, filename));
-      if (!await file.exists()) return null;
-      return await file.readAsString();
-    } catch (e) {
-      _log.warning('Failed to read payload file $filename: $e');
-      return null;
-    }
+    return await payload_handler.readPayloadString(filename);
   }
 
   /// Read and decode JSON payload file. Returns decoded object or null.
   Future<dynamic> readPayloadJson(String filename) async {
-    final s = await readPayloadString(filename);
-    if (s == null) return null;
-    try {
-      return json.decode(s);
-    } catch (e) {
-      _log.warning('Failed to decode JSON in payload $filename: $e');
-      return null;
-    }
+    return await payload_handler.readPayloadJson(filename);
   }
 
   Future<void> exportToSqlFile(String destPath,
@@ -1462,7 +1404,7 @@ class DBService {
               }
 
               var handler = _getHandler(name, c);
-              handler ??= FileBackedColumnHandler(prefix: name);
+              handler ??= payload_handler.FileBackedColumnHandler(prefix: name);
 
               try {
                 final newVal = await handler.onWrite(name, c, toWrite);

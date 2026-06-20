@@ -17,23 +17,72 @@ Future<bool> defaultSubmitHandler(Map<String, dynamic> payload, int? id) async {
     return res != null;
   } catch (e, st) {
     logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'flush handler threw for id=${id ?? '-'}: $e';
-    } catch (_) {}
+    _setLastLog('flush handler threw for id=${id ?? '-'}: $e');
     return false;
   }
 }
 
 // Optional registry for selecting handlers by key (registry values must be top-level)
-final Map<String, Future<bool> Function(Map<String, dynamic> payload, int? id)>
-    submitHandlerRegistry = {
+final Map<String, SubmitHandler> submitHandlerRegistry = {
   'default': defaultSubmitHandler,
 };
 
-Future<bool> Function(Map<String, dynamic> payload, int? id)
-    getSubmitHandlerByKey(String? key) {
+SubmitHandler getSubmitHandlerByKey(String? key) {
   return submitHandlerRegistry[key ?? 'default'] ?? defaultSubmitHandler;
+}
+
+// Helper: decode stored payload (may be Map, JSON string or a filename).
+const String _kPayloadsDir = 'payloads';
+
+Future<Map<String, dynamic>> _decodePayload(dynamic payloadRaw) async {
+  if (payloadRaw is Map) return Map<String, dynamic>.from(payloadRaw);
+  if (payloadRaw is String) {
+    final trimmed = payloadRaw.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        final decoded = json.decode(payloadRaw);
+        if (decoded is Map<String, dynamic>) return decoded;
+        return {};
+      } catch (_) {
+        return {};
+      }
+    }
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      final file = File(path.join(docs.path, _kPayloadsDir, payloadRaw));
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final decoded = json.decode(content);
+        if (decoded is Map<String, dynamic>) return decoded;
+      }
+    } catch (_) {}
+  }
+  return {};
+}
+
+void _setLastLog(String msg) {
+  try {
+    WorkmanagerService.instance.lastLogListenable.value = msg;
+  } catch (_) {}
+}
+
+// Helper: invoke a SubmitHandler with logging and error-safety.
+Future<bool> _invokeHandler(
+    SubmitHandler handler, Map<String, dynamic> payload, int? id) async {
+  try {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('calling submitHandler for id=$id payload=$payload');
+    }
+    final res = await handler(payload, id);
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('submitHandler result for id=$id -> $res');
+    }
+    return res;
+  } catch (_) {
+    return false;
+  }
 }
 
 // Top-level helper used by Workmanager's callback dispatcher
@@ -77,18 +126,12 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
 
     final statusMsg = result ? 'success' : 'failure';
     logger.i('processPendingSubmissions -> $statusMsg');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'processPendingSubmissions -> $statusMsg';
-    } catch (_) {}
+    _setLastLog('processPendingSubmissions -> $statusMsg');
 
     return result;
   } catch (e, st) {
     logger.w('processPendingSubmissions threw: $e\n$st');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'processPendingSubmissions threw: $e';
-    } catch (_) {}
+    _setLastLog('processPendingSubmissions threw: $e');
     return false;
   }
 }
@@ -97,9 +140,7 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
 /// `pending_submissions` table. Host app controls how each resolved
 /// payload is submitted via [submitHandler].
 @pragma('vm:entry-point')
-Future<bool> flushPendingSubmissions(
-    {Future<bool> Function(Map<String, dynamic> payload, int? id)?
-        submitHandler}) async {
+Future<bool> flushPendingSubmissions({SubmitHandler? submitHandler}) async {
   // Prevent concurrent flushes from running in parallel (foreground + background).
   // If a flush is already in progress, return false to indicate no-op.
   if (FlushState.isFlushing) return false;
@@ -107,79 +148,29 @@ Future<bool> flushPendingSubmissions(
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: "status = ?", whereArgs: ['pending'], orderBy: 'created_at ASC');
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'example.flushPendingSubmissions invoked: rows=${rows.length}';
-    } catch (_) {}
+    _setLastLog('example.flushPendingSubmissions invoked: rows=${rows.length}');
 
     final handler = submitHandler ?? defaultSubmitHandler;
 
     for (final row in rows) {
       final id = row['id'] as int?;
-      final payloadRaw = row['payload'];
-      Map<String, dynamic> payload = {};
-
-      if (payloadRaw is Map) {
-        payload = Map<String, dynamic>.from(payloadRaw);
-      } else if (payloadRaw is String) {
-        final trimmed = payloadRaw.trim();
-        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          try {
-            payload = json.decode(payloadRaw) as Map<String, dynamic>;
-          } catch (_) {
-            payload = {};
-          }
-        } else {
-          try {
-            final docs = await getApplicationDocumentsDirectory();
-            final file = File(path.join(docs.path, 'payloads', payloadRaw));
-            if (await file.exists()) {
-              final content = await file.readAsString();
-              payload = json.decode(content) as Map<String, dynamic>;
-            } else {
-              payload = {};
-            }
-          } catch (_) {
-            payload = {};
-          }
-        }
-      }
-
+      final payload = await _decodePayload(row['payload']);
       if (payload.isEmpty) continue;
 
-      var success = false;
-      try {
-        if (kDebugMode) {
-          // ignore: avoid_print
-          print('calling submitHandler for id=$id payload=$payload');
-        }
-        success = await handler(payload, id);
-        if (kDebugMode) {
-          // ignore: avoid_print
-          print('submitHandler result for id=$id -> $success');
-        }
-      } catch (_) {
-        success = false;
-      }
+      final success = await _invokeHandler(handler, payload, id);
 
       if (success && id != null) {
         await DBService.instance.delete('pending_submissions', 'id = ?', [id]);
         try {
           WorkmanagerService.instance.notifyPendingChanged();
         } catch (_) {}
-        try {
-          WorkmanagerService.instance.lastLogListenable.value =
-              'example.flushed pending id=$id';
-        } catch (_) {}
+        _setLastLog('example.flushed pending id=$id');
       }
     }
 
     return true;
   } catch (e, st) {
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'example.flushPendingSubmissions threw: $e\n$st';
-    } catch (_) {}
+    _setLastLog('example.flushPendingSubmissions threw: $e\n$st');
     return false;
   } finally {
     FlushState.isFlushing = false;
@@ -189,8 +180,7 @@ Future<bool> flushPendingSubmissions(
 /// Process a single pending submission by id. Returns true on success.
 @pragma('vm:entry-point')
 Future<bool> flushPendingSubmissionById(int id,
-    {Future<bool> Function(Map<String, dynamic> payload, int? id)?
-        submitHandler}) async {
+    {SubmitHandler? submitHandler}) async {
   // Prevent concurrent flushes from running in parallel.
   if (FlushState.isFlushing) return false;
   FlushState.isFlushing = true;
@@ -198,58 +188,29 @@ Future<bool> flushPendingSubmissionById(int id,
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: 'id = ? AND status = ?', whereArgs: [id, 'pending']);
     if (rows.isEmpty) {
-      try {
-        WorkmanagerService.instance.lastLogListenable.value =
-            'flushPendingSubmissionById: no pending row for id=$id';
-      } catch (_) {}
+      _setLastLog('flushPendingSubmissionById: no pending row for id=$id');
       return false;
     }
 
     final row = rows.first;
-    final payloadRaw = row['payload'];
-    Map<String, dynamic> payload = {};
-
-    if (payloadRaw is Map) {
-      payload = Map<String, dynamic>.from(payloadRaw);
-    } else if (payloadRaw is String) {
-      final trimmed = payloadRaw.trim();
-      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-          payload = json.decode(payloadRaw) as Map<String, dynamic>;
-        } catch (_) {
-          payload = {};
-        }
-      }
-    }
-
+    final payload = await _decodePayload(row['payload']);
     if (payload.isEmpty) return false;
 
     final handler = submitHandler ?? defaultSubmitHandler;
-    var success = false;
-    try {
-      success = await handler(payload, id);
-    } catch (_) {
-      success = false;
-    }
+    final success = await _invokeHandler(handler, payload, id);
 
     if (success) {
       await DBService.instance.delete('pending_submissions', 'id = ?', [id]);
       try {
         WorkmanagerService.instance.notifyPendingChanged();
       } catch (_) {}
-      try {
-        WorkmanagerService.instance.lastLogListenable.value =
-            'example.flushed pending id=$id';
-      } catch (_) {}
+      _setLastLog('example.flushed pending id=$id');
       return true;
     }
 
     return false;
   } catch (e, st) {
-    try {
-      WorkmanagerService.instance.lastLogListenable.value =
-          'flushPendingSubmissionById threw: $e\n$st';
-    } catch (_) {}
+    _setLastLog('flushPendingSubmissionById threw: $e\n$st');
     return false;
   } finally {
     FlushState.isFlushing = false;

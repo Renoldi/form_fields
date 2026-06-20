@@ -269,11 +269,7 @@ class FormFieldsInitializer {
     // Register optional host-provided Flush handlers before starting
     // Workmanager so any scheduled/background triggers can safely call
     // `FlushApi.flushPendingSubmissions` immediately after start.
-    try {
-      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
-    } catch (e, st) {
-      _log.warning('Failed to register FlushApi handlers: $e', e, st);
-    }
+    _registerFlushHandlers(flushAll: flushAll, flushOne: flushOne);
 
     await _initWorkmanagerIfNeeded(
       enableWorkmanager: enableWorkmanager,
@@ -289,6 +285,17 @@ class FormFieldsInitializer {
       workmanagerTaskName: workmanagerTaskName,
     );
     _log.info('FormFields initialized');
+  }
+
+  static void _registerFlushHandlers(
+      {FlushAllHandler? flushAll, FlushOneHandler? flushOne}) {
+    try {
+      if (flushAll == null && flushOne == null) return;
+      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
+      _log.fine('FlushApi handlers registered');
+    } catch (e, st) {
+      _log.warning('Failed to register FlushApi handlers: $e', e, st);
+    }
   }
 
   /// Change the on-disk database version by triggering the DB migration
