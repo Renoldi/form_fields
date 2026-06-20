@@ -170,8 +170,17 @@ class WorkmanagerService {
       try {
         if (_backgroundHandler != null) {
           final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('getCallbackHandle for _backgroundHandler -> $handle');
+          }
           if (handle != null) {
             data['callback_handle'] = handle.toRawHandle();
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print(
+                  'embedding callback_handle raw=${handle.toRawHandle()} into inputData');
+            }
           }
         }
       } catch (_) {}
@@ -232,6 +241,10 @@ class WorkmanagerService {
       try {
         if (_backgroundHandler != null) {
           final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('getCallbackHandle for runOnceNowDetailed -> $handle');
+          }
           if (handle != null) data['callback_handle'] = handle.toRawHandle();
         }
       } catch (_) {}
@@ -456,7 +469,16 @@ class WorkmanagerService {
             final raw = inputData['callback_handle'];
             final rawHandle = raw is int ? raw : int.parse(raw.toString());
             final cbHandle = CallbackHandle.fromRawHandle(rawHandle);
+            // Log resolution attempt
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print('Attempting to resolve callback handle: $rawHandle');
+            }
             final cb = PluginUtilities.getCallbackFromHandle(cbHandle);
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print('Resolved callback: $cb');
+            }
             if (cb is BackgroundTaskHandler) {
               final res = await cb(task, inputData);
               return Future.value(res);
@@ -473,6 +495,11 @@ class WorkmanagerService {
         // in this isolate (may be null in background isolates).
         if (_backgroundHandler != null) {
           try {
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print(
+                  'Using static _backgroundHandler fallback: $_backgroundHandler');
+            }
             final res = await _backgroundHandler!(task, inputData);
             return Future.value(res);
           } catch (e) {

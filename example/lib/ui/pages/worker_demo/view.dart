@@ -339,6 +339,37 @@ class View extends PresenterState {
                               },
                             ),
                             ElevatedButton.icon(
+                              icon: const Icon(Icons.play_circle_fill),
+                              label: const Text('Run background task'),
+                              onPressed: () async {
+                                vm.setLoading(true);
+                                try {
+                                  final err = await WorkmanagerService.instance
+                                      .runOnceNowDetailed(taskName: 'dbg_now');
+                                  WorkmanagerService
+                                          .instance.lastLogListenable.value =
+                                      'run background task -> ${err ?? 'ok'}';
+                                  // Give a short delay for logs to populate
+                                  await Future.delayed(
+                                      const Duration(seconds: 2));
+                                  try {
+                                    await vm.loadPending();
+                                  } catch (_) {}
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(SnackBar(
+                                    content: Text(err == null
+                                        ? 'Background task scheduled'
+                                        : 'Background task error: $err'),
+                                  ));
+                                } catch (e, st) {
+                                  WorkmanagerService.instance.lastLogListenable
+                                      .value = 'run background threw: $e\n$st';
+                                }
+                                vm.setLoading(false);
+                              },
+                            ),
+                            ElevatedButton.icon(
                               icon: const Icon(Icons.stop_circle),
                               label: const Text('Stop All'),
                               onPressed: () async {

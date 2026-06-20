@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:workmanager/workmanager.dart';
 // Workmanager is initialized by FormFieldsInitializer when requested.
 // Avoid importing the plugin here so the example keeps only the
 // foreground/top-level flush routine (`processPendingSubmissions`).
@@ -32,6 +33,23 @@ final logger = Logger();
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
+
+// Top-level callback dispatcher used by Workmanager in background isolates.
+// Ensures Flutter bindings and DB are initialized in the background isolate
+// before invoking the app's background task handler.
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      final res = await backgroundTaskHandler(task, inputData);
+      return Future.value(res);
+    } catch (e) {
+      return Future.value(false);
+    }
+  });
+}
 
 /// Top-level background handler invoked by Workmanager in background
 /// isolates. Must be a top-level function to be reachable from the
@@ -135,11 +153,11 @@ Future<void> main() async {
       // Use a top-level background handler that calls the example
       // implementation directly so background isolates don't rely on
       // FlushApi static registration.
-      workmanagerFlushPendingHandler: () async =>
-          // Foreground connectivity-triggered flush: run the foreground
-          // implementation which uses FlushApi wiring already registered
-          // in the UI isolate.
-          await processPendingSubmissions(),
+      // Provide top-level handlers and callback dispatcher so background
+      // isolates can resolve and run them.
+      workmanagerCallbackDispatcher: callbackDispatcher,
+      workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
+      workmanagerHandler: backgroundTaskHandler,
 
       // Ensure the top-level background handler is registered so the
       // background isolate can resolve the callback handle.

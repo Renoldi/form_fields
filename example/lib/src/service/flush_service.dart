@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -7,25 +8,67 @@ import 'package:form_fields/form_fields.dart';
 import '../../data/models/post.dart';
 import '../../main.dart';
 
+// Top-level default submit handler: safe to call from background isolates
+@pragma('vm:entry-point')
+Future<bool> defaultSubmitHandler(Map<String, dynamic> payload, int? id) async {
+  try {
+    final post = Post.fromJson(payload);
+    final res = await Post.add(post: post);
+    return res != null;
+  } catch (e, st) {
+    logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'flush handler threw for id=${id ?? '-'}: $e';
+    } catch (_) {}
+    return false;
+  }
+}
+
+// Optional registry for selecting handlers by key (registry values must be top-level)
+final Map<String, Future<bool> Function(Map<String, dynamic> payload, int? id)>
+    submitHandlerRegistry = {
+  'default': defaultSubmitHandler,
+};
+
+Future<bool> Function(Map<String, dynamic> payload, int? id)
+    getSubmitHandlerByKey(String? key) {
+  return submitHandlerRegistry[key ?? 'default'] ?? defaultSubmitHandler;
+}
+
+// Top-level helper used by Workmanager's callback dispatcher
+@pragma('vm:entry-point')
+Future<void> workmanagerFlushPendingHandler() async {
+  if (kDebugMode) {
+    // ignore: avoid_print
+    print('workmanagerFlushPendingHandler invoked in isolate');
+  }
+  // In background isolate we must NOT rely on FlushApi.register (that's
+  // registered in the UI isolate). Call the concrete implementation that
+  // reads DB rows and invokes the submit handler directly.
+  await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
+}
+
+// Top-level background task handler matching Workmanager's signature.
+// This is registered as the background handler so WorkmanagerService can
+// obtain a callback handle and include it with scheduled tasks. The
+// background isolate will resolve this handler and invoke it directly.
+@pragma('vm:entry-point')
+Future<bool> backgroundTaskHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  try {
+    // Directly call the implementation that accesses DB in this isolate.
+    await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 @pragma('vm:entry-point')
 Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
-  // Provide a default submit handler if the caller doesn't inject one.
-  Future<bool> defaultHandler(dynamic payload, int? id) async {
-    try {
-      final post = Post.fromJson(payload);
-      final res = await Post.add(post: post);
-      return res != null;
-    } catch (e, st) {
-      logger.w('flush submitHandler threw for id=${id ?? '-'}: $e\n$st');
-      try {
-        WorkmanagerService.instance.lastLogListenable.value =
-            'flush handler threw for id=${id ?? '-'}: $e';
-      } catch (_) {}
-      return false;
-    }
-  }
-
-  final handler = submitHandler ?? defaultHandler;
+  // Use injected handler if provided, otherwise use top-level default.
+  final handler = submitHandler ?? defaultSubmitHandler;
 
   try {
     logger.i('Invoking flushPendingSubmissions');
@@ -53,6 +96,7 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
 /// Example-only helper: Process pending submissions stored in the
 /// `pending_submissions` table. Host app controls how each resolved
 /// payload is submitted via [submitHandler].
+@pragma('vm:entry-point')
 Future<bool> flushPendingSubmissions(
     {Future<bool> Function(Map<String, dynamic> payload, int? id)?
         submitHandler}) async {
@@ -104,7 +148,15 @@ Future<bool> flushPendingSubmissions(
       var success = false;
       if (submitHandler != null) {
         try {
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('calling submitHandler for id=$id payload=$payload');
+          }
           success = await submitHandler(payload, id);
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('submitHandler result for id=$id -> $success');
+          }
         } catch (_) {
           success = false;
         }
@@ -135,6 +187,7 @@ Future<bool> flushPendingSubmissions(
 }
 
 /// Process a single pending submission by id. Returns true on success.
+@pragma('vm:entry-point')
 Future<bool> flushPendingSubmissionById(int id,
     {Future<bool> Function(Map<String, dynamic> payload, int? id)?
         submitHandler}) async {
