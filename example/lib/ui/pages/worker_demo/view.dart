@@ -34,142 +34,69 @@ class View extends PresenterState {
                         Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: ValueListenableBuilder<dynamic>(
+                      child: ValueListenableBuilder<dynamic>(
+                        valueListenable:
+                            WorkmanagerService.instance.statusListenable,
+                        builder: (ctx, status, _) {
+                          final last = WorkmanagerService.instance.lastRunAt;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  'Initialized: ${WorkmanagerService.instance.isInitialized}'),
+                              ValueListenableBuilder<String?>(
                                 valueListenable: WorkmanagerService
-                                    .instance.statusListenable,
-                                builder: (ctx, status, _) {
-                                  final last =
-                                      WorkmanagerService.instance.lastRunAt;
-                                  final statusText = status == null
-                                      ? 'unknown'
-                                      : status.toString();
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              'Worker status: $statusText',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          ValueListenableBuilder<int>(
-                                            valueListenable: WorkmanagerService
-                                                .instance
-                                                .registeredCountListenable,
-                                            builder: (rCtx, cnt, __) {
-                                              final active = cnt > 0;
-                                              return Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: active
-                                                      ? Colors.green[50]
-                                                      : Colors.grey[200],
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Text(
-                                                  active
-                                                      ? 'Active'
-                                                      : 'Inactive',
-                                                  style: TextStyle(
-                                                      color: active
-                                                          ? Colors.green[800]
-                                                          : Colors.grey[600],
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                          'Initialized: ${WorkmanagerService.instance.isInitialized}'),
-                                      ValueListenableBuilder<String?>(
-                                        valueListenable: WorkmanagerService
-                                            .instance.lastLogListenable,
-                                        builder: (c, lastLog, __) =>
-                                            Text('Last log: ${lastLog ?? '-'}'),
-                                      ),
-                                      if (last != null)
-                                        Text(
-                                            'Last run: ${last.toIso8601String()}'),
-                                    ],
-                                  );
-                                }),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Refresh'),
-                            onPressed: () async {
-                              // Re-initialize to refresh the initialized flag.
-                              await WorkmanagerService.instance.initialize();
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                                  const SnackBar(content: Text('Refreshed')));
-                            },
-                          ),
-                        ],
+                                    .instance.lastLogListenable,
+                                builder: (c, lastLog, __) =>
+                                    Text('Last log: ${lastLog ?? '-'}'),
+                              ),
+                              if (last != null)
+                                Text('Last run: ${last.toIso8601String()}'),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  // Recent logs (expandable)
-                  // ExpansionTile(
-                  //   title: const Text('Logs'),
-                  //   children: [
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(horizontal: 12),
-                  //       child: ValueListenableBuilder<String?>(
-                  //         valueListenable:
-                  //             WorkmanagerService.instance.lastLogListenable,
-                  //         builder: (c, _, __) {
-                  //           final logs = WorkmanagerService
-                  //               .instance.recentLogs.reversed
-                  //               .toList();
-                  //           final show = logs.take(10).toList();
-                  //           if (show.isEmpty) {
-                  //             return const Padding(
-                  //               padding: EdgeInsets.symmetric(vertical: 12),
-                  //               child: Text('- no logs -'),
-                  //             );
-                  //           }
-                  //           return Column(
-                  //             children: show
-                  //                 .map((l) => ListTile(
-                  //                       dense: true,
-                  //                       title: Text(l),
-                  //                     ))
-                  //                 .toList(),
-                  //           );
-                  //         },
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  const SizedBox(height: 12),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Background Worker (demo)',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Background Worker (demo)',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              ValueListenableBuilder<int>(
+                                valueListenable: WorkmanagerService
+                                    .instance.registeredCountListenable,
+                                builder: (rCtx, cnt, __) {
+                                  final active = cnt > 0;
+                                  return Chip(
+                                    label: Text(
+                                      active ? 'Active' : 'Inactive',
+                                      style: TextStyle(
+                                        color: active
+                                            ? Colors.green[800]
+                                            : Colors.grey[700],
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    backgroundColor: active
+                                        ? Colors.green.withValues(alpha: 0.12)
+                                        : Colors.grey.withValues(alpha: 0.12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 0),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                           ValueListenableBuilder<dynamic>(
                               valueListenable:
                                   WorkmanagerService.instance.statusListenable,
@@ -183,6 +110,24 @@ class View extends PresenterState {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Status: $statusText'),
+                                    ValueListenableBuilder<String?>(
+                                      valueListenable: WorkmanagerService
+                                          .instance.countdownListenable,
+                                      builder: (c, cd, __) {
+                                        if (cd == null) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 6.0),
+                                          child: Text('Next run in: $cd',
+                                              style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)),
+                                        );
+                                      },
+                                    ),
                                     if (last != null)
                                       Text(
                                           'Last run: ${last.toIso8601String()}'),
@@ -259,6 +204,18 @@ class View extends PresenterState {
                               },
                             ),
                             ElevatedButton.icon(
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Refresh'),
+                              onPressed: () async {
+                                // Re-initialize to refresh the initialized flag.
+                                await WorkmanagerService.instance.initialize();
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.maybeOf(context)
+                                    ?.showSnackBar(const SnackBar(
+                                        content: Text('Refreshed')));
+                              },
+                            ),
+                            ElevatedButton.icon(
                               icon: const Icon(Icons.bolt),
                               label: const Text('Run worker now'),
                               onPressed: () async {
@@ -268,7 +225,23 @@ class View extends PresenterState {
                                 // prevent duplicate processing.
                                 var ok = false;
                                 try {
-                                  ok = await FlushApi.flushPendingSubmissions();
+                                  final handler = WorkmanagerService
+                                      .instance.flushPendingHandler;
+                                  if (handler != null) {
+                                    try {
+                                      await handler();
+                                      ok = true;
+                                    } catch (_) {
+                                      ok = false;
+                                    }
+                                  } else {
+                                    try {
+                                      ok = await FlushApi
+                                          .flushPendingSubmissions();
+                                    } catch (_) {
+                                      ok = false;
+                                    }
+                                  }
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
                                       'runNow: foreground flush completed -> $ok';
@@ -276,10 +249,10 @@ class View extends PresenterState {
                                   try {
                                     await vm.loadPending();
                                   } catch (_) {}
-                                } catch (e) {
+                                } catch (e, st) {
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
-                                      'runNow: foreground flush threw: $e';
+                                      'runNow: foreground flush threw: $e\n$st';
                                 }
                                 vm.setLoading(false);
                                 if (!context.mounted) return;
@@ -301,21 +274,40 @@ class View extends PresenterState {
                                 try {
                                   WorkmanagerService.instance.lastLogListenable
                                       .value = 'foregroundFlush invoked';
-                                  await FlushApi.flushPendingSubmissions();
-                                  WorkmanagerService.instance.lastLogListenable
-                                      .value = 'foregroundFlush completed';
+                                  final handler = WorkmanagerService
+                                      .instance.flushPendingHandler;
+                                  bool ok2 = false;
+                                  if (handler != null) {
+                                    try {
+                                      await handler();
+                                      ok2 = true;
+                                    } catch (_) {
+                                      ok2 = false;
+                                    }
+                                  } else {
+                                    try {
+                                      ok2 = await FlushApi
+                                          .flushPendingSubmissions();
+                                    } catch (_) {
+                                      ok2 = false;
+                                    }
+                                  }
+                                  WorkmanagerService
+                                          .instance.lastLogListenable.value =
+                                      'foregroundFlush completed -> ${ok2 ? 'success' : 'failure'}';
                                   // Refresh pending list after a foreground flush
                                   try {
                                     await vm.loadPending();
                                   } catch (_) {}
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
-                                      ?.showSnackBar(const SnackBar(
-                                          content:
-                                              Text('Foreground flush run')));
-                                } catch (e) {
+                                      ?.showSnackBar(SnackBar(
+                                          content: Text(ok2
+                                              ? 'Foreground flush success'
+                                              : 'Foreground flush failed')));
+                                } catch (e, st) {
                                   WorkmanagerService.instance.lastLogListenable
-                                      .value = 'foregroundFlush threw: $e';
+                                      .value = 'foregroundFlush threw: $e\n$st';
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
                                       ?.showSnackBar(SnackBar(
@@ -478,13 +470,13 @@ class View extends PresenterState {
                                                             id);
                                                     // Reload pending list after attempt
                                                     await vm.loadPending();
-                                                  } catch (e) {
+                                                  } catch (e, st) {
                                                     try {
                                                       WorkmanagerService
                                                               .instance
                                                               .lastLogListenable
                                                               .value =
-                                                          'runPending threw: $e';
+                                                          'runPending threw: $e\n$st';
                                                     } catch (_) {}
                                                   }
                                                 },

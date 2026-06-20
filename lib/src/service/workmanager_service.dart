@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
+import 'flush_api.dart';
 
 /// Top-level helper to register a background handler from the host app.
 /// Provided for backward compatibility with example usage.
@@ -21,6 +22,20 @@ void setBackgroundTaskHandler(BackgroundTaskHandler handler) =>
 class WorkmanagerService {
   WorkmanagerService._internal();
   bool _suppressListener = false;
+
+  /// Estimated time the periodic task was scheduled at (host local time).
+  /// Used by example UI to show an estimated countdown. This is only an
+  /// approximation — platform schedulers may run tasks at slightly different
+  /// times.
+  DateTime? scheduledAt;
+
+  /// The configured periodic frequency passed to `start()` when a periodic
+  /// task was registered. Exposed for example UI to compute countdowns.
+  Duration? scheduledFrequency;
+  Timer? _countdownTimer;
+
+  /// Notifier for UI countdown display (mm:ss). Null when no countdown.
+  final ValueNotifier<String?> countdownListenable = ValueNotifier(null);
 
   // Initialize listener to capture direct writes to `lastLogListenable`.
   // Many places in the code set `lastLogListenable.value = '...'` directly;
@@ -163,8 +178,21 @@ class WorkmanagerService {
           inputData: data,
           initialDelay: initialDelay,
         );
+        // Record estimated scheduling details so the UI can display a
+        // countdown. This is an approximation — background isolates and
+        // platform job schedulers control the real execution timing.
+        scheduledFrequency = frequency;
+        scheduledAt = DateTime.now();
+        // Start internal countdown updater so UI can display remaining time.
+        _startCountdownTimer();
       } else {
         await Workmanager().registerOneOffTask(name, name, inputData: data);
+        // For one-off tasks we record the schedule time but clear the
+        // periodic frequency.
+        scheduledAt = DateTime.now();
+        scheduledFrequency = null;
+        // Clear any countdown for one-off tasks.
+        _stopCountdownTimer();
       }
       statusListenable.value =
           periodic ? 'registered_periodic' : 'registered_once';
@@ -249,6 +277,12 @@ class WorkmanagerService {
     if (_registeredTasks.isEmpty) {
       statusListenable.value = 'stopped';
     }
+    // If no tasks remain, clear scheduling metadata.
+    if (_registeredTasks.isEmpty) {
+      scheduledAt = null;
+      scheduledFrequency = null;
+      _stopCountdownTimer();
+    }
     // Cancel connectivity listener so auto-send stops when service is stopped.
     try {
       await _connectivitySub?.cancel();
@@ -261,6 +295,101 @@ class WorkmanagerService {
         // ignore: avoid_print
         print('failed to cancel connectivity subscription: $e');
       }
+    }
+  }
+
+  void _startCountdownTimer() {
+    try {
+      _countdownTimer?.cancel();
+      countdownListenable.value = null;
+      if (scheduledFrequency == null) return;
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) async {
+        try {
+          final freq = scheduledFrequency;
+          if (freq == null) return;
+          final scheduled = scheduledAt ?? DateTime.now();
+          final next = scheduled.add(freq);
+          final rem = next.difference(DateTime.now());
+
+          if (rem.inMilliseconds <= 0) {
+            try {
+              lastLogListenable.value =
+                  'next scheduled run now; triggering flush and resetting countdown';
+            } catch (_) {}
+            try {
+              lastLogListenable.value =
+                  'countdown-trigger: calling flushPendingSubmissions()';
+            } catch (_) {}
+
+            var success = false;
+            try {
+              if (flushPendingHandler != null) {
+                await flushPendingHandler!();
+                success = true;
+              } else {
+                success = await FlushApi.flushPendingSubmissions();
+              }
+            } catch (e, st) {
+              try {
+                lastLogListenable.value =
+                    'countdown-triggered flush threw: $e\n$st';
+              } catch (_) {}
+            }
+
+            try {
+              lastLogListenable.value =
+                  'countdown-triggered flush: ${success ? 'success' : 'failure'}';
+            } catch (_) {}
+
+            try {
+              final err = await runOnceNowDetailed(taskName: 'dbg_countdown');
+              try {
+                lastLogListenable.value =
+                    'scheduled one-off dbg_countdown -> ${err ?? 'ok'}';
+              } catch (_) {}
+            } catch (e, st) {
+              try {
+                lastLogListenable.value =
+                    'failed scheduling dbg_countdown: $e\n$st';
+              } catch (_) {}
+            }
+
+            scheduledAt = DateTime.now();
+            try {
+              countdownListenable.value = null;
+            } catch (_) {}
+            return;
+          }
+
+          final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
+          final ss = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
+          try {
+            countdownListenable.value = '$mm:$ss';
+          } catch (_) {}
+        } catch (_) {}
+      });
+    } catch (_) {}
+  }
+
+  void _stopCountdownTimer() {
+    try {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+    } catch (_) {}
+    try {
+      countdownListenable.value = null;
+    } catch (_) {}
+  }
+
+  /// Convenience: return an estimated next run time based on when the task
+  /// was scheduled and the configured periodic frequency. Returns null when
+  /// no estimate is available.
+  DateTime? get nextEstimatedRun {
+    try {
+      if (scheduledAt == null || scheduledFrequency == null) return null;
+      return scheduledAt!.add(scheduledFrequency!);
+    } catch (_) {
+      return null;
     }
   }
 

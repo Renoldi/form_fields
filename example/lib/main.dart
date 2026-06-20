@@ -143,14 +143,14 @@ Future<void> main() async {
     // One-time developer helper: reset DB and re-initialize from bundled
     // migrations. REMOVE this call after the DB has been reset to avoid
     // deleting user data on subsequent launches.
-    if (kDebugMode) {
-      try {
-        await DBService.instance.resetDatabase(reinit: true);
-        logger.i('Developer: resetDatabase completed');
-      } catch (e, st) {
-        logger.w('Developer: resetDatabase failed: $e\n$st');
-      }
-    }
+    // if (kDebugMode) {
+    //   try {
+    //     await DBService.instance.resetDatabase(reinit: true);
+    //     logger.i('Developer: resetDatabase completed');
+    //   } catch (e, st) {
+    //     logger.w('Developer: resetDatabase failed: $e\n$st');
+    //   }
+    // }
 
     // Workmanager initialization and handler registration is performed by
     // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true` is
@@ -191,84 +191,84 @@ Future<void> main() async {
       dbVersion: 0,
     );
 
-    // Debug helper: schedule a one-off run immediately to verify dispatcher
-    if (kDebugMode && !kIsWeb) {
-      try {
-        final err = await WorkmanagerService.instance
-            .runOnceNowDetailed(taskName: 'dbg_now');
-        logger.i('Debug: runOnceNowDetailed -> $err');
-        // give a short delay for logs to populate
-        await Future.delayed(const Duration(seconds: 2));
-        logger.i('Debug recentLogs: ${WorkmanagerService.instance.recentLogs}');
-      } catch (e, st) {
-        logger.w('Debug runOnceNow failed: $e\n$st');
-      }
-    }
+    // // Debug helper: schedule a one-off run immediately to verify dispatcher
+    // if (kDebugMode && !kIsWeb) {
+    //   try {
+    //     final err = await WorkmanagerService.instance
+    //         .runOnceNowDetailed(taskName: 'dbg_now');
+    //     logger.i('Debug: runOnceNowDetailed -> $err');
+    //     // give a short delay for logs to populate
+    //     await Future.delayed(const Duration(seconds: 2));
+    //     logger.i('Debug recentLogs: ${WorkmanagerService.instance.recentLogs}');
+    //   } catch (e, st) {
+    //     logger.w('Debug runOnceNow failed: $e\n$st');
+    //   }
+    // }
 
-    // Start a countdown display for the configured Workmanager frequency.
-    if (!kIsWeb) {
-      try {
-        void startCountdown(Duration freq) {
-          DateTime next = DateTime.now().add(freq);
-          Timer.periodic(const Duration(seconds: 1), (t) async {
-            final rem = next.difference(DateTime.now());
-            if (rem.inMilliseconds <= 0) {
-              try {
-                WorkmanagerService.instance.lastLogListenable.value =
-                    'next scheduled run now; triggering flush and resetting countdown';
-              } catch (_) {}
-              // Log start
-              try {
-                WorkmanagerService.instance.lastLogListenable.value =
-                    'countdown-trigger: calling processPendingSubmissions()';
-              } catch (_) {}
+    // // Start a countdown display for the configured Workmanager frequency.
+    // if (!kIsWeb) {
+    //   try {
+    //     void startCountdown(Duration freq) {
+    //       DateTime next = DateTime.now().add(freq);
+    //       Timer.periodic(const Duration(seconds: 1), (t) async {
+    //         final rem = next.difference(DateTime.now());
+    //         if (rem.inMilliseconds <= 0) {
+    //           try {
+    //             WorkmanagerService.instance.lastLogListenable.value =
+    //                 'next scheduled run now; triggering flush and resetting countdown';
+    //           } catch (_) {}
+    //           // Log start
+    //           try {
+    //             WorkmanagerService.instance.lastLogListenable.value =
+    //                 'countdown-trigger: calling processPendingSubmissions()';
+    //           } catch (_) {}
 
-              try {
-                final success = await processPendingSubmissions();
-                try {
-                  WorkmanagerService.instance.lastLogListenable.value =
-                      'countdown-triggered flush: ${success ? 'success' : 'failure'}';
-                } catch (_) {}
-              } catch (e) {
-                try {
-                  WorkmanagerService.instance.lastLogListenable.value =
-                      'countdown-triggered flush threw: $e';
-                } catch (_) {}
-              }
+    //           try {
+    //             final success = await processPendingSubmissions();
+    //             try {
+    //               WorkmanagerService.instance.lastLogListenable.value =
+    //                   'countdown-triggered flush: ${success ? 'success' : 'failure'}';
+    //             } catch (_) {}
+    //           } catch (e) {
+    //             try {
+    //               WorkmanagerService.instance.lastLogListenable.value =
+    //                   'countdown-triggered flush threw: $e';
+    //             } catch (_) {}
+    //           }
 
-              // Also attempt to schedule a one-off background run as a fallback
-              try {
-                final err = await WorkmanagerService.instance
-                    .runOnceNowDetailed(taskName: 'dbg_countdown');
-                try {
-                  WorkmanagerService.instance.lastLogListenable.value =
-                      'scheduled one-off dbg_countdown -> ${err ?? 'ok'}';
-                } catch (_) {}
-              } catch (e) {
-                try {
-                  WorkmanagerService.instance.lastLogListenable.value =
-                      'failed scheduling dbg_countdown: $e';
-                } catch (_) {}
-              }
+    //           // Also attempt to schedule a one-off background run as a fallback
+    //           try {
+    //             final err = await WorkmanagerService.instance
+    //                 .runOnceNowDetailed(taskName: 'dbg_countdown');
+    //             try {
+    //               WorkmanagerService.instance.lastLogListenable.value =
+    //                   'scheduled one-off dbg_countdown -> ${err ?? 'ok'}';
+    //             } catch (_) {}
+    //           } catch (e) {
+    //             try {
+    //               WorkmanagerService.instance.lastLogListenable.value =
+    //                   'failed scheduling dbg_countdown: $e';
+    //             } catch (_) {}
+    //           }
 
-              next = DateTime.now().add(freq);
-              return;
-            }
-            final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
-            final ss = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
-            final msg = 'countdown to next run: $mm:$ss';
-            try {
-              WorkmanagerService.instance.lastLogListenable.value = msg;
-            } catch (_) {}
-            logger.i(msg);
-          });
-        }
+    //           next = DateTime.now().add(freq);
+    //           return;
+    //         }
+    //         final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
+    //         final ss = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
+    //         final msg = 'countdown to next run: $mm:$ss';
+    //         try {
+    //           WorkmanagerService.instance.lastLogListenable.value = msg;
+    //         } catch (_) {}
+    //         logger.i(msg);
+    //       });
+    //     }
 
-        startCountdown(wmFreq);
-      } catch (e, st) {
-        logger.w('Failed to start countdown: $e\n$st');
-      }
-    }
+    //     startCountdown(wmFreq);
+    //   } catch (e, st) {
+    //     logger.w('Failed to start countdown: $e\n$st');
+    //   }
+    // }
 
     // flushPendingHandler is registered via the `workmanagerFlushPendingHandler`
     // parameter passed to `FormFieldsInitializer.initAll` above. Background

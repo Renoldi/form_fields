@@ -79,10 +79,10 @@ Future<bool> flushPendingSubmissions(
     }
 
     return true;
-  } catch (e) {
+  } catch (e, st) {
     try {
       WorkmanagerService.instance.lastLogListenable.value =
-          'example.flushPendingSubmissions threw: $e';
+          'example.flushPendingSubmissions threw: $e\n$st';
     } catch (_) {}
     return false;
   } finally {
@@ -157,10 +157,10 @@ Future<bool> flushPendingSubmissionById(int id,
     }
 
     return false;
-  } catch (e) {
+  } catch (e, st) {
     try {
       WorkmanagerService.instance.lastLogListenable.value =
-          'flushPendingSubmissionById threw: $e';
+          'flushPendingSubmissionById threw: $e\n$st';
     } catch (_) {}
     return false;
   } finally {
