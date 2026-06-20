@@ -1,4 +1,7 @@
 import 'flush_state.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('FlushApi');
 
 typedef SubmitHandler = Future<bool> Function(
     Map<String, dynamic> payload, int? id);
@@ -29,8 +32,11 @@ class FlushApi {
     FlushState.isFlushing = true;
     try {
       if (_flushAll != null) {
+        _log.fine('Invoking registered flushAll handler');
         return await _flushAll!(submitHandler: submitHandler);
       }
+      _log.warning(
+          'No flushAll handler registered when flushPendingSubmissions called');
       throw StateError(
           'No flushAll handler registered. Call FlushApi.register(...) from the host/example.');
     } finally {
@@ -45,8 +51,11 @@ class FlushApi {
     FlushState.isFlushing = true;
     try {
       if (_flushOne != null) {
+        _log.fine('Invoking registered flushOne handler for id=$id');
         return await _flushOne!(id, submitHandler: submitHandler);
       }
+      _log.warning(
+          'No flushOne handler registered when flushPendingSubmissionById called (id=$id)');
       throw StateError(
           'No flushOne handler registered. Call FlushApi.register(...) from the host/example.');
     } finally {

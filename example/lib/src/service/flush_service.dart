@@ -50,6 +50,51 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
   }
 }
 
+/// Top-level background handler for Workmanager isolates.
+/// Calls the example implementation directly so it doesn't rely on
+/// `FlushApi` static registration (which is not available in other isolates).
+@pragma('vm:entry-point')
+Future<bool> backgroundFlushHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  // Background handler signature matches `BackgroundTaskHandler` so
+  // Workmanager can resolve and invoke it via a callback handle.
+  try {
+    logger.i(
+        'backgroundFlushHandler: starting flush with background submitHandler');
+
+    final ok = await flushPendingSubmissions(
+        submitHandler: (Map<String, dynamic> payload, int? id) async {
+      try {
+        final post = Post.fromJson(payload);
+        final res = await Post.add(post: post);
+        return res != null;
+      } catch (e, st) {
+        try {
+          logger
+              .w('background submitHandler threw for id=${id ?? '-'}: $e\n$st');
+        } catch (_) {}
+        return false;
+      }
+    });
+
+    logger.i(
+        'backgroundFlushHandler: finished flush -> ${ok ? 'success' : 'failure'}');
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'backgroundFlushHandler -> ${ok ? 'success' : 'failure'}';
+    } catch (_) {}
+
+    return ok;
+  } catch (e, st) {
+    try {
+      logger.w('backgroundFlushHandler threw: $e\n$st');
+      WorkmanagerService.instance.lastLogListenable.value =
+          'backgroundFlushHandler threw: $e';
+    } catch (_) {}
+    return false;
+  }
+}
+
 /// Example-only helper: Process pending submissions stored in the
 /// `pending_submissions` table. Host app controls how each resolved
 /// payload is submitted via [submitHandler].

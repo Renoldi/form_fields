@@ -26,7 +26,6 @@ import 'config/environment.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
-import 'data/models/post.dart';
 
 final logger = Logger();
 
@@ -133,8 +132,18 @@ Future<void> main() async {
       // Register a foreground flush handler so the `WorkmanagerService` can
       // invoke it when connectivity is restored. Use the shared,
       // top-level `processPendingSubmissions` implementation.
-      workmanagerFlushPendingHandler: () async =>
-          await processPendingSubmissions(),
+      // Use a top-level background handler that calls the example
+      // implementation directly so background isolates don't rely on
+      // FlushApi static registration.
+      workmanagerFlushPendingHandler: () async {
+        // Foreground connectivity-triggered flush: run the foreground
+        // implementation which uses FlushApi wiring already registered
+        // in the UI isolate.
+        await processPendingSubmissions();
+      },
+      // Ensure the top-level background handler is registered so the
+      // background isolate can resolve the callback handle.
+      workmanagerHandler: backgroundFlushHandler,
       flushAll: ({SubmitHandler? submitHandler}) async =>
           await flushPendingSubmissions(submitHandler: submitHandler),
       flushOne: (int id, {SubmitHandler? submitHandler}) async =>
@@ -162,6 +171,20 @@ Future<void> main() async {
     //     logger.w('Debug runOnceNow failed: $e\n$st');
     //   }
     // }
+
+    // Small guard: ensure FlushApi handlers are registered (idempotent)
+    try {
+      logger.i('Post-init: registering FlushApi handlers (guard)');
+      FlushApi.register(
+        flushAll: ({SubmitHandler? submitHandler}) async =>
+            await flushPendingSubmissions(submitHandler: submitHandler),
+        flushOne: (int id, {SubmitHandler? submitHandler}) async =>
+            await flushPendingSubmissionById(id, submitHandler: submitHandler),
+      );
+      logger.i('Post-init: FlushApi handlers registered');
+    } catch (e, st) {
+      logger.w('Post-init: failed to register FlushApi handlers: $e\n$st');
+    }
 
     // // Start a countdown display for the configured Workmanager frequency.
     // if (!kIsWeb) {
