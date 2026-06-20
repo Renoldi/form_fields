@@ -32,6 +32,12 @@ class WorkmanagerService {
   /// The configured periodic frequency passed to `start()` when a periodic
   /// task was registered. Exposed for example UI to compute countdowns.
   Duration? scheduledFrequency;
+
+  /// The host-configured/default frequency supplied when the service was
+  /// initialized (via `FormFieldsInitializer.initAll`) or when `start()`
+  /// was last called. This value is NOT cleared on `stop()` so UI can
+  /// reuse the original configured frequency when re-starting.
+  Duration? configuredFrequency;
   Timer? _countdownTimer;
 
   /// Notifier for UI countdown display (mm:ss). Null when no countdown.
@@ -179,9 +185,11 @@ class WorkmanagerService {
           initialDelay: initialDelay,
         );
         // Record estimated scheduling details so the UI can display a
-        // countdown. This is an approximation — background isolates and
-        // platform job schedulers control the real execution timing.
+        // countdown. Also record the configured/default frequency so the
+        // UI can re-use it after a stop() rather than falling back to a
+        // hard-coded default.
         scheduledFrequency = frequency;
+        if (frequency != null) configuredFrequency = frequency;
         scheduledAt = DateTime.now();
         // Start internal countdown updater so UI can display remaining time.
         _startCountdownTimer();
