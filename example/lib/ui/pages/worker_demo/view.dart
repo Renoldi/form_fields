@@ -225,11 +225,17 @@ class View extends PresenterState {
                               label: const Text('Run worker now'),
                               onPressed: () async {
                                 vm.setLoading(true);
-                                // Perform an immediate foreground flush. We avoid
-                                // scheduling a one-off background run here to
-                                // prevent duplicate processing.
+                                // Ensure periodic worker is started so status
+                                // becomes Active, then perform a foreground
+                                // flush immediately.
                                 var ok = false;
                                 try {
+                                  final freq = WorkmanagerService
+                                          .instance.configuredFrequency ??
+                                      const Duration(hours: 1);
+                                  await WorkmanagerService.instance
+                                      .start(periodic: true, frequency: freq);
+
                                   final handler = WorkmanagerService
                                       .instance.flushPendingHandler;
                                   if (handler != null) {
@@ -247,17 +253,18 @@ class View extends PresenterState {
                                       ok = false;
                                     }
                                   }
+
                                   WorkmanagerService
                                           .instance.lastLogListenable.value =
-                                      'runNow: foreground flush completed -> $ok';
+                                      'runNow: started periodic (${freq.inMinutes}m) and foreground flush -> $ok';
+
                                   // Reload pending items to reflect any deletions
                                   try {
                                     await vm.loadPending();
                                   } catch (_) {}
                                 } catch (e, st) {
-                                  WorkmanagerService
-                                          .instance.lastLogListenable.value =
-                                      'runNow: foreground flush threw: $e\n$st';
+                                  WorkmanagerService.instance.lastLogListenable
+                                      .value = 'runNow: threw: $e\n$st';
                                 }
                                 vm.setLoading(false);
                                 if (!context.mounted) return;
@@ -265,8 +272,8 @@ class View extends PresenterState {
                                     ?.showSnackBar(
                                   SnackBar(
                                     content: Text(ok
-                                        ? 'Worker ran successfully'
-                                        : 'Worker run failed'),
+                                        ? 'Worker started and ran successfully'
+                                        : 'Worker started; run failed'),
                                     duration: const Duration(seconds: 4),
                                   ),
                                 );
