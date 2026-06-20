@@ -135,15 +135,14 @@ Future<void> main() async {
       // Use a top-level background handler that calls the example
       // implementation directly so background isolates don't rely on
       // FlushApi static registration.
-      workmanagerFlushPendingHandler: () async {
-        // Foreground connectivity-triggered flush: run the foreground
-        // implementation which uses FlushApi wiring already registered
-        // in the UI isolate.
-        await processPendingSubmissions();
-      },
+      workmanagerFlushPendingHandler: () async =>
+          // Foreground connectivity-triggered flush: run the foreground
+          // implementation which uses FlushApi wiring already registered
+          // in the UI isolate.
+          await processPendingSubmissions(),
+
       // Ensure the top-level background handler is registered so the
       // background isolate can resolve the callback handle.
-      workmanagerHandler: backgroundFlushHandler,
       flushAll: ({SubmitHandler? submitHandler}) async =>
           await flushPendingSubmissions(submitHandler: submitHandler),
       flushOne: (int id, {SubmitHandler? submitHandler}) async =>
