@@ -266,6 +266,15 @@ class FormFieldsInitializer {
       onCreate: onCreate,
     );
 
+    // Register optional host-provided Flush handlers before starting
+    // Workmanager so any scheduled/background triggers can safely call
+    // `FlushApi.flushPendingSubmissions` immediately after start.
+    try {
+      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
+    } catch (e, st) {
+      _log.warning('Failed to register FlushApi handlers: $e', e, st);
+    }
+
     await _initWorkmanagerIfNeeded(
       enableWorkmanager: enableWorkmanager,
       workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
@@ -279,16 +288,6 @@ class FormFieldsInitializer {
       workmanagerInputData: workmanagerInputData,
       workmanagerTaskName: workmanagerTaskName,
     );
-
-    // Register optional host-provided Flush handlers so the package-level
-    // FlushApi can call back into the host/example app. This preserves the
-    // previous behavior where hosts registered implementations themselves.
-    try {
-      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
-    } catch (e, st) {
-      _log.warning('Failed to register FlushApi handlers: $e', e, st);
-    }
-
     _log.info('FormFields initialized');
   }
 

@@ -102,8 +102,8 @@ Future<bool> flushPendingSubmissions(
         submitHandler}) async {
   // Prevent concurrent flushes from running in parallel (foreground + background).
   // If a flush is already in progress, return false to indicate no-op.
-  // if (FlushState.isFlushing) return false;
-  // FlushState.isFlushing = true;
+  if (FlushState.isFlushing) return false;
+  FlushState.isFlushing = true;
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: "status = ?", whereArgs: ['pending'], orderBy: 'created_at ASC');
@@ -111,6 +111,8 @@ Future<bool> flushPendingSubmissions(
       WorkmanagerService.instance.lastLogListenable.value =
           'example.flushPendingSubmissions invoked: rows=${rows.length}';
     } catch (_) {}
+
+    final handler = submitHandler ?? defaultSubmitHandler;
 
     for (final row in rows) {
       final id = row['id'] as int?;
@@ -146,20 +148,18 @@ Future<bool> flushPendingSubmissions(
       if (payload.isEmpty) continue;
 
       var success = false;
-      if (submitHandler != null) {
-        try {
-          if (kDebugMode) {
-            // ignore: avoid_print
-            print('calling submitHandler for id=$id payload=$payload');
-          }
-          success = await submitHandler(payload, id);
-          if (kDebugMode) {
-            // ignore: avoid_print
-            print('submitHandler result for id=$id -> $success');
-          }
-        } catch (_) {
-          success = false;
+      try {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('calling submitHandler for id=$id payload=$payload');
         }
+        success = await handler(payload, id);
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('submitHandler result for id=$id -> $success');
+        }
+      } catch (_) {
+        success = false;
       }
 
       if (success && id != null) {
@@ -182,7 +182,7 @@ Future<bool> flushPendingSubmissions(
     } catch (_) {}
     return false;
   } finally {
-    // FlushState.isFlushing = false;
+    FlushState.isFlushing = false;
   }
 }
 
@@ -192,8 +192,8 @@ Future<bool> flushPendingSubmissionById(int id,
     {Future<bool> Function(Map<String, dynamic> payload, int? id)?
         submitHandler}) async {
   // Prevent concurrent flushes from running in parallel.
-  // if (FlushState.isFlushing) return false;
-  // FlushState.isFlushing = true;
+  if (FlushState.isFlushing) return false;
+  FlushState.isFlushing = true;
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: 'id = ? AND status = ?', whereArgs: [id, 'pending']);
@@ -224,21 +224,12 @@ Future<bool> flushPendingSubmissionById(int id,
 
     if (payload.isEmpty) return false;
 
+    final handler = submitHandler ?? defaultSubmitHandler;
     var success = false;
-    if (submitHandler != null) {
-      try {
-        success = await submitHandler(payload, id);
-      } catch (_) {
-        success = false;
-      }
-    } else {
-      try {
-        final post = Post.fromJson(payload);
-        final res = await Post.add(post: post);
-        success = res != null;
-      } catch (_) {
-        success = false;
-      }
+    try {
+      success = await handler(payload, id);
+    } catch (_) {
+      success = false;
     }
 
     if (success) {
@@ -261,6 +252,6 @@ Future<bool> flushPendingSubmissionById(int id,
     } catch (_) {}
     return false;
   } finally {
-    // FlushState.isFlushing = false;
+    FlushState.isFlushing = false;
   }
 }
