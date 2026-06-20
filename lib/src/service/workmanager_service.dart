@@ -154,7 +154,7 @@ class WorkmanagerService {
   Future<void> start({
     String? taskName,
     Duration? frequency,
-    bool periodic = false,
+    bool periodic = true,
     Map<String, dynamic>? inputData,
     Duration? initialDelay,
   }) async {

@@ -158,7 +158,7 @@ class FormFieldsInitializer {
   static Future<void> initAll({
     String dbName = 'form_fields.db',
     bool enableWorkmanager = true,
-    bool registerPeriodic = false,
+    bool registerPeriodic = true,
 
     /// If true the initializer will call `WorkmanagerService.instance.start()`
     /// after initialization. Use this to opt-in to automatic scheduling from
