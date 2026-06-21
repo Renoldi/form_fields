@@ -1,52 +1,75 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
+
 import 'flush_api.dart';
 
-/// Top-level helper to register a background handler from the host app.
-/// Provided for backward compatibility with example usage.
-void setBackgroundTaskHandler(BackgroundTaskHandler handler) =>
-    WorkmanagerService.setBackgroundTaskHandler(handler);
-
-/// A small, reusable wrapper around the `workmanager` plugin that exposes
-/// a simple start/stop API and accepts `VoidCallback` handlers from
-/// outside the plugin for foreground start/stop notifications.
-///
-/// Note: background tasks run in a separate isolate and cannot directly
-/// call closures provided from the app's UI isolate. The provided
-/// `onStart` / `onStop` callbacks are executed in the foreground when
-/// `start()` / `stop()` are called.
+/// Thin wrapper around the `workmanager` plugin that provides a small,
+/// testable surface for the example app. Includes per-task scheduling
+/// metadata and a `perTaskCountdownListenable` so the UI can show
+/// countdowns for each registered worker.
 class WorkmanagerService {
-  WorkmanagerService._internal();
+  WorkmanagerService._internal() {
+    _attachLastLogListener();
+  }
+
+  static final WorkmanagerService _instance = WorkmanagerService._internal();
+  factory WorkmanagerService() => _instance;
+  static WorkmanagerService get instance => _instance;
+
   bool _suppressListener = false;
+  bool _initialized = false;
 
-  /// Estimated time the periodic task was scheduled at (host local time).
-  /// Used by example UI to show an estimated countdown. This is only an
-  /// approximation — platform schedulers may run tasks at slightly different
-  /// times.
-  DateTime? scheduledAt;
+  // Basic state exposed to the UI
+  final ValueNotifier<String?> statusListenable = ValueNotifier(null);
+  final ValueNotifier<String?> lastLogListenable = ValueNotifier(null);
+  final ValueNotifier<int> registeredCountListenable = ValueNotifier(0);
+  final ValueNotifier<int> pendingChangedListenable = ValueNotifier(0);
+  final ValueNotifier<String?> countdownListenable = ValueNotifier(null);
+  final ValueNotifier<Map<String, String?>> perTaskCountdownListenable =
+      ValueNotifier(<String, String?>{});
 
-  /// The configured periodic frequency passed to `start()` when a periodic
-  /// task was registered. Exposed for example UI to compute countdowns.
-  Duration? scheduledFrequency;
+  DateTime? lastRunAt;
 
-  /// The host-configured/default frequency supplied when the service was
-  /// initialized (via `FormFieldsInitializer.initAll`) or when `start()`
-  /// was last called. This value is NOT cleared on `stop()` so UI can
-  /// reuse the original configured frequency when re-starting.
+  // Internal bookkeeping
+  final List<String> _logs = <String>[];
+  final Set<String> _registeredTasks = <String>{};
+  final Map<String, DateTime?> _scheduledAtPerTask = <String, DateTime?>{};
+  final Map<String, Duration?> _scheduledFrequencyPerTask =
+      <String, Duration?>{};
+
   Duration? configuredFrequency;
   Timer? _countdownTimer;
 
-  /// Notifier for UI countdown display (mm:ss). Null when no countdown.
-  final ValueNotifier<String?> countdownListenable = ValueNotifier(null);
+  StreamSubscription<dynamic>? _connectivitySub;
 
-  // Initialize listener to capture direct writes to `lastLogListenable`.
-  // Many places in the code set `lastLogListenable.value = '...'` directly;
-  // this listener ensures those messages are recorded in `_logs`.
+  /// Host-provided top-level background handler resolver (optional).
+  static BackgroundTaskHandler? _backgroundHandler;
+
+  /// Optional handler the host registers to perform a foreground flush.
+  Future<void> Function()? foregroundFlushHandler;
+
+  /// Per-task foreground flush handlers (registered by task name).
+  final Map<String, Future<void> Function()> _perTaskForegroundHandlers = {};
+
+  /// Register a foreground handler for a specific task name.
+  void setForegroundHandlerForTask(
+      String taskName, Future<void> Function()? handler) {
+    try {
+      if (handler == null) {
+        _perTaskForegroundHandlers.remove(taskName);
+      } else {
+        _perTaskForegroundHandlers[taskName] = handler;
+      }
+    } catch (_) {}
+  }
+
+  static const String _defaultTaskName = 'form_fields_background_task';
+
   void _attachLastLogListener() {
     lastLogListenable.addListener(() {
       try {
@@ -60,65 +83,25 @@ class WorkmanagerService {
     });
   }
 
-  static final WorkmanagerService _instance = WorkmanagerService._internal()
-    .._attachLastLogListener();
-  factory WorkmanagerService() => _instance;
+  /// Helper for legacy example usage.
+  static void setBackgroundTaskHandler(BackgroundTaskHandler handler) {
+    _backgroundHandler = handler;
+  }
 
-  /// Backward-compatible accessor used throughout the package.
-  static WorkmanagerService get instance => _instance;
-
-  bool _initialized = false;
-  StreamSubscription<dynamic>? _connectivitySub;
-
-  static const String _defaultTaskName = 'form_fields_background_task';
-
-  /// Public status notifier and last-run timestamp used by example UI.
-  final ValueNotifier<String?> statusListenable = ValueNotifier(null);
-  DateTime? lastRunAt;
-
-  /// Last log message and registered task count for UI introspection.
-  final ValueNotifier<String?> lastLogListenable = ValueNotifier(null);
-  final ValueNotifier<int> registeredCountListenable = ValueNotifier(0);
-  final List<String> _logs = <String>[];
-  final Set<String> _registeredTasks = <String>{};
-
-  /// Notifier incremented when pending submissions change (rows deleted/added).
-  /// Example UI can listen to this to refresh pending lists without parsing logs.
-  final ValueNotifier<int> pendingChangedListenable = ValueNotifier<int>(0);
-
-  /// `setHandler` is kept for API compatibility but foreground handlers
-  /// are not used by this service. Background handlers must be registered
-  /// with `setBackgroundTaskHandler`.
-
-  /// Background handler registered via top-level `setBackgroundTaskHandler`.
-  static BackgroundTaskHandler? _backgroundHandler;
-
-  /// Optional handler provided by the host app to flush pending submissions
-  /// when network connectivity is available. This callback runs in the
-  /// foreground isolate and should handle DB access and network calls.
-  Future<void> Function()? foregroundFlushHandler;
-
-  /// Initialize the underlying Workmanager plugin once.
-  ///
-  /// Note: the `isInDebugMode` flag is deprecated — debug behavior should
-  /// be handled via native `WorkmanagerDebug` handlers configured on the
-  /// platform side (see plugin docs). This method no longer accepts that
-  /// parameter and will ignore any debug mode toggles.
+  /// Initialize the workmanager plugin and connectivity listener.
   Future<void> initialize({void Function()? callbackDispatcher}) async {
     if (_initialized) return;
     try {
       await Workmanager()
           .initialize(callbackDispatcher ?? workmanagerCallbackDispatcher);
       _initialized = true;
-      // Listen for connectivity changes in the foreground isolate and
-      // invoke the host-provided flush handler when network becomes
-      // available.
+
+      // Listen for connectivity changes and invoke foreground flush when online.
       try {
         _connectivitySub =
             Connectivity().onConnectivityChanged.listen((_) async {
           try {
             final current = await Connectivity().checkConnectivity();
-            // Determine network availability via string representation
             final curStr = current.toString().toLowerCase();
             final hasNetwork = !curStr.contains('none');
             if (hasNetwork) {
@@ -140,19 +123,11 @@ class WorkmanagerService {
     }
   }
 
-  /// Register a foreground handler callable from the UI isolate.
   void setHandler(BackgroundTaskHandler handler) {
-    // No-op: foreground handlers are intentionally not invoked here.
+    // kept for API compatibility; not used by this wrapper.
   }
 
-  /// Register a top-level background handler so it can be invoked from
-  /// background isolates. This is provided as a top-level convenience
-  /// to match the package example usage.
-  static void setBackgroundTaskHandler(BackgroundTaskHandler handler) {
-    _backgroundHandler = handler;
-  }
-
-  /// Start the worker. Backwards-compatible signature used by examples.
+  /// Start a worker. Records per-task metadata to support per-worker UI.
   Future<void> start({
     String? taskName,
     Duration? frequency,
@@ -164,8 +139,6 @@ class WorkmanagerService {
 
     final name = taskName ?? _defaultTaskName;
     try {
-      // Ensure callback handle is included so background isolates can
-      // resolve the original top-level handler via PluginUtilities.
       final data = inputData != null
           ? Map<String, dynamic>.from(inputData)
           : <String, dynamic>{};
@@ -176,7 +149,10 @@ class WorkmanagerService {
             // ignore: avoid_print
             print('getCallbackHandle for _backgroundHandler -> $handle');
           }
-          if (handle != null) {
+          // Only embed the global background handler if the caller did not
+          // already provide a `callback_handle` (per-registration handlers
+          // should take precedence).
+          if (handle != null && data['callback_handle'] == null) {
             data['callback_handle'] = handle.toRawHandle();
             if (kDebugMode) {
               // ignore: avoid_print
@@ -195,29 +171,25 @@ class WorkmanagerService {
           inputData: data,
           initialDelay: initialDelay,
         );
-        // Record estimated scheduling details so the UI can display a
-        // countdown. Also record the configured/default frequency so the
-        // UI can re-use it after a stop() rather than falling back to a
-        // hard-coded default.
-        scheduledFrequency = frequency;
+        // record metadata
         if (frequency != null) configuredFrequency = frequency;
-        scheduledAt = DateTime.now();
-        // Start internal countdown updater so UI can display remaining time.
+        _scheduledAtPerTask[name] = DateTime.now();
+        _scheduledFrequencyPerTask[name] = frequency;
+        _addLog('task_registered: $name freq=${frequency?.inSeconds ?? 0}s');
         _startCountdownTimer();
       } else {
         await Workmanager().registerOneOffTask(name, name, inputData: data);
-        // For one-off tasks we record the schedule time but clear the
-        // periodic frequency.
-        scheduledAt = DateTime.now();
-        scheduledFrequency = null;
-        // Clear any countdown for one-off tasks.
-        _stopCountdownTimer();
+        _scheduledAtPerTask[name] = DateTime.now();
+        _scheduledFrequencyPerTask[name] = null;
+        _addLog('task_registered (one-off): $name');
+        // keep timer running for UI if other periodic tasks exist
+        _startCountdownTimer();
       }
-      statusListenable.value =
-          periodic ? 'registered_periodic' : 'registered_once';
-      // Track registration for UI.
+
       _registeredTasks.add(name);
       registeredCountListenable.value = _registeredTasks.length;
+      statusListenable.value =
+          periodic ? 'registered_periodic' : 'registered_once';
       _addLog('registered ${periodic ? 'periodic' : 'one-off'}: $name');
     } catch (e) {
       if (kDebugMode) {
@@ -225,15 +197,15 @@ class WorkmanagerService {
         print('Workmanager register task failed: $e');
       }
       statusListenable.value = 'register_failed';
-      statusListenable.value = 'register_failed';
       _addLog('register_failed: $e');
     }
   }
 
-  /// Run a one-off task immediately and return an error string on failure,
-  /// otherwise null on success.
-  Future<String?> runOnceNowDetailed(
-      {String? taskName, Map<String, dynamic>? inputData}) async {
+  /// Run a one-off task immediately.
+  Future<String?> runOnceNowDetailed({
+    String? taskName,
+    Map<String, dynamic>? inputData,
+  }) async {
     final name =
         taskName ?? 'run_once_${DateTime.now().millisecondsSinceEpoch}';
     try {
@@ -252,10 +224,13 @@ class WorkmanagerService {
       } catch (_) {}
 
       await Workmanager().registerOneOffTask(name, name, inputData: data);
-      // Record one-off registration
+      final now = DateTime.now();
       _registeredTasks.add(name);
+      _scheduledAtPerTask[name] = now;
+      _scheduledFrequencyPerTask[name] = null;
       registeredCountListenable.value = _registeredTasks.length;
       _addLog('registered one-off (run now): $name');
+      _startCountdownTimer();
       return null;
     } catch (e) {
       _addLog('runOnceNowDetailed failed: $e');
@@ -263,9 +238,8 @@ class WorkmanagerService {
     }
   }
 
-  /// Stop the service and cancel any registered tasks.
+  /// Stop specific task or all tasks.
   Future<void> stop({VoidCallback? onStop, String? taskName}) async {
-    // Call the provided foreground callback right away.
     try {
       onStop?.call();
     } catch (e) {
@@ -275,9 +249,6 @@ class WorkmanagerService {
       }
     }
 
-    // If a specific taskName is provided, cancel only that task.
-    // Otherwise, cancel all tracked registered tasks so `stop()` acts
-    // as a blanket shutdown when called without arguments.
     final namesToCancel = taskName != null
         ? <String>[taskName]
         : _registeredTasks.toList(growable: false);
@@ -285,6 +256,8 @@ class WorkmanagerService {
       try {
         await Workmanager().cancelByUniqueName(name);
         _registeredTasks.remove(name);
+        _scheduledAtPerTask.remove(name);
+        _scheduledFrequencyPerTask.remove(name);
         _addLog('cancelled: $name');
       } catch (e) {
         if (kDebugMode) {
@@ -295,18 +268,14 @@ class WorkmanagerService {
       }
     }
 
-    // Ensure public count/status reflect current state.
     registeredCountListenable.value = _registeredTasks.length;
     if (_registeredTasks.isEmpty) {
       statusListenable.value = 'stopped';
-    }
-    // If no tasks remain, clear scheduling metadata.
-    if (_registeredTasks.isEmpty) {
-      scheduledAt = null;
-      scheduledFrequency = null;
+      _scheduledAtPerTask.clear();
+      _scheduledFrequencyPerTask.clear();
       _stopCountdownTimer();
     }
-    // Cancel connectivity listener so auto-send stops when service is stopped.
+
     try {
       await _connectivitySub?.cancel();
       _connectivitySub = null;
@@ -325,20 +294,55 @@ class WorkmanagerService {
     try {
       _countdownTimer?.cancel();
       countdownListenable.value = null;
-      if (scheduledFrequency == null) return;
+      if (_registeredTasks.isEmpty) return;
+
       _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) async {
         try {
-          final freq = scheduledFrequency;
-          if (freq == null) return;
-          final scheduled = scheduledAt ?? DateTime.now();
-          final next = scheduled.add(freq);
-          final rem = next.difference(DateTime.now());
+          final now = DateTime.now();
+          Duration? minRem;
+          final Map<String, String?> perMap = {};
+          final List<String> toTrigger = [];
 
-          if (rem.inMilliseconds <= 0) {
+          for (final tName in _registeredTasks) {
+            final at = _scheduledAtPerTask[tName];
+            final fq = _scheduledFrequencyPerTask[tName];
+            if (at == null || fq == null) {
+              perMap[tName] = null;
+              continue;
+            }
+            final next = at.add(fq);
+            final rem = next.difference(now);
+            if (rem.inMilliseconds <= 0) {
+              toTrigger.add(tName);
+              perMap[tName] = '00:00';
+              minRem = const Duration(seconds: 0);
+            } else {
+              final m = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
+              final s = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
+              perMap[tName] = '$m:$s';
+              if (minRem == null || rem < minRem) minRem = rem;
+            }
+          }
+
+          try {
+            perTaskCountdownListenable.value = perMap;
+          } catch (_) {}
+
+          if (minRem == null) {
             try {
-              lastLogListenable.value =
-                  'next scheduled run now; triggering flush and resetting countdown';
+              countdownListenable.value = null;
             } catch (_) {}
+          } else {
+            final mm =
+                minRem.inMinutes.remainder(60).toString().padLeft(2, '0');
+            final ss =
+                minRem.inSeconds.remainder(60).toString().padLeft(2, '0');
+            try {
+              countdownListenable.value = '$mm:$ss';
+            } catch (_) {}
+          }
+
+          if (toTrigger.isNotEmpty) {
             try {
               lastLogListenable.value =
                   'countdown-trigger: calling flushPendingSubmissions()';
@@ -346,11 +350,34 @@ class WorkmanagerService {
 
             var success = false;
             try {
-              if (foregroundFlushHandler != null) {
-                await foregroundFlushHandler!();
-                success = true;
-              } else {
-                success = await FlushApi.flushPendingSubmissions();
+              // Prefer per-task foreground handlers. Call each task's
+              // handler if registered. If no per-task handlers were
+              // invoked, fall back to the global `foregroundFlushHandler`
+              // or to `FlushApi.flushPendingSubmissions()`.
+              var invokedAny = false;
+              for (final n in toTrigger) {
+                final h = _perTaskForegroundHandlers[n];
+                if (h != null) {
+                  invokedAny = true;
+                  try {
+                    await h();
+                    success = true;
+                  } catch (e, st) {
+                    try {
+                      lastLogListenable.value =
+                          'task-handler $n threw: $e\n$st';
+                    } catch (_) {}
+                  }
+                }
+              }
+
+              if (!invokedAny) {
+                if (foregroundFlushHandler != null) {
+                  await foregroundFlushHandler!();
+                  success = true;
+                } else {
+                  success = await FlushApi.flushPendingSubmissions();
+                }
               }
             } catch (e, st) {
               try {
@@ -365,30 +392,14 @@ class WorkmanagerService {
             } catch (_) {}
 
             try {
-              final err = await runOnceNowDetailed(taskName: 'dbg_countdown');
-              try {
-                lastLogListenable.value =
-                    'scheduled one-off dbg_countdown -> ${err ?? 'ok'}';
-              } catch (_) {}
-            } catch (e, st) {
-              try {
-                lastLogListenable.value =
-                    'failed scheduling dbg_countdown: $e\n$st';
-              } catch (_) {}
-            }
-
-            scheduledAt = DateTime.now();
-            try {
-              countdownListenable.value = null;
+              final now2 = DateTime.now();
+              for (final n in toTrigger) {
+                if (_scheduledFrequencyPerTask[n] != null) {
+                  _scheduledAtPerTask[n] = now2;
+                }
+              }
             } catch (_) {}
-            return;
           }
-
-          final mm = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
-          final ss = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
-          try {
-            countdownListenable.value = '$mm:$ss';
-          } catch (_) {}
         } catch (_) {}
       });
     } catch (_) {}
@@ -404,13 +415,19 @@ class WorkmanagerService {
     } catch (_) {}
   }
 
-  /// Convenience: return an estimated next run time based on when the task
-  /// was scheduled and the configured periodic frequency. Returns null when
-  /// no estimate is available.
   DateTime? get nextEstimatedRun {
     try {
-      if (scheduledAt == null || scheduledFrequency == null) return null;
-      return scheduledAt!.add(scheduledFrequency!);
+      // return nearest non-null scheduled run across tasks
+      DateTime? next;
+      for (final t in _registeredTasks) {
+        final at = _scheduledAtPerTask[t];
+        final fq = _scheduledFrequencyPerTask[t];
+        if (at != null && fq != null) {
+          final candidate = at.add(fq);
+          if (next == null || candidate.isBefore(next)) next = candidate;
+        }
+      }
+      return next;
     } catch (_) {
       return null;
     }
@@ -426,17 +443,30 @@ class WorkmanagerService {
     } catch (_) {}
   }
 
-  /// Call this to notify listeners that pending items changed.
   void notifyPendingChanged() {
     try {
       pendingChangedListenable.value = pendingChangedListenable.value + 1;
     } catch (_) {}
   }
 
-  /// Public accessor for recent logs (oldest -> newest).
   List<String> get recentLogs => List.unmodifiable(_logs);
 
-  /// Clear recent logs and notify listeners.
+  List<String> get registeredTaskNames => List.unmodifiable(_registeredTasks);
+
+  /// Return a snapshot of per-task metadata for debugging/inspection.
+  Map<String, Map<String, dynamic>> get taskMetadata {
+    final Map<String, Map<String, dynamic>> out = {};
+    for (final t in _registeredTasks) {
+      out[t] = {
+        'scheduledAt': _scheduledAtPerTask[t]?.toIso8601String(),
+        'frequencySeconds': _scheduledFrequencyPerTask[t]?.inSeconds,
+      };
+    }
+    return out;
+  }
+
+  bool get isInitialized => _initialized;
+
   void clearLogs() {
     try {
       _logs.clear();
@@ -446,11 +476,7 @@ class WorkmanagerService {
     } catch (_) {}
   }
 
-  /// A lightweight helper to check whether Workmanager has been initialized.
-  bool get isInitialized => _initialized;
-
-  /// The callback dispatcher used by the `workmanager` plugin. This must be
-  /// a top-level or static function reference as required by the plugin.
+  // Background callback dispatcher used by Workmanager plugin.
   static void _callbackDispatcher() {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -460,20 +486,12 @@ class WorkmanagerService {
         print('Workmanager executeTask: $task, inputData: $inputData');
       }
 
-      // Update last run timestamp and notify listeners in the UI isolate
-      // via platform channels isn't possible here; we update a simple
-      // timestamp variable for the isolate that invoked this code path.
       try {
-        // First, attempt to find a callback handle provided in the task's
-        // inputData. Hosts can schedule tasks with a `callback_handle`
-        // entry (raw handle) so background isolates can resolve the
-        // original top-level function via PluginUtilities.
         if (inputData != null && inputData['callback_handle'] != null) {
           try {
             final raw = inputData['callback_handle'];
             final rawHandle = raw is int ? raw : int.parse(raw.toString());
             final cbHandle = CallbackHandle.fromRawHandle(rawHandle);
-            // Log resolution attempt
             if (kDebugMode) {
               // ignore: avoid_print
               print('Attempting to resolve callback handle: $rawHandle');
@@ -484,8 +502,17 @@ class WorkmanagerService {
               print('Resolved callback: $cb');
             }
             if (cb is BackgroundTaskHandler) {
-              final res = await cb(task, inputData);
+              final res = await cb(task, inputData as Map<String, dynamic>?);
               return Future.value(res);
+            } else {
+              if (kDebugMode) {
+                // ignore: avoid_print
+                print(
+                    'Callback resolved but is not BackgroundTaskHandler: $cb');
+              }
+              // If we could not resolve a usable callback, bail out with
+              // `false` so Workmanager does not treat the task as succeeded.
+              return Future.value(false);
             }
           } catch (e) {
             if (kDebugMode) {
@@ -495,8 +522,6 @@ class WorkmanagerService {
           }
         }
 
-        // Fallback: attempt to use the static background handler if set
-        // in this isolate (may be null in background isolates).
         if (_backgroundHandler != null) {
           try {
             if (kDebugMode) {
@@ -520,9 +545,6 @@ class WorkmanagerService {
     });
   }
 
-// Top-level callback dispatcher wrapper. Workmanager's background isolate
-// must be able to resolve a top-level entry-point by name; annotate this
-// function so it is preserved and visible to the background isolate.
   @pragma('vm:entry-point')
   void workmanagerCallbackDispatcher() =>
       WorkmanagerService._callbackDispatcher();

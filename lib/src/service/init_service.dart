@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:sqflite/sqflite.dart';
@@ -24,8 +26,8 @@ class WorkerRegistration {
     this.initialDelay = kWorkmanagerInitialDelayDefault,
     this.periodic = true,
     this.inputData,
-    this.handler,
-    this.foregroundFlushHandler,
+    this.backgroundHandler,
+    this.foregroundHandler,
     this.register = true,
   });
 
@@ -34,8 +36,8 @@ class WorkerRegistration {
   final Duration initialDelay;
   final bool periodic;
   final Map<String, dynamic>? inputData;
-  final BackgroundTaskHandler? handler;
-  final Future<void> Function()? foregroundFlushHandler;
+  final BackgroundTaskHandler? backgroundHandler;
+  final Future<void> Function()? foregroundHandler;
   final bool register;
 }
 
@@ -116,24 +118,59 @@ class FormFieldsInitializer {
       List<WorkerRegistration> regs) async {
     BackgroundTaskHandler? firstHandler;
     for (final reg in regs) {
-      if (reg.handler != null && firstHandler == null) {
-        firstHandler = reg.handler;
+      if (reg.backgroundHandler != null && firstHandler == null) {
+        firstHandler = reg.backgroundHandler;
       }
 
-      if (reg.foregroundFlushHandler != null) {
-        _safeSetForegroundFlushHandler(reg.foregroundFlushHandler);
+      if (reg.foregroundHandler != null) {
+        _safeSetForegroundFlushHandler(reg.foregroundHandler);
       }
 
       if (!reg.register) continue;
 
       try {
+        // Merge reg.inputData and embed a callback handle for the
+        // registration's own handler (if provided). This ensures that
+        // each worker can resolve its specific top-level handler when
+        // executed in a background isolate.
+        Map<String, dynamic>? inputDataForReg;
+        try {
+          final base = reg.inputData != null
+              ? Map<String, dynamic>.from(reg.inputData!)
+              : <String, dynamic>{};
+          if (reg.backgroundHandler != null) {
+            try {
+              final handle =
+                  PluginUtilities.getCallbackHandle(reg.backgroundHandler!);
+              if (kDebugMode) {
+                // ignore: avoid_print
+                print('getCallbackHandle for reg.handler -> $handle');
+              }
+              if (handle != null) {
+                base['callback_handle'] = handle.toRawHandle();
+              }
+            } catch (_) {}
+          }
+          inputDataForReg = base.isEmpty ? null : base;
+        } catch (_) {
+          inputDataForReg = reg.inputData;
+        }
+
         await WorkmanagerService.instance.start(
           taskName: reg.taskName,
           frequency: reg.frequency,
           periodic: reg.periodic,
-          inputData: reg.inputData,
+          inputData: inputDataForReg,
           initialDelay: reg.initialDelay,
         );
+        // Register per-task foreground handler so countdown triggers can
+        // invoke task-specific foreground logic (e.g. `sendRandomForeground`).
+        try {
+          if (reg.taskName != null && reg.foregroundHandler != null) {
+            WorkmanagerService.instance.setForegroundHandlerForTask(
+                reg.taskName!, reg.foregroundHandler);
+          }
+        } catch (_) {}
         _log.fine('Registered worker: ${reg.taskName}');
       } catch (e, st) {
         _log.warning('Failed to register worker ${reg.taskName}: $e', e, st);
@@ -146,7 +183,16 @@ class FormFieldsInitializer {
   static void _safeSetForegroundFlushHandler(Future<void> Function()? handler) {
     if (handler == null) return;
     try {
-      WorkmanagerService.instance.foregroundFlushHandler = handler;
+      // Only set the foreground flush handler if one hasn't been set yet.
+      // This preserves the host-provided flush handler (typically the
+      // `form_fields_flush` handler) and avoids later worker registrations
+      // from overwriting it (which could cause countdown-triggered flushes
+      // to call the wrong handler such as `sendRandomForeground`).
+      if (WorkmanagerService.instance.foregroundFlushHandler == null) {
+        WorkmanagerService.instance.foregroundFlushHandler = handler;
+      } else {
+        _log.fine('foregroundFlushHandler already set; skipping override');
+      }
     } catch (e, st) {
       _log.warning('Failed to set foregroundFlushHandler: $e', e, st);
     }

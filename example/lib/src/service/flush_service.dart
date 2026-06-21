@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
+import 'package:geolocator/geolocator.dart';
 
 // Local logger for example service helpers (avoid circular import with main)
 final logger = Logger();
@@ -24,6 +25,169 @@ Future<void> workmanagerFlushPendingHandler() async {
     print('workmanagerFlushPendingHandler invoked in isolate');
   }
   await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
+}
+
+// Example worker: send current location
+@pragma('vm:entry-point')
+Future<bool> sendCurrentLocationBackgroundHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  try {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('sendCurrentLocationBackgroundHandler invoked: $task');
+    }
+
+    // Attempt to retrieve a real location when possible. Background
+    // isolates may not be able to prompt for permissions, so this
+    // function falls back to a deterministic mock when permission
+    // is unavailable.
+    double lat = 0.0;
+    double lng = 0.0;
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        // Can't request permission from background isolate; fall back
+        // to inputData or mock.
+        if (inputData != null && inputData['location'] is Map) {
+          final loc = Map<String, dynamic>.from(inputData['location']);
+          lat = (loc['lat'] is num) ? (loc['lat'] as num).toDouble() : 0.0;
+          lng = (loc['lng'] is num) ? (loc['lng'] as num).toDouble() : 0.0;
+        } else {
+          final now = DateTime.now().millisecondsSinceEpoch;
+          lat = 37.4219999 + (now % 100) / 10000.0;
+          lng = -122.0840575 - (now % 100) / 10000.0;
+        }
+      } else {
+        // Permission is granted — fetch current position.
+        final pos = await Geolocator.getCurrentPosition(
+            locationSettings:
+                const LocationSettings(accuracy: LocationAccuracy.best));
+        lat = pos.latitude;
+        lng = pos.longitude;
+      }
+    } catch (e) {
+      // Any platform/plugin error falls back to mock/inputData.
+      if (inputData != null && inputData['location'] is Map) {
+        final loc = Map<String, dynamic>.from(inputData['location']);
+        lat = (loc['lat'] is num) ? (loc['lat'] as num).toDouble() : 0.0;
+        lng = (loc['lng'] is num) ? (loc['lng'] as num).toDouble() : 0.0;
+      } else {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        lat = 37.4219999 + (now % 100) / 10000.0;
+        lng = -122.0840575 - (now % 100) / 10000.0;
+      }
+    }
+
+    final payload = {
+      'type': 'location',
+      'lat': lat,
+      'lng': lng,
+      'ts': DateTime.now().toIso8601String(),
+    };
+
+    await DBService.instance.insertOrUpdate('pending_submissions', {
+      'payload': json.encode(payload),
+      'status': _kStatusPending,
+      'created_at': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'worker: send_current_location queued';
+      WorkmanagerService.instance.notifyPendingChanged();
+    } catch (_) {}
+
+    return true;
+  } catch (e, st) {
+    logger.w('sendCurrentLocationBackgroundHandler failed: $e\n$st');
+    return false;
+  }
+}
+
+// Foreground helper for UI-invoked immediate send
+Future<void> sendCurrentLocationForeground() async {
+  try {
+    // Request permission from the foreground isolate when necessary.
+    LocationPermission perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      logger.w('Location permission denied; cannot fetch location');
+      return;
+    }
+
+    final pos = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.best));
+    await sendCurrentLocationBackgroundHandler('foreground', {
+      'location': {'lat': pos.latitude, 'lng': pos.longitude}
+    });
+    // Attempt an immediate foreground flush to send any pending items.
+    try {
+      await FlushApi.flushPendingSubmissions(
+          waitIfFlushing: true, waitTimeout: const Duration(seconds: 15));
+    } catch (_) {}
+    try {
+      WorkmanagerService.instance.notifyPendingChanged();
+    } catch (_) {}
+  } catch (e, st) {
+    logger.w('sendCurrentLocationForeground failed: $e\n$st');
+  }
+}
+
+// Example worker: send random event
+@pragma('vm:entry-point')
+Future<bool> sendRandomBackgroundHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  try {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('sendRandomBackgroundHandler invoked: $task');
+    }
+
+    final rnd = (DateTime.now().millisecondsSinceEpoch % 10000);
+    final payload = {
+      'type': 'random_event',
+      'value': rnd,
+      'ts': DateTime.now().toIso8601String(),
+    };
+
+    await DBService.instance.insertOrUpdate('pending_submissions', {
+      'payload': json.encode(payload),
+      'status': _kStatusPending,
+      'created_at': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    try {
+      WorkmanagerService.instance.lastLogListenable.value =
+          'worker: send_random queued value=$rnd';
+      WorkmanagerService.instance.notifyPendingChanged();
+    } catch (_) {}
+
+    return true;
+  } catch (e, st) {
+    logger.w('sendRandomBackgroundHandler failed: $e\n$st');
+    return false;
+  }
+}
+
+Future<void> sendRandomForeground() async {
+  try {
+    await sendRandomBackgroundHandler('foreground', null);
+    // Try to flush pending items immediately after enqueueing.
+    try {
+      await FlushApi.flushPendingSubmissions(
+          waitIfFlushing: true, waitTimeout: const Duration(seconds: 15));
+    } catch (_) {}
+    try {
+      WorkmanagerService.instance.notifyPendingChanged();
+    } catch (_) {}
+  } catch (e, st) {
+    logger.w('sendRandomForeground failed: $e\n$st');
+  }
 }
 
 // Top-level background helper that can be invoked from the UI isolate

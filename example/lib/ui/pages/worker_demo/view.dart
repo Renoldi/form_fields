@@ -7,8 +7,11 @@ import 'package:form_fields_example/localization/localizations.dart';
 import 'view_model.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields_example/src/service/flush_service.dart';
 
 class View extends PresenterState {
+  String? _selectedWorker;
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -136,6 +139,41 @@ class View extends PresenterState {
                               }),
                           const SizedBox(height: 12),
                           const SizedBox(height: 8),
+                          // Per-worker countdown selector
+                          ValueListenableBuilder<Map<String, String?>>(
+                            valueListenable: WorkmanagerService
+                                .instance.perTaskCountdownListenable,
+                            builder: (ctx, map, __) {
+                              final names = WorkmanagerService
+                                  .instance.registeredTaskNames;
+                              if (names.isEmpty) return const SizedBox.shrink();
+                              _selectedWorker ??= names.first;
+                              final display = map[_selectedWorker] ?? '-';
+                              return Row(
+                                children: [
+                                  DropdownButton<String>(
+                                    value: _selectedWorker,
+                                    items: names
+                                        .map((n) => DropdownMenuItem(
+                                              value: n,
+                                              child: Text(n),
+                                            ))
+                                        .toList(),
+                                    onChanged: (v) {
+                                      if (v == null) return;
+                                      setState(() {
+                                        _selectedWorker = v;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text('Next run in: $display',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              );
+                            },
+                          ),
                           Form(
                             key: vm.formKey,
                             child: Column(
@@ -331,6 +369,96 @@ class View extends PresenterState {
                                   ScaffoldMessenger.maybeOf(context)
                                       ?.showSnackBar(SnackBar(
                                           content: Text('Flush threw: $e')));
+                                }
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.bug_report),
+                              label: const Text('Show debug'),
+                              onPressed: () {
+                                final meta =
+                                    WorkmanagerService.instance.taskMetadata;
+                                final logs =
+                                    WorkmanagerService.instance.recentLogs;
+                                showDialog<void>(
+                                    context: context,
+                                    builder: (ctx) {
+                                      return AlertDialog(
+                                        title: const Text('Workmanager Debug'),
+                                        content: SingleChildScrollView(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('Task metadata:'),
+                                              const SizedBox(height: 8),
+                                              Text(meta.entries
+                                                  .map((e) =>
+                                                      '${e.key}: scheduledAt=${e.value['scheduledAt']}, freq_s=${e.value['frequencySeconds']}')
+                                                  .join('\n')),
+                                              const SizedBox(height: 12),
+                                              const Text('Recent logs:'),
+                                              const SizedBox(height: 8),
+                                              Text(logs.join('\n')),
+                                            ],
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(),
+                                              child: const Text('Close')),
+                                        ],
+                                      );
+                                    });
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.location_on),
+                              label: const Text('Send current location'),
+                              onPressed: () async {
+                                try {
+                                  WorkmanagerService.instance.lastLogListenable
+                                      .value = 'sendCurrentLocation invoked';
+                                } catch (_) {}
+                                try {
+                                  await sendCurrentLocationForeground();
+                                  await vm.loadPending();
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(const SnackBar(
+                                          content: Text('Location queued')));
+                                } catch (e, st) {
+                                  try {
+                                    WorkmanagerService
+                                            .instance.lastLogListenable.value =
+                                        'sendCurrentLocation threw: $e\n$st';
+                                  } catch (_) {}
+                                }
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.casino),
+                              label: const Text('Send random event'),
+                              onPressed: () async {
+                                try {
+                                  WorkmanagerService.instance.lastLogListenable
+                                      .value = 'sendRandom invoked';
+                                } catch (_) {}
+                                try {
+                                  await sendRandomForeground();
+                                  await vm.loadPending();
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(const SnackBar(
+                                          content: Text('Random queued')));
+                                } catch (e, st) {
+                                  try {
+                                    WorkmanagerService
+                                        .instance
+                                        .lastLogListenable
+                                        .value = 'sendRandom threw: $e\n$st';
+                                  } catch (_) {}
                                 }
                               },
                             ),

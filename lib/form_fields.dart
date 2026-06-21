@@ -118,8 +118,7 @@ export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 export 'src/service/db_service.dart' show DBService;
 export 'src/service/import_export_service.dart' show ImportExportService;
 export 'src/service/crypto_utils.dart' show CryptoUtils;
-export 'src/service/workmanager_service.dart'
-    show WorkmanagerService, setBackgroundTaskHandler;
+export 'src/service/workmanager_service.dart' show WorkmanagerService;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
 export 'src/service/flush_api.dart' show FlushApi, SubmitHandler;

@@ -28,6 +28,7 @@ dependencies:
   workmanager: any
   path_provider: any
   path: any
+  geolocator: any
 
 dev_dependencies:
   flutter_test:

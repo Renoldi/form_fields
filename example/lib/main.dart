@@ -118,12 +118,34 @@ Future<void> main() async {
       workerRegistrations: [
         WorkerRegistration(
           taskName: 'form_fields_flush',
+          // Use a platform-appropriate minimum (15 minutes) to avoid
+          // overwhelming background isolate launches during development.
+          frequency: Duration(seconds: 20),
+          initialDelay: Duration.zero,
+          periodic: true,
+          inputData: null,
+          backgroundHandler: null,
+          foregroundHandler: workmanagerFlushPendingHandler,
+          register: true,
+        ),
+        WorkerRegistration(
+          taskName: 'send_current_location',
+          frequency: Duration(minutes: 15),
+          initialDelay: Duration.zero,
+          periodic: true,
+          inputData: null,
+          backgroundHandler: sendCurrentLocationBackgroundHandler,
+          foregroundHandler: sendCurrentLocationForeground,
+          register: true,
+        ),
+        WorkerRegistration(
+          taskName: 'send_random_event',
           frequency: Duration(seconds: 60),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
-          handler: null,
-          foregroundFlushHandler: workmanagerFlushPendingHandler,
+          backgroundHandler: sendRandomBackgroundHandler,
+          foregroundHandler: sendRandomForeground,
           register: true,
         ),
       ],
@@ -136,6 +158,13 @@ Future<void> main() async {
       ],
       dbVersion: 0,
     );
+
+    // Register example flush handlers so `FlushApi` can invoke them.
+    // try {
+    //   FlushApi.register(
+    //       flushAll: flushPendingSubmissions,
+    //       flushOne: flushPendingSubmissionById);
+    // } catch (_) {}
 
     // // Debug helper: schedule a one-off run immediately to verify dispatcher
     // if (kDebugMode && !kIsWeb) {
