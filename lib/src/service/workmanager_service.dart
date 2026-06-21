@@ -673,6 +673,22 @@ class WorkmanagerService {
               }
             } catch (_) {}
 
+            try {
+              for (final n in toTrigger) {
+                try {
+                  final eff = _scheduledFrequencyPerTask[n];
+                  final req = _scheduledRequestedFrequencyPerTask[n];
+                  _addLog(
+                      'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}');
+                  if (kDebugMode) {
+                    // ignore: avoid_print
+                    print(
+                        'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}');
+                  }
+                } catch (_) {}
+              }
+            } catch (_) {}
+
             // Prevent overlapping flush runs using FlushState guard.
             if (FlushState.isFlushing) {
               try {
@@ -787,11 +803,24 @@ class WorkmanagerService {
               try {
                 final now2 = DateTime.now();
                 for (final n in toTrigger) {
+                  // Update scheduledAt when we know an effective frequency
+                  // (platform-adjusted) or when the host provided a requested
+                  // frequency via `workerRegistrations`. The countdown logic
+                  // uses the requested frequency when provided, so we must
+                  // update scheduledAt in that case as well to avoid
+                  // immediately retriggering.
                   if (_scheduledFrequencyPerTask[n] != null) {
                     _scheduledAtPerTask[n] = now2;
                     try {
                       _addLog(
-                          'updated scheduledAt for $n -> ${now2.toIso8601String()}');
+                          'updated scheduledAt for $n -> ${now2.toIso8601String()} (effective freq)');
+                    } catch (_) {}
+                  } else if (_providedWorkerDefinitions != null &&
+                      _scheduledRequestedFrequencyPerTask[n] != null) {
+                    _scheduledAtPerTask[n] = now2;
+                    try {
+                      _addLog(
+                          'updated scheduledAt for $n -> ${now2.toIso8601String()} (requested freq)');
                     } catch (_) {}
                   }
                 }
