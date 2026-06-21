@@ -130,7 +130,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(seconds: 60),
+          frequency: Duration(minutes: 2),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -157,6 +157,7 @@ Future<void> main() async {
         // 'migrations/v2_down.sql',
       ],
       dbVersion: 0,
+      // Invoke each registration's handlers immediately at startup.
     );
 
     // Register example flush handlers so `FlushApi` can invoke them.

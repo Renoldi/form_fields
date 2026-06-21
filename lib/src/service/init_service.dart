@@ -115,7 +115,8 @@ class FormFieldsInitializer {
   /// register a package-level background handler. This helper centralizes
   /// logging and error handling for worker registration.
   static Future<BackgroundTaskHandler?> _registerWorkers(
-      List<WorkerRegistration> regs) async {
+      List<WorkerRegistration> regs,
+      {bool triggerOnStart = false}) async {
     BackgroundTaskHandler? firstHandler;
 
     // Track seen handler+period combinations so we only register one
@@ -209,6 +210,40 @@ class FormFieldsInitializer {
           initialDelay: reg.initialDelay,
         );
 
+        // Optionally trigger handlers immediately at startup so hosts can
+        // run initial work (foreground/background) without waiting for the
+        // scheduled interval to elapse. This is opt-in via
+        // `triggerOnStart` passed from `initAll`.
+        if (triggerOnStart) {
+          try {
+            if (reg.foregroundHandler != null) {
+              await reg.foregroundHandler!();
+              _log.fine(
+                  'Invoked foregroundHandler for ${reg.taskName} on start');
+            }
+          } catch (e, st) {
+            _log.warning(
+                'foregroundHandler threw during start invocation: $e', e, st);
+          }
+
+          try {
+            if (reg.backgroundHandler != null) {
+              // Use a one-off run to trigger the background handler via
+              // Workmanager if possible. This will schedule a one-off task
+              // that should execute the resolved background callback.
+              await WorkmanagerService.instance.runOnceNowDetailed(
+                taskName: reg.taskName,
+                inputData: inputDataForReg,
+              );
+              _log.fine(
+                  'Requested runOnceNow for backgroundHandler ${reg.taskName}');
+            }
+          } catch (e, st) {
+            _log.warning(
+                'Failed to trigger backgroundHandler at start: $e', e, st);
+          }
+        }
+
         // Mark this handler+period as registered so subsequent identical
         // registrations are skipped. Use the key we computed earlier.
         if (key != null) seenHandlerPeriod.add(key);
@@ -260,6 +295,7 @@ class FormFieldsInitializer {
     required List<WorkerRegistration>? workerRegistrations,
     required bool registerPeriodic,
     required bool autoStartWorkmanager,
+    required bool triggerWorkerHandlersOnStart,
   }) async {
     if (!enableWorkmanager || kIsWeb) return;
 
@@ -287,8 +323,9 @@ class FormFieldsInitializer {
       // Register provided worker registrations via helper to keep logic small
       // and reusable. The helper returns the first provided background handler
       // (if any) so we can register it at the package level.
-      final BackgroundTaskHandler? firstHandler =
-          await _registerWorkers(workerRegistrations);
+      final BackgroundTaskHandler? firstHandler = await _registerWorkers(
+          workerRegistrations,
+          triggerOnStart: triggerWorkerHandlersOnStart);
 
       if (firstHandler != null) {
         try {
@@ -354,6 +391,11 @@ class FormFieldsInitializer {
     OnDatabaseVersionChangeFn? onUpgrade,
     OnDatabaseVersionChangeFn? onDowngrade,
     OnDatabaseOpenFn? onOpen,
+
+    /// If true, call each registration's foreground/background handlers
+    /// immediately at startup (in addition to scheduling periodic runs).
+    /// Default: true.
+    bool triggerWorkerHandlersOnStart = true,
     // Optional host-provided flush handlers that will be registered on
     // package startup so callers can invoke host-provided flush logic via
     // `FlushApi.flushPendingSubmissions` / `FlushApi.flushPendingSubmissionById`.
@@ -422,6 +464,7 @@ class FormFieldsInitializer {
       workerRegistrations: workerRegistrations,
       registerPeriodic: registerPeriodic,
       autoStartWorkmanager: autoStartWorkmanager,
+      triggerWorkerHandlersOnStart: triggerWorkerHandlersOnStart,
     );
     _log.info('FormFields initialized');
   }

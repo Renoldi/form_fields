@@ -98,8 +98,8 @@ class WorkmanagerService {
   Future<void> initialize({void Function()? callbackDispatcher}) async {
     if (_initialized) return;
     try {
-      await Workmanager()
-          .initialize(callbackDispatcher ?? workmanagerCallbackDispatcher);
+      await Workmanager().initialize(
+          callbackDispatcher ?? WorkmanagerService._callbackDispatcher);
       _initialized = true;
 
       // Listen for connectivity changes and invoke foreground flush when online.

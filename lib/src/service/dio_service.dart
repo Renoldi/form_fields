@@ -193,7 +193,7 @@ class DioUtil {
         final merged = <String, dynamic>{};
         merged.addAll(_dio.options.headers);
         merged.addAll(headers);
-        requestOptions = Options(headers: merged);
+        requestOptions = Options(headers: merged, validateStatus: (_) => true);
       }
 
       final response = await _dio.get<T>(
@@ -205,7 +205,22 @@ class DioUtil {
     } on DioException catch (e) {
       _logger.e('❌ GET Failed: ${_dio.options.baseUrl}$path');
       if (e.response != null) {
-        return e.response as Response<T>;
+        try {
+          final r = e.response!;
+          return Response<T>(
+            requestOptions: r.requestOptions,
+            statusCode: r.statusCode,
+            statusMessage: r.statusMessage,
+            data: r.data as T,
+          );
+        } catch (_) {
+          return Response(
+            requestOptions: RequestOptions(path: path),
+            statusCode: e.response?.statusCode,
+            statusMessage: e.response?.statusMessage,
+            data: e.response?.data,
+          ) as Response<T>;
+        }
       }
       return Response(
         requestOptions: RequestOptions(path: path),
@@ -237,7 +252,7 @@ class DioUtil {
         final merged = <String, dynamic>{};
         merged.addAll(_dio.options.headers);
         merged.addAll(headers);
-        requestOptions = Options(headers: merged);
+        requestOptions = Options(headers: merged, validateStatus: (_) => true);
       }
 
       final response = await _dio.post<T>(
@@ -250,7 +265,22 @@ class DioUtil {
     } on DioException catch (e) {
       _logger.e('❌ POST Failed: ${_dio.options.baseUrl}$path');
       if (e.response != null) {
-        return e.response as Response<T>;
+        try {
+          final r = e.response!;
+          return Response<T>(
+            requestOptions: r.requestOptions,
+            statusCode: r.statusCode,
+            statusMessage: r.statusMessage,
+            data: r.data as T,
+          );
+        } catch (_) {
+          return Response(
+            requestOptions: RequestOptions(path: path),
+            statusCode: e.response?.statusCode,
+            statusMessage: e.response?.statusMessage,
+            data: e.response?.data,
+          ) as Response<T>;
+        }
       }
       return Response(
         requestOptions: RequestOptions(path: path),
@@ -282,7 +312,7 @@ class DioUtil {
         final merged = <String, dynamic>{};
         merged.addAll(_dio.options.headers);
         merged.addAll(headers);
-        requestOptions = Options(headers: merged);
+        requestOptions = Options(headers: merged, validateStatus: (_) => true);
       }
 
       final response = await _dio.put<T>(
@@ -295,7 +325,22 @@ class DioUtil {
     } on DioException catch (e) {
       _logger.e('❌ PUT Failed: ${_dio.options.baseUrl}$path');
       if (e.response != null) {
-        return e.response as Response<T>;
+        try {
+          final r = e.response!;
+          return Response<T>(
+            requestOptions: r.requestOptions,
+            statusCode: r.statusCode,
+            statusMessage: r.statusMessage,
+            data: r.data as T,
+          );
+        } catch (_) {
+          return Response(
+            requestOptions: RequestOptions(path: path),
+            statusCode: e.response?.statusCode,
+            statusMessage: e.response?.statusMessage,
+            data: e.response?.data,
+          ) as Response<T>;
+        }
       }
       return Response(
         requestOptions: RequestOptions(path: path),

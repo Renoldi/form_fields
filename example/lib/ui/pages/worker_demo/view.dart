@@ -335,6 +335,48 @@ class View extends PresenterState {
                                       inputData: data.isEmpty ? null : data,
                                       initialDelay: init,
                                     );
+                                    // After scheduling, trigger an immediate
+                                    // run so "Start All" results in sending
+                                    // right away. Prefer calling a foreground
+                                    // handler when available (runs on main
+                                    // isolate). Otherwise request a one-off
+                                    // background run which should resolve
+                                    // the callback handle.
+                                    try {
+                                      // Map to foreground handler if present.
+                                      Future<void> Function()? fgHandler;
+                                      switch (name) {
+                                        case 'form_fields_flush':
+                                          fgHandler =
+                                              workmanagerFlushPendingHandler;
+                                          break;
+                                        case 'send_current_location':
+                                          fgHandler =
+                                              sendCurrentLocationForeground;
+                                          break;
+                                        case 'send_random_event':
+                                          fgHandler = sendRandomForeground;
+                                          break;
+                                        default:
+                                          fgHandler = null;
+                                      }
+
+                                      if (fgHandler != null) {
+                                        await fgHandler();
+                                      } else {
+                                        await WorkmanagerService.instance
+                                            .runOnceNowDetailed(
+                                                taskName: name,
+                                                inputData:
+                                                    data.isEmpty ? null : data);
+                                      }
+                                    } catch (e) {
+                                      try {
+                                        WorkmanagerService.instance
+                                                .lastLogListenable.value =
+                                            'start all trigger failed for $name: $e';
+                                      } catch (_) {}
+                                    }
                                   }
 
                                   if (!context.mounted) return;
