@@ -130,7 +130,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(minutes: 15),
+          frequency: Duration(seconds: 70),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
