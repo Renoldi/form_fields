@@ -27,6 +27,25 @@ Future<void> workmanagerFlushPendingHandler() async {
   await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
 }
 
+// Background wrapper with Workmanager's expected signature. Returns true
+// on success so Workmanager treats the task as completed.
+@pragma('vm:entry-point')
+Future<bool> workmanagerFlushBackgroundHandler(
+    String task, Map<String, dynamic>? inputData) async {
+  try {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print(
+          'workmanagerFlushBackgroundHandler invoked: $task input=$inputData');
+    }
+    await flushPendingSubmissions(submitHandler: defaultSubmitHandler);
+    return true;
+  } catch (e, st) {
+    logger.w('workmanagerFlushBackgroundHandler failed: $e\n$st');
+    return false;
+  }
+}
+
 // Example worker: send current location
 @pragma('vm:entry-point')
 Future<bool> sendCurrentLocationBackgroundHandler(

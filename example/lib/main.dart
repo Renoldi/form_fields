@@ -124,7 +124,7 @@ Future<void> main() async {
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
-          backgroundHandler: null,
+          backgroundHandler: workmanagerFlushBackgroundHandler,
           foregroundHandler: workmanagerFlushPendingHandler,
           register: true,
         ),
