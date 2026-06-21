@@ -99,14 +99,14 @@ Future<void> main() async {
     // Note: `myHandler` must be a top-level/static function so it can be
     // resolved from background isolates.
 
-    // if (kDebugMode) {
-    //   try {
-    //     await DBService.instance.resetDatabase(reinit: true);
-    //     logger.i('Developer: resetDatabase completed');
-    //   } catch (e, st) {
-    //     logger.w('Developer: resetDatabase failed: $e\n$st');
-    //   }
-    // }
+    if (kDebugMode) {
+      try {
+        await DBService.instance.resetDatabase(reinit: true);
+        logger.i('Developer: resetDatabase completed');
+      } catch (e, st) {
+        logger.w('Developer: resetDatabase failed: $e\n$st');
+      }
+    }
     // Use platform-appropriate minimum for periodic work (15 minutes).
 
     await FormFieldsInitializer.initAll(
@@ -120,7 +120,7 @@ Future<void> main() async {
           taskName: 'form_fields_flush',
           // Use a platform-appropriate minimum (15 minutes) to avoid
           // overwhelming background isolate launches during development.
-          frequency: Duration(seconds: 20),
+          frequency: Duration(minutes: 15),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -130,7 +130,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(seconds: 70),
+          frequency: Duration(seconds: 60),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -140,7 +140,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_random_event',
-          frequency: Duration(seconds: 60),
+          frequency: Duration(minutes: 70),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -160,11 +160,11 @@ Future<void> main() async {
     );
 
     // Register example flush handlers so `FlushApi` can invoke them.
-    // try {
-    //   FlushApi.register(
-    //       flushAll: flushPendingSubmissions,
-    //       flushOne: flushPendingSubmissionById);
-    // } catch (_) {}
+    try {
+      FlushApi.register(
+          flushAll: flushPendingSubmissions,
+          flushOne: flushPendingSubmissionById);
+    } catch (_) {}
 
     // // Debug helper: schedule a one-off run immediately to verify dispatcher
     // if (kDebugMode && !kIsWeb) {

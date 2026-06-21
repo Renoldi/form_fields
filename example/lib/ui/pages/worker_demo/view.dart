@@ -8,6 +8,7 @@ import 'view_model.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/src/service/flush_service.dart';
+import 'dart:ui' show PluginUtilities;
 
 class View extends PresenterState {
   String? _selectedWorker;
@@ -144,32 +145,60 @@ class View extends PresenterState {
                             valueListenable: WorkmanagerService
                                 .instance.perTaskCountdownListenable,
                             builder: (ctx, map, __) {
-                              final names = WorkmanagerService
+                              final registered = WorkmanagerService
                                   .instance.registeredTaskNames;
+                              final demoNames = WorkmanagerService
+                                  .instance.providedWorkerDefinitions
+                                  .map((d) => d['name'] as String)
+                                  .toList();
+
+                              // Show union of registered names and demo names.
+                              // Keep registered names first for expected ordering.
+                              final names = [
+                                ...registered,
+                                ...demoNames
+                                    .where((d) => !registered.contains(d))
+                              ];
+
                               if (names.isEmpty) return const SizedBox.shrink();
-                              _selectedWorker ??= names.first;
+
+                              if (_selectedWorker == null ||
+                                  !names.contains(_selectedWorker)) {
+                                _selectedWorker = names.first;
+                              }
+
                               final display = map[_selectedWorker] ?? '-';
                               return Row(
                                 children: [
-                                  DropdownButton<String>(
-                                    value: _selectedWorker,
-                                    items: names
-                                        .map((n) => DropdownMenuItem(
-                                              value: n,
-                                              child: Text(n),
-                                            ))
-                                        .toList(),
-                                    onChanged: (v) {
-                                      if (v == null) return;
-                                      setState(() {
-                                        _selectedWorker = v;
-                                      });
-                                    },
+                                  Flexible(
+                                    fit: FlexFit.loose,
+                                    child: DropdownButton<String>(
+                                      isExpanded: true,
+                                      value: _selectedWorker,
+                                      items: names
+                                          .map((n) => DropdownMenuItem(
+                                                value: n,
+                                                child: Text(n),
+                                              ))
+                                          .toList(),
+                                      onChanged: (v) {
+                                        if (v == null) return;
+                                        setState(() {
+                                          _selectedWorker = v;
+                                        });
+                                      },
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Text('Next run in: $display',
+                                  Flexible(
+                                    fit: FlexFit.tight,
+                                    child: Text(
+                                      'Next run in: $display',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               );
                             },
@@ -244,6 +273,86 @@ class View extends PresenterState {
                                     ?.showSnackBar(SnackBar(
                                         content: Text(
                                             'Started periodic (${freq.inMinutes}m)')));
+                              },
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.playlist_play),
+                              label: const Text('Start All'),
+                              onPressed: () async {
+                                vm.setLoading(true);
+                                try {
+                                  // Retrieve worker metadata from the
+                                  // service so the UI follows host-provided
+                                  // registrations instead of hardcoding demo
+                                  // values. Handlers are mapped by name
+                                  // below so they remain top-level entrypoints.
+                                  final defs = WorkmanagerService
+                                      .instance.providedWorkerDefinitions;
+
+                                  for (final def in defs) {
+                                    final name = def['name'] as String;
+                                    final freq = def['frequency'] as Duration;
+                                    final init =
+                                        def['initialDelay'] as Duration;
+
+                                    // Map the task name to the proper top-level
+                                    // background handler function defined in
+                                    // `flush_service.dart`.
+                                    Function? handler;
+                                    switch (name) {
+                                      case 'form_fields_flush':
+                                        handler =
+                                            workmanagerFlushBackgroundHandler;
+                                        break;
+                                      case 'send_current_location':
+                                        handler =
+                                            sendCurrentLocationBackgroundHandler;
+                                        break;
+                                      case 'send_random_event':
+                                        handler = sendRandomBackgroundHandler;
+                                        break;
+                                      default:
+                                        handler = null;
+                                    }
+
+                                    final data = <String, dynamic>{};
+                                    if (handler != null) {
+                                      try {
+                                        final cb =
+                                            PluginUtilities.getCallbackHandle(
+                                                handler as Function);
+                                        if (cb != null) {
+                                          data['callback_handle'] =
+                                              cb.toRawHandle();
+                                        }
+                                      } catch (_) {}
+                                    }
+
+                                    await WorkmanagerService.instance.start(
+                                      taskName: name,
+                                      frequency: freq,
+                                      periodic: true,
+                                      inputData: data.isEmpty ? null : data,
+                                      initialDelay: init,
+                                    );
+                                  }
+
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(const SnackBar(
+                                          content:
+                                              Text('Started all workers')));
+                                } catch (e) {
+                                  WorkmanagerService.instance.lastLogListenable
+                                      .value = 'start all failed: $e';
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.maybeOf(context)
+                                      ?.showSnackBar(SnackBar(
+                                          content:
+                                              Text('Start all failed: $e')));
+                                } finally {
+                                  vm.setLoading(false);
+                                }
                               },
                             ),
                             ElevatedButton.icon(
@@ -593,6 +702,50 @@ class View extends PresenterState {
                                     ?.showSnackBar(const SnackBar(
                                         content: Text('Logs cleared')));
                               },
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.delete_sweep),
+                              label: const Text('Remove All Pending'),
+                              onPressed: vm.pending.isEmpty
+                                  ? null
+                                  : () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title:
+                                              const Text('Remove all pending?'),
+                                          content: const Text(
+                                              'This will delete all pending submissions. This action cannot be undone.'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
+                                              child: const Text('Remove'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm != true) return;
+                                      try {
+                                        await vm.removeAllPending();
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.maybeOf(context)
+                                            ?.showSnackBar(const SnackBar(
+                                                content: Text(
+                                                    'All pending removed')));
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.maybeOf(context)
+                                            ?.showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Failed to remove pending: $e')));
+                                      }
+                                    },
                             ),
                           ]),
                           const Divider(),

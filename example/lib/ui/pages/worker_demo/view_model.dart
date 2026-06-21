@@ -41,6 +41,16 @@ class ViewModel extends ChangeNotifier {
     await loadPending();
   }
 
+  /// Remove all pending submissions from the local pending_submissions
+  /// table. This is a destructive action so callers should prompt the
+  /// user for confirmation before invoking.
+  Future<void> removeAllPending() async {
+    await ensureTableExists();
+    // Delete all rows; use a tautology where-clause so handlers run.
+    await DBService.instance.delete('pending_submissions', '1 = 1', []);
+    await loadPending();
+  }
+
   Future<void> addPending() async {
     // Ensure minimal required fields for the example API. Some test
     // endpoints require a `userId` field — set a default if missing so

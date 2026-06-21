@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'flush_api.dart';
+import 'flush_state.dart';
 
 /// Thin wrapper around the `workmanager` plugin that provides a small,
 /// testable surface for the example app. Includes per-task scheduling
@@ -40,6 +41,11 @@ class WorkmanagerService {
   final Set<String> _registeredTasks = <String>{};
   final Map<String, DateTime?> _scheduledAtPerTask = <String, DateTime?>{};
   final Map<String, Duration?> _scheduledFrequencyPerTask =
+      <String, Duration?>{};
+  // Preserve the originally requested frequency (what host passed) so the
+  // UI can opt to display requested intervals even if the platform adjusts
+  // the effective scheduling interval (e.g. Android WorkManager min).
+  final Map<String, Duration?> _scheduledRequestedFrequencyPerTask =
       <String, Duration?>{};
 
   Duration? configuredFrequency;
@@ -138,6 +144,13 @@ class WorkmanagerService {
     await initialize();
 
     final name = taskName ?? _defaultTaskName;
+    // Prevent duplicate registrations for the same unique name. If the
+    // task was already registered we skip re-registering to avoid the
+    // handler being invoked multiple times for a single scheduled run.
+    if (_registeredTasks.contains(name)) {
+      _addLog('already_registered: $name');
+      return;
+    }
     try {
       final data = inputData != null
           ? Map<String, dynamic>.from(inputData)
@@ -174,8 +187,46 @@ class WorkmanagerService {
         // record metadata
         if (frequency != null) configuredFrequency = frequency;
         _scheduledAtPerTask[name] = DateTime.now();
-        _scheduledFrequencyPerTask[name] = frequency;
+        // Store requested frequency separately so UI can display it if the
+        // host provided registrations. We'll compute an effective frequency
+        // next (platform may enforce a minimum).
+        _scheduledRequestedFrequencyPerTask[name] = frequency;
+        // WorkManager on Android enforces a minimum periodic interval
+        // (typically 15 minutes). Use the effective interval for UI
+        // countdowns so the app reflects what the platform will schedule.
+        Duration? effectiveFreq = frequency;
+        const Duration kAndroidMinPeriodic = Duration(minutes: 15);
+        try {
+          if (frequency != null && frequency < kAndroidMinPeriodic) {
+            effectiveFreq = kAndroidMinPeriodic;
+            _addLog(
+                'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}');
+            try {
+              // also print to console to aid debugging via logcat
+              // ignore: avoid_print
+              print(
+                  'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}');
+            } catch (_) {}
+          }
+        } catch (_) {}
+        _scheduledFrequencyPerTask[name] = effectiveFreq;
         _addLog('task_registered: $name freq=${frequency?.inSeconds ?? 0}s');
+        try {
+          final sat = _scheduledAtPerTask[name]?.toIso8601String();
+          final freqS = _scheduledFrequencyPerTask[name]?.inSeconds;
+          final next = _scheduledAtPerTask[name]
+              ?.add(_scheduledFrequencyPerTask[name] ?? Duration.zero)
+              .toIso8601String();
+          _addLog(
+              'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next');
+          try {
+            // Print to console so it's visible in adb logcat (helpful when
+            // the UI dialog isn't easily copyable).
+            // ignore: avoid_print
+            print(
+                'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next');
+          } catch (_) {}
+        } catch (_) {}
         _startCountdownTimer();
       } else {
         await Workmanager().registerOneOffTask(name, name, inputData: data);
@@ -249,22 +300,45 @@ class WorkmanagerService {
       }
     }
 
-    final namesToCancel = taskName != null
-        ? <String>[taskName]
-        : _registeredTasks.toList(growable: false);
-    for (final name in namesToCancel) {
+    if (taskName == null) {
+      // Stop all: attempt to cancel all scheduled work via Workmanager's
+      // dedicated API, then clear internal registration state so the UI
+      // reflects that no tasks remain registered.
       try {
-        await Workmanager().cancelByUniqueName(name);
-        _registeredTasks.remove(name);
-        _scheduledAtPerTask.remove(name);
-        _scheduledFrequencyPerTask.remove(name);
-        _addLog('cancelled: $name');
+        await Workmanager().cancelAll();
+        _addLog('cancelAll invoked');
       } catch (e) {
         if (kDebugMode) {
           // ignore: avoid_print
-          print('cancelByUniqueName failed for $name: $e');
+          print('cancelAll failed: $e');
         }
-        _addLog('cancel_failed: $name -> $e');
+        _addLog('cancelAll_failed: $e');
+      }
+
+      // Clear our internal bookkeeping regardless of platform cancel
+      // success so the app state reflects the user's intent to stop all.
+      for (final name in _registeredTasks.toList(growable: false)) {
+        _scheduledAtPerTask.remove(name);
+        _scheduledFrequencyPerTask.remove(name);
+        _addLog('cleared registration: $name');
+      }
+      _registeredTasks.clear();
+    } else {
+      final namesToCancel = <String>[taskName];
+      for (final name in namesToCancel) {
+        try {
+          await Workmanager().cancelByUniqueName(name);
+          _registeredTasks.remove(name);
+          _scheduledAtPerTask.remove(name);
+          _scheduledFrequencyPerTask.remove(name);
+          _addLog('cancelled: $name');
+        } catch (e) {
+          if (kDebugMode) {
+            // ignore: avoid_print
+            print('cancelByUniqueName failed for $name: $e');
+          }
+          _addLog('cancel_failed: $name -> $e');
+        }
       }
     }
 
@@ -305,7 +379,17 @@ class WorkmanagerService {
 
           for (final tName in _registeredTasks) {
             final at = _scheduledAtPerTask[tName];
-            final fq = _scheduledFrequencyPerTask[tName];
+            // Prefer displaying the requested frequency when the host
+            // provided definitions (the user expects the UI to reflect
+            // `workerRegistrations`). Fall back to the effective platform
+            // frequency otherwise.
+            Duration? fq;
+            final requested = _scheduledRequestedFrequencyPerTask[tName];
+            if (_providedWorkerDefinitions != null && requested != null) {
+              fq = requested;
+            } else {
+              fq = _scheduledFrequencyPerTask[tName];
+            }
             if (at == null || fq == null) {
               perMap[tName] = null;
               continue;
@@ -317,9 +401,13 @@ class WorkmanagerService {
               perMap[tName] = '00:00';
               minRem = const Duration(seconds: 0);
             } else {
-              final m = rem.inMinutes.remainder(60).toString().padLeft(2, '0');
-              final s = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
-              perMap[tName] = '$m:$s';
+              final h = rem.inHours;
+              final m = rem.inMinutes.remainder(60);
+              final s = rem.inSeconds.remainder(60);
+              final display = h > 0
+                  ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
+                  : '${m.toString()}:${s.toString().padLeft(2, '0')}';
+              perMap[tName] = display;
               if (minRem == null || rem < minRem) minRem = rem;
             }
           }
@@ -333,12 +421,14 @@ class WorkmanagerService {
               countdownListenable.value = null;
             } catch (_) {}
           } else {
-            final mm =
-                minRem.inMinutes.remainder(60).toString().padLeft(2, '0');
-            final ss =
-                minRem.inSeconds.remainder(60).toString().padLeft(2, '0');
+            final h = minRem.inHours;
+            final m = minRem.inMinutes.remainder(60);
+            final s = minRem.inSeconds.remainder(60);
+            final display = h > 0
+                ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
+                : '${m.toString()}:${s.toString().padLeft(2, '0')}';
             try {
-              countdownListenable.value = '$mm:$ss';
+              countdownListenable.value = display;
             } catch (_) {}
           }
 
@@ -348,57 +438,86 @@ class WorkmanagerService {
                   'countdown-trigger: calling flushPendingSubmissions()';
             } catch (_) {}
 
-            var success = false;
-            try {
-              // Prefer per-task foreground handlers. Call each task's
-              // handler if registered. If no per-task handlers were
-              // invoked, fall back to the global `foregroundFlushHandler`
-              // or to `FlushApi.flushPendingSubmissions()`.
-              var invokedAny = false;
-              for (final n in toTrigger) {
-                final h = _perTaskForegroundHandlers[n];
-                if (h != null) {
-                  invokedAny = true;
-                  try {
-                    await h();
-                    success = true;
-                  } catch (e, st) {
-                    try {
-                      lastLogListenable.value =
-                          'task-handler $n threw: $e\n$st';
-                    } catch (_) {}
-                  }
-                }
-              }
-
-              if (!invokedAny) {
-                if (foregroundFlushHandler != null) {
-                  await foregroundFlushHandler!();
-                  success = true;
-                } else {
-                  success = await FlushApi.flushPendingSubmissions();
-                }
-              }
-            } catch (e, st) {
+            // Prevent overlapping flush runs using FlushState guard.
+            if (FlushState.isFlushing) {
               try {
                 lastLogListenable.value =
-                    'countdown-triggered flush threw: $e\n$st';
+                    'countdown-trigger: flush already in progress; skipping';
+              } catch (_) {}
+            } else {
+              FlushState.isFlushing = true;
+              var success = false;
+              try {
+                // Prefer per-task foreground handlers. Call each task's
+                // handler if registered. If no per-task handlers were
+                // invoked, fall back to the global `foregroundFlushHandler`
+                // or to `FlushApi.flushPendingSubmissions()`.
+                // Deduplicate handlers so a single function reference is only
+                // invoked once even if it is registered for multiple tasks.
+                final Set<Future<void> Function()> uniqueHandlers = {};
+                for (final n in toTrigger) {
+                  final h = _perTaskForegroundHandlers[n];
+                  if (h != null) uniqueHandlers.add(h);
+                }
+
+                if (uniqueHandlers.isNotEmpty) {
+                  for (final h in uniqueHandlers) {
+                    try {
+                      await h();
+                      success = true;
+                    } catch (e, st) {
+                      try {
+                        lastLogListenable.value = 'task-handler threw: $e\n$st';
+                      } catch (_) {}
+                    }
+                  }
+                } else {
+                  // No per-task handlers registered. Call the global
+                  // foreground handler or fallback flush function once.
+                  if (foregroundFlushHandler != null) {
+                    try {
+                      await foregroundFlushHandler!();
+                      success = true;
+                    } catch (e, st) {
+                      try {
+                        lastLogListenable.value =
+                            'foregroundFlushHandler threw: $e\n$st';
+                      } catch (_) {}
+                    }
+                  } else {
+                    try {
+                      success = await FlushApi.flushPendingSubmissions();
+                    } catch (e, st) {
+                      try {
+                        lastLogListenable.value =
+                            'FlushApi.flushPendingSubmissions threw: $e\n$st';
+                      } catch (_) {}
+                    }
+                  }
+                }
+              } catch (e, st) {
+                try {
+                  lastLogListenable.value =
+                      'countdown-triggered flush threw: $e\n$st';
+                } catch (_) {}
+              } finally {
+                FlushState.isFlushing = false;
+              }
+
+              try {
+                lastLogListenable.value =
+                    'countdown-triggered flush: ${success ? 'success' : 'failure'}';
+              } catch (_) {}
+
+              try {
+                final now2 = DateTime.now();
+                for (final n in toTrigger) {
+                  if (_scheduledFrequencyPerTask[n] != null) {
+                    _scheduledAtPerTask[n] = now2;
+                  }
+                }
               } catch (_) {}
             }
-
-            try {
-              lastLogListenable.value =
-                  'countdown-triggered flush: ${success ? 'success' : 'failure'}';
-            } catch (_) {}
-
-            try {
-              final now2 = DateTime.now();
-              for (final n in toTrigger) {
-                if (_scheduledFrequencyPerTask[n] != null) {
-                  _scheduledAtPerTask[n] = now2;
-                }
-              }
-            } catch (_) {}
           }
         } catch (_) {}
       });
@@ -453,16 +572,77 @@ class WorkmanagerService {
 
   List<String> get registeredTaskNames => List.unmodifiable(_registeredTasks);
 
+  // Optional host-provided definitions (populated by FormFieldsInitializer
+  // when the host passed `workerRegistrations` to `initAll`). If present
+  // these are used by the example UI instead of the built-in demo defs.
+  List<Map<String, dynamic>>? _providedWorkerDefinitions;
+
+  /// Called by hosts (via `FormFieldsInitializer`) to expose the
+  /// registration metadata used at startup. The example UI reads
+  /// `providedWorkerDefinitions` so it doesn't hardcode demo values.
+  void setProvidedWorkerDefinitions(List<Map<String, dynamic>> defs) {
+    try {
+      _providedWorkerDefinitions = List<Map<String, dynamic>>.from(defs);
+      try {
+        for (final d in _providedWorkerDefinitions!) {
+          final name = d['name'];
+          final freq = d['frequency'] is Duration
+              ? (d['frequency'] as Duration).inSeconds
+              : d['frequency']?.toString();
+          _addLog('provided_def: $name freq_s=$freq');
+          try {
+            // Also print to console so adb logcat captures it.
+            // ignore: avoid_print
+            print('provided_def: $name freq_s=$freq');
+          } catch (_) {}
+        }
+      } catch (_) {}
+    } catch (_) {}
+  }
+
+  /// Return the host-provided definitions when available, otherwise fall
+  /// back to the internal `demoWorkerDefinitions` used by the example.
+  List<Map<String, dynamic>> get providedWorkerDefinitions =>
+      _providedWorkerDefinitions ?? demoWorkerDefinitions;
+
   /// Return a snapshot of per-task metadata for debugging/inspection.
   Map<String, Map<String, dynamic>> get taskMetadata {
     final Map<String, Map<String, dynamic>> out = {};
     for (final t in _registeredTasks) {
       out[t] = {
         'scheduledAt': _scheduledAtPerTask[t]?.toIso8601String(),
-        'frequencySeconds': _scheduledFrequencyPerTask[t]?.inSeconds,
+        'requestedFrequencySeconds':
+            _scheduledRequestedFrequencyPerTask[t]?.inSeconds,
+        'effectiveFrequencySeconds': _scheduledFrequencyPerTask[t]?.inSeconds,
       };
     }
     return out;
+  }
+
+  /// Demo worker definitions used by the example UI to offer a
+  /// "Start All" convenience. This intentionally contains only metadata
+  /// (names, frequencies, initial delays) and does not reference any
+  /// handler functions so it can live inside the service layer.
+  static List<Map<String, dynamic>> get demoWorkerDefinitions {
+    return [
+      {
+        'name': 'form_fields_flush',
+        'frequency': const Duration(seconds: 20),
+        'initialDelay': Duration.zero,
+      },
+      {
+        'name': 'send_current_location',
+        // Use minutes for realistic scheduling in the example.
+        'frequency': const Duration(minutes: 70),
+        'initialDelay': Duration.zero,
+      },
+      {
+        'name': 'send_random_event',
+        // Use minutes for realistic scheduling in the example.
+        'frequency': const Duration(minutes: 70),
+        'initialDelay': Duration.zero,
+      },
+    ];
   }
 
   bool get isInitialized => _initialized;

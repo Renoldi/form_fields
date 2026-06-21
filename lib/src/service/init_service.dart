@@ -117,6 +117,11 @@ class FormFieldsInitializer {
   static Future<BackgroundTaskHandler?> _registerWorkers(
       List<WorkerRegistration> regs) async {
     BackgroundTaskHandler? firstHandler;
+
+    // Track seen handler+period combinations so we only register one
+    // callback per period. Key format: <handlerId>|<freqSeconds>|<periodic>
+    final Set<String> seenHandlerPeriod = <String>{};
+
     for (final reg in regs) {
       if (reg.backgroundHandler != null && firstHandler == null) {
         firstHandler = reg.backgroundHandler;
@@ -127,6 +132,46 @@ class FormFieldsInitializer {
       }
 
       if (!reg.register) continue;
+
+      // Build a dedupe key based on available callback handle or fallback
+      // to runtime identity. Prefer background handler identity when
+      // available, otherwise use foreground handler identity.
+      String? handlerId;
+      try {
+        if (reg.backgroundHandler != null) {
+          final handle =
+              PluginUtilities.getCallbackHandle(reg.backgroundHandler!);
+          if (handle != null) {
+            handlerId = 'cb:${handle.toRawHandle()}';
+          } else {
+            handlerId = 'bg_hash:${reg.backgroundHandler.hashCode}';
+          }
+        } else if (reg.foregroundHandler != null) {
+          // Foreground handlers are typically closures and not top-level
+          // callbacks, so avoid calling PluginUtilities.getCallbackHandle
+          // (incompatible type) and use a hash-based identity instead.
+          handlerId = 'fg_hash:${reg.foregroundHandler.hashCode}';
+        }
+      } catch (_) {
+        // If PluginUtilities throws, fall back to hash-based id
+        if (handlerId == null) {
+          if (reg.backgroundHandler != null) {
+            handlerId = 'bg_hash:${reg.backgroundHandler.hashCode}';
+          } else if (reg.foregroundHandler != null) {
+            handlerId = 'fg_hash:${reg.foregroundHandler.hashCode}';
+          }
+        }
+      }
+
+      final key = handlerId == null
+          ? null
+          : '$handlerId|${reg.frequency.inSeconds}|${reg.periodic}';
+
+      if (key != null && seenHandlerPeriod.contains(key)) {
+        _log.fine(
+            'Skipping duplicate worker registration for ${reg.taskName} (same handler+period)');
+        continue;
+      }
 
       try {
         // Merge reg.inputData and embed a callback handle for the
@@ -163,6 +208,15 @@ class FormFieldsInitializer {
           inputData: inputDataForReg,
           initialDelay: reg.initialDelay,
         );
+
+        // Mark this handler+period as registered so subsequent identical
+        // registrations are skipped. Use the key we computed earlier.
+        if (key != null) seenHandlerPeriod.add(key);
+
+        try {
+          WorkmanagerService.instance.lastLogListenable.value =
+              'registered_from_init: ${reg.taskName} freq_s=${reg.frequency.inSeconds}';
+        } catch (_) {}
         // Register per-task foreground handler so countdown triggers can
         // invoke task-specific foreground logic (e.g. `sendRandomForeground`).
         try {
@@ -214,10 +268,25 @@ class FormFieldsInitializer {
     await WorkmanagerService.instance
         .initialize(callbackDispatcher: workmanagerCallbackDispatcher);
 
-    // Register provided worker registrations via helper to keep logic small
-    // and reusable. The helper returns the first provided background handler
-    // (if any) so we can register it at the package level.
+    // If host provided registration metadata, expose it to the
+    // WorkmanagerService so the example UI can read the host-provided
+    // definitions (instead of the built-in demo definitions).
     if (workerRegistrations != null && workerRegistrations.isNotEmpty) {
+      try {
+        final defs = workerRegistrations.map((reg) {
+          return {
+            'name': reg.taskName ?? 'form_fields_background_task',
+            'frequency': reg.frequency,
+            'initialDelay': reg.initialDelay,
+            'periodic': reg.periodic,
+          };
+        }).toList();
+        WorkmanagerService.instance.setProvidedWorkerDefinitions(defs);
+      } catch (_) {}
+
+      // Register provided worker registrations via helper to keep logic small
+      // and reusable. The helper returns the first provided background handler
+      // (if any) so we can register it at the package level.
       final BackgroundTaskHandler? firstHandler =
           await _registerWorkers(workerRegistrations);
 

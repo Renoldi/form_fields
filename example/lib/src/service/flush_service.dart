@@ -12,6 +12,11 @@ import 'package:geolocator/geolocator.dart';
 // Local logger for example service helpers (avoid circular import with main)
 final logger = Logger();
 
+// Dedupe guard: avoid enqueueing the same location payload multiple times
+// within a short period (helps when UI or background triggers fire quickly).
+DateTime? _lastSendCurrentLocationEnqueueAt;
+const Duration _kSendCurrentLocationDedupeWindow = Duration(seconds: 2);
+
 const String _kPendingTable = 'pending_submissions';
 const String _kStatusPending = 'pending';
 const String _kPayloadsDir = 'payloads';
@@ -51,6 +56,14 @@ Future<bool> workmanagerFlushBackgroundHandler(
 Future<bool> sendCurrentLocationBackgroundHandler(
     String task, Map<String, dynamic>? inputData) async {
   try {
+    // If a flush is currently in progress, note it in logs but continue
+    // with enqueueing. Previously we skipped insertion during an active
+    // flush which caused missing pending rows; allow insert to ensure
+    // events are recorded even while a flush runs.
+    if (FlushState.isFlushing) {
+      logger.i('Enqueueing send_current_location while flush active');
+      _setLastLog('send_current_location enqueue during flush');
+    }
     if (kDebugMode) {
       // ignore: avoid_print
       print('sendCurrentLocationBackgroundHandler invoked: $task');
@@ -105,6 +118,24 @@ Future<bool> sendCurrentLocationBackgroundHandler(
       'ts': DateTime.now().toIso8601String(),
     };
 
+    // Dedupe: avoid inserting multiple nearly-identical location payloads
+    // if the handler is invoked repeatedly in a short burst. However,
+    // allow UI-initiated calls (`task == 'foreground'`) to always enqueue
+    // so user actions are not silently dropped.
+    try {
+      final now = DateTime.now();
+      final isForegroundTrigger = (task == 'foreground');
+      if (!isForegroundTrigger &&
+          _lastSendCurrentLocationEnqueueAt != null &&
+          now.difference(_lastSendCurrentLocationEnqueueAt!) <
+              _kSendCurrentLocationDedupeWindow) {
+        logger.i('Skipping duplicate send_current_location (dedupe)');
+        _setLastLog('worker: send_current_location skipped (dedupe)');
+        return true;
+      }
+      _lastSendCurrentLocationEnqueueAt = now;
+    } catch (_) {}
+
     await DBService.instance.insertOrUpdate('pending_submissions', {
       'payload': json.encode(payload),
       'status': _kStatusPending,
@@ -127,6 +158,12 @@ Future<bool> sendCurrentLocationBackgroundHandler(
 // Foreground helper for UI-invoked immediate send
 Future<void> sendCurrentLocationForeground() async {
   try {
+    // If a flush is currently running, log this fact but still enqueue so
+    // the event is not lost.
+    if (FlushState.isFlushing) {
+      logger.i('Enqueueing sendCurrentLocationForeground while flush active');
+      _setLastLog('sendCurrentLocationForeground enqueue during flush');
+    }
     // Request permission from the foreground isolate when necessary.
     LocationPermission perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
@@ -141,13 +178,48 @@ Future<void> sendCurrentLocationForeground() async {
     final pos = await Geolocator.getCurrentPosition(
         locationSettings:
             const LocationSettings(accuracy: LocationAccuracy.best));
+    // Dedupe window: record last enqueue time but DO NOT skip foreground
+    // user-initiated events. Foreground actions should always enqueue so
+    // user intent is preserved even if triggered rapidly.
+    try {
+      final now = DateTime.now();
+      if (_lastSendCurrentLocationEnqueueAt != null &&
+          now.difference(_lastSendCurrentLocationEnqueueAt!) <
+              _kSendCurrentLocationDedupeWindow) {
+        logger.i(
+            'Repeated sendCurrentLocationForeground within dedupe window — will still enqueue');
+        _setLastLog('sendCurrentLocationForeground repeated; still enqueueing');
+      }
+      _lastSendCurrentLocationEnqueueAt = now;
+    } catch (_) {}
+
     await sendCurrentLocationBackgroundHandler('foreground', {
       'location': {'lat': pos.latitude, 'lng': pos.longitude}
     });
     // Attempt an immediate foreground flush to send any pending items.
+    // If a flush is currently running, wait a short while for it to finish
+    // (so we don't run concurrent submit handlers). If waiting times out
+    // we still return to avoid blocking the UI indefinitely.
     try {
-      await FlushApi.flushPendingSubmissions(
-          waitIfFlushing: true, waitTimeout: const Duration(seconds: 15));
+      // Use the package-level FlushApi which will wait for any active
+      // flush (up to the provided timeout) and then acquire the shared
+      // `FlushState` lock before invoking the registered handler. Await
+      // and inspect the boolean result so callers can react to success
+      // / failure (including timeout).
+      try {
+        final success = await FlushApi.flushPendingSubmissions(
+          submitHandler: null,
+          waitIfFlushing: true,
+          waitTimeout: const Duration(seconds: 30),
+        );
+        if (success) {
+          _setLastLog('foreground flush: success');
+        } else {
+          _setLastLog('foreground flush: failure/timeout');
+        }
+      } catch (e) {
+        _setLastLog('foreground flush threw: $e');
+      }
     } catch (_) {}
     try {
       WorkmanagerService.instance.notifyPendingChanged();
@@ -198,8 +270,7 @@ Future<void> sendRandomForeground() async {
     await sendRandomBackgroundHandler('foreground', null);
     // Try to flush pending items immediately after enqueueing.
     try {
-      await FlushApi.flushPendingSubmissions(
-          waitIfFlushing: true, waitTimeout: const Duration(seconds: 15));
+      await flushPendingSubmissions(submitHandler: null);
     } catch (_) {}
     try {
       WorkmanagerService.instance.notifyPendingChanged();
