@@ -145,6 +145,10 @@ class WorkmanagerService {
       } catch (_) {}
       rethrow;
     }
+    // Ensure countdown timer is active after scheduling.
+    try {
+      _startCountdownTimer();
+    } catch (_) {}
   }
 
   /// Start a single worker by its registered name using the provided
@@ -209,6 +213,17 @@ class WorkmanagerService {
       } catch (_) {}
       rethrow;
     }
+    // Ensure countdown timer is active after scheduling this worker.
+    try {
+      _startCountdownTimer();
+    } catch (_) {}
+  }
+
+  /// Ensure the countdown timer is running if any tasks are registered.
+  void ensureCountdownActive() {
+    try {
+      if (_registeredTasks.isNotEmpty) _startCountdownTimer();
+    } catch (_) {}
   }
 
   /// Stop a single worker by its unique name. This calls into the
@@ -558,6 +573,15 @@ class WorkmanagerService {
     try {
       _countdownTimer?.cancel();
       countdownListenable.value = null;
+      try {
+        _addLog(
+            'countdown: starting timer; registered=${_registeredTasks.length}');
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print(
+              'countdown: starting timer; registered=${_registeredTasks.length}');
+        }
+      } catch (_) {}
       if (_registeredTasks.isEmpty) return;
 
       _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) async {
@@ -606,6 +630,16 @@ class WorkmanagerService {
             perTaskCountdownListenable.value = perMap;
           } catch (_) {}
 
+          try {
+            _addLog(
+                'countdown tick: toTrigger=${toTrigger.join(',')} minRem_s=${minRem?.inSeconds}');
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print(
+                  'countdown tick: toTrigger=${toTrigger.join(',')} minRem_s=${minRem?.inSeconds}');
+            }
+          } catch (_) {}
+
           if (minRem == null) {
             try {
               countdownListenable.value = null;
@@ -625,7 +659,18 @@ class WorkmanagerService {
           if (toTrigger.isNotEmpty) {
             try {
               lastLogListenable.value =
-                  'countdown-trigger: calling flushPendingSubmissions()';
+                  'countdown-trigger: calling flushPendingSubmissions() toTrigger=${toTrigger.join(',')}';
+            } catch (_) {}
+            try {
+              _addLog(
+                  'countdown-trigger: invoking handlers for ${toTrigger.join(',')}');
+            } catch (_) {}
+            try {
+              if (kDebugMode) {
+                // ignore: avoid_print
+                print(
+                    'countdown-trigger: invoking handlers for ${toTrigger.join(',')}');
+              }
             } catch (_) {}
 
             // Prevent overlapping flush runs using FlushState guard.
@@ -730,10 +775,24 @@ class WorkmanagerService {
               } catch (_) {}
 
               try {
+                _addLog(
+                    'countdown-triggered flush result: ${success ? 'success' : 'failure'}');
+                if (kDebugMode) {
+                  // ignore: avoid_print
+                  print(
+                      'countdown-triggered flush result: ${success ? 'success' : 'failure'}');
+                }
+              } catch (_) {}
+
+              try {
                 final now2 = DateTime.now();
                 for (final n in toTrigger) {
                   if (_scheduledFrequencyPerTask[n] != null) {
                     _scheduledAtPerTask[n] = now2;
+                    try {
+                      _addLog(
+                          'updated scheduledAt for $n -> ${now2.toIso8601String()}');
+                    } catch (_) {}
                   }
                 }
               } catch (_) {}
