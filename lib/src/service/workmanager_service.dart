@@ -62,6 +62,9 @@ class WorkmanagerService {
   /// Per-task foreground flush handlers (registered by task name).
   final Map<String, Future<void> Function()> _perTaskForegroundHandlers = {};
 
+  /// Per-task background handlers (registered by task name).
+  final Map<String, BackgroundTaskHandler> _perTaskBackgroundHandlers = {};
+
   /// Register a foreground handler for a specific task name.
   void setForegroundHandlerForTask(
       String taskName, Future<void> Function()? handler) {
@@ -72,6 +75,193 @@ class WorkmanagerService {
         _perTaskForegroundHandlers[taskName] = handler;
       }
     } catch (_) {}
+  }
+
+  /// Register a top-level background handler for a specific task name.
+  /// This allows the service to embed the handler's callback handle when
+  /// scheduling work for that task (so background isolates can resolve
+  /// the correct entrypoint).
+  void setBackgroundHandlerForTask(
+      String taskName, BackgroundTaskHandler? handler) {
+    try {
+      if (handler == null) {
+        _perTaskBackgroundHandlers.remove(taskName);
+      } else {
+        _perTaskBackgroundHandlers[taskName] = handler;
+      }
+    } catch (_) {}
+  }
+
+  /// Convenience: schedule all provided worker definitions.
+  /// For each provided definition this will call `start(...)` and,
+  /// if `triggerNow` is true, attempt to invoke a foreground handler
+  /// or request a one-off background run to trigger the registered
+  /// background handler.
+  Future<void> startAll({bool triggerNow = true}) async {
+    try {
+      final defs = providedWorkerDefinitions;
+      for (final def in defs) {
+        final name = def['name'] as String;
+        final freq = def['frequency'] as Duration;
+        final init = def['initialDelay'] as Duration;
+
+        final data = <String, dynamic>{};
+        final bgHandler = _perTaskBackgroundHandlers[name];
+        if (bgHandler != null) {
+          try {
+            final cb = PluginUtilities.getCallbackHandle(bgHandler);
+            if (cb != null) data['callback_handle'] = cb.toRawHandle();
+          } catch (_) {}
+        }
+
+        await start(
+          taskName: name,
+          frequency: freq,
+          periodic: true,
+          inputData: data.isEmpty ? null : data,
+          initialDelay: init,
+        );
+
+        if (!triggerNow) continue;
+
+        // Prefer invoking a per-task foreground handler if registered.
+        try {
+          final fg = _perTaskForegroundHandlers[name];
+          if (fg != null) {
+            await fg();
+          } else {
+            await runOnceNowDetailed(
+                taskName: name, inputData: data.isEmpty ? null : data);
+          }
+        } catch (e) {
+          try {
+            lastLogListenable.value = 'start all trigger failed for $name: $e';
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      try {
+        lastLogListenable.value = 'start all failed: $e';
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  /// Start a single worker by its registered name using the provided
+  /// worker definitions. If the worker definition isn't found this will
+  /// no-op and log a message. If `triggerNow` is true the method will
+  /// attempt to invoke a foreground handler (if registered) or request
+  /// a one-off background run to trigger the background handler.
+  Future<void> startWorkerByName(String name, {bool triggerNow = true}) async {
+    try {
+      Map<String, dynamic>? def;
+      for (final d in providedWorkerDefinitions) {
+        try {
+          if ((d['name'] as String) == name) {
+            def = d;
+            break;
+          }
+        } catch (_) {}
+      }
+      if (def == null) {
+        _addLog('startWorkerByName: definition not found: $name');
+        return;
+      }
+
+      final freq = def['frequency'] as Duration;
+      final init = def['initialDelay'] as Duration;
+
+      final data = <String, dynamic>{};
+      final bgHandler = _perTaskBackgroundHandlers[name];
+      if (bgHandler != null) {
+        try {
+          final cb = PluginUtilities.getCallbackHandle(bgHandler);
+          if (cb != null) data['callback_handle'] = cb.toRawHandle();
+        } catch (_) {}
+      }
+
+      await start(
+        taskName: name,
+        frequency: freq,
+        periodic: true,
+        inputData: data.isEmpty ? null : data,
+        initialDelay: init,
+      );
+
+      if (!triggerNow) return;
+
+      try {
+        final fg = _perTaskForegroundHandlers[name];
+        if (fg != null) {
+          await fg();
+        } else {
+          await runOnceNowDetailed(
+              taskName: name, inputData: data.isEmpty ? null : data);
+        }
+      } catch (e) {
+        try {
+          lastLogListenable.value = 'start worker trigger failed for $name: $e';
+        } catch (_) {}
+      }
+    } catch (e) {
+      try {
+        lastLogListenable.value = 'start worker failed: $e';
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  /// Stop a single worker by its unique name. This calls into the
+  /// existing `stop(...)` API with `taskName` set so the same cancellation
+  /// logic and bookkeeping is used.
+  Future<void> stopWorkerByName(String name) async {
+    try {
+      await stop(taskName: name);
+      try {
+        lastLogListenable.value = 'stopWorkerByName: stopped $name';
+      } catch (_) {}
+    } catch (e) {
+      try {
+        lastLogListenable.value = 'stop worker failed: $e';
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  /// Return the countdown display string for a specific task name.
+  /// Matches the display format used by the internal countdown timer
+  /// (`perTaskCountdownListenable`). Returns `null` when no countdown
+  /// is available for the given task (not scheduled or missing metadata).
+  String? getCountdownForTask(String name) {
+    try {
+      final at = _scheduledAtPerTask[name];
+      if (at == null) return null;
+
+      // Prefer the requested frequency when host provided definitions
+      // (so UI shows what the host requested rather than platform-adjusted).
+      Duration? fq;
+      final requested = _scheduledRequestedFrequencyPerTask[name];
+      if (_providedWorkerDefinitions != null && requested != null) {
+        fq = requested;
+      } else {
+        fq = _scheduledFrequencyPerTask[name];
+      }
+      if (fq == null) return null;
+
+      final next = at.add(fq);
+      final rem = next.difference(DateTime.now());
+      if (rem.inMilliseconds <= 0) return '00:00';
+
+      final h = rem.inHours;
+      final m = rem.inMinutes.remainder(60);
+      final s = rem.inSeconds.remainder(60);
+      final display = h > 0
+          ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
+          : '${m.toString()}:${s.toString().padLeft(2, '0')}';
+      return display;
+    } catch (_) {
+      return null;
+    }
   }
 
   static const String _defaultTaskName = 'form_fields_background_task';
@@ -476,7 +666,7 @@ class WorkmanagerService {
                       try {
                         lastLogListenable.value = 'task-handler success';
                       } catch (_) {}
-                    } catch (e, st) {
+                    } catch (e) {
                       try {
                         lastLogListenable.value = 'task-handler threw: $e';
                       } catch (_) {}
@@ -500,7 +690,7 @@ class WorkmanagerService {
                         lastLogListenable.value =
                             'foregroundFlushHandler success';
                       } catch (_) {}
-                    } catch (e, st) {
+                    } catch (e) {
                       try {
                         lastLogListenable.value =
                             'foregroundFlushHandler threw: $e';
@@ -517,7 +707,7 @@ class WorkmanagerService {
                         lastLogListenable.value =
                             'FlushApi.flushPendingSubmissions -> ${success ? 'success' : 'failure'}';
                       } catch (_) {}
-                    } catch (e, st) {
+                    } catch (e) {
                       try {
                         lastLogListenable.value =
                             'FlushApi.flushPendingSubmissions threw: $e';

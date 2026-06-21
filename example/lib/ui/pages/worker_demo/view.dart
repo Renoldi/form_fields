@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,10 +9,34 @@ import 'view_model.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/src/service/flush_service.dart';
-import 'dart:ui' show PluginUtilities;
+// PluginUtilities no longer needed here
 
 class View extends PresenterState {
   String? _selectedWorker;
+  // Timer? _countdownTimer;
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   // Tick every second so countdowns update in the UI.
+  //   try {
+  //     _countdownTimer?.cancel();
+  //     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+  //       try {
+  //         if (mounted) setState(() {});
+  //       } catch (_) {}
+  //     });
+  //   } catch (_) {}
+  // }
+
+  // @override
+  // void dispose() {
+  //   try {
+  //     _countdownTimer?.cancel();
+  //     _countdownTimer = null;
+  //   } catch (_) {}
+  //   super.dispose();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +192,12 @@ class View extends PresenterState {
                                 _selectedWorker = names.first;
                               }
 
-                              final display = map[_selectedWorker] ?? '-';
+                              // Prefer using the service helper so callers can
+                              // request a countdown by name directly.
+                              final display = WorkmanagerService.instance
+                                      .getCountdownForTask(
+                                          _selectedWorker ?? '') ??
+                                  (map[_selectedWorker] ?? '-');
                               return Row(
                                 children: [
                                   Flexible(
@@ -281,104 +311,7 @@ class View extends PresenterState {
                               onPressed: () async {
                                 vm.setLoading(true);
                                 try {
-                                  // Retrieve worker metadata from the
-                                  // service so the UI follows host-provided
-                                  // registrations instead of hardcoding demo
-                                  // values. Handlers are mapped by name
-                                  // below so they remain top-level entrypoints.
-                                  final defs = WorkmanagerService
-                                      .instance.providedWorkerDefinitions;
-
-                                  for (final def in defs) {
-                                    final name = def['name'] as String;
-                                    final freq = def['frequency'] as Duration;
-                                    final init =
-                                        def['initialDelay'] as Duration;
-
-                                    // Map the task name to the proper top-level
-                                    // background handler function defined in
-                                    // `flush_service.dart`.
-                                    Function? handler;
-                                    switch (name) {
-                                      case 'form_fields_flush':
-                                        handler =
-                                            workmanagerFlushBackgroundHandler;
-                                        break;
-                                      case 'send_current_location':
-                                        handler =
-                                            sendCurrentLocationBackgroundHandler;
-                                        break;
-                                      case 'send_random_event':
-                                        handler = sendRandomBackgroundHandler;
-                                        break;
-                                      default:
-                                        handler = null;
-                                    }
-
-                                    final data = <String, dynamic>{};
-                                    if (handler != null) {
-                                      try {
-                                        final cb =
-                                            PluginUtilities.getCallbackHandle(
-                                                handler as Function);
-                                        if (cb != null) {
-                                          data['callback_handle'] =
-                                              cb.toRawHandle();
-                                        }
-                                      } catch (_) {}
-                                    }
-
-                                    await WorkmanagerService.instance.start(
-                                      taskName: name,
-                                      frequency: freq,
-                                      periodic: true,
-                                      inputData: data.isEmpty ? null : data,
-                                      initialDelay: init,
-                                    );
-                                    // After scheduling, trigger an immediate
-                                    // run so "Start All" results in sending
-                                    // right away. Prefer calling a foreground
-                                    // handler when available (runs on main
-                                    // isolate). Otherwise request a one-off
-                                    // background run which should resolve
-                                    // the callback handle.
-                                    try {
-                                      // Map to foreground handler if present.
-                                      Future<void> Function()? fgHandler;
-                                      switch (name) {
-                                        case 'form_fields_flush':
-                                          fgHandler =
-                                              workmanagerFlushPendingHandler;
-                                          break;
-                                        case 'send_current_location':
-                                          fgHandler =
-                                              sendCurrentLocationForeground;
-                                          break;
-                                        case 'send_random_event':
-                                          fgHandler = sendRandomForeground;
-                                          break;
-                                        default:
-                                          fgHandler = null;
-                                      }
-
-                                      if (fgHandler != null) {
-                                        await fgHandler();
-                                      } else {
-                                        await WorkmanagerService.instance
-                                            .runOnceNowDetailed(
-                                                taskName: name,
-                                                inputData:
-                                                    data.isEmpty ? null : data);
-                                      }
-                                    } catch (e) {
-                                      try {
-                                        WorkmanagerService.instance
-                                                .lastLogListenable.value =
-                                            'start all trigger failed for $name: $e';
-                                      } catch (_) {}
-                                    }
-                                  }
-
+                                  await WorkmanagerService.instance.startAll();
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
                                       ?.showSnackBar(const SnackBar(

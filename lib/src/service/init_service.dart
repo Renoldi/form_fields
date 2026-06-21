@@ -260,6 +260,12 @@ class FormFieldsInitializer {
                 reg.taskName!, reg.foregroundHandler);
           }
         } catch (_) {}
+        try {
+          if (reg.taskName != null && reg.backgroundHandler != null) {
+            WorkmanagerService.instance.setBackgroundHandlerForTask(
+                reg.taskName!, reg.backgroundHandler);
+          }
+        } catch (_) {}
         _log.fine('Registered worker: ${reg.taskName}');
       } catch (e, st) {
         _log.warning('Failed to register worker ${reg.taskName}: $e', e, st);
