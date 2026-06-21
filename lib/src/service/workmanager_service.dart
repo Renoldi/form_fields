@@ -448,6 +448,10 @@ class WorkmanagerService {
               FlushState.isFlushing = true;
               var success = false;
               try {
+                try {
+                  lastLogListenable.value =
+                      'countdown-trigger: toTrigger=${toTrigger.join(',')}';
+                } catch (_) {}
                 // Prefer per-task foreground handlers. Call each task's
                 // handler if registered. If no per-task handlers were
                 // invoked, fall back to the global `foregroundFlushHandler`
@@ -461,13 +465,23 @@ class WorkmanagerService {
                 }
 
                 if (uniqueHandlers.isNotEmpty) {
+                  try {
+                    lastLogListenable.value =
+                        'countdown-trigger: invoking ${uniqueHandlers.length} per-task handlers';
+                  } catch (_) {}
                   for (final h in uniqueHandlers) {
                     try {
                       await h();
                       success = true;
+                      try {
+                        lastLogListenable.value = 'task-handler success';
+                      } catch (_) {}
                     } catch (e, st) {
                       try {
-                        lastLogListenable.value = 'task-handler threw: $e\n$st';
+                        lastLogListenable.value = 'task-handler threw: $e';
+                      } catch (_) {}
+                      try {
+                        _addLog('task-handler threw: $e');
                       } catch (_) {}
                     }
                   }
@@ -476,21 +490,37 @@ class WorkmanagerService {
                   // foreground handler or fallback flush function once.
                   if (foregroundFlushHandler != null) {
                     try {
+                      lastLogListenable.value =
+                          'countdown-trigger: calling global foregroundFlushHandler';
+                    } catch (_) {}
+                    try {
                       await foregroundFlushHandler!();
                       success = true;
+                      try {
+                        lastLogListenable.value =
+                            'foregroundFlushHandler success';
+                      } catch (_) {}
                     } catch (e, st) {
                       try {
                         lastLogListenable.value =
-                            'foregroundFlushHandler threw: $e\n$st';
+                            'foregroundFlushHandler threw: $e';
                       } catch (_) {}
                     }
                   } else {
                     try {
+                      lastLogListenable.value =
+                          'countdown-trigger: calling FlushApi.flushPendingSubmissions';
+                    } catch (_) {}
+                    try {
                       success = await FlushApi.flushPendingSubmissions();
+                      try {
+                        lastLogListenable.value =
+                            'FlushApi.flushPendingSubmissions -> ${success ? 'success' : 'failure'}';
+                      } catch (_) {}
                     } catch (e, st) {
                       try {
                         lastLogListenable.value =
-                            'FlushApi.flushPendingSubmissions threw: $e\n$st';
+                            'FlushApi.flushPendingSubmissions threw: $e';
                       } catch (_) {}
                     }
                   }
