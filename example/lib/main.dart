@@ -114,27 +114,19 @@ Future<void> main() async {
       // Let `initAll` initialize Workmanager and register handlers.
       enableWorkmanager: true,
       registerPeriodic: true,
-      // Example: override periodic scheduling values from host app.
-      // Run every 15 minutes (minimum recommended by Android JobScheduler).
-      workmanagerFrequency: Duration(seconds: 60),
-      workmanagerInitialDelay: Duration.zero,
-      // Foreground flush handler: attempts to submit pending DB entries
-      // when connectivity resumes. Must be a top-level function.
-      workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
-
-      // Flush helpers (implemented below) are provided for the example.
-      flushAll: (
-              {SubmitHandler? submitHandler,
-              bool skipFlushStateGuard = false}) async =>
-          await flushPendingSubmissions(
-              submitHandler: submitHandler,
-              skipFlushStateGuard: skipFlushStateGuard),
-      flushOne: (int id,
-              {SubmitHandler? submitHandler,
-              required bool skipFlushStateGuard}) async =>
-          await flushPendingSubmissionById(id,
-              submitHandler: submitHandler,
-              skipFlushStateGuard: skipFlushStateGuard),
+      // Example: register one or more background workers.
+      workerRegistrations: [
+        WorkerRegistration(
+          taskName: 'form_fields_flush',
+          frequency: Duration(seconds: 60),
+          initialDelay: Duration.zero,
+          periodic: true,
+          inputData: null,
+          handler: null,
+          foregroundFlushHandler: workmanagerFlushPendingHandler,
+          register: true,
+        ),
+      ],
       migrationAssetPaths: [
         'migrations/migration.sql',
         // 'migrations/migration_json_file.sql',

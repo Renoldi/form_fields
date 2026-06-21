@@ -96,7 +96,7 @@ class WorkmanagerService {
   /// Optional handler provided by the host app to flush pending submissions
   /// when network connectivity is available. This callback runs in the
   /// foreground isolate and should handle DB access and network calls.
-  Future<void> Function()? flushPendingHandler;
+  Future<void> Function()? foregroundFlushHandler;
 
   /// Initialize the underlying Workmanager plugin once.
   ///
@@ -124,7 +124,7 @@ class WorkmanagerService {
             if (hasNetwork) {
               _addLog('connectivity: $current -> attempting flush');
               try {
-                await flushPendingHandler?.call();
+                await foregroundFlushHandler?.call();
               } catch (e) {
                 _addLog('flush handler error: $e');
               }
@@ -310,7 +310,7 @@ class WorkmanagerService {
     try {
       await _connectivitySub?.cancel();
       _connectivitySub = null;
-      flushPendingHandler = null;
+      foregroundFlushHandler = null;
       _addLog(
           'stopped: connectivity listener cancelled and flush handler cleared');
     } catch (e) {
@@ -346,8 +346,8 @@ class WorkmanagerService {
 
             var success = false;
             try {
-              if (flushPendingHandler != null) {
-                await flushPendingHandler!();
+              if (foregroundFlushHandler != null) {
+                await foregroundFlushHandler!();
                 success = true;
               } else {
                 success = await FlushApi.flushPendingSubmissions();

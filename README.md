@@ -67,7 +67,7 @@ This package includes example tooling to schedule and run background flushes (pr
   WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
 
   // ensure a foreground flush handler is set so UI can call it immediately
-  WorkmanagerService.instance.flushPendingHandler = () async {
+  WorkmanagerService.instance.foregroundFlushHandler = () async {
     await processPendingSubmissions();
   };
 
@@ -81,15 +81,15 @@ This package includes example tooling to schedule and run background flushes (pr
 
 - **Constants and scheduling**: `FormFieldsInitializer` exposes `workmanagerInitialDelay` (default `kWorkmanagerInitialDelayDefault = Duration(minutes:15)`) and `workmanagerFrequency` when starting periodic tasks. Pass `initialDelay` to `WorkmanagerService.start(...)` if you need a custom delay before the first run.
 
-- **Triggering a one-off run from UI**: use `WorkmanagerService.instance.runOnceNowDetailed()` to register a one-off task immediately. Note that the background one-off will run via the OS scheduling; to process immediately in the foreground, call `WorkmanagerService.instance.flushPendingHandler?.call()` (if set) or invoke your flush helper directly.
+- **Triggering a one-off run from UI**: use `WorkmanagerService.instance.runOnceNowDetailed()` to register a one-off task immediately. Note that the background one-off will run via the OS scheduling; to process immediately in the foreground, call `WorkmanagerService.instance.foregroundFlushHandler?.call()` (if set) or invoke your flush helper directly.
 
-  ```dart
-  // register a one-off background run
-  await WorkmanagerService.instance.runOnceNowDetailed();
+```dart
+// register a one-off background run
+await WorkmanagerService.instance.runOnceNowDetailed();
 
-  // also perform an immediate foreground flush (for testing)
-  await WorkmanagerService.instance.flushPendingHandler?.call();
-  ```
+// also perform an immediate foreground flush (for testing)
+await WorkmanagerService.instance.foregroundFlushHandler?.call();
+```
 
 - **Per-row manual run (example UI)**: the example app provides `flushPendingSubmissionById(id)` in `example/lib/src/service/flush_service.dart` to process a single pending row and delete it on success. The Worker Demo UI adds a Play button per row that calls this helper and reloads the pending list.
 

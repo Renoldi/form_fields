@@ -120,7 +120,8 @@ export 'src/service/import_export_service.dart' show ImportExportService;
 export 'src/service/crypto_utils.dart' show CryptoUtils;
 export 'src/service/workmanager_service.dart'
     show WorkmanagerService, setBackgroundTaskHandler;
-export 'src/service/init_service.dart' show FormFieldsInitializer;
+export 'src/service/init_service.dart'
+    show FormFieldsInitializer, WorkerRegistration;
 export 'src/service/flush_api.dart' show FlushApi, SubmitHandler;
 export 'src/service/flush_state.dart' show FlushState;
 

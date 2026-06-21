@@ -237,7 +237,7 @@ class View extends PresenterState {
                                       .start(periodic: true, frequency: freq);
 
                                   final handler = WorkmanagerService
-                                      .instance.flushPendingHandler;
+                                      .instance.foregroundFlushHandler;
                                   if (handler != null) {
                                     try {
                                       await handler();
@@ -294,7 +294,7 @@ class View extends PresenterState {
                                   WorkmanagerService.instance.lastLogListenable
                                       .value = 'foregroundFlush invoked';
                                   final handler = WorkmanagerService
-                                      .instance.flushPendingHandler;
+                                      .instance.foregroundFlushHandler;
                                   bool ok2 = false;
                                   if (handler != null) {
                                     try {

@@ -14,6 +14,31 @@ final _log = Logger('FormFieldsInitializer');
 /// Hosts can override this by passing `workmanagerInitialDelay` to `initAll`.
 const Duration kWorkmanagerInitialDelayDefault = Duration(minutes: 15);
 
+/// Configuration describing a single worker/task that may be registered
+/// with Workmanager. Hosts can provide multiple registrations to schedule
+/// and manage several background workers from `initAll`.
+class WorkerRegistration {
+  const WorkerRegistration({
+    this.taskName,
+    this.frequency = const Duration(hours: 1),
+    this.initialDelay = kWorkmanagerInitialDelayDefault,
+    this.periodic = true,
+    this.inputData,
+    this.handler,
+    this.foregroundFlushHandler,
+    this.register = true,
+  });
+
+  final String? taskName;
+  final Duration frequency;
+  final Duration initialDelay;
+  final bool periodic;
+  final Map<String, dynamic>? inputData;
+  final BackgroundTaskHandler? handler;
+  final Future<void> Function()? foregroundFlushHandler;
+  final bool register;
+}
+
 /// Single initializer to bootstrap package services from host app.
 ///
 /// Responsibilities:
@@ -83,20 +108,58 @@ class FormFieldsInitializer {
     }
   }
 
+  /// Registers each provided [WorkerRegistration]. Returns the first
+  /// non-null `BackgroundTaskHandler` encountered so the caller may
+  /// register a package-level background handler. This helper centralizes
+  /// logging and error handling for worker registration.
+  static Future<BackgroundTaskHandler?> _registerWorkers(
+      List<WorkerRegistration> regs) async {
+    BackgroundTaskHandler? firstHandler;
+    for (final reg in regs) {
+      if (reg.handler != null && firstHandler == null) {
+        firstHandler = reg.handler;
+      }
+
+      if (reg.foregroundFlushHandler != null) {
+        _safeSetForegroundFlushHandler(reg.foregroundFlushHandler);
+      }
+
+      if (!reg.register) continue;
+
+      try {
+        await WorkmanagerService.instance.start(
+          taskName: reg.taskName,
+          frequency: reg.frequency,
+          periodic: reg.periodic,
+          inputData: reg.inputData,
+          initialDelay: reg.initialDelay,
+        );
+        _log.fine('Registered worker: ${reg.taskName}');
+      } catch (e, st) {
+        _log.warning('Failed to register worker ${reg.taskName}: $e', e, st);
+      }
+    }
+
+    return firstHandler;
+  }
+
+  static void _safeSetForegroundFlushHandler(Future<void> Function()? handler) {
+    if (handler == null) return;
+    try {
+      WorkmanagerService.instance.foregroundFlushHandler = handler;
+    } catch (e, st) {
+      _log.warning('Failed to set foregroundFlushHandler: $e', e, st);
+    }
+  }
+
   /// Initialize Workmanager plugin and register provided handlers when
   /// appropriate. This is intentionally isolated so hosts may reuse parts.
   static Future<void> _initWorkmanagerIfNeeded({
     required bool enableWorkmanager,
     required void Function()? workmanagerCallbackDispatcher,
-    required BackgroundTaskHandler? workmanagerHandler,
-    required Future<void> Function()? workmanagerFlushPendingHandler,
+    required List<WorkerRegistration>? workerRegistrations,
     required bool registerPeriodic,
     required bool autoStartWorkmanager,
-    required Duration workmanagerFrequency,
-    required Duration workmanagerInitialDelay,
-    required bool workmanagerPeriodic,
-    required Map<String, dynamic>? workmanagerInputData,
-    String? workmanagerTaskName,
   }) async {
     if (!enableWorkmanager || kIsWeb) return;
 
@@ -105,40 +168,39 @@ class FormFieldsInitializer {
     await WorkmanagerService.instance
         .initialize(callbackDispatcher: workmanagerCallbackDispatcher);
 
-    if (workmanagerHandler != null) {
-      WorkmanagerService.instance.setHandler(workmanagerHandler);
-      try {
-        WorkmanagerService.setBackgroundTaskHandler(workmanagerHandler);
-      } catch (e, st) {
-        _log.warning('Failed to set background task handler: $e', e, st);
+    // Register provided worker registrations via helper to keep logic small
+    // and reusable. The helper returns the first provided background handler
+    // (if any) so we can register it at the package level.
+    if (workerRegistrations != null && workerRegistrations.isNotEmpty) {
+      final BackgroundTaskHandler? firstHandler =
+          await _registerWorkers(workerRegistrations);
+
+      if (firstHandler != null) {
+        try {
+          WorkmanagerService.instance.setHandler(firstHandler);
+          WorkmanagerService.setBackgroundTaskHandler(firstHandler);
+        } catch (e, st) {
+          _log.warning('Failed to set background task handler: $e', e, st);
+        }
       }
+      return;
     }
 
-    if (workmanagerFlushPendingHandler != null) {
+    // Fallback: no registrations provided. If `autoStartWorkmanager` is true
+    // and `registerPeriodic` is set, start the default service without
+    // scheduling tasks (legacy behavior removed; nothing to register).
+    if (autoStartWorkmanager) {
       try {
-        WorkmanagerService.instance.flushPendingHandler =
-            workmanagerFlushPendingHandler;
+        await WorkmanagerService.instance.start(
+          taskName: null,
+          frequency: const Duration(hours: 1),
+          periodic: false,
+          inputData: null,
+          initialDelay: Duration.zero,
+        );
       } catch (e, st) {
-        _log.warning('Failed to set flushPendingHandler: $e', e, st);
+        _log.warning('Failed to auto-start WorkmanagerService: $e', e, st);
       }
-    }
-
-    if (registerPeriodic) {
-      await WorkmanagerService.instance.start(
-        taskName: workmanagerTaskName,
-        frequency: workmanagerFrequency,
-        periodic: true,
-        inputData: workmanagerInputData,
-        initialDelay: workmanagerInitialDelay,
-      );
-    } else if (autoStartWorkmanager) {
-      await WorkmanagerService.instance.start(
-        taskName: workmanagerTaskName,
-        frequency: workmanagerFrequency,
-        periodic: workmanagerPeriodic,
-        inputData: workmanagerInputData,
-        initialDelay: workmanagerInitialDelay,
-      );
     }
   }
 
@@ -152,43 +214,18 @@ class FormFieldsInitializer {
 
     /// If true the initializer will call `WorkmanagerService.instance.start()`
     /// after initialization. Use this to opt-in to automatic scheduling from
-    /// `initAll`. If `registerPeriodic` is true this parameter is ignored
-    /// because it preserves the previous behavior.
+    /// `initAll`.
     bool autoStartWorkmanager = false,
-
-    /// Optional task name for the registered workmanager task. If omitted
-    /// the service default is used.
-    String? workmanagerTaskName,
-
-    /// Frequency used when starting a periodic task.
-    Duration workmanagerFrequency = const Duration(hours: 1),
-
-    /// Optional initial delay before the first run of a periodic task.
-    /// Passed through to `WorkmanagerService.start` as `initialDelay`.
-    /// Defaults to 15 minutes to match typical background scheduling minimums.
-    Duration workmanagerInitialDelay = kWorkmanagerInitialDelayDefault,
-
-    /// Whether the auto-start should register a periodic task (true) or
-    /// simply mark the service as started without scheduling (false).
-    bool workmanagerPeriodic = true,
-
-    /// Optional input data passed to the background task when scheduled.
-    Map<String, dynamic>? workmanagerInputData,
-
-    /// Optional foreground flush handler that will be invoked when
-    /// network connectivity is restored. This handler runs in the
-    /// foreground isolate and should perform DB/network work. If
-    /// provided `initAll` will register it on `WorkmanagerService`.
-    Future<void> Function()? workmanagerFlushPendingHandler,
-
-    /// Optional handler to register for background tasks.
-    BackgroundTaskHandler? workmanagerHandler,
 
     /// Optional top-level callback dispatcher to register with `Workmanager()`
     /// in the host app. If provided and `enableWorkmanager` is true, `initAll`
     /// will call `Workmanager().initialize(workmanagerCallbackDispatcher)` so
     /// background isolates can reach the host's top-level dispatcher.
     void Function()? workmanagerCallbackDispatcher,
+
+    /// New: multiple worker registrations to schedule and manage background
+    /// tasks. Use `WorkerRegistration` to describe each worker.
+    List<WorkerRegistration>? workerRegistrations,
     Level logLevel = Level.INFO,
     List<String>? migrationAssetPaths,
     int dbVersion = 0,
@@ -226,9 +263,14 @@ class FormFieldsInitializer {
     });
 
     // Validate inputs to catch common misconfiguration early.
-    if (workmanagerFrequency <= Duration.zero) {
-      throw ArgumentError.value(workmanagerFrequency, 'workmanagerFrequency',
-          'must be > Duration.zero');
+    // Validate worker registrations
+    if (workerRegistrations != null) {
+      for (final reg in workerRegistrations) {
+        if (reg.frequency <= Duration.zero) {
+          throw ArgumentError.value(reg.frequency, 'workerRegistrations',
+              'frequency must be > Duration.zero for ${reg.taskName}');
+        }
+      }
     }
 
     if (dbVersion == 0 && onDowngrade != null) {
@@ -256,37 +298,22 @@ class FormFieldsInitializer {
       onCreate: onCreate,
     );
 
-    // Register optional host-provided Flush handlers before starting
-    // Workmanager so any scheduled/background triggers can safely call
-    // `FlushApi.flushPendingSubmissions` immediately after start.
-    _registerFlushHandlers(flushAll: flushAll, flushOne: flushOne);
+    // No host-provided flush handlers are registered automatically anymore.
+    // Hosts should register any FlushApi handlers explicitly when needed.
 
     await _initWorkmanagerIfNeeded(
       enableWorkmanager: enableWorkmanager,
       workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
-      workmanagerHandler: workmanagerHandler,
-      workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
+      workerRegistrations: workerRegistrations,
       registerPeriodic: registerPeriodic,
       autoStartWorkmanager: autoStartWorkmanager,
-      workmanagerFrequency: workmanagerFrequency,
-      workmanagerInitialDelay: workmanagerInitialDelay,
-      workmanagerPeriodic: workmanagerPeriodic,
-      workmanagerInputData: workmanagerInputData,
-      workmanagerTaskName: workmanagerTaskName,
     );
     _log.info('FormFields initialized');
   }
 
-  static void _registerFlushHandlers(
-      {FlushAllHandler? flushAll, FlushOneHandler? flushOne}) {
-    try {
-      if (flushAll == null && flushOne == null) return;
-      FlushApi.register(flushAll: flushAll, flushOne: flushOne);
-      _log.fine('FlushApi handlers registered');
-    } catch (e, st) {
-      _log.warning('Failed to register FlushApi handlers: $e', e, st);
-    }
-  }
+  // NOTE: `FlushApi` registration is no longer performed automatically
+  // by `initAll`. Hosts who want to expose flush handlers should call
+  // `FlushApi.register(...)` themselves at app startup.
 
   /// Change the on-disk database version by triggering the DB migration
   /// flow. This will open/reconcile the DB and run upgrades/downgrades as
