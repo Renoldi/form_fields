@@ -5,9 +5,15 @@ final _log = Logger('FlushApi');
 
 typedef SubmitHandler = Future<bool> Function(
     Map<String, dynamic> payload, int? id);
-typedef FlushAllHandler = Future<bool> Function({SubmitHandler? submitHandler});
+typedef FlushAllHandler = Future<bool> Function({
+  SubmitHandler? submitHandler,
+  // When true the implementation should not perform its own FlushState
+  // guard because the caller (FlushApi) will have already acquired the
+  // shared `FlushState` lock.
+  bool skipFlushStateGuard,
+});
 typedef FlushOneHandler = Future<bool> Function(int id,
-    {SubmitHandler? submitHandler});
+    {SubmitHandler? submitHandler, required bool skipFlushStateGuard});
 
 class FlushApi {
   FlushApi._();
@@ -26,14 +32,38 @@ class FlushApi {
   }
 
   /// Call the registered "flush all" implementation.
-  static Future<bool> flushPendingSubmissions(
-      {SubmitHandler? submitHandler}) async {
-    if (FlushState.isFlushing) return false;
-    FlushState.isFlushing = true;
+  /// Attempt to run the registered "flush all" handler.
+  ///
+  /// If [waitIfFlushing] is true the method will wait until any currently
+  /// active flush completes (up to [waitTimeout]) and then acquire the
+  /// shared `FlushState` lock before invoking the registered handler.
+  /// Otherwise, the call returns immediately with `false` when a flush is
+  /// already active.
+  static Future<bool> flushPendingSubmissions({
+    SubmitHandler? submitHandler,
+    bool waitIfFlushing = false,
+    Duration? waitTimeout,
+  }) async {
+    // Attempt to acquire the shared lock. Optionally wait for it.
+    final deadline =
+        waitTimeout == null ? null : DateTime.now().add(waitTimeout);
+    while (true) {
+      if (!FlushState.isFlushing) {
+        FlushState.isFlushing = true;
+        break;
+      }
+      if (!waitIfFlushing) return false;
+      if (deadline != null && DateTime.now().isAfter(deadline)) return false;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
     try {
       if (_flushAll != null) {
-        _log.fine('Invoking registered flushAll handler');
-        return await _flushAll!(submitHandler: submitHandler);
+        _log.fine('Invoking registered flushAll handler (skip guard)');
+        // Registered handlers are expected to accept a `skipFlushStateGuard`
+        // flag so the API-level lock isn't doubled.
+        return await _flushAll!(
+            submitHandler: submitHandler, skipFlushStateGuard: true);
       }
       _log.warning(
           'No flushAll handler registered when flushPendingSubmissions called');
@@ -46,13 +76,27 @@ class FlushApi {
 
   /// Call the registered "flush one" implementation.
   static Future<bool> flushPendingSubmissionById(int id,
-      {SubmitHandler? submitHandler}) async {
-    if (FlushState.isFlushing) return false;
-    FlushState.isFlushing = true;
+      {SubmitHandler? submitHandler,
+      bool waitIfFlushing = false,
+      Duration? waitTimeout}) async {
+    final deadline =
+        waitTimeout == null ? null : DateTime.now().add(waitTimeout);
+    while (true) {
+      if (!FlushState.isFlushing) {
+        FlushState.isFlushing = true;
+        break;
+      }
+      if (!waitIfFlushing) return false;
+      if (deadline != null && DateTime.now().isAfter(deadline)) return false;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
     try {
       if (_flushOne != null) {
-        _log.fine('Invoking registered flushOne handler for id=$id');
-        return await _flushOne!(id, submitHandler: submitHandler);
+        _log.fine(
+            'Invoking registered flushOne handler for id=$id (skip guard)');
+        return await _flushOne!(id,
+            submitHandler: submitHandler, skipFlushStateGuard: true);
       }
       _log.warning(
           'No flushOne handler registered when flushPendingSubmissionById called (id=$id)');

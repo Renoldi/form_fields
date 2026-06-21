@@ -108,7 +108,6 @@ Future<void> main() async {
     //   }
     // }
     // Use platform-appropriate minimum for periodic work (15 minutes).
-    final wmFreq = const Duration(seconds: 30);
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
@@ -117,17 +116,25 @@ Future<void> main() async {
       registerPeriodic: true,
       // Example: override periodic scheduling values from host app.
       // Run every 15 minutes (minimum recommended by Android JobScheduler).
-      workmanagerFrequency: wmFreq,
+      workmanagerFrequency: Duration(seconds: 60),
       workmanagerInitialDelay: Duration.zero,
       // Foreground flush handler: attempts to submit pending DB entries
       // when connectivity resumes. Must be a top-level function.
       workmanagerFlushPendingHandler: workmanagerFlushPendingHandler,
 
       // Flush helpers (implemented below) are provided for the example.
-      flushAll: ({SubmitHandler? submitHandler}) async =>
-          await flushPendingSubmissions(submitHandler: submitHandler),
-      flushOne: (int id, {SubmitHandler? submitHandler}) async =>
-          await flushPendingSubmissionById(id, submitHandler: submitHandler),
+      flushAll: (
+              {SubmitHandler? submitHandler,
+              bool skipFlushStateGuard = false}) async =>
+          await flushPendingSubmissions(
+              submitHandler: submitHandler,
+              skipFlushStateGuard: skipFlushStateGuard),
+      flushOne: (int id,
+              {SubmitHandler? submitHandler,
+              required bool skipFlushStateGuard}) async =>
+          await flushPendingSubmissionById(id,
+              submitHandler: submitHandler,
+              skipFlushStateGuard: skipFlushStateGuard),
       migrationAssetPaths: [
         'migrations/migration.sql',
         // 'migrations/migration_json_file.sql',

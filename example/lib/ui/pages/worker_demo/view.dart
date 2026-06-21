@@ -247,8 +247,15 @@ class View extends PresenterState {
                                     }
                                   } else {
                                     try {
+                                      // If a periodic flush is currently active
+                                      // we wait briefly for it to finish, then
+                                      // run the foreground flush so "Run worker
+                                      // now" provides an immediate effect.
                                       ok = await FlushApi
-                                          .flushPendingSubmissions();
+                                          .flushPendingSubmissions(
+                                              waitIfFlushing: true,
+                                              waitTimeout:
+                                                  const Duration(seconds: 15));
                                     } catch (_) {
                                       ok = false;
                                     }

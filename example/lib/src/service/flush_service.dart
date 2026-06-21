@@ -126,11 +126,18 @@ Future<bool> _invokeHandler(
 /// `pending_submissions` table. Host app controls how each resolved
 /// payload is submitted via [submitHandler].
 @pragma('vm:entry-point')
-Future<bool> flushPendingSubmissions({SubmitHandler? submitHandler}) async {
+Future<bool> flushPendingSubmissions(
+    {SubmitHandler? submitHandler, bool skipFlushStateGuard = false}) async {
   // Prevent concurrent flushes from running in parallel (foreground + background).
   // If a flush is already in progress, return false to indicate no-op.
-  if (FlushState.isFlushing) return false;
-  FlushState.isFlushing = true;
+  // When [skipFlushStateGuard] is true the caller has already acquired the
+  // shared `FlushState` lock and this function should not re-check it.
+  var acquiredHere = false;
+  if (!skipFlushStateGuard) {
+    if (FlushState.isFlushing) return false;
+    FlushState.isFlushing = true;
+    acquiredHere = true;
+  }
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: "status = ?", whereArgs: ['pending'], orderBy: 'created_at ASC');
@@ -159,17 +166,21 @@ Future<bool> flushPendingSubmissions({SubmitHandler? submitHandler}) async {
     _setLastLog('example.flushPendingSubmissions threw: $e\n$st');
     return false;
   } finally {
-    FlushState.isFlushing = false;
+    if (acquiredHere) FlushState.isFlushing = false;
   }
 }
 
 /// Process a single pending submission by id. Returns true on success.
 @pragma('vm:entry-point')
 Future<bool> flushPendingSubmissionById(int id,
-    {SubmitHandler? submitHandler}) async {
+    {SubmitHandler? submitHandler, bool skipFlushStateGuard = false}) async {
   // Prevent concurrent flushes from running in parallel.
-  if (FlushState.isFlushing) return false;
-  FlushState.isFlushing = true;
+  var acquiredHere = false;
+  if (!skipFlushStateGuard) {
+    if (FlushState.isFlushing) return false;
+    FlushState.isFlushing = true;
+    acquiredHere = true;
+  }
   try {
     final rows = await DBService.instance.selectFrom('pending_submissions',
         where: 'id = ? AND status = ?', whereArgs: [id, 'pending']);
@@ -199,6 +210,6 @@ Future<bool> flushPendingSubmissionById(int id,
     _setLastLog('flushPendingSubmissionById threw: $e\n$st');
     return false;
   } finally {
-    FlushState.isFlushing = false;
+    if (acquiredHere) FlushState.isFlushing = false;
   }
 }

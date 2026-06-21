@@ -107,7 +107,8 @@ class WorkmanagerService {
   Future<void> initialize({void Function()? callbackDispatcher}) async {
     if (_initialized) return;
     try {
-      await Workmanager().initialize(callbackDispatcher ?? _callbackDispatcher);
+      await Workmanager()
+          .initialize(callbackDispatcher ?? workmanagerCallbackDispatcher);
       _initialized = true;
       // Listen for connectivity changes in the foreground isolate and
       // invoke the host-provided flush handler when network becomes
@@ -518,4 +519,11 @@ class WorkmanagerService {
       return Future.value(true);
     });
   }
+
+// Top-level callback dispatcher wrapper. Workmanager's background isolate
+// must be able to resolve a top-level entry-point by name; annotate this
+// function so it is preserved and visible to the background isolate.
+  @pragma('vm:entry-point')
+  void workmanagerCallbackDispatcher() =>
+      WorkmanagerService._callbackDispatcher();
 }
