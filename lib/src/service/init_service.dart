@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 import 'db_service.dart';
 import 'workmanager_service.dart';
 import 'package:workmanager/workmanager.dart';
-import 'flush_api.dart';
+import 'flush_types.dart';
 
 final _log = Logger('FormFieldsInitializer');
 

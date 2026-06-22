@@ -373,11 +373,10 @@ class View extends PresenterState {
                                       // we wait briefly for it to finish, then
                                       // run the foreground flush so "Run worker
                                       // now" provides an immediate effect.
-                                      ok = await FlushApi
-                                          .flushPendingSubmissions(
-                                              waitIfFlushing: true,
-                                              waitTimeout:
-                                                  const Duration(seconds: 15));
+                                      ok = await flushPendingSubmissions(
+                                          waitIfFlushing: true,
+                                          waitTimeout:
+                                              const Duration(seconds: 15));
                                     } catch (_) {
                                       ok = false;
                                     }
@@ -427,8 +426,7 @@ class View extends PresenterState {
                                     }
                                   } else {
                                     try {
-                                      ok2 = await FlushApi
-                                          .flushPendingSubmissions();
+                                      ok2 = await flushPendingSubmissions();
                                     } catch (_) {
                                       ok2 = false;
                                     }
@@ -506,7 +504,7 @@ class View extends PresenterState {
                                       .value = 'sendCurrentLocation invoked';
                                 } catch (_) {}
                                 try {
-                                  await sendCurrentLocationForeground();
+                                  // await sendCurrentLocationForeground();
                                   await vm.loadPending();
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
@@ -530,7 +528,7 @@ class View extends PresenterState {
                                       .value = 'sendRandom invoked';
                                 } catch (_) {}
                                 try {
-                                  await sendRandomForeground();
+                                  // await sendRandomForeground();
                                   await vm.loadPending();
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.maybeOf(context)
@@ -771,9 +769,8 @@ class View extends PresenterState {
                                                         'runPending: id=$id';
                                                   } catch (_) {}
                                                   try {
-                                                    await FlushApi
-                                                        .flushPendingSubmissionById(
-                                                            id);
+                                                    await flushPendingSubmissionById(
+                                                        id);
                                                     // Reload pending list after attempt
                                                     await vm.loadPending();
                                                   } catch (e, st) {

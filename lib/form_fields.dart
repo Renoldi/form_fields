@@ -121,8 +121,9 @@ export 'src/service/crypto_utils.dart' show CryptoUtils;
 export 'src/service/workmanager_service.dart' show WorkmanagerService;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
-export 'src/service/flush_api.dart' show FlushApi, SubmitHandler;
-export 'src/service/flush_state.dart' show FlushState;
+// `FlushState` moved into `WorkmanagerService` as `isFlushing`.
+export 'src/service/flush_types.dart'
+    show SubmitHandler, FlushAllHandler, FlushOneHandler;
 
 export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';

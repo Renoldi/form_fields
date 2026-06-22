@@ -6,8 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
-import 'flush_api.dart';
-import 'flush_state.dart';
+// Flush state relocated into WorkmanagerService as `isFlushing`.
 
 /// Thin wrapper around the `workmanager` plugin that provides a small,
 /// testable surface for the example app. Includes per-task scheduling
@@ -55,6 +54,64 @@ class WorkmanagerService {
 
   /// Host-provided top-level background handler resolver (optional).
   static BackgroundTaskHandler? _backgroundHandler;
+
+  /// Shared flush guard moved here so callers can check `WorkmanagerService.isFlushing`.
+  static bool isFlushing = false;
+
+  /// Timestamp when the shared flush guard was acquired. Used to detect
+  /// and recover from stale guards that may be left set if an isolate
+  /// crashed while holding the guard.
+  static DateTime? _flushGuardSetAt;
+  static bool _inCountdownInvocation = false;
+
+  /// Whether the countdown code is currently invoking registered handlers.
+  static bool get isInCountdownInvocation => _inCountdownInvocation;
+
+  /// Public accessor for debugging: when the flush guard was set (or null).
+  static DateTime? get flushGuardSetAt => _flushGuardSetAt;
+
+  /// Try to acquire the shared flush guard.
+  /// Returns `true` when this caller successfully acquired the guard
+  /// (the caller must call `releaseFlushGuard()` when finished).
+  /// If `skip` is true the guard is not acquired and the function returns
+  /// `false` to indicate the caller did not set the guard (caller should
+  /// treat `skip` as bypassing the guard semantics).
+  static bool acquireFlushGuard({bool skip = false}) {
+    if (skip) return false;
+    if (isFlushing) {
+      try {
+        // If the guard appears to be held for an unexpectedly long time
+        // treat it as stale and allow recovery. This helps when an earlier
+        // run acquired the guard but the isolate crashed without
+        // releasing it. The threshold is intentionally generous.
+        final setAt = _flushGuardSetAt;
+        if (setAt != null) {
+          final age = DateTime.now().difference(setAt);
+          const staleThreshold = Duration(minutes: 5);
+          if (age > staleThreshold) {
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print(
+                  'acquireFlushGuard: clearing stale guard (age=${age.inMinutes}m)');
+            }
+            isFlushing = true; // re-acquire
+            _flushGuardSetAt = DateTime.now();
+            return true;
+          }
+        }
+      } catch (_) {}
+      return false;
+    }
+    isFlushing = true;
+    _flushGuardSetAt = DateTime.now();
+    return true;
+  }
+
+  /// Release the shared flush guard. Safe to call even if the guard is not set.
+  static void releaseFlushGuard() {
+    isFlushing = false;
+    _flushGuardSetAt = null;
+  }
 
   /// Optional handler the host registers to perform a foreground flush.
   Future<void> Function()? foregroundFlushHandler;
@@ -659,7 +716,7 @@ class WorkmanagerService {
           if (toTrigger.isNotEmpty) {
             try {
               lastLogListenable.value =
-                  'countdown-trigger: calling flushPendingSubmissions() toTrigger=${toTrigger.join(',')}';
+                  'countdown-trigger: calling registered handlers toTrigger=${toTrigger.join(',')}';
             } catch (_) {}
             try {
               _addLog(
@@ -689,38 +746,41 @@ class WorkmanagerService {
               }
             } catch (_) {}
 
-            // Prevent overlapping flush runs using FlushState guard.
-            if (FlushState.isFlushing) {
+            // Prevent overlapping flush runs using shared guard. Acquire
+            // the guard centrally; if acquisition fails another flush is
+            // already running and we skip triggering handlers for this tick.
+            final acquired = WorkmanagerService.acquireFlushGuard();
+            if (!acquired) {
               try {
                 lastLogListenable.value =
                     'countdown-trigger: flush already in progress; skipping';
               } catch (_) {}
             } else {
-              FlushState.isFlushing = true;
               var success = false;
               try {
+                // Mark that countdown is invoking handlers so foreground
+                // handlers can avoid attempting to re-acquire the guard.
+                try {
+                  _inCountdownInvocation = true;
+                } catch (_) {}
                 try {
                   lastLogListenable.value =
                       'countdown-trigger: toTrigger=${toTrigger.join(',')}';
                 } catch (_) {}
-                // Prefer per-task foreground handlers. Call each task's
-                // handler if registered. If no per-task handlers were
-                // invoked, fall back to the global `foregroundFlushHandler`
-                // or to `FlushApi.flushPendingSubmissions()`.
-                // Deduplicate handlers so a single function reference is only
-                // invoked once even if it is registered for multiple tasks.
-                final Set<Future<void> Function()> uniqueHandlers = {};
+
+                // Deduplicate per-task foreground handlers and invoke them
+                final Set<Future<void> Function()> uniqueFgHandlers = {};
                 for (final n in toTrigger) {
                   final h = _perTaskForegroundHandlers[n];
-                  if (h != null) uniqueHandlers.add(h);
+                  if (h != null) uniqueFgHandlers.add(h);
                 }
 
-                if (uniqueHandlers.isNotEmpty) {
+                if (uniqueFgHandlers.isNotEmpty) {
                   try {
                     lastLogListenable.value =
-                        'countdown-trigger: invoking ${uniqueHandlers.length} per-task handlers';
+                        'countdown-trigger: invoking ${uniqueFgHandlers.length} per-task foreground handlers';
                   } catch (_) {}
-                  for (final h in uniqueHandlers) {
+                  for (final h in uniqueFgHandlers) {
                     try {
                       await h();
                       success = true;
@@ -737,9 +797,54 @@ class WorkmanagerService {
                     }
                   }
                 } else {
-                  // No per-task handlers registered. Call the global
-                  // foreground handler or fallback flush function once.
-                  if (foregroundFlushHandler != null) {
+                  // No foreground handlers. Try per-task background handlers
+                  // and invoke each unique background handler only once.
+                  final Map<BackgroundTaskHandler, String> bgHandlerToTask = {};
+                  for (final n in toTrigger) {
+                    final bh = _perTaskBackgroundHandlers[n];
+                    if (bh != null && !bgHandlerToTask.containsKey(bh)) {
+                      bgHandlerToTask[bh] = n;
+                    }
+                  }
+
+                  if (bgHandlerToTask.isNotEmpty) {
+                    try {
+                      lastLogListenable.value =
+                          'countdown-trigger: invoking ${bgHandlerToTask.length} per-task background handlers';
+                    } catch (_) {}
+                    for (final entry in bgHandlerToTask.entries) {
+                      final bh = entry.key;
+                      final repTask = entry.value;
+                      // Find inputData for representative task if provided
+                      Map<String, dynamic>? inputData;
+                      try {
+                        for (final def in providedWorkerDefinitions) {
+                          try {
+                            if ((def['name'] as String) == repTask &&
+                                def['inputData'] != null) {
+                              inputData = Map<String, dynamic>.from(
+                                  def['inputData'] as Map<String, dynamic>);
+                              break;
+                            }
+                          } catch (_) {}
+                        }
+                      } catch (_) {}
+
+                      try {
+                        final res = await bh(repTask, inputData);
+                        if (res == true) success = true;
+                        try {
+                          lastLogListenable.value =
+                              'background handler for $repTask -> ${res ? 'success' : 'failure'}';
+                        } catch (_) {}
+                      } catch (e) {
+                        try {
+                          lastLogListenable.value =
+                              'background handler for $repTask threw: $e';
+                        } catch (_) {}
+                      }
+                    }
+                  } else if (foregroundFlushHandler != null) {
                     try {
                       lastLogListenable.value =
                           'countdown-trigger: calling global foregroundFlushHandler';
@@ -757,46 +862,68 @@ class WorkmanagerService {
                             'foregroundFlushHandler threw: $e';
                       } catch (_) {}
                     }
-                  } else {
+                  } else if (_backgroundHandler != null) {
+                    // Fallback to a globally-registered background handler
                     try {
-                      lastLogListenable.value =
-                          'countdown-trigger: calling FlushApi.flushPendingSubmissions';
-                    } catch (_) {}
-                    try {
-                      success = await FlushApi.flushPendingSubmissions();
+                      final rep = toTrigger.first;
+                      Map<String, dynamic>? inputData;
+                      try {
+                        for (final def in providedWorkerDefinitions) {
+                          try {
+                            if ((def['name'] as String) == rep &&
+                                def['inputData'] != null) {
+                              inputData = Map<String, dynamic>.from(
+                                  def['inputData'] as Map<String, dynamic>);
+                              break;
+                            }
+                          } catch (_) {}
+                        }
+                      } catch (_) {}
+                      final res = await _backgroundHandler!(rep, inputData);
+                      if (res == true) success = true;
                       try {
                         lastLogListenable.value =
-                            'FlushApi.flushPendingSubmissions -> ${success ? 'success' : 'failure'}';
+                            'global background handler for $rep -> ${res ? 'success' : 'failure'}';
                       } catch (_) {}
                     } catch (e) {
                       try {
                         lastLogListenable.value =
-                            'FlushApi.flushPendingSubmissions threw: $e';
+                            'global background handler threw: $e';
                       } catch (_) {}
                     }
+                  } else {
+                    try {
+                      lastLogListenable.value =
+                          'countdown-trigger: no handlers registered for tasks';
+                    } catch (_) {}
                   }
                 }
               } catch (e, st) {
                 try {
                   lastLogListenable.value =
-                      'countdown-triggered flush threw: $e\n$st';
+                      'countdown-triggered handlers threw: $e\n$st';
                 } catch (_) {}
               } finally {
-                FlushState.isFlushing = false;
+                try {
+                  _inCountdownInvocation = false;
+                } catch (_) {}
+                try {
+                  WorkmanagerService.releaseFlushGuard();
+                } catch (_) {}
               }
 
               try {
                 lastLogListenable.value =
-                    'countdown-triggered flush: ${success ? 'success' : 'failure'}';
+                    'countdown-triggered handlers: ${success ? 'success' : 'failure'}';
               } catch (_) {}
 
               try {
                 _addLog(
-                    'countdown-triggered flush result: ${success ? 'success' : 'failure'}');
+                    'countdown-triggered handlers result: ${success ? 'success' : 'failure'}');
                 if (kDebugMode) {
                   // ignore: avoid_print
                   print(
-                      'countdown-triggered flush result: ${success ? 'success' : 'failure'}');
+                      'countdown-triggered handlers result: ${success ? 'success' : 'failure'}');
                 }
               } catch (_) {}
 

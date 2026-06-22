@@ -120,7 +120,7 @@ Future<void> main() async {
           taskName: 'form_fields_flush',
           // Use a platform-appropriate minimum (15 minutes) to avoid
           // overwhelming background isolate launches during development.
-          frequency: Duration(seconds: 15),
+          frequency: Duration(seconds: 30),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -130,7 +130,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(minutes: 20),
+          frequency: Duration(seconds: 20),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -140,7 +140,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_random_event',
-          frequency: Duration(minutes: 70),
+          frequency: Duration(seconds: 70),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
