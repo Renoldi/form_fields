@@ -356,33 +356,39 @@ class WorkmanagerService {
     _backgroundHandler = handler;
   }
 
-  /// Initialize the workmanager plugin and connectivity listener.
-  Future<void> initialize({void Function()? callbackDispatcher}) async {
+  /// Initialize the workmanager plugin and optionally the connectivity listener.
+  Future<void> initialize(
+      {void Function()? callbackDispatcher,
+      bool useConnectivity = true}) async {
     if (_initialized) return;
     try {
       await Workmanager().initialize(
           callbackDispatcher ?? WorkmanagerService._callbackDispatcher);
       _initialized = true;
 
-      // Listen for connectivity changes and invoke foreground flush when online.
-      try {
-        _connectivitySub =
-            Connectivity().onConnectivityChanged.listen((_) async {
-          try {
-            final current = await Connectivity().checkConnectivity();
-            final curStr = current.toString().toLowerCase();
-            final hasNetwork = !curStr.contains('none');
-            if (hasNetwork) {
-              _addLog('connectivity: $current -> attempting flush');
-              try {
-                await foregroundFlushHandler?.call();
-              } catch (e) {
-                _addLog('flush handler error: $e');
+      // Optionally listen for connectivity changes and invoke foreground
+      // flush when online. Hosts can disable this behavior by calling
+      // `initialize(..., useConnectivity: false)`.
+      if (useConnectivity) {
+        try {
+          _connectivitySub =
+              Connectivity().onConnectivityChanged.listen((_) async {
+            try {
+              final current = await Connectivity().checkConnectivity();
+              final curStr = current.toString().toLowerCase();
+              final hasNetwork = !curStr.contains('none');
+              if (hasNetwork) {
+                _addLog('connectivity: $current -> attempting flush');
+                try {
+                  await foregroundFlushHandler?.call();
+                } catch (e) {
+                  _addLog('flush handler error: $e');
+                }
               }
-            }
-          } catch (_) {}
-        });
-      } catch (_) {}
+            } catch (_) {}
+          });
+        } catch (_) {}
+      }
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -687,15 +693,7 @@ class WorkmanagerService {
             perTaskCountdownListenable.value = perMap;
           } catch (_) {}
 
-          try {
-            _addLog(
-                'countdown tick: toTrigger=${toTrigger.join(',')} minRem_s=${minRem?.inSeconds}');
-            if (kDebugMode) {
-              // ignore: avoid_print
-              print(
-                  'countdown tick: toTrigger=${toTrigger.join(',')} minRem_s=${minRem?.inSeconds}');
-            }
-          } catch (_) {}
+          // countdown tick logging removed to reduce noisy logs
 
           if (minRem == null) {
             try {

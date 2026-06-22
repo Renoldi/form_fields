@@ -302,13 +302,15 @@ class FormFieldsInitializer {
     required bool registerPeriodic,
     required bool autoStartWorkmanager,
     required bool triggerWorkerHandlersOnStart,
+    required bool useConnectivity,
   }) async {
     if (!enableWorkmanager || kIsWeb) return;
 
     _log.info('Initializing WorkmanagerService');
 
-    await WorkmanagerService.instance
-        .initialize(callbackDispatcher: workmanagerCallbackDispatcher);
+    await WorkmanagerService.instance.initialize(
+        callbackDispatcher: workmanagerCallbackDispatcher,
+        useConnectivity: useConnectivity);
 
     // If host provided registration metadata, expose it to the
     // WorkmanagerService so the example UI can read the host-provided
@@ -402,6 +404,11 @@ class FormFieldsInitializer {
     /// immediately at startup (in addition to scheduling periodic runs).
     /// Default: true.
     bool triggerWorkerHandlersOnStart = true,
+
+    /// Whether `WorkmanagerService` should listen for connectivity changes
+    /// and attempt foreground flushes when network returns. Defaults to
+    /// `true`.
+    bool useConnectivity = true,
     // Optional host-provided flush handlers that will be registered on
     // package startup so callers can invoke host-provided flush logic via
     // `FlushApi.flushPendingSubmissions` / `FlushApi.flushPendingSubmissionById`.
@@ -471,6 +478,7 @@ class FormFieldsInitializer {
       registerPeriodic: registerPeriodic,
       autoStartWorkmanager: autoStartWorkmanager,
       triggerWorkerHandlersOnStart: triggerWorkerHandlersOnStart,
+      useConnectivity: useConnectivity,
     );
     _log.info('FormFields initialized');
   }
