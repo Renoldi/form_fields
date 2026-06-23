@@ -16,6 +16,7 @@ dependencies:
   form_fields:
     path: ../
   logger: any
+  flutter_foreground_task: any
   go_router: any
   shared_preferences: any
   provider: any

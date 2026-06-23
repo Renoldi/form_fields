@@ -89,6 +89,8 @@ Future<void> main() async {
     // Note: `myHandler` must be a top-level/static function so it can be
     // resolved for background callbacks.
 
+    // Foreground-task initialization is handled by `FormFieldsInitializer.initAll`.
+
     if (kDebugMode) {
       try {
         await DBService.instance.resetDatabase(reinit: true);
@@ -105,6 +107,27 @@ Future<void> main() async {
       // register handlers.
       enableForegroundService: true,
       registerPeriodic: true,
+      // Optional: customize the notification and foreground-task options
+      // passed to the underlying `flutter_foreground_task` initialization.
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'form_fields_channel',
+        channelName: 'FormFields Background',
+        channelDescription: 'Background tasks for form_fields package',
+        playSound: false,
+        enableVibration: false,
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        autoRunOnBoot: true,
+        autoRunOnMyPackageReplaced: true,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
       // Example: register one or more background workers.
       workerRegistrations: [
         WorkerRegistration(

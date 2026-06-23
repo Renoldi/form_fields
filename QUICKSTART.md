@@ -209,7 +209,7 @@ Form(
 Use the package initializer to apply bundled migration assets or manage
 version changes programmatically.
 
-```dart
+````dart
 // Version-less initialization: apply bundled migrations and let the
 // initializer set PRAGMA user_version and invoke lifecycle callbacks.
 await FormFieldsInitializer.initAll(
@@ -220,6 +220,50 @@ await FormFieldsInitializer.initAll(
   onCreate: (db, v) async { /* app setup */ },
   onUpgrade: (db, oldV, newV) async { /* incremental upgrade */ },
 );
+
+## Foreground service & worker configuration
+
+If your app uses background workers, you can configure the foreground
+service notification and task options via `initAll(...)`. `initAll` will
+initialize the single global foreground service (one service — many
+workers) and register any `workerRegistrations` you provide.
+
+Example:
+
+```dart
+await FormFieldsInitializer.initAll(
+  enableForegroundService: true,
+  workerRegistrations: [...],
+  androidNotificationOptions: AndroidNotificationOptions(
+    channelId: 'form_fields_channel',
+    channelName: 'FormFields Background',
+    channelDescription: 'Background tasks for form_fields package',
+    playSound: false,
+    enableVibration: false,
+    onlyAlertOnce: true,
+  ),
+  iosNotificationOptions: const IOSNotificationOptions(
+    showNotification: false,
+    playSound: false,
+  ),
+  foregroundTaskOptions: const ForegroundTaskOptions(
+    eventAction: ForegroundTaskEventAction.nothing(),
+    autoRunOnBoot: true,
+    autoRunOnMyPackageReplaced: true,
+    allowWakeLock: true,
+    allowWifiLock: true,
+  ),
+);
+````
+
+Notes:
+
+- `FlutterForegroundTask.init` is called once by the initializer; do
+  not call it per-worker.
+- Prefer `eventAction.nothing()` and schedule different intervals per
+  worker via `WorkerRegistration.frequency` to reduce battery impact.
+- Android enforces a minimum periodic interval (typically ~15 minutes)
+  — the package will adjust/display effective intervals accordingly.
 
 // If you need a background handler, register a top-level handler via
 // the initializer. The handler must be a top-level function so it can
@@ -234,10 +278,11 @@ await FormFieldsInitializer.initAll(
 
 // Programmatic migration: change DB version at runtime
 await FormFieldsInitializer.changeDbVersion(2,
-    migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql']);
+migrationAssetPaths: ['migrations/v1.sql','migrations/v2.sql']);
+
 ```
 
-````
+```
 
 ## 9. Selection Widgets (Dropdown, Multi-Select, Radio, Checkbox)
 
@@ -262,7 +307,7 @@ FormFieldsDropdown<String?>(
   initialValue: _selectedCountry, // String?
   onChanged: (value) => setState(() => _selectedCountry = value),
 )
-````
+```
 
 ### Multi-Select Dropdown
 
