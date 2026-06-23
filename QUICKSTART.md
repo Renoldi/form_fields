@@ -260,8 +260,12 @@ Notes:
 
 - `FlutterForegroundTask.init` is called once by the initializer; do
   not call it per-worker.
-- Prefer `eventAction.nothing()` and schedule different intervals per
-  worker via `WorkerRegistration.frequency` to reduce battery impact.
+- Recommendation: for normal periodic scheduling prefer using
+  `WorkerRegistration.frequency` (a `Duration`) on each registration.
+  The initializer/adapter will translate `frequency` into the
+  appropriate `ForegroundTaskOptions.eventAction` for the foreground
+  service. Use `eventAction` directly only when you need low-level
+  control over the foreground-service behavior.
 - Android enforces a minimum periodic interval (typically ~15 minutes)
   — the package will adjust/display effective intervals accordingly.
 

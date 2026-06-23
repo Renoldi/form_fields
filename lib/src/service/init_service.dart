@@ -46,6 +46,15 @@ class WorkerRegistration {
   final bool register;
 }
 
+// Recommendation: For normal periodic scheduling prefer using the
+// `frequency` property on `WorkerRegistration` (a `Duration`). The
+// adapter will translate `frequency` into a foreground-service-level
+// action (`ForegroundTaskOptions.eventAction`) when initializing the
+// `flutter_foreground_task` service. Only manipulate
+// `ForegroundTaskOptions.eventAction` directly if you need low-level
+// control over the foreground-service's repeat behavior (for example,
+// custom millisecond granularity or a no-op action).
+
 /// Single initializer to bootstrap package services from host app.
 ///
 /// Responsibilities:

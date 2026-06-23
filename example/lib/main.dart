@@ -13,6 +13,9 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+// Types used for configuring the foreground service initialization when
+// the plugin supports custom icon data.
+
 // Background tasks are initialized by `FormFieldsInitializer.initAll(...)`.
 // The package uses a foreground-service (via `flutter_foreground_task`) to
 // execute long-running work. Register top-level background handlers by
@@ -113,8 +116,11 @@ Future<void> main() async {
         channelId: 'form_fields_channel',
         channelName: 'FormFields Background',
         channelDescription: 'Background tasks for form_fields package',
+        // Updated for newer `flutter_foreground_task` API: do not set
+        // `iconData` here (handled by app resources / manifest).
         playSound: false,
         enableVibration: false,
+        showWhen: false,
         onlyAlertOnce: true,
       ),
       iosNotificationOptions: IOSNotificationOptions(
@@ -122,6 +128,8 @@ Future<void> main() async {
         playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
+        // Default to `nothing()` here — worker intervals are scheduled
+        // using each `WorkerRegistration.frequency` (recommended).
         eventAction: ForegroundTaskEventAction.nothing(),
         autoRunOnBoot: true,
         autoRunOnMyPackageReplaced: true,
@@ -129,6 +137,10 @@ Future<void> main() async {
         allowWifiLock: true,
       ),
       // Example: register one or more background workers.
+      // Recommendation: use `frequency` on each `WorkerRegistration` to
+      // schedule periodic work. The initializer will convert `frequency`
+      // into the appropriate `eventAction` for the foreground service.
+      // Only set `eventAction` directly when you need low-level control.
       workerRegistrations: [
         WorkerRegistration(
           taskName: 'form_fields_flush',
