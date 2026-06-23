@@ -710,64 +710,77 @@ class View extends PresenterState {
 
                           const SizedBox(height: 12),
 
-                          // Per-task controls
-                          ValueListenableBuilder<Map<String, String?>>(
+                          // Per-task controls. Listen to `registeredCountListenable`
+                          // as well as `perTaskCountdownListenable` so the UI updates
+                          // immediately when a task is started/stopped (fixes the
+                          // play/stop toggle not updating on manual stop).
+                          ValueListenableBuilder<int>(
                               valueListenable: ForegroundTaskService
-                                  .instance.perTaskCountdownListenable,
-                              builder: (ctx, perMap, __) {
-                                final defs = ForegroundTaskService
-                                    .instance.providedWorkerDefinitions;
-                                if (defs.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: defs.map<Widget>((d) {
-                                      final name = d['name'] as String;
-                                      final freq = d['frequency'] as Duration;
-                                      final cd = perMap[name];
-                                      final isRegistered = ForegroundTaskService
-                                          .instance.registeredTaskNames
-                                          .contains(name);
-                                      return ListTile(
-                                          dense: true,
-                                          title: Text(name),
-                                          subtitle: Text(
-                                              'freq: ${freq.inSeconds}s • next: ${cd ?? '-'}'),
-                                          trailing: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                    icon: const Icon(
-                                                        Icons.play_arrow),
-                                                    tooltip: 'Start $name',
-                                                    onPressed: isRegistered
-                                                        ? null
-                                                        : () async {
-                                                            try {
-                                                              await ForegroundTaskService
-                                                                  .instance
-                                                                  .startWorkerByName(
-                                                                      name);
-                                                            } catch (_) {}
-                                                          }),
-                                                IconButton(
-                                                    icon:
-                                                        const Icon(Icons.stop),
-                                                    tooltip: 'Stop $name',
-                                                    onPressed: isRegistered
-                                                        ? () async {
-                                                            try {
-                                                              await ForegroundTaskService
-                                                                  .instance
-                                                                  .stopWorkerByName(
-                                                                      name);
-                                                            } catch (_) {}
-                                                          }
-                                                        : null)
-                                              ]));
-                                    }).toList());
+                                  .instance.registeredCountListenable,
+                              builder: (ctx2, _, __) {
+                                return ValueListenableBuilder<
+                                        Map<String, String?>>(
+                                    valueListenable: ForegroundTaskService
+                                        .instance.perTaskCountdownListenable,
+                                    builder: (ctx, perMap, __) {
+                                      final defs = ForegroundTaskService
+                                          .instance.providedWorkerDefinitions;
+                                      if (defs.isEmpty) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: defs.map<Widget>((d) {
+                                            final name = d['name'] as String;
+                                            final freq =
+                                                d['frequency'] as Duration;
+                                            final cd = perMap[name];
+                                            final isRegistered =
+                                                ForegroundTaskService.instance
+                                                    .registeredTaskNames
+                                                    .contains(name);
+                                            return ListTile(
+                                                dense: true,
+                                                title: Text(name),
+                                                subtitle: Text(
+                                                    'freq: ${freq.inSeconds}s • next: ${cd ?? '-'}'),
+                                                trailing: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      IconButton(
+                                                          icon: const Icon(
+                                                              Icons.play_arrow),
+                                                          tooltip:
+                                                              'Start $name',
+                                                          onPressed:
+                                                              isRegistered
+                                                                  ? null
+                                                                  : () async {
+                                                                      try {
+                                                                        await ForegroundTaskService
+                                                                            .instance
+                                                                            .startWorkerByName(name);
+                                                                      } catch (_) {}
+                                                                    }),
+                                                      IconButton(
+                                                          icon: const Icon(
+                                                              Icons.stop),
+                                                          tooltip: 'Stop $name',
+                                                          onPressed:
+                                                              isRegistered
+                                                                  ? () async {
+                                                                      try {
+                                                                        await ForegroundTaskService
+                                                                            .instance
+                                                                            .stopWorkerByName(name);
+                                                                      } catch (_) {}
+                                                                    }
+                                                                  : null)
+                                                    ]));
+                                          }).toList());
+                                    });
                               }),
 
                           const SizedBox(height: 8),
