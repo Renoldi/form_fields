@@ -90,6 +90,8 @@ Detailed documentation is available in the [`docs/`](docs/) folder:
 - **[MULTILANG_IMPLEMENTATION.md](docs/MULTILANG_IMPLEMENTATION.md)** - Internationalization guide
 - **[DB Import/Export](docs/components/db_import_export.md)** - Database export/import and background setup
 
+- **[Foreground Task Integration](FOREGROUND_TASK_SETUP.md)** - Petunjuk lengkap integrasi `flutter_foreground_task` pada iOS dan Android
+
 ## 🎓 Key Features to Try
 
 1. **Form Validation**: Test required fields, email, and phone validation
