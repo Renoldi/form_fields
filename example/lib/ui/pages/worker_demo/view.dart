@@ -476,118 +476,132 @@ class View extends PresenterState {
                                             ?.copyWith(
                                                 fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 8),
-                                    TextFormField(
-                                      initialValue: vm.post.title ?? '',
-                                      decoration: InputDecoration(
-                                          labelText: 'Title',
-                                          prefixIcon: const Icon(Icons.title),
-                                          filled: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 12, horizontal: 12),
-                                          border: inputBorder,
-                                          enabledBorder: inputBorder,
-                                          focusedBorder: inputBorder.copyWith(
-                                              borderSide: BorderSide(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  width: 2))),
-                                      onChanged: (v) => vm.post.title = v,
+                                    FormFields<String>(
+                                      key: ValueKey(
+                                          'title-${vm.post.title ?? ''}'),
+                                      label: 'Title',
+                                      currentValue: vm.post.title ?? '',
+                                      inputDecoration: InputDecoration(
+                                        labelText: 'Title',
+                                        prefixIcon: const Icon(Icons.title),
+                                        filled: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 12),
+                                        border: inputBorder,
+                                        enabledBorder: inputBorder,
+                                        focusedBorder: inputBorder.copyWith(
+                                            borderSide: BorderSide(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                width: 2)),
+                                      ),
+                                      onChanged: (v) {
+                                        vm.post.title = v;
+                                        vm.commit();
+                                      },
                                       validator: (v) => (v ?? '').trim().isEmpty
                                           ? 'Title required'
                                           : null,
                                     ),
                                     const SizedBox(height: 8),
-                                    TextFormField(
-                                      initialValue: vm.post.body ?? '',
-                                      decoration: InputDecoration(
-                                          labelText: 'Body',
-                                          prefixIcon: const Icon(Icons.article),
-                                          filled: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 12, horizontal: 12),
-                                          border: inputBorder,
-                                          enabledBorder: inputBorder,
-                                          focusedBorder: inputBorder.copyWith(
-                                              borderSide: BorderSide(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  width: 2))),
-                                      maxLines: 3,
-                                      onChanged: (v) => vm.post.body = v,
+                                    FormFields<String>(
+                                      key: ValueKey(
+                                          'body-${vm.post.body ?? ''}'),
+                                      label: 'Body',
+                                      currentValue: vm.post.body ?? '',
+                                      multiLine: 3,
+                                      inputDecoration: InputDecoration(
+                                        labelText: 'Body',
+                                        prefixIcon: const Icon(Icons.article),
+                                        filled: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 12, horizontal: 12),
+                                        border: inputBorder,
+                                        enabledBorder: inputBorder,
+                                        focusedBorder: inputBorder.copyWith(
+                                            borderSide: BorderSide(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                width: 2)),
+                                      ),
+                                      onChanged: (v) {
+                                        vm.post.body = v;
+                                        vm.commit();
+                                      },
                                     ),
                                     const SizedBox(height: 8),
                                     Row(children: [
                                       Expanded(
-                                          child: TextFormField(
-                                              key: ValueKey(vm.post.userId ??
+                                          child: FormFields<int>(
+                                              key: ValueKey(
+                                                  'userId-${vm.post.userId ?? appState.currentUser?.id ?? ''}'),
+                                              label: 'User ID',
+                                              currentValue: vm.post.userId ??
                                                   appState.currentUser?.id ??
-                                                  ''),
-                                              initialValue:
-                                                  vm.post.userId?.toString() ??
-                                                      appState.currentUser?.id
-                                                          ?.toString() ??
-                                                      '',
-                                              decoration: InputDecoration(
-                                                  labelText: 'User ID',
-                                                  prefixIcon:
-                                                      const Icon(Icons.person),
-                                                  filled: true,
-                                                  contentPadding:
-                                                      const EdgeInsets.symmetric(
-                                                          vertical: 12,
-                                                          horizontal: 12),
-                                                  border: inputBorder,
-                                                  enabledBorder: inputBorder,
-                                                  focusedBorder:
-                                                      inputBorder.copyWith(
-                                                          borderSide: BorderSide(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                              width: 2))),
-                                              keyboardType:
-                                                  TextInputType.number,
+                                                  1,
+                                              inputDecoration: InputDecoration(
+                                                labelText: 'User ID',
+                                                prefixIcon:
+                                                    const Icon(Icons.person),
+                                                filled: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 12,
+                                                        horizontal: 12),
+                                                border: inputBorder,
+                                                enabledBorder: inputBorder,
+                                                focusedBorder:
+                                                    inputBorder.copyWith(
+                                                        borderSide: BorderSide(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .primary,
+                                                            width: 2)),
+                                              ),
                                               onChanged: (v) {
-                                                vm.post.userId =
-                                                    int.tryParse(v) ?? 1;
+                                                vm.post.userId = v;
+                                                vm.commit();
                                               })),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                          child: TextFormField(
-                                              initialValue: vm.post.tags?.join(
-                                                      ',') ??
-                                                  '',
-                                              decoration: InputDecoration(
-                                                  labelText: 'Tags (comma)',
-                                                  prefixIcon:
-                                                      const Icon(Icons.tag),
-                                                  filled: true,
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                          vertical: 12,
-                                                          horizontal: 12),
-                                                  border: inputBorder,
-                                                  enabledBorder: inputBorder,
-                                                  focusedBorder: inputBorder
-                                                      .copyWith(
-                                                          borderSide: BorderSide(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                              width: 2))),
+                                          child: FormFields<String>(
+                                              key: ValueKey(
+                                                  'tags-${vm.post.tags?.join(',') ?? ''}'),
+                                              label: 'Tags (comma)',
+                                              currentValue:
+                                                  vm.post.tags?.join(',') ?? '',
+                                              inputDecoration: InputDecoration(
+                                                labelText: 'Tags (comma)',
+                                                prefixIcon:
+                                                    const Icon(Icons.tag),
+                                                filled: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 12,
+                                                        horizontal: 12),
+                                                border: inputBorder,
+                                                enabledBorder: inputBorder,
+                                                focusedBorder:
+                                                    inputBorder.copyWith(
+                                                        borderSide: BorderSide(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .primary,
+                                                            width: 2)),
+                                              ),
                                               onChanged: (v) {
-                                                vm.post.tags = v
+                                                vm.post.tags = (v)
                                                     .split(',')
                                                     .map((s) => s.trim())
                                                     .where((s) => s.isNotEmpty)
                                                     .toList();
+                                                vm.commit();
                                               })),
                                     ]),
                                     const SizedBox(height: 12),
