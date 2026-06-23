@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'db_service.dart';
 import 'workmanager_service.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 // NOTE: dependency migrated from an OS-scheduled plugin to `flutter_foreground_task`.
 // Runtime APIs and parameter names were renamed to reflect
 // foreground-service semantics provided by `flutter_foreground_task`.
@@ -308,6 +309,9 @@ class FormFieldsInitializer {
     required bool autoStartForegroundService,
     required bool triggerWorkerHandlersOnStart,
     required bool useConnectivity,
+    AndroidNotificationOptions? androidNotificationOptions,
+    IOSNotificationOptions? iosNotificationOptions,
+    ForegroundTaskOptions? foregroundTaskOptions,
   }) async {
     if (!enableForegroundService || kIsWeb) return;
 
@@ -315,7 +319,10 @@ class FormFieldsInitializer {
 
     await ForegroundTaskService.instance.initialize(
         callbackDispatcher: foregroundTaskCallbackDispatcher,
-        useConnectivity: useConnectivity);
+        useConnectivity: useConnectivity,
+        androidNotificationOptions: androidNotificationOptions,
+        iosNotificationOptions: iosNotificationOptions,
+        foregroundTaskOptions: foregroundTaskOptions);
 
     // If host provided registration metadata, expose it to the
     // ForegroundTaskService so the example UI can read the host-provided
@@ -416,6 +423,9 @@ class FormFieldsInitializer {
     /// and attempt foreground flushes when network returns. Defaults to
     /// `true`.
     bool useConnectivity = true,
+    AndroidNotificationOptions? androidNotificationOptions,
+    IOSNotificationOptions? iosNotificationOptions,
+    ForegroundTaskOptions? foregroundTaskOptions,
 
     // Optional host-provided flush handlers that will be registered on
     // package startup so callers can invoke host-provided flush logic via
@@ -489,6 +499,9 @@ class FormFieldsInitializer {
       autoStartForegroundService: autoStartForegroundService,
       triggerWorkerHandlersOnStart: triggerWorkerHandlersOnStart,
       useConnectivity: useConnectivity,
+      androidNotificationOptions: androidNotificationOptions,
+      iosNotificationOptions: iosNotificationOptions,
+      foregroundTaskOptions: foregroundTaskOptions,
     );
     _log.info('FormFields initialized');
   }

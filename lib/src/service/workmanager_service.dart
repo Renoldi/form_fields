@@ -19,7 +19,12 @@ class _ForegroundAdapter {
   static BackgroundTaskHandler? _registeredCallback;
   static final Map<String, _AdapterTaskHandler> _handlers = {};
 
-  static Future<void> initialize({void Function()? callbackDispatcher}) async {
+  static Future<void> initialize({
+    void Function()? callbackDispatcher,
+    AndroidNotificationOptions? androidNotificationOptions,
+    IOSNotificationOptions? iosNotificationOptions,
+    ForegroundTaskOptions? foregroundTaskOptions,
+  }) async {
     if (kDebugMode) {
       // ignore: avoid_print
       print(
@@ -28,22 +33,28 @@ class _ForegroundAdapter {
 
     try {
       FlutterForegroundTask.init(
-        androidNotificationOptions: AndroidNotificationOptions(
-          channelId: 'form_fields_channel',
-          channelName: 'FormFields Background',
-          channelDescription: 'Background tasks for form_fields package',
-          playSound: false,
-          enableVibration: false,
-        ),
-        iosNotificationOptions: IOSNotificationOptions(
-          showNotification: true,
-          playSound: false,
-        ),
-        foregroundTaskOptions: ForegroundTaskOptions(
-          eventAction: ForegroundTaskEventAction.nothing(),
-          allowWakeLock: true,
-          allowWifiLock: false,
-        ),
+        androidNotificationOptions: androidNotificationOptions ??
+            AndroidNotificationOptions(
+              channelId: 'form_fields_channel',
+              channelName: 'FormFields Background',
+              channelDescription: 'Background tasks for form_fields package',
+              playSound: false,
+              enableVibration: false,
+              onlyAlertOnce: true,
+            ),
+        iosNotificationOptions: iosNotificationOptions ??
+            IOSNotificationOptions(
+              showNotification: false,
+              playSound: false,
+            ),
+        foregroundTaskOptions: foregroundTaskOptions ??
+            ForegroundTaskOptions(
+              eventAction: ForegroundTaskEventAction.repeat(5000),
+              autoRunOnBoot: true,
+              autoRunOnMyPackageReplaced: true,
+              allowWakeLock: true,
+              allowWifiLock: true,
+            ),
       );
     } catch (e) {
       if (kDebugMode) {
@@ -565,12 +576,19 @@ class ForegroundTaskService {
   /// Initialize the foreground-task adapter and optionally the connectivity listener.
   Future<void> initialize(
       {void Function()? callbackDispatcher,
-      bool useConnectivity = true}) async {
+      bool useConnectivity = true,
+      AndroidNotificationOptions? androidNotificationOptions,
+      IOSNotificationOptions? iosNotificationOptions,
+      ForegroundTaskOptions? foregroundTaskOptions}) async {
     if (_initialized) return;
     try {
       await _ForegroundAdapter.initialize(
-          callbackDispatcher:
-              callbackDispatcher ?? ForegroundTaskService._callbackDispatcher);
+        callbackDispatcher:
+            callbackDispatcher ?? ForegroundTaskService._callbackDispatcher,
+        androidNotificationOptions: androidNotificationOptions,
+        iosNotificationOptions: iosNotificationOptions,
+        foregroundTaskOptions: foregroundTaskOptions,
+      );
       _initialized = true;
 
       // Optionally listen for connectivity changes and invoke foreground

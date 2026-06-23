@@ -25,6 +25,16 @@
 
 library;
 
+// Re-export selected types from `flutter_foreground_task` so host apps
+// can configure foreground/task options via the public package API
+// without importing `flutter_foreground_task` directly.
+export 'package:flutter_foreground_task/flutter_foreground_task.dart'
+    show
+        AndroidNotificationOptions,
+        IOSNotificationOptions,
+        ForegroundTaskOptions,
+        ForegroundTaskEventAction;
+
 export 'src/fields/core/form_fields_signature_pad.dart'
     show FormFieldsSignaturePad;
 export 'src/utilities/signature_pad_export_result.dart'
