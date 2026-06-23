@@ -7,23 +7,27 @@ import 'package:path/path.dart' as p;
 
 import 'db_service.dart';
 import 'workmanager_service.dart';
-import 'package:workmanager/workmanager.dart';
+// NOTE: dependency migrated from an OS-scheduled plugin to `flutter_foreground_task`.
+// Runtime APIs and parameter names were renamed to reflect
+// foreground-service semantics provided by `flutter_foreground_task`.
 import 'flush_types.dart';
 
 final _log = Logger('FormFieldsInitializer');
 
-/// Default initial delay used for scheduling periodic Workmanager tasks.
-/// Hosts can override this by passing `workmanagerInitialDelay` to `initAll`.
-const Duration kWorkmanagerInitialDelayDefault = Duration(minutes: 15);
+/// Default initial delay used for scheduling periodic background tasks.
+/// Hosts can override this by passing an explicit `initialDelay` in
+/// `WorkerRegistration` when calling `initAll` from the host app.
+const Duration kBackgroundInitialDelayDefault = Duration(minutes: 15);
 
 /// Configuration describing a single worker/task that may be registered
-/// with Workmanager. Hosts can provide multiple registrations to schedule
-/// and manage several background workers from `initAll`.
+/// with the package's foreground-service scheduling. Hosts can provide
+/// multiple registrations to schedule and manage several background
+/// workers from `initAll`.
 class WorkerRegistration {
   const WorkerRegistration({
     this.taskName,
     this.frequency = const Duration(hours: 1),
-    this.initialDelay = kWorkmanagerInitialDelayDefault,
+    this.initialDelay = kBackgroundInitialDelayDefault,
     this.periodic = true,
     this.inputData,
     this.backgroundHandler,
@@ -45,7 +49,7 @@ class WorkerRegistration {
 ///
 /// Responsibilities:
 /// - Initialize DB (apply optional migrations)
-/// - Initialize Workmanager (optional)
+/// - Initialize foreground-service plumbing (optional)
 /// - Register package-level Flush handlers
 class FormFieldsInitializer {
   FormFieldsInitializer._();
@@ -202,7 +206,7 @@ class FormFieldsInitializer {
           inputDataForReg = reg.inputData;
         }
 
-        await WorkmanagerService.instance.start(
+        await ForegroundTaskService.instance.start(
           taskName: reg.taskName,
           frequency: reg.frequency,
           periodic: reg.periodic,
@@ -228,10 +232,10 @@ class FormFieldsInitializer {
 
           try {
             if (reg.backgroundHandler != null) {
-              // Use a one-off run to trigger the background handler via
-              // Workmanager if possible. This will schedule a one-off task
+              // Use a one-off run to trigger the background handler via the
+              // foreground-task adapter. This will request a one-off run
               // that should execute the resolved background callback.
-              await WorkmanagerService.instance.runOnceNowDetailed(
+              await ForegroundTaskService.instance.runOnceNowDetailed(
                 taskName: reg.taskName,
                 inputData: inputDataForReg,
               );
@@ -249,20 +253,20 @@ class FormFieldsInitializer {
         if (key != null) seenHandlerPeriod.add(key);
 
         try {
-          WorkmanagerService.instance.lastLogListenable.value =
+          ForegroundTaskService.instance.lastLogListenable.value =
               'registered_from_init: ${reg.taskName} freq_s=${reg.frequency.inSeconds}';
         } catch (_) {}
         // Register per-task foreground handler so countdown triggers can
         // invoke task-specific foreground logic (e.g. `sendRandomForeground`).
         try {
           if (reg.taskName != null && reg.foregroundHandler != null) {
-            WorkmanagerService.instance.setForegroundHandlerForTask(
+            ForegroundTaskService.instance.setForegroundHandlerForTask(
                 reg.taskName!, reg.foregroundHandler);
           }
         } catch (_) {}
         try {
           if (reg.taskName != null && reg.backgroundHandler != null) {
-            WorkmanagerService.instance.setBackgroundHandlerForTask(
+            ForegroundTaskService.instance.setBackgroundHandlerForTask(
                 reg.taskName!, reg.backgroundHandler);
           }
         } catch (_) {}
@@ -283,8 +287,8 @@ class FormFieldsInitializer {
       // `form_fields_flush` handler) and avoids later worker registrations
       // from overwriting it (which could cause countdown-triggered flushes
       // to call the wrong handler such as `sendRandomForeground`).
-      if (WorkmanagerService.instance.foregroundFlushHandler == null) {
-        WorkmanagerService.instance.foregroundFlushHandler = handler;
+      if (ForegroundTaskService.instance.foregroundFlushHandler == null) {
+        ForegroundTaskService.instance.foregroundFlushHandler = handler;
       } else {
         _log.fine('foregroundFlushHandler already set; skipping override');
       }
@@ -293,27 +297,28 @@ class FormFieldsInitializer {
     }
   }
 
-  /// Initialize Workmanager plugin and register provided handlers when
-  /// appropriate. This is intentionally isolated so hosts may reuse parts.
-  static Future<void> _initWorkmanagerIfNeeded({
-    required bool enableWorkmanager,
-    required void Function()? workmanagerCallbackDispatcher,
+  /// Initialize foreground-service plumbing and register provided handlers
+  /// when appropriate. This is intentionally isolated so hosts may reuse
+  /// parts.
+  static Future<void> _initForegroundIfNeeded({
+    required bool enableForegroundService,
+    required void Function()? foregroundTaskCallbackDispatcher,
     required List<WorkerRegistration>? workerRegistrations,
     required bool registerPeriodic,
-    required bool autoStartWorkmanager,
+    required bool autoStartForegroundService,
     required bool triggerWorkerHandlersOnStart,
     required bool useConnectivity,
   }) async {
-    if (!enableWorkmanager || kIsWeb) return;
+    if (!enableForegroundService || kIsWeb) return;
 
-    _log.info('Initializing WorkmanagerService');
+    _log.info('Initializing ForegroundTaskService (foreground-service)');
 
-    await WorkmanagerService.instance.initialize(
-        callbackDispatcher: workmanagerCallbackDispatcher,
+    await ForegroundTaskService.instance.initialize(
+        callbackDispatcher: foregroundTaskCallbackDispatcher,
         useConnectivity: useConnectivity);
 
     // If host provided registration metadata, expose it to the
-    // WorkmanagerService so the example UI can read the host-provided
+    // ForegroundTaskService so the example UI can read the host-provided
     // definitions (instead of the built-in demo definitions).
     if (workerRegistrations != null && workerRegistrations.isNotEmpty) {
       try {
@@ -325,7 +330,7 @@ class FormFieldsInitializer {
             'periodic': reg.periodic,
           };
         }).toList();
-        WorkmanagerService.instance.setProvidedWorkerDefinitions(defs);
+        ForegroundTaskService.instance.setProvidedWorkerDefinitions(defs);
       } catch (_) {}
 
       // Register provided worker registrations via helper to keep logic small
@@ -337,8 +342,8 @@ class FormFieldsInitializer {
 
       if (firstHandler != null) {
         try {
-          WorkmanagerService.instance.setHandler(firstHandler);
-          WorkmanagerService.setBackgroundTaskHandler(firstHandler);
+          ForegroundTaskService.instance.setHandler(firstHandler);
+          ForegroundTaskService.setBackgroundTaskHandler(firstHandler);
         } catch (e, st) {
           _log.warning('Failed to set background task handler: $e', e, st);
         }
@@ -346,12 +351,13 @@ class FormFieldsInitializer {
       return;
     }
 
-    // Fallback: no registrations provided. If `autoStartWorkmanager` is true
-    // and `registerPeriodic` is set, start the default service without
-    // scheduling tasks (legacy behavior removed; nothing to register).
-    if (autoStartWorkmanager) {
+    // Fallback: no registrations provided. If `autoStartForegroundService`
+    // is true and `registerPeriodic` is set, start the default service
+    // without scheduling tasks (legacy behavior removed; nothing to
+    // register).
+    if (autoStartForegroundService) {
       try {
-        await WorkmanagerService.instance.start(
+        await ForegroundTaskService.instance.start(
           taskName: null,
           frequency: const Duration(hours: 1),
           periodic: false,
@@ -359,29 +365,30 @@ class FormFieldsInitializer {
           initialDelay: Duration.zero,
         );
       } catch (e, st) {
-        _log.warning('Failed to auto-start WorkmanagerService: $e', e, st);
+        _log.warning('Failed to auto-start ForegroundTaskService: $e', e, st);
       }
     }
   }
 
-  /// Initialize DB, logging, workmanager and any other services the package
+  /// Initialize DB, logging, foreground-service and any other services the package
   /// requires. Designed to be called from app `main()` so the host app
   /// doesn't need to initialize each service individually.
   static Future<void> initAll({
     String dbName = 'form_fields.db',
-    bool enableWorkmanager = true,
+    bool enableForegroundService = true,
     bool registerPeriodic = true,
 
-    /// If true the initializer will call `WorkmanagerService.instance.start()`
+    /// If true the initializer will call `ForegroundTaskService.instance.start()`
     /// after initialization. Use this to opt-in to automatic scheduling from
     /// `initAll`.
-    bool autoStartWorkmanager = false,
+    bool autoStartForegroundService = false,
 
-    /// Optional top-level callback dispatcher to register with `Workmanager()`
-    /// in the host app. If provided and `enableWorkmanager` is true, `initAll`
-    /// will call `Workmanager().initialize(workmanagerCallbackDispatcher)` so
-    /// background isolates can reach the host's top-level dispatcher.
-    void Function()? workmanagerCallbackDispatcher,
+    /// Optional top-level callback dispatcher to register with the package's
+    /// foreground-task adapter in the host app. If provided and
+    /// `enableForegroundService` is true, `initAll` will register this
+    /// dispatcher so background isolates can reach the host's top-level
+    /// dispatcher.
+    void Function()? foregroundTaskCallbackDispatcher,
 
     /// New: multiple worker registrations to schedule and manage background
     /// tasks. Use `WorkerRegistration` to describe each worker.
@@ -405,10 +412,11 @@ class FormFieldsInitializer {
     /// Default: true.
     bool triggerWorkerHandlersOnStart = true,
 
-    /// Whether `WorkmanagerService` should listen for connectivity changes
+    /// Whether `ForegroundTaskService` should listen for connectivity changes
     /// and attempt foreground flushes when network returns. Defaults to
     /// `true`.
     bool useConnectivity = true,
+
     // Optional host-provided flush handlers that will be registered on
     // package startup so callers can invoke host-provided flush logic via
     // `FlushApi.flushPendingSubmissions` / `FlushApi.flushPendingSubmissionById`.
@@ -418,10 +426,12 @@ class FormFieldsInitializer {
     // Setup logging
     Logger.root.level = logLevel;
     Logger.root.onRecord.listen((rec) {
-      final msg = '${rec.level.name}: ${rec.time.toIso8601String()} '
-          '${rec.loggerName} - ${rec.message}';
-      // ignore: avoid_print
-      print(msg);
+      /// Strategy for background execution. Defaults to `foregroundService`.
+      // BackgroundStrategy backgroundStrategy =
+      //     BackgroundStrategy.foregroundService,
+      if (kDebugMode) {
+        print(rec.message);
+      }
       if (rec.error != null) {
         // ignore: avoid_print
         print(rec.error);
@@ -471,12 +481,12 @@ class FormFieldsInitializer {
     // No host-provided flush handlers are registered automatically anymore.
     // Hosts should register any FlushApi handlers explicitly when needed.
 
-    await _initWorkmanagerIfNeeded(
-      enableWorkmanager: enableWorkmanager,
-      workmanagerCallbackDispatcher: workmanagerCallbackDispatcher,
+    await _initForegroundIfNeeded(
+      enableForegroundService: enableForegroundService,
+      foregroundTaskCallbackDispatcher: foregroundTaskCallbackDispatcher,
       workerRegistrations: workerRegistrations,
       registerPeriodic: registerPeriodic,
-      autoStartWorkmanager: autoStartWorkmanager,
+      autoStartForegroundService: autoStartForegroundService,
       triggerWorkerHandlersOnStart: triggerWorkerHandlersOnStart,
       useConnectivity: useConnectivity,
     );
@@ -490,7 +500,7 @@ class FormFieldsInitializer {
   /// Change the on-disk database version by triggering the DB migration
   /// flow. This will open/reconcile the DB and run upgrades/downgrades as
   /// needed. If `migrationAssetPaths` are provided they will be used to
-  /// locate migration assets.
+  // backgroundStrategy: backgroundStrategy,
   static Future<Database> changeDbVersion(int targetVersion,
       {String dbName = 'form_fields.db',
       List<String>? migrationAssetPaths,

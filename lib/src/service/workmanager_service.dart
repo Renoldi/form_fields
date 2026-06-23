@@ -4,22 +4,226 @@ import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:workmanager/workmanager.dart';
+// Adapter and comments updated to remove legacy scheduler references.
+// Implementation uses `flutter_foreground_task` for foreground-service
+// execution. Public API is `ForegroundTaskService` (breaking rename).
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'flush_types.dart';
 
-// Flush state relocated into WorkmanagerService as `isFlushing`.
+// Adapter shim to centralize migration from legacy schedulers to
+// `flutter_foreground_task`.
+// These methods currently log a migration hint and act as
+// no-op placeholders so the package compiles. Replace implementations
+// with proper `flutter_foreground_task` calls as needed.
+class _ForegroundAdapter {
+  static BackgroundTaskHandler? _registeredCallback;
+  static final Map<String, _AdapterTaskHandler> _handlers = {};
 
-/// Thin wrapper around the `workmanager` plugin that provides a small,
-/// testable surface for the example app. Includes per-task scheduling
-/// metadata and a `perTaskCountdownListenable` so the UI can show
-/// countdowns for each registered worker.
-class WorkmanagerService {
-  WorkmanagerService._internal() {
+  static Future<void> initialize({void Function()? callbackDispatcher}) async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print(
+          'Foreground adapter initialize() -> initializing FlutterForegroundTask');
+    }
+
+    try {
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'form_fields_channel',
+          channelName: 'FormFields Background',
+          channelDescription: 'Background tasks for form_fields package',
+          playSound: false,
+          enableVibration: false,
+        ),
+        iosNotificationOptions: IOSNotificationOptions(
+          showNotification: true,
+          playSound: false,
+        ),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.nothing(),
+          allowWakeLock: true,
+          allowWifiLock: false,
+        ),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('FlutterForegroundTask.init failed: $e');
+      }
+    }
+  }
+
+  static Future<void> registerPeriodicTask(String uniqueName, String taskName,
+      {Duration? frequency,
+      Map<String, dynamic>? inputData,
+      Duration? initialDelay}) async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print(
+          'Adapter registerPeriodicTask: $uniqueName freq=${frequency?.inMilliseconds}ms');
+    }
+
+    final freqMs = frequency?.inMilliseconds ?? 0;
+    final eventAction = freqMs > 0
+        ? ForegroundTaskEventAction.repeat(freqMs)
+        : ForegroundTaskEventAction.nothing();
+
+    final handler =
+        _AdapterTaskHandler(taskName, inputData, _registeredCallback);
+    _handlers[uniqueName] = handler;
+
+    try {
+      FlutterForegroundTask.setTaskHandler(handler);
+
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'FormFields background',
+        notificationText: 'Running background tasks',
+        callback: null,
+      );
+
+      // Try to update service options to set repeating interval.
+      try {
+        await FlutterForegroundTask.updateService(
+          foregroundTaskOptions:
+              ForegroundTaskOptions(eventAction: eventAction),
+        );
+      } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('registerPeriodicTask failed: $e');
+      }
+    }
+  }
+
+  static Future<void> registerOneOffTask(String uniqueName, String taskName,
+      {Map<String, dynamic>? inputData}) async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Adapter registerOneOffTask (invoking immediately): $uniqueName');
+    }
+
+    // For one-off runs, invoke the registered background callback directly.
+    await callRegisteredTask(taskName, inputData);
+  }
+
+  static Future<void> cancelAll() async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Adapter cancelAll called -> stopping foreground service');
+    }
+    try {
+      await FlutterForegroundTask.stopService();
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('stopService failed: $e');
+      }
+    }
+  }
+
+  static Future<void> cancelByUniqueName(String name) async {
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Adapter cancelByUniqueName: $name -> stopping service');
+    }
+    _handlers.remove(name);
+    try {
+      await FlutterForegroundTask.stopService();
+    } catch (e) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('stopService failed: $e');
+      }
+    }
+  }
+
+  static void executeTask(BackgroundTaskHandler handler) {
+    _registeredCallback = handler;
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('Adapter executeTask registered');
+    }
+  }
+
+  /// Helper to invoke the registered background handler (used for
+  /// manual testing/migration). Returns `true` on success.
+  static Future<bool> callRegisteredTask(
+      String task, Map<String, dynamic>? inputData) async {
+    if (_registeredCallback != null) {
+      try {
+        final res = await _registeredCallback!(task, inputData);
+        return res == true;
+      } catch (e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('Adapter callRegisteredTask threw: $e');
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+class _AdapterTaskHandler extends TaskHandler {
+  final String taskName;
+  final Map<String, dynamic>? inputData;
+  final BackgroundTaskHandler? cb;
+
+  _AdapterTaskHandler(this.taskName, this.inputData, this.cb);
+
+  @override
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
+    if (cb != null) {
+      try {
+        await cb!(taskName, inputData);
+      } catch (e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('AdapterTaskHandler.onStart handler threw: $e');
+        }
+      }
+    }
+  }
+
+  @override
+  void onRepeatEvent(DateTime timestamp) {
+    if (cb != null) {
+      // fire-and-forget
+      cb!(taskName, inputData).then((_) {}).catchError((e) {
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('AdapterTaskHandler.onRepeatEvent threw: $e');
+        }
+      });
+    }
+  }
+
+  @override
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
+}
+
+// OS-scheduled adapter removed — package now uses foreground-service
+// semantics only (via `flutter_foreground_task`). If you need
+// OS-scheduled semantics re-add an OS-scheduled plugin and implement an
+// adapter that delegates to its APIs.
+
+// Flush state relocated into ForegroundTaskService as `isFlushing`.
+
+/// Service layer exposing foreground-task scheduling and helpers used by
+/// the example app. Includes per-task scheduling metadata and a
+/// `perTaskCountdownListenable` so the UI can show countdowns for each
+/// registered worker.
+class ForegroundTaskService {
+  ForegroundTaskService._internal() {
     _attachLastLogListener();
   }
 
-  static final WorkmanagerService _instance = WorkmanagerService._internal();
-  factory WorkmanagerService() => _instance;
-  static WorkmanagerService get instance => _instance;
+  static final ForegroundTaskService _instance =
+      ForegroundTaskService._internal();
+  factory ForegroundTaskService() => _instance;
+  static ForegroundTaskService get instance => _instance;
 
   bool _suppressListener = false;
   bool _initialized = false;
@@ -43,7 +247,7 @@ class WorkmanagerService {
       <String, Duration?>{};
   // Preserve the originally requested frequency (what host passed) so the
   // UI can opt to display requested intervals even if the platform adjusts
-  // the effective scheduling interval (e.g. Android WorkManager min).
+  // the effective scheduling interval (e.g. Android minimum periodic interval).
   final Map<String, Duration?> _scheduledRequestedFrequencyPerTask =
       <String, Duration?>{};
 
@@ -55,7 +259,9 @@ class WorkmanagerService {
   /// Host-provided top-level background handler resolver (optional).
   static BackgroundTaskHandler? _backgroundHandler;
 
-  /// Shared flush guard moved here so callers can check `WorkmanagerService.isFlushing`.
+  /// Background execution uses foreground service via `flutter_foreground_task`.
+
+  /// Shared flush guard moved here so callers can check `ForegroundTaskService.isFlushing`.
   static bool isFlushing = false;
 
   /// Timestamp when the shared flush guard was acquired. Used to detect
@@ -356,14 +562,15 @@ class WorkmanagerService {
     _backgroundHandler = handler;
   }
 
-  /// Initialize the workmanager plugin and optionally the connectivity listener.
+  /// Initialize the foreground-task adapter and optionally the connectivity listener.
   Future<void> initialize(
       {void Function()? callbackDispatcher,
       bool useConnectivity = true}) async {
     if (_initialized) return;
     try {
-      await Workmanager().initialize(
-          callbackDispatcher ?? WorkmanagerService._callbackDispatcher);
+      await _ForegroundAdapter.initialize(
+          callbackDispatcher:
+              callbackDispatcher ?? ForegroundTaskService._callbackDispatcher);
       _initialized = true;
 
       // Optionally listen for connectivity changes and invoke foreground
@@ -392,7 +599,7 @@ class WorkmanagerService {
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Workmanager initialize failed: $e');
+        print('Foreground adapter initialize failed: $e');
       }
     }
   }
@@ -445,7 +652,7 @@ class WorkmanagerService {
       } catch (_) {}
 
       if (periodic) {
-        await Workmanager().registerPeriodicTask(
+        await _ForegroundAdapter.registerPeriodicTask(
           name,
           name,
           frequency: frequency,
@@ -459,7 +666,7 @@ class WorkmanagerService {
         // host provided registrations. We'll compute an effective frequency
         // next (platform may enforce a minimum).
         _scheduledRequestedFrequencyPerTask[name] = frequency;
-        // WorkManager on Android enforces a minimum periodic interval
+        // Android enforces a minimum periodic interval
         // (typically 15 minutes). Use the effective interval for UI
         // countdowns so the app reflects what the platform will schedule.
         Duration? effectiveFreq = frequency;
@@ -497,7 +704,8 @@ class WorkmanagerService {
         } catch (_) {}
         _startCountdownTimer();
       } else {
-        await Workmanager().registerOneOffTask(name, name, inputData: data);
+        await _ForegroundAdapter.registerOneOffTask(name, name,
+            inputData: data);
         _scheduledAtPerTask[name] = DateTime.now();
         _scheduledFrequencyPerTask[name] = null;
         _addLog('task_registered (one-off): $name');
@@ -513,7 +721,7 @@ class WorkmanagerService {
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Workmanager register task failed: $e');
+        print('Foreground adapter register task failed: $e');
       }
       statusListenable.value = 'register_failed';
       _addLog('register_failed: $e');
@@ -542,7 +750,7 @@ class WorkmanagerService {
         }
       } catch (_) {}
 
-      await Workmanager().registerOneOffTask(name, name, inputData: data);
+      await _ForegroundAdapter.registerOneOffTask(name, name, inputData: data);
       final now = DateTime.now();
       _registeredTasks.add(name);
       _scheduledAtPerTask[name] = now;
@@ -569,11 +777,10 @@ class WorkmanagerService {
     }
 
     if (taskName == null) {
-      // Stop all: attempt to cancel all scheduled work via Workmanager's
-      // dedicated API, then clear internal registration state so the UI
-      // reflects that no tasks remain registered.
+      // Stop all: stop the foreground service and clear internal
+      // registration state so the UI reflects that no tasks remain registered.
       try {
-        await Workmanager().cancelAll();
+        await _ForegroundAdapter.cancelAll();
         _addLog('cancelAll invoked');
       } catch (e) {
         if (kDebugMode) {
@@ -595,7 +802,7 @@ class WorkmanagerService {
       final namesToCancel = <String>[taskName];
       for (final name in namesToCancel) {
         try {
-          await Workmanager().cancelByUniqueName(name);
+          await _ForegroundAdapter.cancelByUniqueName(name);
           _registeredTasks.remove(name);
           _scheduledAtPerTask.remove(name);
           _scheduledFrequencyPerTask.remove(name);
@@ -747,7 +954,7 @@ class WorkmanagerService {
             // Prevent overlapping flush runs using shared guard. Acquire
             // the guard centrally; if acquisition fails another flush is
             // already running and we skip triggering handlers for this tick.
-            final acquired = WorkmanagerService.acquireFlushGuard();
+            final acquired = ForegroundTaskService.acquireFlushGuard();
             if (!acquired) {
               try {
                 lastLogListenable.value =
@@ -906,7 +1113,7 @@ class WorkmanagerService {
                   _inCountdownInvocation = false;
                 } catch (_) {}
                 try {
-                  WorkmanagerService.releaseFlushGuard();
+                  ForegroundTaskService.releaseFlushGuard();
                 } catch (_) {}
               }
 
@@ -1089,14 +1296,17 @@ class WorkmanagerService {
     } catch (_) {}
   }
 
-  // Background callback dispatcher used by Workmanager plugin.
+  // Background callback dispatcher used by the adapter/foreground-task handler.
   static void _callbackDispatcher() {
     WidgetsFlutterBinding.ensureInitialized();
 
-    Workmanager().executeTask((task, inputData) async {
+    // Create a unified callback handler used by adapters. The handler
+    // resolves callback handles or falls back to the registered
+    // `_backgroundHandler`.
+    Future<bool> handler(String task, Map<String, dynamic>? inputData) async {
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Workmanager executeTask: $task, inputData: $inputData');
+        print('Background executeTask: $task, inputData: $inputData');
       }
 
       try {
@@ -1116,16 +1326,14 @@ class WorkmanagerService {
             }
             if (cb is BackgroundTaskHandler) {
               final res = await cb(task, inputData as Map<String, dynamic>?);
-              return Future.value(res);
+              return res == true;
             } else {
               if (kDebugMode) {
                 // ignore: avoid_print
                 print(
                     'Callback resolved but is not BackgroundTaskHandler: $cb');
               }
-              // If we could not resolve a usable callback, bail out with
-              // `false` so Workmanager does not treat the task as succeeded.
-              return Future.value(false);
+              return false;
             }
           } catch (e) {
             if (kDebugMode) {
@@ -1143,22 +1351,24 @@ class WorkmanagerService {
                   'Using static _backgroundHandler fallback: $_backgroundHandler');
             }
             final res = await _backgroundHandler!(task, inputData);
-            return Future.value(res);
+            return res == true;
           } catch (e) {
             if (kDebugMode) {
               // ignore: avoid_print
               print('background handler threw: $e');
             }
-            return Future.value(false);
+            return false;
           }
         }
       } catch (_) {}
 
-      return Future.value(true);
-    });
+      return true;
+    }
+
+    _ForegroundAdapter.executeTask(handler);
   }
 
   @pragma('vm:entry-point')
-  void workmanagerCallbackDispatcher() =>
-      WorkmanagerService._callbackDispatcher();
+  void foregroundTaskCallbackDispatcher() =>
+      ForegroundTaskService._callbackDispatcher();
 }

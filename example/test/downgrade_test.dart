@@ -29,7 +29,7 @@ void main() {
       dbName: 'form_fields.db',
       dbVersion: 0,
       migrationAssetPaths: ['migrations/v1.sql', 'migrations/v2.sql'],
-      enableWorkmanager: false,
+      enableForegroundService: false,
     );
 
     // Confirm we are at v2

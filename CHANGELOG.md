@@ -4,6 +4,18 @@ All notable changes to the FormFields package will be documented in this file.
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- Renamed public background scheduling API: `WorkmanagerService` -> `ForegroundTaskService`.
+  The package no longer relies on the `workmanager` plugin for OS-scheduled
+  background work and instead uses `flutter_foreground_task` foreground-service
+  semantics. Hosts should update calls to `FormFieldsInitializer.initAll(...)`
+  parameters: `enableWorkmanager` -> `enableForegroundService`,
+  `workmanagerCallbackDispatcher` -> `foregroundTaskCallbackDispatcher`, and
+  `autoStartWorkmanager` -> `autoStartForegroundService`. The example app and
+  adapters have been updated; review your app's usage and migration notes in
+  the README if you relied on OS-scheduled WorkManager behavior.
+
 ### Added
 
 - OTP/verification field with countdown timer, resend UI, and flexible label positioning

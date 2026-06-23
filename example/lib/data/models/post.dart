@@ -63,7 +63,7 @@ class Post {
       final code = resp.statusCode ?? 0;
       try {
         final body = resp.data != null ? json.encode(resp.data) : '-';
-        WorkmanagerService.instance.lastLogListenable.value =
+        ForegroundTaskService.instance.lastLogListenable.value =
             'Post.add -> status=$code url=$url body=$body';
       } catch (_) {}
       if (code >= 200 && code < 300 && resp.data != null) {
@@ -72,7 +72,7 @@ class Post {
       return null;
     }).catchError((e) {
       try {
-        WorkmanagerService.instance.lastLogListenable.value =
+        ForegroundTaskService.instance.lastLogListenable.value =
             'Post.add threw: $e';
       } catch (_) {}
       throw e;

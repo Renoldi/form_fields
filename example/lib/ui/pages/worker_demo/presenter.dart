@@ -14,7 +14,7 @@ class Presenter extends StatefulWidget {
 
 abstract class PresenterState extends State<Presenter> {
   late final ViewModel viewModel;
-  VoidCallback? _workmanagerLogListener;
+  VoidCallback? _foregroundLogListener;
 
   @override
   void initState() {
@@ -24,23 +24,23 @@ abstract class PresenterState extends State<Presenter> {
     viewModel.loadPending();
     // Listen for explicit pending-change notifications and refresh the list.
     try {
-      _workmanagerLogListener = () {
+      _foregroundLogListener = () {
         try {
           viewModel.loadPending();
         } catch (_) {}
       };
-      WorkmanagerService.instance.pendingChangedListenable
-          .addListener(_workmanagerLogListener!);
+      ForegroundTaskService.instance.pendingChangedListenable
+          .addListener(_foregroundLogListener!);
     } catch (_) {}
   }
 
   @override
   void dispose() {
     try {
-      if (_workmanagerLogListener != null) {
-        WorkmanagerService.instance.pendingChangedListenable
-            .removeListener(_workmanagerLogListener!);
-        _workmanagerLogListener = null;
+      if (_foregroundLogListener != null) {
+        ForegroundTaskService.instance.pendingChangedListenable
+            .removeListener(_foregroundLogListener!);
+        _foregroundLogListener = null;
       }
     } catch (_) {}
     viewModel.dispose();

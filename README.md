@@ -45,11 +45,15 @@ FormFields<String>(
 )
 ```
 
-**Background Worker (Workmanager) — Usage**
+**Background Worker (flutter_foreground_task) — Usage**
 
-This package includes example tooling to schedule and run background flushes (processing queued/pending submissions). The example app shows how to wire a top-level background handler, register a foreground flush handler, and trigger one-off/background runs from the UI.
+This package uses `flutter_foreground_task` for long-running background work.
+The package provides a small wrapper service (`ForegroundTaskService`) that
+wires host-provided background and foreground handlers to the foreground
+service. Call `FormFieldsInitializer.initAll(...)` to initialize the
+foreground-service plumbing and register any worker definitions.
 
-- **Top-level background handler**: background isolates require a top-level (non-closure) function. Annotate it for AOT entry-point resolution:
+- **Top-level background handler**: background callback resolution requires a top-level (non-closure) function for AOT entry-points:
 
   ```dart
   @pragma('vm:entry-point')
@@ -59,36 +63,32 @@ This package includes example tooling to schedule and run background flushes (pr
   }
   ```
 
-- **Initialize / register handlers**: you can either let the package initialize Workmanager for you via `FormFieldsInitializer.initAll(...)` or initialize it manually and register handlers. Example (from the example app):
+- **Initialize / register handlers**: register a top-level background handler on the service before calling `initAll`, or let `initAll` register handlers via the provided `workerRegistrations`:
 
   ```dart
-  // manual initialize (example/main.dart)
-  await Workmanager().initialize(workmanagerCallbackDispatcher);
-  WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
-
-  // ensure a foreground flush handler is set so UI can call it immediately
-  WorkmanagerService.instance.foregroundFlushHandler = () async {
+  // Option A: register handler on the service, then call initAll
+  ForegroundTaskService.setBackgroundTaskHandler(backgroundFlushHandler);
+  ForegroundTaskService.instance.foregroundFlushHandler = () async {
     await processPendingSubmissions();
   };
-
-  // or let initAll register handlers for you:
   await FormFieldsInitializer.initAll(
-    enableWorkmanager: true,
-    workmanagerHandler: backgroundFlushHandler,
-    workmanagerFlushPendingHandler: () async => await processPendingSubmissions(),
+    enableWorkmanager: true, // legacy name; runtime uses flutter_foreground_task
+    workerRegistrations: [...],
   );
+
+  // Option B: pass per-worker registrations into initAll (example below)
   ```
 
-- **Constants and scheduling**: `FormFieldsInitializer` exposes `workmanagerInitialDelay` (default `kWorkmanagerInitialDelayDefault = Duration(minutes:15)`) and `workmanagerFrequency` when starting periodic tasks. Pass `initialDelay` to `WorkmanagerService.start(...)` if you need a custom delay before the first run.
+- **Constants and scheduling**: `FormFieldsInitializer` still exposes a legacy initial-delay constant (renamed to `kBackgroundInitialDelayDefault` in code) used by the example; scheduling behavior is driven by the foreground-service adapter.
 
-- **Triggering a one-off run from UI**: use `WorkmanagerService.instance.runOnceNowDetailed()` to register a one-off task immediately. Note that the background one-off will run via the OS scheduling; to process immediately in the foreground, call `WorkmanagerService.instance.foregroundFlushHandler?.call()` (if set) or invoke your flush helper directly.
+- **Triggering a one-off run from UI**: use `ForegroundTaskService.instance.runOnceNowDetailed()` to request an immediate run (the current adapter invokes the registered callback promptly). To run a foreground flush immediately, call `ForegroundTaskService.instance.foregroundFlushHandler?.call()`.
 
 ```dart
-// register a one-off background run
-await WorkmanagerService.instance.runOnceNowDetailed();
+// register a one-off run
+await ForegroundTaskService.instance.runOnceNowDetailed();
 
-// also perform an immediate foreground flush (for testing)
-await WorkmanagerService.instance.foregroundFlushHandler?.call();
+// perform an immediate foreground flush
+await ForegroundTaskService.instance.foregroundFlushHandler?.call();
 ```
 
 - **Per-row manual run (example UI)**: the example app provides `flushPendingSubmissionById(id)` in `example/lib/src/service/flush_service.dart` to process a single pending row and delete it on success. The Worker Demo UI adds a Play button per row that calls this helper and reloads the pending list.
@@ -98,7 +98,7 @@ await WorkmanagerService.instance.foregroundFlushHandler?.call();
   - [example/lib/src/service/flush_service.dart](example/lib/src/service/flush_service.dart)
   - [example/lib/ui/pages/worker_demo/view.dart](example/lib/ui/pages/worker_demo/view.dart)
 
-- **UI synchronisation**: the package exposes `WorkmanagerService.instance.pendingChangedListenable` (a `ValueNotifier<int>`) and `notifyPendingChanged()` — call `notifyPendingChanged()` after you delete pending rows so the example UI refreshes without parsing logs.
+- **UI synchronisation**: the package exposes `ForegroundTaskService.instance.pendingChangedListenable` (a `ValueNotifier<int>`) and `notifyPendingChanged()` — call `notifyPendingChanged()` after you delete pending rows so the example UI refreshes without parsing logs.
 
 - **Debug helpers in example**: the example app includes a countdown display that calls `processPendingSubmissions()` when the timer expires and schedules one-off fallbacks (`dbg_countdown`) and a debug immediate run (`dbg_now`) in debug mode. See [example/lib/main.dart](example/lib/main.dart).
 

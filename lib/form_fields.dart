@@ -114,14 +114,14 @@ export 'src/service/upload_service.dart' show UploadService, UploadOutcome;
 export 'src/utilities/upload_helper.dart' show UploadHelper;
 export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 
-// Database, import/export, crypto, and background workmanager services
+// Database, import/export, crypto, and background services
 export 'src/service/db_service.dart' show DBService;
 export 'src/service/import_export_service.dart' show ImportExportService;
 export 'src/service/crypto_utils.dart' show CryptoUtils;
-export 'src/service/workmanager_service.dart' show WorkmanagerService;
+export 'src/service/workmanager_service.dart' show ForegroundTaskService;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
-// `FlushState` moved into `WorkmanagerService` as `isFlushing`.
+// `FlushState` moved into `ForegroundTaskService` as `isFlushing`.
 export 'src/service/flush_types.dart'
     show SubmitHandler, FlushAllHandler, FlushOneHandler;
 

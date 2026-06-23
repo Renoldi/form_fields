@@ -2,7 +2,7 @@ name: form_fields
 description: A comprehensive and reusable Flutter form field widget with support
   for multiple input types including text, email, phone, password, date, time,
   and more.
-version: 1.1.0
+version: 2.0.0
 homepage: https://github.com/renoldi/form_fields
 repository: https://github.com/renoldi/form_fields
 issue_tracker: https://github.com/renoldi/form_fields/issues
@@ -23,7 +23,7 @@ dependencies:
   path: any
   path_provider: any
   crypto: any
-  workmanager: any
+  flutter_foreground_task: any
   # file_picker removed; using assets and app directories for import/export
   provider: any
   cunning_document_scanner: any

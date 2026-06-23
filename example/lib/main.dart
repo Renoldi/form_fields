@@ -13,10 +13,11 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-// Workmanager is initialized by `FormFieldsInitializer.initAll(...)` when
-// requested. The package will initialize the plugin and wire background
-// handlers for you when you pass `workmanagerHandler` to `initAll` or
-// register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
+// Background tasks are initialized by `FormFieldsInitializer.initAll(...)`.
+// The package uses a foreground-service (via `flutter_foreground_task`) to
+// execute long-running work. Register top-level background handlers by
+// calling `ForegroundTaskService.setBackgroundTaskHandler()` before init,
+// or include per-worker registrations in `initAll`'s `workerRegistrations`.
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 // example-local service helpers (flush, handlers)
@@ -34,13 +35,13 @@ final logger = Logger();
 // MAIN ENTRY POINT
 // ============================================================================
 
-// Background dispatching: the package can initialize Workmanager and wire
-// background handlers when `enableWorkmanager: true` is passed to
-// `FormFieldsInitializer.initAll(...)`. Register a top-level handler via
-// the `workmanagerHandler` argument to `initAll`, or call
-// `WorkmanagerService.setBackgroundTaskHandler(myHandler)` before
-// scheduling tasks. Handlers must be top-level/static so they can be
-// resolved from background isolates.
+// Background dispatching: the package initializes a foreground-service
+// (via `flutter_foreground_task`) when you call
+// `FormFieldsInitializer.initAll(...)`. Register a top-level handler by
+// calling `ForegroundTaskService.setBackgroundTaskHandler(myHandler)` before
+// init, or include per-worker registrations in `initAll`'s
+// `workerRegistrations`. Handlers must be top-level/static for callback
+// resolution.
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,23 +82,12 @@ Future<void> main() async {
     //   }
     // }
 
-    // Workmanager initialization and handler registration is performed by
-    // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true`.
-    // Example: register a top-level background handler (choose one):
-    //
-    // 1) Register the handler on the service before init:
-    //    WorkmanagerService.setBackgroundTaskHandler(myHandler);
-    //    await FormFieldsInitializer.initAll(..., enableWorkmanager: true);
-    //
-    // 2) Or pass the handler into initAll directly:
-    //    await FormFieldsInitializer.initAll(
-    //      ...,
-    //      enableWorkmanager: true,
-    //      workmanagerHandler: myHandler,
-    //    );
-    //
+    // Foreground-service initialization and handler registration is
+    // performed by `FormFieldsInitializer.initAll(...)`. You can register
+    // a top-level handler on the service before calling `initAll`, or
+    // include handlers in the `workerRegistrations` passed to `initAll`.
     // Note: `myHandler` must be a top-level/static function so it can be
-    // resolved from background isolates.
+    // resolved for background callbacks.
 
     if (kDebugMode) {
       try {
@@ -111,8 +101,9 @@ Future<void> main() async {
 
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
-      // Let `initAll` initialize Workmanager and register handlers.
-      enableWorkmanager: true,
+      // Let `initAll` initialize the foreground-service plumbing and
+      // register handlers.
+      enableForegroundService: true,
       registerPeriodic: true,
       // Example: register one or more background workers.
       workerRegistrations: [
@@ -124,8 +115,8 @@ Future<void> main() async {
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
-          backgroundHandler: workmanagerFlushBackgroundHandler,
-          foregroundHandler: workmanagerFlushPendingHandler,
+          backgroundHandler: backgroundFlushHandler,
+          foregroundHandler: foregroundFlushPendingHandler,
           register: true,
         ),
         WorkerRegistration(
@@ -167,15 +158,15 @@ Future<void> main() async {
     //       flushOne: flushPendingSubmissionById);
     // } catch (_) {}
 
-    // // Debug helper: schedule a one-off run immediately to verify dispatcher
+    // // Debug helper: schedule a one-off run immediately to verify adapter
     // if (kDebugMode && !kIsWeb) {
     //   try {
-    //     final err = await WorkmanagerService.instance
+    //     final err = await ForegroundTaskService.instance
     //         .runOnceNowDetailed(taskName: 'dbg_now');
     //     logger.i('Debug: runOnceNowDetailed -> $err');
     //     // give a short delay for logs to populate
     //     await Future.delayed(const Duration(seconds: 2));
-    //     logger.i('Debug recentLogs: ${WorkmanagerService.instance.recentLogs}');
+    //     logger.i('Debug recentLogs: ${ForegroundTaskService.instance.recentLogs}');
     //   } catch (e, st) {
     //     logger.w('Debug runOnceNow failed: $e\n$st');
     //   }

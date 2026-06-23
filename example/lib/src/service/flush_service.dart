@@ -20,26 +20,26 @@ const String _kStatusPending = 'pending';
 const String _kPayloadsDir = 'payloads';
 
 @pragma('vm:entry-point')
-Future<void> workmanagerFlushPendingHandler() async {
+Future<void> foregroundFlushPendingHandler() async {
   if (kDebugMode) {
     // ignore: avoid_print
-    print('workmanagerFlushPendingHandler invoked in isolate');
+    print('foregroundFlushPendingHandler invoked in isolate');
   }
   await processPendingSubmissions();
 }
 
 @pragma('vm:entry-point')
-Future<bool> workmanagerFlushBackgroundHandler(
+Future<bool> backgroundFlushHandler(
     String task, Map<String, dynamic>? inputData) async {
   try {
     if (kDebugMode) {
       // ignore: avoid_print
-      print('workmanagerFlushBackgroundHandler invoked: $task');
+      print('backgroundFlushHandler invoked: $task');
     }
     await processPendingSubmissions();
     return true;
   } catch (e, st) {
-    _logger.w('workmanagerFlushBackgroundHandler failed: $e\n$st');
+    _logger.w('backgroundFlushHandler failed: $e\n$st');
     return false;
   }
 }
@@ -86,10 +86,10 @@ Future<bool> flushPendingSubmissions({
 }) async {
   final skip = skipGuard ||
       skipFlushStateGuard ||
-      WorkmanagerService.isInCountdownInvocation;
+      ForegroundTaskService.isInCountdownInvocation;
   _logger.i(
-      'flushPendingSubmissions: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-  final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+      'flushPendingSubmissions: skip=$skip isFlushing=${ForegroundTaskService.isFlushing} guardSetAt=${ForegroundTaskService.flushGuardSetAt} inCountdown=${ForegroundTaskService.isInCountdownInvocation}');
+  final acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skip);
   if (!skip && !acquiredHere) {
     _logger.i('flushPendingSubmissions: another flush in progress — skipping');
     return false;
@@ -120,14 +120,14 @@ Future<bool> flushPendingSubmissions({
     _logger.w('flushPendingSubmissions threw: $e\n$st');
     return false;
   } finally {
-    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+    if (acquiredHere) ForegroundTaskService.releaseFlushGuard();
   }
 }
 
 @pragma('vm:entry-point')
 Future<bool> flushPendingSubmissionById(int id,
     {SubmitHandler? submitHandler, bool skipGuard = false}) async {
-  final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skipGuard);
+  final acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skipGuard);
   if (!skipGuard && !acquiredHere) return false;
   try {
     final rows = await DBService.instance.selectFrom(_kPendingTable,
@@ -144,14 +144,14 @@ Future<bool> flushPendingSubmissionById(int id,
 
     await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
     try {
-      WorkmanagerService.instance.notifyPendingChanged();
+      ForegroundTaskService.instance.notifyPendingChanged();
     } catch (_) {}
     return true;
   } catch (e, st) {
     _logger.w('flushPendingSubmissionById threw: $e\n$st');
     return false;
   } finally {
-    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+    if (acquiredHere) ForegroundTaskService.releaseFlushGuard();
   }
 }
 
@@ -184,7 +184,7 @@ Future<bool> _processPendingRow(
   if (id != null) {
     await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
     try {
-      WorkmanagerService.instance.notifyPendingChanged();
+      ForegroundTaskService.instance.notifyPendingChanged();
     } catch (_) {}
   }
   return true;

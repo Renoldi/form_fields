@@ -11,7 +11,7 @@ Future<int> addPendingSubmission(Map<String, dynamic> payload,
     final values = <String, dynamic>{'payload': payload, 'status': status};
     final id = await DBService.instance.insert('pending_submissions', values);
     try {
-      WorkmanagerService.instance.notifyPendingChanged();
+      ForegroundTaskService.instance.notifyPendingChanged();
     } catch (_) {}
     _pendingLogger.i(
         'addPendingSubmission inserted id=$id payloadType=${payload['type'] ?? '-'}');

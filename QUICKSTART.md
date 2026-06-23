@@ -221,14 +221,16 @@ await FormFieldsInitializer.initAll(
   onUpgrade: (db, oldV, newV) async { /* incremental upgrade */ },
 );
 
-// If you need a background Workmanager handler use `workmanagerHandler`.
-// The handler must be a top-level function (so it's reachable from
-// background isolates). `initAll` will register it for both foreground
-// convenience and as the background task handler for the package:
+// If you need a background handler, register a top-level handler via
+// the initializer. The handler must be a top-level function so it can
+// be resolved from background isolates. `initAll` will register the
+// handler for foreground convenience and as the package's background
+// callback when appropriate. The package uses `flutter_foreground_task`
+// for foreground-service execution.
 
 // Example:
 // Future<bool> myBackgroundHandler(String task, Map<String, dynamic>? data) async { ... }
-// await FormFieldsInitializer.initAll(..., workmanagerHandler: myBackgroundHandler);
+// await FormFieldsInitializer.initAll(..., backgroundHandler: myBackgroundHandler);
 
 // Programmatic migration: change DB version at runtime
 await FormFieldsInitializer.changeDbVersion(2,

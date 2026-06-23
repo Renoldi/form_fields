@@ -32,7 +32,7 @@ void main() {
       dbName: 'form_fields.db',
       dbVersion: 0,
       migrationAssetPaths: ['migrations/v1.sql', 'migrations/v2.sql'],
-      enableWorkmanager: false,
+      enableForegroundService: false,
       onCreate: (db, v) async {
         // Print to test output for verification
         // ignore: avoid_print

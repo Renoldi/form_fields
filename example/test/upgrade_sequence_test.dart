@@ -28,7 +28,7 @@ void main() {
       dbName: 'form_fields.db',
       dbVersion: 0,
       migrationAssetPaths: ['migrations/v1.sql'],
-      enableWorkmanager: false,
+      enableForegroundService: false,
     );
 
     var db =

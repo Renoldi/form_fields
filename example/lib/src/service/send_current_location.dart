@@ -16,10 +16,10 @@ Future<bool> sendCurrentLocationBackgroundHandler(
       // ignore: avoid_print
       print('sendCurrentLocationBackgroundHandler invoked: $task');
     }
-    final skip = WorkmanagerService.isInCountdownInvocation;
+    final skip = ForegroundTaskService.isInCountdownInvocation;
     _sendLocationLogger.i(
-        'sendCurrentLocationBackgroundHandler: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-    acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+        'sendCurrentLocationBackgroundHandler: skip=$skip isFlushing=${ForegroundTaskService.isFlushing} guardSetAt=${ForegroundTaskService.flushGuardSetAt} inCountdown=${ForegroundTaskService.isInCountdownInvocation}');
+    acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skip);
     if (!skip && !acquiredHere) {
       _sendLocationLogger.i(
           'sendCurrentLocationBackgroundHandler: another flush in progress — skipping');
@@ -57,16 +57,16 @@ Future<bool> sendCurrentLocationBackgroundHandler(
     _sendLocationLogger.w('Background handler failed: $e\n$st');
     return false;
   } finally {
-    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+    if (acquiredHere) ForegroundTaskService.releaseFlushGuard();
   }
 }
 
 @pragma('vm:entry-point')
 Future<void> sendCurrentLocationForeground() async {
-  final skip = WorkmanagerService.isInCountdownInvocation;
+  final skip = ForegroundTaskService.isInCountdownInvocation;
   _sendLocationLogger.i(
-      'sendCurrentLocationForeground: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-  final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+      'sendCurrentLocationForeground: skip=$skip isFlushing=${ForegroundTaskService.isFlushing} guardSetAt=${ForegroundTaskService.flushGuardSetAt} inCountdown=${ForegroundTaskService.isInCountdownInvocation}');
+  final acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skip);
   if (!skip && !acquiredHere) {
     _sendLocationLogger.i(
         'sendCurrentLocationForeground: another flush in progress — skipping');
@@ -104,6 +104,6 @@ Future<void> sendCurrentLocationForeground() async {
   } catch (e, st) {
     _sendLocationLogger.w('Foreground handler threw: $e\n$st');
   } finally {
-    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+    if (acquiredHere) ForegroundTaskService.releaseFlushGuard();
   }
 }

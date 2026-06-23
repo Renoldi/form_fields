@@ -13,10 +13,10 @@ Future<bool> sendRandomBackgroundHandler(
       // ignore: avoid_print
       print('sendRandomBackgroundHandler invoked: $task');
     }
-    final skip = WorkmanagerService.isInCountdownInvocation;
+    final skip = ForegroundTaskService.isInCountdownInvocation;
     _sendRandomLogger.i(
-        'sendRandomBackgroundHandler: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-    final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+        'sendRandomBackgroundHandler: skip=$skip isFlushing=${ForegroundTaskService.isFlushing} guardSetAt=${ForegroundTaskService.flushGuardSetAt} inCountdown=${ForegroundTaskService.isInCountdownInvocation}');
+    final acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skip);
     if (!skip && !acquiredHere) {
       _sendRandomLogger.i(
           'sendRandomBackgroundHandler: another flush in progress — skipping');
@@ -46,10 +46,10 @@ Future<bool> sendRandomBackgroundHandler(
 
 @pragma('vm:entry-point')
 Future<void> sendRandomForeground() async {
-  final skip = WorkmanagerService.isInCountdownInvocation;
+  final skip = ForegroundTaskService.isInCountdownInvocation;
   _sendRandomLogger.i(
-      'sendRandomForeground: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-  final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+      'sendRandomForeground: skip=$skip isFlushing=${ForegroundTaskService.isFlushing} guardSetAt=${ForegroundTaskService.flushGuardSetAt} inCountdown=${ForegroundTaskService.isInCountdownInvocation}');
+  final acquiredHere = ForegroundTaskService.acquireFlushGuard(skip: skip);
   if (!skip && !acquiredHere) {
     _sendRandomLogger
         .i('sendRandomForeground: another flush in progress — skipping');
@@ -76,6 +76,6 @@ Future<void> sendRandomForeground() async {
   } catch (e, st) {
     _sendRandomLogger.w('Foreground handler threw: $e\n$st');
   } finally {
-    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+    if (acquiredHere) ForegroundTaskService.releaseFlushGuard();
   }
 }
