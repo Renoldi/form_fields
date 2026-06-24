@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -34,21 +35,20 @@ class ImportExportService {
 
   /// Let the user pick a folder and export the SQL file there. Returns the
   /// destination path on success, or null if cancelled.
-  /// TODO: Uncomment when file_picker supports folder picking on all platforms.
-  // Future<String?> pickFolderAndExport() async {
-  //   try {
-  //     final dirPath = await FilePicker.platform.getDirectoryPath();
-  //     if (dirPath == null) return null;
-  //     final fileName =
-  //         'form_fields_export_${DateTime.now().toIso8601String()}.sql';
-  //     final dest = p.join(dirPath, fileName);
-  //     await exportToPath(dest);
-  //     return dest;
-  //   } catch (e, st) {
-  //     _log.warning('Failed to pick folder and export: $e', e, st);
-  //     return null;
-  //   }
-  // }
+  Future<String?> pickFolderAndExport() async {
+    try {
+      final dirPath = await FilePicker.getDirectoryPath();
+      if (dirPath == null) return null;
+      final fileName =
+          'form_fields_export_${DateTime.now().toIso8601String()}.sql';
+      final dest = p.join(dirPath, fileName);
+      await exportToPath(dest);
+      return dest;
+    } catch (e, st) {
+      _log.warning('Failed to pick folder and export: $e', e, st);
+      return null;
+    }
+  }
 
   /// Import a SQL file bundled as an asset (e.g. assets/imports/mydata.sql).
   /// Returns the temporary file path used for import, or null on failure.
@@ -78,36 +78,35 @@ class ImportExportService {
 
   /// Let the user pick a `.sql` file from device storage and import it.
   /// Returns the imported file path on success, or null on failure/cancel.
-  /// TODO Uncomment when file_picker supports file picking on all platforms.
-  // Future<String?> pickFileAndImport() async {
-  //   try {
-  //     final result = await FilePicker.platform.pickFiles(
-  //       type: FileType.custom,
-  //       allowedExtensions: ['sql', 'txt'],
-  //       allowMultiple: false,
-  //     );
-  //     if (result == null || result.files.isEmpty) return null;
-  //     final filePath = result.files.single.path;
-  //     if (filePath == null) return null;
-  //     // Copy to temp to ensure read permissions and consistent path
-  //     final tmpDir = await getTemporaryDirectory();
-  //     final destPath = p.join(
-  //         tmpDir.path, 'import_${DateTime.now().millisecondsSinceEpoch}.sql');
-  //     final src = File(filePath);
-  //     await src.copy(destPath);
-  //     // Ensure core schema exists before importing user-provided SQL.
-  //     try {
-  //       await DBService.instance
-  //           .runMigrationAsset('migrations/migration.sql', applyDml: true);
-  //     } catch (e) {
-  //       _log.warning('Failed to ensure migrations before file import: $e');
-  //     }
-  //     await DBService.instance.importFromSqlFile(destPath);
-  //     _log.info('Imported SQL from picked file $filePath');
-  //     return destPath;
-  //   } catch (e, st) {
-  //     _log.warning('Failed to pick/import file: $e', e, st);
-  //     return null;
-  //   }
-  // }
+  Future<String?> pickFileAndImport() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['sql', 'txt'],
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return null;
+      final filePath = result.files.single.path;
+      if (filePath == null) return null;
+      // Copy to temp to ensure read permissions and consistent path
+      final tmpDir = await getTemporaryDirectory();
+      final destPath = p.join(
+          tmpDir.path, 'import_${DateTime.now().millisecondsSinceEpoch}.sql');
+      final src = File(filePath);
+      await src.copy(destPath);
+      // Ensure core schema exists before importing user-provided SQL.
+      try {
+        await DBService.instance
+            .runMigrationAsset('migrations/migration.sql', applyDml: true);
+      } catch (e) {
+        _log.warning('Failed to ensure migrations before file import: $e');
+      }
+      await DBService.instance.importFromSqlFile(destPath);
+      _log.info('Imported SQL from picked file $filePath');
+      return destPath;
+    } catch (e, st) {
+      _log.warning('Failed to pick/import file: $e', e, st);
+      return null;
+    }
+  }
 }
