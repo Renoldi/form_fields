@@ -35,7 +35,7 @@ dependencies:
   connectivity_plus: any
   flutter_widget_from_html: any
   skeleton_text: any
-  file_picker: ^11.0.2
+  # file_picker: ^10.3.2
 
 dev_dependencies:
   build_runner: any
