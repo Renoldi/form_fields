@@ -1107,7 +1107,7 @@ class WorkmanagerService {
 
   // Background callback dispatcher used by Workmanager plugin.
   static void _callbackDispatcher() {
-    WidgetsFlutterBinding.ensureInitialized();
+    // WidgetsFlutterBinding.ensureInitialized();
 
     Workmanager().executeTask((task, inputData) async {
       if (kDebugMode) {
