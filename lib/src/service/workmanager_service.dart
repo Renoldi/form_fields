@@ -1174,3 +1174,7 @@ class WorkmanagerService {
   void workmanagerCallbackDispatcher() =>
       WorkmanagerService._callbackDispatcher();
 }
+
+@pragma('vm:entry-point')
+void workmanagerCallbackDispatcher() =>
+    WorkmanagerService._callbackDispatcher();
