@@ -362,8 +362,8 @@ class WorkmanagerService {
       bool useConnectivity = true}) async {
     if (_initialized) return;
     try {
-      await Workmanager().initialize(
-          callbackDispatcher ?? WorkmanagerService._callbackDispatcher);
+      await Workmanager()
+          .initialize(callbackDispatcher ?? workmanagerCallbackDispatcher);
       _initialized = true;
 
       // Optionally listen for connectivity changes and invoke foreground
