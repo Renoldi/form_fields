@@ -362,8 +362,12 @@ class WorkmanagerService {
       bool useConnectivity = true}) async {
     if (_initialized) return;
     try {
-      await Workmanager()
-          .initialize(callbackDispatcher ?? workmanagerCallbackDispatcher);
+      final cb = callbackDispatcher ?? workmanagerCallbackDispatcher;
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Workmanager initialize: callbackDispatcher is ${'provided'}');
+      }
+      await Workmanager().initialize(cb);
       _initialized = true;
 
       // Optionally listen for connectivity changes and invoke foreground
@@ -389,10 +393,10 @@ class WorkmanagerService {
           });
         } catch (_) {}
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
         // ignore: avoid_print
-        print('Workmanager initialize failed: $e');
+        print('Workmanager initialize failed: $e\n$st');
       }
     }
   }
@@ -1029,7 +1033,7 @@ class WorkmanagerService {
     try {
       _providedWorkerDefinitions = List<Map<String, dynamic>>.from(defs);
       try {
-        for (final d in _providedWorkerDefinitions!) {
+        for (final d in _providedWorkerDefinitions ?? []) {
           final name = d['name'];
           final freq = d['frequency'] is Duration
               ? (d['frequency'] as Duration).inSeconds
