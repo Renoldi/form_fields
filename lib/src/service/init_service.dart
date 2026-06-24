@@ -116,7 +116,8 @@ class FormFieldsInitializer {
   /// logging and error handling for worker registration.
   static Future<BackgroundTaskHandler?> _registerWorkers(
       List<WorkerRegistration> regs,
-      {bool triggerOnStart = false}) async {
+      {bool triggerOnStart = false,
+      bool deferStartupHandlersOnIos = true}) async {
     BackgroundTaskHandler? firstHandler;
 
     // Track seen handler+period combinations so we only register one
@@ -215,11 +216,30 @@ class FormFieldsInitializer {
         // scheduled interval to elapse. This is opt-in via
         // `triggerOnStart` passed from `initAll`.
         if (triggerOnStart) {
+          // Optionally defer startup handler invocation on iOS to avoid
+          // calling platform-dependent APIs before the app is ready.
+          final bool deferOnIos = deferStartupHandlersOnIos &&
+              defaultTargetPlatform == TargetPlatform.iOS;
+
           try {
             if (reg.foregroundHandler != null) {
-              await reg.foregroundHandler!();
-              _log.fine(
-                  'Invoked foregroundHandler for ${reg.taskName} on start');
+              if (deferOnIos) {
+                _log.fine(
+                    'Deferring foregroundHandler for ${reg.taskName} on iOS');
+                Future.delayed(const Duration(seconds: 2), () async {
+                  try {
+                    await reg.foregroundHandler!();
+                    _log.fine(
+                        'Deferred foregroundHandler executed for ${reg.taskName}');
+                  } catch (e, st) {
+                    _log.warning('Deferred foregroundHandler threw: $e', e, st);
+                  }
+                });
+              } else {
+                await reg.foregroundHandler!();
+                _log.fine(
+                    'Invoked foregroundHandler for ${reg.taskName} on start');
+              }
             }
           } catch (e, st) {
             _log.warning(
@@ -228,15 +248,29 @@ class FormFieldsInitializer {
 
           try {
             if (reg.backgroundHandler != null) {
-              // Use a one-off run to trigger the background handler via
-              // Workmanager if possible. This will schedule a one-off task
-              // that should execute the resolved background callback.
-              await WorkmanagerService.instance.runOnceNowDetailed(
-                taskName: reg.taskName,
-                inputData: inputDataForReg,
-              );
-              _log.fine(
-                  'Requested runOnceNow for backgroundHandler ${reg.taskName}');
+              if (deferOnIos) {
+                _log.fine(
+                    'Deferring backgroundHandler runOnceNow for ${reg.taskName} on iOS');
+                Future.delayed(const Duration(seconds: 2), () async {
+                  try {
+                    await WorkmanagerService.instance.runOnceNowDetailed(
+                      taskName: reg.taskName,
+                      inputData: inputDataForReg,
+                    );
+                    _log.fine(
+                        'Deferred runOnceNow executed for ${reg.taskName}');
+                  } catch (e, st) {
+                    _log.warning('Deferred runOnceNow threw: $e', e, st);
+                  }
+                });
+              } else {
+                await WorkmanagerService.instance.runOnceNowDetailed(
+                  taskName: reg.taskName,
+                  inputData: inputDataForReg,
+                );
+                _log.fine(
+                    'Requested runOnceNow for backgroundHandler ${reg.taskName}');
+              }
             }
           } catch (e, st) {
             _log.warning(
@@ -303,6 +337,7 @@ class FormFieldsInitializer {
     required bool autoStartWorkmanager,
     required bool triggerWorkerHandlersOnStart,
     required bool useConnectivity,
+    required bool deferStartupHandlersOnIos,
   }) async {
     if (!enableWorkmanager || kIsWeb) return;
 
@@ -333,7 +368,8 @@ class FormFieldsInitializer {
       // (if any) so we can register it at the package level.
       final BackgroundTaskHandler? firstHandler = await _registerWorkers(
           workerRegistrations,
-          triggerOnStart: triggerWorkerHandlersOnStart);
+          triggerOnStart: triggerWorkerHandlersOnStart,
+          deferStartupHandlersOnIos: deferStartupHandlersOnIos);
 
       if (firstHandler != null) {
         try {
@@ -404,6 +440,12 @@ class FormFieldsInitializer {
     /// immediately at startup (in addition to scheduling periodic runs).
     /// Default: true.
     bool triggerWorkerHandlersOnStart = true,
+
+    /// If true, `initAll` will defer invoking startup handlers on iOS by a
+    /// short delay to avoid calling platform APIs before the app is fully
+    /// initialized. Hosts may set this to `false` to preserve legacy
+    /// immediate behavior (not recommended on iOS).
+    bool deferStartupHandlersOnIos = true,
 
     /// Whether `WorkmanagerService` should listen for connectivity changes
     /// and attempt foreground flushes when network returns. Defaults to
@@ -478,6 +520,7 @@ class FormFieldsInitializer {
       registerPeriodic: registerPeriodic,
       autoStartWorkmanager: autoStartWorkmanager,
       triggerWorkerHandlersOnStart: triggerWorkerHandlersOnStart,
+      deferStartupHandlersOnIos: deferStartupHandlersOnIos,
       useConnectivity: useConnectivity,
     );
     _log.info('FormFields initialized');

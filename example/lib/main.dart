@@ -158,6 +158,12 @@ Future<void> main() async {
       ],
       dbVersion: 0,
       // Invoke each registration's handlers immediately at startup.
+      // Explicitly show startup trigger and iOS deferral options.
+      triggerWorkerHandlersOnStart: true,
+      // If true (default) `initAll` will defer invoking startup handlers
+      // on iOS by a short delay to avoid platform-not-ready crashes. Set
+      // to false to keep legacy immediate behavior.
+      deferStartupHandlersOnIos: true,
     );
 
     // Register example flush handlers so `FlushApi` can invoke them.
