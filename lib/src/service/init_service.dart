@@ -12,6 +12,16 @@ import 'flush_types.dart';
 
 final _log = Logger('FormFieldsInitializer');
 
+// Strip common ANSI escape sequences (colors/etc.) so logs printed in
+// environments that don't support ANSI (or where escapes are visible)
+// remain readable.
+final _ansiEscape = RegExp(r'\x1B\[[0-9;]*[A-Za-z]');
+
+String _stripAnsi(String? input) {
+  if (input == null) return '';
+  return input.replaceAll(_ansiEscape, '');
+}
+
 /// Default initial delay used for scheduling periodic Workmanager tasks.
 /// Hosts can override this by passing `workmanagerInitialDelay` to `initAll`.
 const Duration kWorkmanagerInitialDelayDefault = Duration(minutes: 15);
@@ -460,17 +470,18 @@ class FormFieldsInitializer {
     // Setup logging
     Logger.root.level = logLevel;
     Logger.root.onRecord.listen((rec) {
-      final msg = '${rec.level.name}: ${rec.time.toIso8601String()} '
+      final raw = '${rec.level.name}: ${rec.time.toIso8601String()} '
           '${rec.loggerName} - ${rec.message}';
+      final msg = _stripAnsi(raw);
       // ignore: avoid_print
       print(msg);
       if (rec.error != null) {
         // ignore: avoid_print
-        print(rec.error);
+        print(_stripAnsi(rec.error.toString()));
       }
       if (rec.stackTrace != null) {
         // ignore: avoid_print
-        print(rec.stackTrace);
+        print(_stripAnsi(rec.stackTrace.toString()));
       }
     });
 
