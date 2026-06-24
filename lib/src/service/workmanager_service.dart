@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 // Flush state relocated into WorkmanagerService as `isFlushing`.
