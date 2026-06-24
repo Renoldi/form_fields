@@ -36,7 +36,7 @@ class ImportExportService {
   /// destination path on success, or null if cancelled.
   Future<String?> pickFolderAndExport() async {
     try {
-      final dirPath = await FilePicker.getDirectoryPath();
+      final dirPath = await FilePicker.platform.getDirectoryPath();
       if (dirPath == null) return null;
       final fileName =
           'form_fields_export_${DateTime.now().toIso8601String()}.sql';
@@ -79,7 +79,7 @@ class ImportExportService {
   /// Returns the imported file path on success, or null on failure/cancel.
   Future<String?> pickFileAndImport() async {
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['sql', 'txt'],
         allowMultiple: false,
