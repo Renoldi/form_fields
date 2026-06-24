@@ -19,6 +19,7 @@ const Map<String, String> enUSStrings = {
 
   // Validation - Required
   'required': '{label} is required',
+  'requiredDefault': 'required',
   'selectRequired': 'Please select {label}',
   'enterRequired': 'Please enter {label}',
 

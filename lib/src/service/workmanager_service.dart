@@ -120,6 +120,10 @@ class _ForegroundAdapter {
         print('stopService failed: $e');
       }
     }
+    // Clear registered handlers so repeated starts don't keep references
+    // to previously-registered tasks.
+    _handlers.clear();
+    _registeredCallback = null;
   }
 
   static Future<void> cancelByUniqueName(String name) async {
@@ -129,7 +133,22 @@ class _ForegroundAdapter {
     }
     _handlers.remove(name);
     try {
-      await FlutterForegroundTask.stopService();
+      // If there are no remaining handlers, stop the service. If other
+      // handlers remain we attempt to update service options instead of
+      // stopping the entire foreground service to avoid interrupting
+      // other tasks.
+      if (_handlers.isEmpty) {
+        await FlutterForegroundTask.stopService();
+        _registeredCallback = null;
+      } else {
+        try {
+          // Attempt to update service to remove repeating action if needed.
+          await FlutterForegroundTask.updateService(
+              foregroundTaskOptions: ForegroundTaskOptions(
+            eventAction: ForegroundTaskEventAction.nothing(),
+          ));
+        } catch (_) {}
+      }
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -836,6 +855,44 @@ class ForegroundTaskService {
         // ignore: avoid_print
         print('failed to cancel connectivity subscription: $e');
       }
+    }
+  }
+
+  /// Force-stop everything: stop the foreground adapter service and
+  /// clear all internal bookkeeping. Use this for emergency stops when
+  /// normal cancellation does not fully stop the service.
+  Future<void> forceStopAll() async {
+    try {
+      // Try adapter-level shutdown first.
+      await _ForegroundAdapter.cancelAll();
+    } catch (e) {
+      _addLog('forceStopAll: adapter cancelAll threw: $e');
+    }
+
+    try {
+      // Clear internal bookkeeping and listeners so UI reflects stopped state.
+      for (final name in _registeredTasks.toList(growable: false)) {
+        _scheduledAtPerTask.remove(name);
+        _scheduledFrequencyPerTask.remove(name);
+      }
+      _registeredTasks.clear();
+      registeredCountListenable.value = 0;
+      statusListenable.value = 'stopped';
+      _scheduledAtPerTask.clear();
+      _scheduledFrequencyPerTask.clear();
+      _stopCountdownTimer();
+    } catch (e) {
+      _addLog('forceStopAll: cleanup threw: $e');
+    }
+
+    try {
+      await _connectivitySub?.cancel();
+      _connectivitySub = null;
+      foregroundFlushHandler = null;
+      _addLog(
+          'forceStopAll: connectivity listener cancelled and flush handler cleared');
+    } catch (e) {
+      _addLog('forceStopAll: cancel connectivity failed: $e');
     }
   }
 

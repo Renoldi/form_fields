@@ -111,7 +111,7 @@ Future<void> main() async {
           taskName: 'form_fields_flush',
           // Use a platform-appropriate minimum (15 minutes) to avoid
           // overwhelming background isolate launches during development.
-          frequency: Duration(seconds: 30),
+          frequency: Duration(seconds: 40),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,

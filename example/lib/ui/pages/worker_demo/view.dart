@@ -61,11 +61,6 @@ class View extends PresenterState {
           textStyle: const TextStyle(fontSize: 14),
         );
 
-        final inputBorder = OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        );
-
         return Scaffold(
           appBar: AppBar(
             title: Text(context.tr('workerDemo')),
@@ -476,118 +471,61 @@ class View extends PresenterState {
                                             ?.copyWith(
                                                 fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 8),
-                                    TextFormField(
-                                      initialValue: vm.post.title ?? '',
-                                      decoration: InputDecoration(
-                                          labelText: 'Title',
-                                          prefixIcon: const Icon(Icons.title),
-                                          filled: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 12, horizontal: 12),
-                                          border: inputBorder,
-                                          enabledBorder: inputBorder,
-                                          focusedBorder: inputBorder.copyWith(
-                                              borderSide: BorderSide(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  width: 2))),
-                                      onChanged: (v) => vm.post.title = v,
-                                      validator: (v) => (v ?? '').trim().isEmpty
-                                          ? 'Title required'
-                                          : null,
+                                    FormFields<String>(
+                                      // label: 'Title',
+                                      currentValue: vm.post.title ?? '',
+                                      onChanged: (v) {
+                                        vm.post.title = v;
+                                        vm.commit();
+                                      },
+                                      // validator: (v) => (v ?? '').trim().isEmpty
+                                      //     ? 'Title required'
+                                      //     : null,
+                                      isRequired: true,
                                     ),
                                     const SizedBox(height: 8),
-                                    TextFormField(
-                                      initialValue: vm.post.body ?? '',
-                                      decoration: InputDecoration(
-                                          labelText: 'Body',
-                                          prefixIcon: const Icon(Icons.article),
-                                          filled: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 12, horizontal: 12),
-                                          border: inputBorder,
-                                          enabledBorder: inputBorder,
-                                          focusedBorder: inputBorder.copyWith(
-                                              borderSide: BorderSide(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                  width: 2))),
-                                      maxLines: 3,
-                                      onChanged: (v) => vm.post.body = v,
+                                    FormFields<String>(
+                                      // label: 'Body',
+                                      currentValue: vm.post.body ?? '',
+                                      onChanged: (v) {
+                                        vm.post.body = v;
+                                        vm.commit();
+                                      },
+                                      isRequired: true,
                                     ),
                                     const SizedBox(height: 8),
                                     Row(children: [
                                       Expanded(
-                                          child: TextFormField(
+                                          child: FormFields<String>(
+                                              // label: 'User ID',
                                               key: ValueKey(vm.post.userId ??
                                                   appState.currentUser?.id ??
                                                   ''),
-                                              initialValue:
+                                              currentValue:
                                                   vm.post.userId?.toString() ??
                                                       appState.currentUser?.id
                                                           ?.toString() ??
                                                       '',
-                                              decoration: InputDecoration(
-                                                  labelText: 'User ID',
-                                                  prefixIcon:
-                                                      const Icon(Icons.person),
-                                                  filled: true,
-                                                  contentPadding:
-                                                      const EdgeInsets.symmetric(
-                                                          vertical: 12,
-                                                          horizontal: 12),
-                                                  border: inputBorder,
-                                                  enabledBorder: inputBorder,
-                                                  focusedBorder:
-                                                      inputBorder.copyWith(
-                                                          borderSide: BorderSide(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                              width: 2))),
-                                              keyboardType:
-                                                  TextInputType.number,
+                                              isRequired: true,
                                               onChanged: (v) {
                                                 vm.post.userId =
                                                     int.tryParse(v) ?? 1;
+                                                vm.commit();
                                               })),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                          child: TextFormField(
-                                              initialValue: vm.post.tags?.join(
-                                                      ',') ??
-                                                  '',
-                                              decoration: InputDecoration(
-                                                  labelText: 'Tags (comma)',
-                                                  prefixIcon:
-                                                      const Icon(Icons.tag),
-                                                  filled: true,
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                          vertical: 12,
-                                                          horizontal: 12),
-                                                  border: inputBorder,
-                                                  enabledBorder: inputBorder,
-                                                  focusedBorder: inputBorder
-                                                      .copyWith(
-                                                          borderSide: BorderSide(
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .colorScheme
-                                                                  .primary,
-                                                              width: 2))),
+                                          child: FormFields<String>(
+                                              // label: 'Tags (comma)',
+                                              currentValue:
+                                                  vm.post.tags?.join(',') ?? '',
+                                              isRequired: true,
                                               onChanged: (v) {
                                                 vm.post.tags = v
                                                     .split(',')
                                                     .map((s) => s.trim())
                                                     .where((s) => s.isNotEmpty)
                                                     .toList();
+                                                vm.commit();
                                               })),
                                     ]),
                                     const SizedBox(height: 12),

@@ -20,6 +20,7 @@ const Map<String, String> idIDStrings = {
 
   // Validation - Required
   'required': '{label} wajib diisi',
+  'requiredDefault': 'wajib diisi',
   'selectRequired': 'Silakan pilih {label}',
   'enterRequired': 'Silakan masukkan {label}',
 

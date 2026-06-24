@@ -60,7 +60,7 @@ class FormFieldsController extends ChangeNotifier {
   FormType? formType;
 
   /// Field label
-  String label = "";
+  String? label;
 
   /// Label display state
   bool isLabel = false;
