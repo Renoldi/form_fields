@@ -1173,10 +1173,6 @@ class WorkmanagerService {
       return Future.value(true);
     });
   }
-
-  @pragma('vm:entry-point')
-  void workmanagerCallbackDispatcher() =>
-      WorkmanagerService._callbackDispatcher();
 }
 
 @pragma('vm:entry-point')
