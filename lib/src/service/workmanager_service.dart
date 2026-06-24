@@ -693,8 +693,20 @@ class WorkmanagerService {
             perTaskCountdownListenable.value = perMap;
           } catch (_) {}
 
-          // countdown tick logging removed to reduce noisy logs
-
+          // countdown tick logging: report per-task remaining times so
+          // it's easy to see each worker's countdown in `recentLogs` or
+          // console output while debugging.
+          try {
+            final entries = perMap.entries
+                .map((e) => '${e.key}=${e.value ?? 'n/a'}')
+                .join(', ');
+            final msg = 'countdown-tick: $entries';
+            _addLog(msg);
+            if (kDebugMode) {
+              // ignore: avoid_print
+              print(msg);
+            }
+          } catch (_) {}
           if (minRem == null) {
             try {
               countdownListenable.value = null;

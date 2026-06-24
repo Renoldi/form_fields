@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:form_fields_example/data/models/post.dart';
 import 'package:logger/logger.dart';
 import 'package:form_fields/form_fields.dart';
 import 'pending_submission_helper.dart';
@@ -25,17 +26,23 @@ Future<bool> sendRandomBackgroundHandler(
 
     _sendRandomLogger.i('Background handler invoked for $task');
     // Example: create and persist a random event payload for later flush.
-    final payload = {
-      'type': 'random_event',
-      'source': task,
-      'value': DateTime.now().millisecondsSinceEpoch % 1000,
-      'ts': DateTime.now().toIso8601String(),
-    };
-    final id = await addPendingSubmission(payload);
+    // final payload = {
+    //   'type': 'random_event',
+    //   'source': task,
+    //   'value': DateTime.now().millisecondsSinceEpoch % 1000,
+    //   'ts': DateTime.now().toIso8601String(),
+    // };
+    Post post = Post(
+      userId: 1,
+      title: 'Random Event',
+      body:
+          'Random event data: ${DateTime.now().millisecondsSinceEpoch % 1000}',
+      tags: ['random', 'background'],
+    );
+
+    final id = await addPendingSubmission(post.toJson());
     if (id > 0) {
-      _sendRandomLogger.i('Inserted pending random event payload id=$id');
-    } else {
-      _sendRandomLogger.w('Failed to persist pending random event');
+      _sendRandomLogger.i('Foreground inserted pending random id=$id');
     }
     return true;
   } catch (e, st) {
@@ -61,15 +68,24 @@ Future<void> sendRandomForeground() async {
       // ignore: avoid_print
       print('sendRandomForeground invoked');
     }
-    _sendRandomLogger.i('Foreground handler invoked');
-    // Insert pending entry from foreground as well.
-    final payload = {
-      'type': 'random_event',
-      'source': 'foreground',
-      'value': DateTime.now().millisecondsSinceEpoch % 1000,
-      'ts': DateTime.now().toIso8601String(),
-    };
-    final id = await addPendingSubmission(payload);
+    // _sendRandomLogger.i('Foreground handler invoked');
+    // // Insert pending entry from foreground as well.
+    // final payload = {
+    //   'type': 'random_event',
+    //   'source': 'foreground',
+    //   'value': DateTime.now().millisecondsSinceEpoch % 1000,
+    //   'ts': DateTime.now().toIso8601String(),
+    // };
+
+    Post post = Post(
+      userId: 1,
+      title: 'Random Event',
+      body:
+          'Random event data: ${DateTime.now().millisecondsSinceEpoch % 1000}',
+      tags: ['random', 'background'],
+    );
+
+    final id = await addPendingSubmission(post.toJson());
     if (id > 0) {
       _sendRandomLogger.i('Foreground inserted pending random id=$id');
     }

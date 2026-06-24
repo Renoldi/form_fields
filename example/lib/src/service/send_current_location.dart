@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:form_fields_example/data/models/post.dart';
 import 'package:logger/logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:form_fields/form_fields.dart';
@@ -37,15 +38,23 @@ Future<bool> sendCurrentLocationBackgroundHandler(
       location = null;
     }
 
-    final payload = {
-      'type': 'location',
-      'source': task,
-      'ts': DateTime.now().toIso8601String(),
-      'location': location == null
-          ? null
-          : {'lat': location['lat'], 'lng': location['lng']},
-    };
-    final id = await addPendingSubmission(payload);
+    // final payload = {
+    //   'type': 'location',
+    //   'source': task,
+    //   'ts': DateTime.now().toIso8601String(),
+    //   'location': location == null
+    //       ? null
+    //       : {'lat': location['lat'], 'lng': location['lng']},
+    // };
+    Post post = Post(
+      userId: 1,
+      title: 'Current Location',
+      body:
+          'Location data: ${location != null ? 'lat=${location['lat']}, lng=${location['lng']}' : 'unknown'}',
+      tags: ['location', 'background'],
+    );
+
+    final id = await addPendingSubmission(post.toJson());
     if (id > 0) {
       _sendLocationLogger.i('Inserted pending location payload id=$id');
     } else {
@@ -89,15 +98,27 @@ Future<void> sendCurrentLocationForeground() async {
       _sendLocationLogger.w('Foreground failed to fetch location: $e\n$st');
       location = null;
     }
-    final payload = {
-      'type': 'location',
-      'source': 'foreground',
-      'ts': DateTime.now().toIso8601String(),
-      'location': location == null
-          ? null
-          : {'lat': location['lat'], 'lng': location['lng']},
-    };
-    final id = await addPendingSubmission(payload);
+    // final payload = {
+    //   'type': 'location',
+    //   'source': 'foreground',
+    //   'ts': DateTime.now().toIso8601String(),
+    //   'location': location == null
+    //       ? null
+    //       : {'lat': location['lat'], 'lng': location['lng']},
+    // };
+    // final id = await addPendingSubmission(payload);
+    Post post = Post(
+      userId: 1,
+      title: 'Current Location',
+      body:
+          'Location data: ${location != null ? 'lat=${location['lat']}, lng=${location['lng']}' : 'unknown'}',
+      tags: ['location', 'background'],
+    );
+
+    final id = await DBService.instance.insertOrUpdate('pending_submissions', {
+      'payload': post.toJson(),
+      'status': 'pending',
+    });
     if (id > 0) {
       _sendLocationLogger.i('Foreground inserted pending location id=$id');
     }
