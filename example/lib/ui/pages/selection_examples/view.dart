@@ -15,80 +15,54 @@ class View extends PresenterState {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Selection Fields Examples',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            // CheckboxListTile example
-            const Text('CheckboxListTile',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            FormFieldsCheckboxListTile(
-              label: 'Agree Terms',
-              value: vm.checkboxValue,
-              onChanged: (v) => vm.setCheckbox(v),
-              isRequired: true,
-            ),
-            Text('Value: ${vm.checkboxValue}'),
-            const SizedBox(height: 12),
-
-            // SwitchListTile example
-            const Text('SwitchListTile',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            FormFieldsSwitchTile(
-              label: 'Enable Notifications',
-              value: vm.switchValue,
-              onChanged: (v) => vm.setSwitch(v),
-              isRequired: false,
-            ),
-            Text('Value: ${vm.switchValue}'),
-            const SizedBox(height: 12),
-
-            // ListTile example (tap to set value)
-            const Text('ListTile (tap to set value)',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            FormFieldsListTile(
-              label: 'Choose Option',
-              title: const Text('Option A'),
-              subtitle: const Text('Tap to select Option A'),
-              onTap: () => vm.setListTile('Option A'),
-            ),
-            FormFieldsListTile(
-              label: 'Choose Option',
-              title: const Text('Option B'),
-              subtitle: const Text('Tap to select Option B'),
-              onTap: () => vm.setListTile('Option B'),
-            ),
-            Text('Selected: ${vm.listTileResult}'),
-            const SizedBox(height: 12),
+            // Grouped selection examples (replacing individual per-item widgets)
 
             // Rating example
-            const Text('Rating', style: TextStyle(fontWeight: FontWeight.w600)),
             FormFieldsRating(
               label: 'Rate App',
               initialRating: vm.rating,
               onChanged: (v) => vm.setRating(v),
-              isRequired: false,
+              isRequired: true,
+              borderType: BorderType.outlineInputBorder,
             ),
-            Text('Rating: ${vm.rating}'),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            // Example: custom icon widgets (uses `filledIcon` / `emptyIcon`)
+            FormFieldsRating(
+              label: 'Rate App (custom icons)',
+              initialRating: vm.rating,
+              onChanged: (v) => vm.setRating(v),
+              isRequired: true,
+              borderType: BorderType.none,
+              filledIcon: Icon(Icons.star, color: Colors.amber),
+              emptyIcon: Icon(Icons.star_border, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            // Switch examples (mirrors ViewModel.switchValue)
 
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => handleValidateForm(vm),
-                    child: const Text('Validate'),
+            Builder(builder: (context) {
+              final totalWidth =
+                  MediaQuery.of(context).size.width - 32; // account for padding
+              final buttonWidth = (totalWidth - 12) / 2;
+              return Row(
+                children: [
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: () => handleValidateForm(vm),
+                      child: const Text('Validate'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => vm.reset(),
-                    child: const Text('Reset'),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: OutlinedButton(
+                      onPressed: () => vm.reset(),
+                      child: const Text('Reset'),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
           ],
         ),
       ),

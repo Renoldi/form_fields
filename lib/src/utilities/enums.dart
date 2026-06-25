@@ -63,6 +63,7 @@ enum FormType {
   password,
   verification,
   email,
+  rating,
   date,
   time,
   dateTime,

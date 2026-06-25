@@ -57,7 +57,8 @@ enum AppRoute {
   barcodeScan(
     name: 'barcode_scan',
     title: 'Barcode Scan',
-  );
+  ),
+  selectionExamples(name: 'selection_examples', title: 'Selection Examples');
 
   final String name;
   final String title;

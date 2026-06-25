@@ -112,7 +112,7 @@ Future<void> main() async {
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
-      enableWorkmanager: true,
+      enableWorkmanager: false,
       registerPeriodic: true,
       // Example: register one or more background workers.
       workerRegistrations: [

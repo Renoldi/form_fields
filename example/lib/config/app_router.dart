@@ -21,6 +21,8 @@ import 'package:form_fields_example/ui/pages/radio_button_examples/main.dart'
     as radio_button_examples;
 import 'package:form_fields_example/ui/pages/checkbox_examples/main.dart'
     as checkbox_examples;
+import 'package:form_fields_example/ui/pages/selection_examples/main.dart'
+    as selection_examples;
 import 'package:form_fields_example/ui/pages/custom_class_examples/main.dart'
     as custom_class_examples;
 import 'package:form_fields_example/ui/pages/null_non_null_validation_examples/main.dart'
@@ -264,6 +266,18 @@ GoRouter createAppRouter(
         ),
       ),
       GoRoute(
+        path: AppRoute.selectionExamples.path,
+        name: AppRoute.selectionExamples.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.selectionExamples,
+          child: ChangeNotifierProvider(
+            create: (_) => selection_examples.SelectionExamplesViewModel(),
+            child: const selection_examples.Presenter(),
+          ),
+        ),
+      ),
+      GoRoute(
         path: AppRoute.checkbox.path,
         name: AppRoute.checkbox.name,
         builder: (context, state) => _buildExamplePage(
@@ -470,5 +484,7 @@ String _routeTitleKey(AppRoute route) {
       return 'workerDemo';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
+    case AppRoute.selectionExamples:
+      return 'selectionExamples';
   }
 }

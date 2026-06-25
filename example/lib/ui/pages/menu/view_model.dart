@@ -64,6 +64,13 @@ class ViewModel extends ChangeNotifier {
           routeName: AppRoute.radioButton.name,
         ),
         AppMenuItemData(
+          title: 'Selection Examples',
+          subtitle: 'List / Switch / Checkbox / Rating',
+          icon: Icons.select_all,
+          color: Colors.orangeAccent,
+          routeName: AppRoute.selectionExamples.name,
+        ),
+        AppMenuItemData(
           title: 'Checkbox',
           subtitle: 'Checkbox Options',
           icon: Icons.check_box,
