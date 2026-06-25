@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
-import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/result_display_widget.dart';
 import 'presenter.dart';
 import 'view_model.dart';
