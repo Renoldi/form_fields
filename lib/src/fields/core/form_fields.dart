@@ -151,7 +151,7 @@ class FormFields<T> extends StatefulWidget {
   final FormType? formType;
 
   /// Field label text
-  final String label;
+  final String? label;
 
   /// Label position relative to input
   final LabelPosition labelPosition;
@@ -270,7 +270,7 @@ class FormFields<T> extends StatefulWidget {
   const FormFields({
     super.key,
     required this.onChanged,
-    required this.label,
+    this.label,
     this.currentValue,
     // Validation
     this.validator,
@@ -767,7 +767,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   void _initializeModel() {
     model.formType = widget.formType;
-    model.label = widget.label;
+    model.label = widget.label ?? '';
   }
 
   // ============================================================================
@@ -1680,7 +1680,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   /// Validates field value based on requirements and type-specific rules
   String? _validateRequired(
     T? value,
-    String label,
+    String? label,
     bool isRequired,
     FormFieldsController vm,
     BuildContext context,
@@ -1711,7 +1711,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         effectiveValue is String && effectiveValue.trim().isEmpty;
 
     if (isRequired && (effectiveValue == null || isBlankString)) {
-      return l.getWithLabel('required', label);
+      return l.getWithLabel('required', label.toTitleCases);
     }
 
     // 3. Skip validation for optional empty fields
