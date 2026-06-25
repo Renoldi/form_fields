@@ -50,6 +50,13 @@ export 'src/fields/selection/form_fields_select.dart' show FormFieldsSelect;
 export 'src/fields/selection/form_fields_dropdown.dart' show FormFieldsDropdown;
 export 'src/fields/selection/form_fields_dropdown_multi.dart'
     show FormFieldsDropdownMulti;
+export 'src/fields/selection/form_fields_list_tile.dart'
+    show FormFieldsListTile;
+export 'src/fields/selection/form_fields_switch_tile.dart'
+    show FormFieldsSwitchTile;
+export 'src/fields/selection/form_fields_checkbox_list_tile.dart'
+    show FormFieldsCheckboxListTile;
+export 'src/fields/selection/form_fields_rating.dart' show FormFieldsRating;
 // Utilities
 export 'src/general/app_modal_bottom_sheet.dart' show showAppModalBottomSheet;
 export 'src/general/responsive_menu_grid.dart' show ResponsiveMenuGrid;
@@ -118,7 +125,8 @@ export 'src/service/offline_upload_manager.dart' show OfflineUploadManager;
 export 'src/service/db_service.dart' show DBService;
 export 'src/service/import_export_service.dart' show ImportExportService;
 export 'src/service/crypto_utils.dart' show CryptoUtils;
-export 'src/service/workmanager_service.dart' show WorkmanagerService, workmanagerCallbackDispatcher;
+export 'src/service/workmanager_service.dart'
+    show WorkmanagerService, workmanagerCallbackDispatcher;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
 // `FlushState` moved into `WorkmanagerService` as `isFlushing`.
