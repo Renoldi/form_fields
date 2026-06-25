@@ -146,7 +146,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
         }
 
         final baseDecoration = (inputDecoration ??
-                InputDecoration(hintText: fieldLabel.toTitleCase))
+                InputDecoration(hintText: fieldLabel.toTitleCases))
             .applyDefaults(Theme.of(context).inputDecorationTheme)
             .copyWith(
               border: border,
@@ -184,7 +184,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 4.0),
-              child: Text(fieldLabel.toTitleCase,
+              child: Text(fieldLabel.toTitleCases,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
             field,
@@ -198,7 +198,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             field,
             Padding(
               padding: const EdgeInsets.only(top: 4.0),
-              child: Text(fieldLabel.toTitleCase,
+              child: Text(fieldLabel.toTitleCases,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
           ],
@@ -210,7 +210,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: Text(fieldLabel.toTitleCase,
+              child: Text(fieldLabel.toTitleCases,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
             Expanded(child: field),
@@ -224,7 +224,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             Expanded(child: field),
             Padding(
               padding: const EdgeInsets.only(left: 8.0),
-              child: Text(fieldLabel.toTitleCase,
+              child: Text(fieldLabel.toTitleCases,
                   style: Theme.of(context).textTheme.bodyMedium),
             ),
           ],

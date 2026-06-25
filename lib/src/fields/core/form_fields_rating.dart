@@ -85,7 +85,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
         }
         if (widget.isRequired && (v == null || v == 0)) {
           return widget.label != null
-              ? l.select(widget.label!.toTitleCase)
+              ? l.select(widget.label!.toTitleCases)
               : l.select('rating');
         }
         if (widget.validator != null) {

@@ -41,7 +41,7 @@ extension StringExtensions on String? {
   }
 
   /// Convert string to title case
-  String get toTitleCase {
+  String get toTitleCases {
     if (this == null || this!.isEmpty) return this ?? '';
     return this!
         .split(' ')

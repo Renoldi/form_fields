@@ -86,7 +86,7 @@ class _FormFieldsCheckboxListTileState
         }
         if (widget.isRequired && (v == null || v == false)) {
           return widget.label != null
-              ? l.select(widget.label!.toTitleCase)
+              ? l.select(widget.label!.toTitleCases)
               : l.select('value');
         }
         if (widget.validator != null) {

@@ -120,7 +120,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                 return widget.externalErrorText;
               }
               if (widget.isRequired && value == null) {
-                return l.select(widget.label.toTitleCase);
+                return l.select(widget.label.toTitleCases);
               }
               if (widget.validator != null) {
                 return widget.validator!(value);
@@ -159,7 +159,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
               }).toList();
 
               return AlertDialog(
-                title: Text(l10n.select(widget.label.toTitleCase)),
+                title: Text(l10n.select(widget.label.toTitleCases)),
                 content: SizedBox(
                   width: double.maxFinite,
                   height: MediaQuery.of(context).size.height * 0.6,
@@ -275,7 +275,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             .applyDefaults(Theme.of(context).inputDecorationTheme)
             .copyWith(
               hintText:
-                  widget.hintText ?? l10n.select(widget.label.toTitleCase),
+                  widget.hintText ?? l10n.select(widget.label.toTitleCases),
               prefixIcon: widget.prefixIcon,
               suffixIcon: widget.suffixIcon,
             );
@@ -289,7 +289,9 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           fillColor: widget.filled ? fillColor : null,
           errorText: (state.errorText != null && state.errorText!.isNotEmpty)
               ? state.errorText
-              : (state.hasError ? l10n.select(widget.label.toTitleCase) : null),
+              : (state.hasError
+                  ? l10n.select(widget.label.toTitleCases)
+                  : null),
           border: _buildBorder(context, widget.borderType),
           enabledBorder: _buildBorder(context, widget.borderType),
           focusedBorder:
@@ -323,7 +325,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
                     child: Text(
                       currentValueText.isEmpty
                           ? (widget.hintText ??
-                              l10n.select(widget.label.toTitleCase))
+                              l10n.select(widget.label.toTitleCases))
                           : currentValueText,
                       style: TextStyle(
                         color: currentValueText.isEmpty
@@ -344,7 +346,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: widget.label.toTitleCase,
+                  text: widget.label.toTitleCases,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -452,7 +454,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: widget.label.toTitleCase,
+                text: widget.label.toTitleCases,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

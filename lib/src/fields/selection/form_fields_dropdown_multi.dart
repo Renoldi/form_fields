@@ -99,7 +99,7 @@ class _FormFieldsDropdownMultiState<T>
         }
         final selected = values ?? [];
         if (widget.isRequired && selected.isEmpty) {
-          return l10n.selectAtLeastOne(widget.label.toTitleCase);
+          return l10n.selectAtLeastOne(widget.label.toTitleCases);
         }
         if (widget.minSelections != null &&
             selected.length < widget.minSelections!) {
@@ -141,7 +141,7 @@ class _FormFieldsDropdownMultiState<T>
                       : widget.items;
 
                   return AlertDialog(
-                    title: Text(dialogL10n.select(widget.label.toTitleCase)),
+                    title: Text(dialogL10n.select(widget.label.toTitleCases)),
                     content: SizedBox(
                       width: double.maxFinite,
                       height: MediaQuery.of(context).size.height * 0.6,
@@ -284,11 +284,11 @@ class _FormFieldsDropdownMultiState<T>
             _buildBorder(context, widget.borderType, isError: state.hasError);
 
         final baseDecoration = InputDecoration(
-          hintText: widget.hintText ?? l10n.select(widget.label.toTitleCase),
+          hintText: widget.hintText ?? l10n.select(widget.label.toTitleCases),
           errorText: (state.errorText != null && state.errorText!.isNotEmpty)
               ? state.errorText
               : (state.hasError
-                  ? l10n.selectAtLeastOne(widget.label.toTitleCase)
+                  ? l10n.selectAtLeastOne(widget.label.toTitleCases)
                   : null),
           border: border,
           enabledBorder: border,
@@ -307,7 +307,7 @@ class _FormFieldsDropdownMultiState<T>
                 fillColor: widget.filled ? fillColor : null),
             child: selectedItems.isEmpty
                 ? Text(
-                    widget.hintText ?? l10n.select(widget.label.toTitleCase),
+                    widget.hintText ?? l10n.select(widget.label.toTitleCases),
                     style: TextStyle(
                       color: widget.textStyle?.color != null
                           ? widget.textStyle!.color!.withValues(alpha: 0.7)
@@ -355,7 +355,7 @@ class _FormFieldsDropdownMultiState<T>
           text: TextSpan(
             children: [
               TextSpan(
-                text: widget.label.toTitleCase,
+                text: widget.label.toTitleCases,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: resolveTextColor(context),

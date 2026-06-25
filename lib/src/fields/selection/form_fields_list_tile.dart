@@ -57,7 +57,7 @@ class FormFieldsListTile extends StatelessWidget {
           return externalErrorText;
         }
         if (isRequired) {
-          return l.select(label?.toTitleCase ?? 'item');
+          return l.select(label?.toTitleCases ?? 'item');
         }
         if (validator != null) {
           return validator!(v);

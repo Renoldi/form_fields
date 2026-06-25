@@ -117,7 +117,7 @@ class _FormFieldsRadioButtonState<T> extends State<FormFieldsRadioButton<T>> {
           return widget.externalErrorText;
         }
         if (widget.isRequired && value == null) {
-          return l.getWithLabel('selectRequired', widget.label.toTitleCase);
+          return l.getWithLabel('selectRequired', widget.label.toTitleCases);
         }
         if (widget.validator != null) return widget.validator!(value);
         return null;
@@ -275,7 +275,7 @@ class _FormFieldsRadioButtonBodyView<T>
       text: TextSpan(
         children: [
           TextSpan(
-            text: widget.label.toTitleCase,
+            text: widget.label.toTitleCases,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -340,7 +340,7 @@ class _FormFieldsRadioButtonBodyView<T>
               (widget.state.errorText != null &&
                       widget.state.errorText!.isNotEmpty)
                   ? widget.state.errorText!
-                  : l.getWithLabel('selectRequired', widget.label.toTitleCase),
+                  : l.getWithLabel('selectRequired', widget.label.toTitleCases),
               style: const TextStyle(
                 color: Color(0xFFB71C1C),
                 fontSize: 12,

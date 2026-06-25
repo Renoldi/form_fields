@@ -593,7 +593,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         widget.labelPosition == LabelPosition.none) {
       return const SizedBox.shrink();
     }
-    final label = raw.toTitleCase;
+    final label = raw.toTitleCases;
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
     final style = (widget.labelTextStyle ?? defaultStyle)
@@ -694,7 +694,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       if (l == null) return '';
       final raw = widget.label;
       return (raw != null && raw.isNotEmpty)
-          ? l.getWithLabel('imageRequired', raw.toTitleCase)
+          ? l.getWithLabel('imageRequired', raw.toTitleCases)
           : l.get('imageRequiredDefault');
     }
     return null;

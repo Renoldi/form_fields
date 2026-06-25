@@ -374,7 +374,7 @@ class AppButton<T> extends StatelessWidget {
           DefaultTextStyle(
             style: TextStyle(
                 color: resolvedFabFgExt ?? IconTheme.of(context).color),
-            child: Text((text ?? 'Action').toTitleCase),
+            child: Text((text ?? 'Action').toTitleCases),
           );
 
       return FloatingActionButton.extended(

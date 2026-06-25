@@ -76,7 +76,7 @@ class View extends PresenterState {
                                   child: Text(
                                     viewModel.user?.displayName != null
                                         ? viewModel
-                                            .user!.displayName.toTitleCase
+                                            .user!.displayName.toTitleCases
                                         : '?',
                                     style: const TextStyle(color: Colors.white),
                                   ),

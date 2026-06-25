@@ -103,7 +103,7 @@ class _FormFieldsCheckboxState<T> extends State<FormFieldsCheckbox<T>> {
           return widget.externalErrorText;
         }
         if (widget.isRequired && (value == null || value.isEmpty)) {
-          return l.selectAtLeastOne(widget.label.toTitleCase);
+          return l.selectAtLeastOne(widget.label.toTitleCases);
         }
         if (widget.validator != null) return widget.validator!(value ?? []);
         return null;
@@ -242,7 +242,7 @@ class _FormFieldsCheckboxBodyView<T>
       text: TextSpan(
         children: [
           TextSpan(
-            text: widget.label.toTitleCase,
+            text: widget.label.toTitleCases,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -305,7 +305,7 @@ class _FormFieldsCheckboxBodyView<T>
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               widget.state.errorText?.isEmpty ?? true
-                  ? l.selectAtLeastOne(widget.label.toTitleCase)
+                  ? l.selectAtLeastOne(widget.label.toTitleCases)
                   : widget.state.errorText!,
               style: TextStyle(
                 color: errorColor,
