@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import '../../utilities/enums.dart';
 
 class FormFieldsRating extends StatefulWidget {
   final int initialRating;
@@ -83,7 +84,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
         return null;
       },
       builder: (FormFieldState<int> state) {
-        return Column(
+        final child = Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -120,6 +121,26 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
                         fontSize: 12)),
               ),
           ],
+        );
+
+        if (widget.borderType == BorderType.none) return child;
+
+        final borderColor = Theme.of(context).dividerColor;
+        final decoration = widget.borderType == BorderType.outlineInputBorder
+            ? BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor),
+              )
+            : BoxDecoration(
+                border: Border(bottom: BorderSide(color: borderColor)));
+
+        return Container(
+          padding: widget.borderType == BorderType.outlineInputBorder
+              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
+              : EdgeInsets.zero,
+          decoration: decoration,
+          child: child,
         );
       },
     );

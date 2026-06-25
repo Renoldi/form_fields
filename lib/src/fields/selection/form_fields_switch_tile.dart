@@ -107,8 +107,7 @@ class _FormFieldsSwitchTileState extends State<FormFieldsSwitchTile> {
                 style: widget.textStyle ?? DefaultTextStyle.of(context).style,
                 child: widget.subtitle!)
             : null;
-
-        return Column(
+        final child = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -136,6 +135,27 @@ class _FormFieldsSwitchTileState extends State<FormFieldsSwitchTile> {
                         fontSize: 12)),
               ),
           ],
+        );
+
+        if (widget.borderType == BorderType.none) return child;
+
+        final borderColor = Theme.of(context).dividerColor;
+        final decoration = widget.borderType == BorderType.outlineInputBorder
+            ? BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor),
+              )
+            : BoxDecoration(
+                border: Border(bottom: BorderSide(color: borderColor)),
+              );
+
+        return Container(
+          padding: widget.borderType == BorderType.outlineInputBorder
+              ? const EdgeInsets.all(6)
+              : EdgeInsets.zero,
+          decoration: decoration,
+          child: child,
         );
       },
     );

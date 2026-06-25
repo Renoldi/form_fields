@@ -75,8 +75,7 @@ class FormFieldsListTile extends StatelessWidget {
                 style: textStyle ?? DefaultTextStyle.of(context).style,
                 child: subtitle!)
             : null;
-
-        return Column(
+        final child = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -102,6 +101,27 @@ class FormFieldsListTile extends StatelessWidget {
                         fontSize: 12)),
               ),
           ],
+        );
+
+        if (borderType == BorderType.none) return child;
+
+        final borderColor = Theme.of(context).dividerColor;
+        final decoration = borderType == BorderType.outlineInputBorder
+            ? BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor),
+              )
+            : BoxDecoration(
+                border: Border(bottom: BorderSide(color: borderColor)),
+              );
+
+        return Container(
+          padding: borderType == BorderType.outlineInputBorder
+              ? const EdgeInsets.all(6)
+              : EdgeInsets.zero,
+          decoration: decoration,
+          child: child,
         );
       },
     );
