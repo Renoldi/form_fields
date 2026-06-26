@@ -1604,8 +1604,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         );
 
         final customTheme = parentTheme.copyWith(
-          colorScheme:
-              parentTheme.colorScheme.copyWith(primary: resolvedSaveColor),
+          colorScheme: parentTheme.colorScheme.copyWith(
+            primary: resolvedSaveColor,
+            onPrimary: resolvedTextColor,
+          ),
           textButtonTheme: TextButtonThemeData(style: buttonStyle),
         );
 
@@ -1891,7 +1893,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     } else if (_isDateTimeType() ||
         _isDateTimeRangeType() ||
         _isTimeOfDayType()) {
-      // Use widget.currentValue for validation, not value from controller
+      // If the controller text is empty (user manually cleared), treat as
+      // `null` so required validation runs correctly. Otherwise fall back
+      // to the currentValue (the canonical typed value provided by parent).
+      final controllerText = value?.trim() ?? '';
+      if (controllerText.isEmpty) {
+        return _validateRequired(
+          null,
+          widget.label.toTitleCases,
+          widget.isRequired,
+          vm,
+          context,
+        );
+      }
+
       return _validateRequired(
         widget.currentValue,
         widget.label.toTitleCases,
