@@ -1580,17 +1580,27 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         final resolvedTextColor =
             widget.saveButtonTextColor ?? parentTheme.colorScheme.onPrimary;
 
-        // Create an explicit ButtonStyle to ensure colors are applied
-        // and that a background is provided while keeping readable text.
+        // Create an explicit ButtonStyle to ensure colors, shape and padding
+        // match the datepicker's confirm button while preserving any
+        // dialog-level customizations the app may provide.
         final backgroundColor = resolvedSaveColor;
         final foregroundColor = resolvedTextColor;
 
-        final buttonStyle = ButtonStyle(
-          backgroundColor: WidgetStateProperty.all(backgroundColor),
-          foregroundColor: WidgetStateProperty.all(foregroundColor),
-          textStyle: WidgetStateProperty.all(TextStyle(color: foregroundColor)),
+        // Start from the dialog's existing TextButton style so we inherit
+        // padding/shape defined by the app theme, then override colors.
+        final baseTextButtonStyle =
+            parentTheme.textButtonTheme.style ?? const ButtonStyle();
+
+        final buttonStyle = baseTextButtonStyle.copyWith(
+          backgroundColor: WidgetStatePropertyAll(backgroundColor),
+          foregroundColor: WidgetStatePropertyAll(foregroundColor),
+          textStyle: WidgetStatePropertyAll(TextStyle(color: foregroundColor)),
           overlayColor:
-              WidgetStateProperty.all(foregroundColor.withValues(alpha: 0.08)),
+              WidgetStatePropertyAll(foregroundColor.withValues(alpha: 0.08)),
+          padding: WidgetStatePropertyAll(
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+          shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
         );
 
         final customTheme = parentTheme.copyWith(
