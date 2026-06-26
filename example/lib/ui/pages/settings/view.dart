@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'presenter.dart';
@@ -10,7 +9,7 @@ class View extends PresenterState {
   Widget build(BuildContext context) {
     return Consumer<ViewModel>(
       builder: (context, viewModel, _) {
-        return SafeScaffold(
+        return Scaffold(
           appBar: AppBar(
             title: Text(context.tr('settings')),
             leading: IconButton(

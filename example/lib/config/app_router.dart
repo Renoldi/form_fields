@@ -423,6 +423,18 @@ Widget _buildExamplePage({
   required AppRoute route,
   required Widget child,
 }) {
+  // If the child already provides its own Scaffold (or SafeScaffold),
+  // return it directly so we don't render a second app bar above it.
+  if (child is Scaffold || child is SafeScaffold) {
+    return child;
+  }
+
+  // For specific demo pages that provide their own Scaffold, return them
+  // directly so we don't render an additional top AppBar.
+  if (route == AppRoute.safeScaffoldDemo) {
+    return child;
+  }
+
   return SafeScaffold(
     appBar: AppBar(
       title: Text(context.tr(_routeTitleKey(route))),
@@ -487,5 +499,7 @@ String _routeTitleKey(AppRoute route) {
       return 'barcodeScan';
     case AppRoute.selectionExamples:
       return 'selectionExamples';
+    case AppRoute.safeScaffoldDemo:
+      return 'safeScaffoldDemo';
   }
 }

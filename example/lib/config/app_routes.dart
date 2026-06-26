@@ -58,6 +58,7 @@ enum AppRoute {
     name: 'barcode_scan',
     title: 'Barcode Scan',
   ),
+  safeScaffoldDemo(name: 'safe_scaffold_demo', title: 'SafeScaffold Demo'),
   selectionExamples(name: 'selection_examples', title: 'Selection Examples');
 
   final String name;

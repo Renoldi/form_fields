@@ -168,6 +168,13 @@ class ViewModel extends ChangeNotifier {
           color: Colors.tealAccent,
           routeName: AppRoute.workerDemo.name,
         ),
+        AppMenuItemData(
+          title: 'SafeScaffold Demo',
+          subtitle: 'Custom scaffold + appbar example',
+          icon: Icons.smartphone,
+          color: Colors.indigo,
+          routeName: AppRoute.safeScaffoldDemo.name,
+        ),
       ];
 
   Future<String?> loadUser({bool forceRefresh = false}) async {

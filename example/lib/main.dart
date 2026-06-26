@@ -434,7 +434,78 @@ class View extends PresenterState {
       primaryColor: seedColor,
       // Ensure UI surfaces (cards, dialogs, canvas) use white to match inputs
       cardColor: Colors.white,
-      dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      // datePickerTheme: DatePickerThemeData(
+      //   backgroundColor: Colors.white,
+      //   headerBackgroundColor: const Color(0xFFF6F6FB),
+      //   headerForegroundColor: seedColor,
+      //   headerHeadlineStyle:
+      //       TextStyle(color: seedColor, fontWeight: FontWeight.w700),
+      //   headerHelpStyle: TextStyle(color: seedColor),
+      //   dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+      //     if (states.contains(WidgetState.selected)) {
+      //       return Colors.white;
+      //     }
+      //     if (states.contains(WidgetState.disabled)) {
+      //       return Colors.grey.shade600;
+      //     }
+      //     return null;
+      //   }),
+      //   dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+      //     if (states.contains(WidgetState.selected)) {
+      //       return seedColor;
+      //     }
+      //     return null;
+      //   }),
+      //   dayOverlayColor: WidgetStateProperty.resolveWith((states) {
+      //     if (states.contains(WidgetState.pressed)) {
+      //       return seedColor.withValues(alpha: 0.12);
+      //     }
+      //     if (states.contains(WidgetState.hovered)) {
+      //       return seedColor.withValues(alpha: 0.08);
+      //     }
+      //     return null;
+      //   }),
+      //   todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+      //     if (states.contains(WidgetState.selected)) {
+      //       return Colors.white;
+      //     }
+      //     return seedColor;
+      //   }),
+      //   todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+      //     if (states.contains(WidgetState.selected)) {
+      //       return seedColor;
+      //     }
+      //     return const Color(0xFFF6F6FB);
+      //   }),
+      // todayBorder: BorderSide(color: seedColor, width: 1),
+      // rangePickerBackgroundColor: Colors.white,
+      // rangePickerHeaderBackgroundColor: const Color(0xFFF6F6FB),
+      // rangePickerHeaderForegroundColor: seedColor,
+      // rangePickerHeaderHeadlineStyle:
+      //     TextStyle(color: seedColor, fontWeight: FontWeight.w700),
+      // rangePickerHeaderHelpStyle: TextStyle(color: seedColor),
+      // toggleButtonTextStyle: const TextStyle(color: Colors.white),
+      // rangeSelectionBackgroundColor: seedColor.withValues(alpha: 0.12),
+      // rangeSelectionOverlayColor:
+      //     WidgetStatePropertyAll(seedColor.withValues(alpha: 0.08)),
+      // dividerColor: const Color(0xFFF6F6FB),
+      // cancelButtonStyle: ButtonStyle(
+      //     foregroundColor: WidgetStateProperty.resolveWith((states) {
+      //       return Colors.grey.shade800;
+      //     }),
+      //     backgroundColor: WidgetStatePropertyAll(Colors.transparent)),
+      // confirmButtonStyle: TextButton.styleFrom(
+      //   backgroundColor: Colors.blue,
+      //   foregroundColor: Colors.white,
+      // ),
+
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      // ),
       canvasColor: Colors.white,
       colorScheme: ThemeData.light(useMaterial3: true).colorScheme.copyWith(
             primary: seedColor,
@@ -496,16 +567,48 @@ class View extends PresenterState {
         }),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: seedColor,
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(Colors.white),
+          backgroundColor: WidgetStatePropertyAll(seedColor),
+          padding: WidgetStatePropertyAll(
+              const EdgeInsets.symmetric(horizontal: 5, vertical: 10)),
           alignment: Alignment.center,
-          shape: RoundedRectangleBorder(
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
             side: BorderSide(color: seedColor, width: 1),
-          ),
-          // textStyle: TextStyles().labelMedium,
+          )),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(seedColor),
+          foregroundColor: WidgetStatePropertyAll(Colors.white),
+          padding: WidgetStatePropertyAll(
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0))),
+          textStyle: WidgetStatePropertyAll(
+              const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(seedColor),
+          foregroundColor: WidgetStatePropertyAll(Colors.white),
+          padding: WidgetStatePropertyAll(
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0))),
+          textStyle: WidgetStatePropertyAll(
+              const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(seedColor),
+          side: WidgetStatePropertyAll(BorderSide(color: seedColor)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0))),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

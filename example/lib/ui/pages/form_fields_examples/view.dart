@@ -1767,6 +1767,9 @@ class View extends PresenterState {
                     formType: FormType.dateTimeRange,
                     labelPosition: LabelPosition.top,
                     useDatePickerForRange: true,
+                    // Example: custom Save button background and text color
+                    saveButtonColor: Colors.green.shade600,
+                    saveButtonTextColor: Colors.white,
                     onChanged: viewModel.updateRange1,
                     currentValue: viewModel.range1,
                   ),
