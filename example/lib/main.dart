@@ -615,7 +615,7 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(
+      home: SafeScaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),

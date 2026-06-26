@@ -206,6 +206,12 @@ class FormFields<T> extends StatefulWidget {
   /// Custom input decoration
   final InputDecoration? inputDecoration;
 
+  /// Optional color for action buttons in pickers (e.g. Save button)
+  final Color? saveButtonColor;
+
+  /// Optional color for action button text in pickers (e.g. Save button text)
+  final Color? saveButtonTextColor;
+
   // -------------------------------------------------------------------------
   // DECORATIVE ELEMENTS
   // -------------------------------------------------------------------------
@@ -304,6 +310,8 @@ class FormFields<T> extends StatefulWidget {
     this.borderType = BorderType.outlineInputBorder,
     this.labelTextStyle,
     this.inputDecoration,
+    this.saveButtonColor,
+    this.saveButtonTextColor,
     // Decorative Elements
     this.prefix,
     this.prefixIcon,
@@ -1561,6 +1569,39 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       lastDate: last,
       initialDateRange: DateTimeRange(start: initialStart, end: initialEnd),
       locale: locale,
+      builder: (dialogContext, child) {
+        final parentTheme = Theme.of(dialogContext);
+        // Use widget.saveButtonColor if provided, otherwise fall back to
+        // the dialog's primary color. Allow overriding the text color via
+        // `saveButtonTextColor` so callers can set e.g. red text.
+        final resolvedSaveColor =
+            widget.saveButtonColor ?? parentTheme.colorScheme.primary;
+
+        final resolvedTextColor =
+            widget.saveButtonTextColor ?? parentTheme.colorScheme.onPrimary;
+
+        // Create an explicit ButtonStyle to ensure colors are applied
+        // and that a background is provided while keeping readable text.
+        final backgroundColor = resolvedSaveColor;
+        final foregroundColor = resolvedTextColor;
+
+        final buttonStyle = ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(backgroundColor),
+          foregroundColor: WidgetStateProperty.all(foregroundColor),
+          textStyle: WidgetStateProperty.all(TextStyle(color: foregroundColor)),
+          overlayColor:
+              WidgetStateProperty.all(foregroundColor.withValues(alpha: 0.08)),
+        );
+
+        final customTheme = parentTheme.copyWith(
+          colorScheme:
+              parentTheme.colorScheme.copyWith(primary: resolvedSaveColor),
+          textButtonTheme: TextButtonThemeData(style: buttonStyle),
+        );
+
+        return Theme(
+            data: customTheme, child: child ?? const SizedBox.shrink());
+      },
     );
 
     if (dateRange != null && mounted) {

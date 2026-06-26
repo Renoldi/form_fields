@@ -10,7 +10,7 @@ class View extends PresenterState {
   Widget build(BuildContext context) {
     return Consumer<ViewModel>(
       builder: (context, viewModel, _) {
-        return Scaffold(
+        return SafeScaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Stack(
             children: [

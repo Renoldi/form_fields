@@ -56,7 +56,7 @@ class View extends PresenterState {
         builder: (context, vm, _) {
           // Keep the view model informed when data arrives via param
 
-          return Scaffold(
+          return SafeScaffold(
             backgroundColor: Color(0xFFF6F6FB),
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

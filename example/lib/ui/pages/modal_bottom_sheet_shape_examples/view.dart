@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'view_model.dart';
 
 class ModalBottomSheetShapeExamplesView extends StatelessWidget {
@@ -28,7 +29,7 @@ class ModalBottomSheetShapeExamplesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shapes = ModalBottomSheetShapeExamplesViewModel.shapes;
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(title: const Text('Modal Bottom Sheet Shapes Example')),
       body: ListView(
         padding: const EdgeInsets.all(16),

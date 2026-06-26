@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:form_fields/form_fields.dart';
 import 'material_icons_all.dart';
 
 class IconsGalleryPage extends StatefulWidget {
@@ -26,7 +27,7 @@ class _IconsGalleryPageState extends State<IconsGalleryPage> {
       return entry.key.toLowerCase().contains(_search.toLowerCase());
     }).toList();
 
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(
         title: const Text('Icons Gallery'),
       ),

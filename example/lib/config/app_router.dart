@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:go_router/go_router.dart';
 import 'package:form_fields_example/ui/pages/login/main.dart' as login;
 import 'package:form_fields_example/ui/pages/myimage_examples/main.dart'
@@ -379,7 +380,7 @@ GoRouter createAppRouter(
     ],
 
     // Error handling
-    errorBuilder: (context, state) => Scaffold(
+    errorBuilder: (context, state) => SafeScaffold(
       appBar: AppBar(
         title: Text(context.tr('pageNotFound')),
         backgroundColor: const Color(0xFF1F2937),
@@ -422,7 +423,7 @@ Widget _buildExamplePage({
   required AppRoute route,
   required Widget child,
 }) {
-  return Scaffold(
+  return SafeScaffold(
     appBar: AppBar(
       title: Text(context.tr(_routeTitleKey(route))),
     ),

@@ -11,7 +11,7 @@ class View extends PresenterState {
       value: viewModel,
       child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
-          return Scaffold(
+          return SafeScaffold(
             appBar: AppBar(
               title: Text(context.tr('changePassword')),
               leading: IconButton(

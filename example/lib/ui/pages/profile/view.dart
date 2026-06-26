@@ -16,7 +16,7 @@ class View extends PresenterState {
           final appState = context.watch<AppStateNotifier>();
           final user = appState.currentUser;
 
-          return Scaffold(
+          return SafeScaffold(
             appBar: AppBar(
               title: Text(context.tr('editProfile')),
               leading: IconButton(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart'
@@ -6,7 +7,7 @@ import 'package:form_fields_example/localization/localizations.dart'
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/config/app_routes.dart';
 
-// Scaffold with Drawer wrapper
+// SafeScaffold with Drawer wrapper
 class ScaffoldWithDrawer extends StatefulWidget {
   final Widget child;
 
@@ -75,7 +76,7 @@ class ScaffoldWithDrawerView extends ScaffoldWithDrawerPresenterState {
   Widget build(BuildContext context) {
     final currentLocale = Localizations.localeOf(context);
 
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

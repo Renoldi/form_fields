@@ -43,7 +43,7 @@ class View extends PresenterState {
     return ChangeNotifierProvider.value(
       value: viewModel,
       child: Consumer<ViewModel>(builder: (context, vm, _) {
-        return Scaffold(
+        return SafeScaffold(
           appBar: AppBar(
             title: Text(context.tr('workerDemo')),
             leading: IconButton(

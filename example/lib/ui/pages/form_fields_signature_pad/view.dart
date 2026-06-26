@@ -41,7 +41,7 @@ class View extends PresenterState {
       create: (_) => ViewModel(),
       child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
-          return Scaffold(
+          return SafeScaffold(
             backgroundColor: const Color(0xFFF4F6FB),
             body: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),

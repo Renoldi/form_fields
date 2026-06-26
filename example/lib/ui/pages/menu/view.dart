@@ -23,7 +23,7 @@ class View extends PresenterState {
                 exitLabel: context.tr('exit'),
               );
             },
-            child: Scaffold(
+            child: SafeScaffold(
               backgroundColor: const Color(0xFFF5F5F5),
               appBar: AppBar(
                 title: Text(context.tr('formFieldsExamples')),

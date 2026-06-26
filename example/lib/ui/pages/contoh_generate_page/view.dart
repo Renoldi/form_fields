@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/form_fields.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,7 @@ class View extends PresenterState {
   Widget build(BuildContext context) {
     return Consumer<ViewModel>(
       builder: (context, viewModel, _) {
-        return Scaffold(
+        return SafeScaffold(
             appBar: AppBar(
               title: Text(context.tr('settings')),
             ),
