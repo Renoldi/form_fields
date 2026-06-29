@@ -8,6 +8,17 @@ class ResponsiveMenuGrid extends StatelessWidget {
   final double verticalSpacing;
   final double minHorizontalSpacing;
 
+  /// Optional fixed height for the grid. If null, grid sizes to content.
+  final double? height;
+
+  /// Optional fixed width for each item. If null, falls back to `itemSize`.
+  final double? width;
+
+  /// Optional cap for computed cross-axis spacing. If null, defaults to a
+  /// quarter of the item width which prevents very large gaps when the grid
+  /// has few columns and large available width.
+  final double? maxCrossAxisSpacing;
+
   /// Jika true, grid akan selalu rata kiri (tanpa auto-center)
   final bool alignLeft;
 
@@ -23,6 +34,9 @@ class ResponsiveMenuGrid extends StatelessWidget {
     this.minHorizontalSpacing = 8,
     this.alignLeft = false,
     this.allowScroll = false,
+    this.height,
+    this.width,
+    this.maxCrossAxisSpacing,
   });
 
   @override
@@ -32,19 +46,24 @@ class ResponsiveMenuGrid extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double width = constraints.maxWidth;
+        final double maxWidth = constraints.maxWidth;
         final double usableWidth =
-            (width - 2 * horizontalMargin).clamp(0.0, double.infinity);
+            (maxWidth - 2 * horizontalMargin).clamp(0.0, double.infinity);
+        final double itemWidth = width ?? itemSize;
+        final double itemHeight = height ?? itemSize;
+
         final int countPerRow = ((usableWidth + minHorizontalSpacing) /
-                (itemSize + minHorizontalSpacing))
+                (itemWidth + minHorizontalSpacing))
             .floor()
             .clamp(1, 999);
-        final double extraWidth = usableWidth - (countPerRow * itemSize);
-        final double crossAxisSpacing = countPerRow > 1
+        final double extraWidth = usableWidth - (countPerRow * itemWidth);
+        final double computedSpacing = countPerRow > 1
             ? (extraWidth / (countPerRow - 1)).clamp(0.0, double.infinity)
             : 0.0;
+        final double spacingCap = maxCrossAxisSpacing ?? (itemWidth * 0.25);
+        final double crossAxisSpacing = computedSpacing.clamp(0.0, spacingCap);
 
-        return Padding(
+        final grid = Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
           child: GridView.count(
             physics: allowScroll ? null : const NeverScrollableScrollPhysics(),
@@ -52,22 +71,35 @@ class ResponsiveMenuGrid extends StatelessWidget {
             crossAxisCount: countPerRow,
             mainAxisSpacing: verticalSpacing,
             crossAxisSpacing: crossAxisSpacing,
-            childAspectRatio: 1,
+            // Use the requested item width/height to determine the cell
+            // aspect ratio so items render at the expected size.
+            childAspectRatio: itemWidth / itemHeight,
             children: widgets
                 .map(
                   (w) => Align(
                     alignment:
                         alignLeft ? Alignment.topLeft : Alignment.topCenter,
-                    child: SizedBox(
-                      width: itemSize,
-                      height: itemSize,
-                      child: w,
+                    // Fill the cell and center the widget inside it. This
+                    // ensures the cell size is controlled by GridView while
+                    // the widget itself remains centered/aligned as requested.
+                    child: SizedBox.expand(
+                      child: Align(
+                        alignment:
+                            alignLeft ? Alignment.topLeft : Alignment.center,
+                        child: SizedBox(
+                          width: itemWidth,
+                          height: itemHeight,
+                          child: w,
+                        ),
+                      ),
                     ),
                   ),
                 )
                 .toList(),
           ),
         );
+
+        return grid;
       },
     );
   }
