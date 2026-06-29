@@ -2,9 +2,13 @@ FCM Integration Steps (Android & iOS)
 
 This guide walks through required platform setup to use Firebase Cloud Messaging (FCM) with the example app.
 <<<<<<< HEAD
+<<<<<<< HEAD
 https://console.firebase.google.com/u/0/project/example-formfield/notification/compose
 =======
 >>>>>>> e5388c1 (update fcm)
+=======
+https://console.firebase.google.com/u/0/project/example-formfield/notification/compose
+>>>>>>> 794d15f (update fcm)
 
 ## Android
 
