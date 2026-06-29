@@ -53,18 +53,41 @@ class FormFieldsRating extends StatefulWidget {
 
 class _FormFieldsRatingState extends State<FormFieldsRating> {
   late int _rating;
+  late final GlobalKey<FormFieldState<int>> _formKey;
 
   @override
   void initState() {
     super.initState();
     _rating = widget.initialRating;
+    _formKey = GlobalKey<FormFieldState<int>>();
   }
 
   @override
   void didUpdateWidget(covariant FormFieldsRating oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialRating != oldWidget.initialRating) {
-      setState(() => _rating = widget.initialRating);
+
+    // If external error text changed, revalidate the FormField after build
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _formKey.currentState?.validate();
+      });
+    }
+
+    // If the caller updated the initial rating, sync it into the
+    // FormField state so the visible stars update.
+    if (oldWidget.initialRating != widget.initialRating) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final current = _formKey.currentState?.value;
+        if (current != widget.initialRating) {
+          _formKey.currentState?.didChange(widget.initialRating);
+        }
+        // Keep internal fallback in sync as well
+        if (_rating != widget.initialRating) {
+          setState(() => _rating = widget.initialRating);
+        }
+      });
     }
   }
 
@@ -84,6 +107,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
     final inactive = widget.inactiveColor ?? Colors.grey.shade400;
 
     return FormField<int>(
+      key: _formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       initialValue: _rating,
       validator: (v) {
