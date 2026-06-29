@@ -60,6 +60,14 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
     _rating = widget.initialRating;
   }
 
+  @override
+  void didUpdateWidget(covariant FormFieldsRating oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialRating != oldWidget.initialRating) {
+      setState(() => _rating = widget.initialRating);
+    }
+  }
+
   void _setRating(int r) {
     if (widget.readOnly) return;
     setState(() {
