@@ -169,6 +169,13 @@ class ViewModel extends ChangeNotifier {
           routeName: AppRoute.workerDemo.name,
         ),
         AppMenuItemData(
+          title: 'FCM Test',
+          subtitle: 'Firebase Cloud Messaging demo',
+          icon: Icons.notifications,
+          color: Colors.blueGrey,
+          routeName: AppRoute.fcmTest.name,
+        ),
+        AppMenuItemData(
           title: 'SafeScaffold Demo',
           subtitle: 'Custom scaffold + appbar example',
           icon: Icons.smartphone,
