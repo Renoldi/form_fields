@@ -44,6 +44,7 @@ import 'package:form_fields_example/ui/pages/language/main.dart' as language;
 import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
 import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart'
     as form_fields_signature_pad;
+import 'package:form_fields_example/ui/pages/fcm_test/main.dart' as fcm_test;
 import 'package:form_fields_example/ui/pages/responsive_menu_grid_examples/main.dart'
     as responsive_menu_grid_examples;
 import 'package:form_fields_example/localization/localizations.dart';
@@ -214,6 +215,18 @@ GoRouter createAppRouter(
           child: ChangeNotifierProvider(
             create: (_) => form_fields_examples.FormFieldsExamplesViewModel(),
             child: const form_fields_examples.Presenter(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.fcmTest.path,
+        name: AppRoute.fcmTest.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.fcmTest,
+          child: ChangeNotifierProvider(
+            create: (_) => fcm_test.ViewModel(),
+            child: const fcm_test.Presenter(),
           ),
         ),
       ),
@@ -497,6 +510,8 @@ String _routeTitleKey(AppRoute route) {
       return 'workerDemo';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
+    case AppRoute.fcmTest:
+      return 'fcmTest';
     case AppRoute.selectionExamples:
       return 'selectionExamples';
     case AppRoute.safeScaffoldDemo:

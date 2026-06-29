@@ -19,6 +19,8 @@ import 'package:form_fields/form_fields.dart';
 // register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // example-local service helpers (flush, handlers)
 
 // Local configuration & state management
@@ -27,6 +29,7 @@ import 'config/environment.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
+import 'ui/pages/fcm_test/main.dart' as fcm_test;
 
 final logger = Logger();
 
@@ -191,6 +194,41 @@ Future<void> main() async {
     // inside FormFieldsInitializer.initAll to avoid duplicate/late registration.
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
+  }
+
+  // Initialize FCM for the example app (non-fatal)
+  try {
+    await Firebase.initializeApp();
+    FCMService.registerBackgroundHandler(fcmBackgroundHandler);
+    await FCMService.instance.initialize(
+      options: const FCMOptions(showLocalNotification: true),
+      onMessage: (msg) async {
+        logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');
+      },
+      onMessageOpenedApp: (msg) async {
+        logger.i('FCM opened app: ${msg.data}');
+      },
+    );
+    // Retrieve and persist FCM token immediately after initialization
+    try {
+      final token = await FCMService.instance.getToken();
+      logger.i('FCM token: $token');
+      final prefs = await SharedPreferences.getInstance();
+      if (token != null && token.isNotEmpty) {
+        await prefs.setString('fcm_token', token);
+      }
+
+      // Listen for token refreshes and persist them (centralized)
+      FCMService.registerOnTokenRefresh((newToken) async {
+        logger.i('FCM token refreshed: $newToken');
+        final p = await SharedPreferences.getInstance();
+        await p.setString('fcm_token', newToken);
+      });
+    } catch (e) {
+      logger.w('Failed to obtain FCM token: $e');
+    }
+  } catch (e, st) {
+    logger.w('FCM initialization failed (example): $e\n$st');
   }
 
   // Start the app
@@ -419,6 +457,27 @@ class View extends PresenterState {
             // ROUTING CONFIGURATION
             // ================================================================
             routerConfig: viewModel.routerConfig,
+            builder: (context, child) {
+              // Wrap the router child so we can show an always-available
+              // FAB to open the FCM test page from anywhere in the app.
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton.extended(
+                      icon: const Icon(Icons.bug_report),
+                      label: const Text('FCM Test'),
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => const fcm_test.Presenter()));
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
