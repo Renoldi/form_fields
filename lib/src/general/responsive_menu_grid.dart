@@ -33,7 +33,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
     this.verticalSpacing = 20,
     this.minHorizontalSpacing = 8,
     this.alignLeft = false,
-    this.allowScroll = false,
+    this.allowScroll = true,
     this.height,
     this.width,
     this.maxCrossAxisSpacing,
