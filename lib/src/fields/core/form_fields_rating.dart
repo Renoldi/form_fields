@@ -82,11 +82,10 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
     if (oldWidget.initialRating != widget.initialRating) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final current = _formKey.currentState?.value;
-        if (current != widget.initialRating) {
-          _formKey.currentState?.didChange(widget.initialRating);
-        }
-        // Keep internal fallback in sync as well
+        // Do not call `didChange` here — calling it marks the field as
+        // interacted-with and can trigger `AutovalidateMode.onUserInteraction`.
+        // Instead, keep the internal fallback `_rating` in sync so the
+        // UI reflects the new value without causing premature validation.
         if (_rating != widget.initialRating) {
           setState(() => _rating = widget.initialRating);
         }
