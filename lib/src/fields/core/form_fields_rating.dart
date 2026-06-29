@@ -23,6 +23,7 @@ class FormFieldsRating extends StatefulWidget {
   final LabelPosition labelPosition;
   final BorderType borderType;
   final String? externalErrorText;
+  final AutovalidateMode autovalidateMode;
 
   const FormFieldsRating({
     super.key,
@@ -45,6 +46,7 @@ class FormFieldsRating extends StatefulWidget {
     this.labelPosition = LabelPosition.top,
     this.borderType = BorderType.none,
     this.externalErrorText,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   }) : assert(initialRating >= 0 && initialRating <= maxRating);
 
   @override
@@ -108,7 +110,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
 
     return FormField<int>(
       key: _formKey,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autovalidateMode: widget.autovalidateMode,
       initialValue: _rating,
       validator: (v) {
         if (widget.externalErrorText != null &&

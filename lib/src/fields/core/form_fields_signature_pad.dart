@@ -529,6 +529,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   void didUpdateWidget(FormFieldsSignaturePad oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    if (oldWidget.externalErrorText != widget.externalErrorText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formFieldKey.currentState?.validate();
+      });
+    }
+
     if (!widget.showExportPreview &&
         oldWidget.showExportPreview != widget.showExportPreview &&
         (_padProvider.previewSignatureResult != null ||
