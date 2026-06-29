@@ -56,13 +56,12 @@ class FormFieldsRating extends StatefulWidget {
 
 class _FormFieldsRatingState extends State<FormFieldsRating> {
   int? _rating;
-  late final GlobalKey<FormFieldState<int?>> _formKey;
+  GlobalKey<FormFieldState<int?>> _formKey = GlobalKey<FormFieldState<int?>>();
 
   @override
   void initState() {
     super.initState();
     _rating = widget.initialRating;
-    _formKey = GlobalKey<FormFieldState<int?>>();
   }
 
   @override
@@ -77,18 +76,17 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
       });
     }
 
-    // If the caller updated the initial rating, sync it into the
-    // FormField state so the visible stars update.
+    // If the caller updated the initial rating, recreate the FormField
+    // so it re-initializes its internal value from `initialValue`.
+    // Recreating avoids calling `didChange(...)` which marks the field as
+    // user-interacted and can trigger `AutovalidateMode.onUserInteraction`.
     if (oldWidget.initialRating != widget.initialRating) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        // Do not call `didChange` here — calling it marks the field as
-        // interacted-with and can trigger `AutovalidateMode.onUserInteraction`.
-        // Instead, keep the internal fallback `_rating` in sync so the
-        // UI reflects the new value without causing premature validation.
-        if (_rating != widget.initialRating) {
-          setState(() => _rating = widget.initialRating);
-        }
+        setState(() {
+          _formKey = GlobalKey<FormFieldState<int?>>();
+          _rating = widget.initialRating;
+        });
       });
     }
   }
