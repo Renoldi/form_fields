@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 
 class FormFieldsRating extends StatefulWidget {
-  final int initialRating;
+  final int? initialRating;
   final int maxRating;
   final ValueChanged<int>? onChanged;
   final double size;
@@ -27,7 +27,7 @@ class FormFieldsRating extends StatefulWidget {
 
   const FormFieldsRating({
     super.key,
-    this.initialRating = 0,
+    this.initialRating,
     this.maxRating = 5,
     this.onChanged,
     this.size = 24.0,
@@ -47,21 +47,22 @@ class FormFieldsRating extends StatefulWidget {
     this.borderType = BorderType.none,
     this.externalErrorText,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
-  }) : assert(initialRating >= 0 && initialRating <= maxRating);
+  }) : assert(initialRating == null ||
+            (initialRating >= 0 && initialRating <= maxRating));
 
   @override
   State<FormFieldsRating> createState() => _FormFieldsRatingState();
 }
 
 class _FormFieldsRatingState extends State<FormFieldsRating> {
-  late int _rating;
-  late final GlobalKey<FormFieldState<int>> _formKey;
+  int? _rating;
+  late final GlobalKey<FormFieldState<int?>> _formKey;
 
   @override
   void initState() {
     super.initState();
     _rating = widget.initialRating;
-    _formKey = GlobalKey<FormFieldState<int>>();
+    _formKey = GlobalKey<FormFieldState<int?>>();
   }
 
   @override
@@ -98,7 +99,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
     setState(() {
       _rating = r;
     });
-    widget.onChanged?.call(_rating);
+    widget.onChanged?.call(_rating!);
   }
 
   @override
@@ -108,7 +109,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
         widget.activeColor ?? Theme.of(context).colorScheme.secondary;
     final inactive = widget.inactiveColor ?? Colors.grey.shade400;
 
-    return FormField<int>(
+    return FormField<int?>(
       key: _formKey,
       autovalidateMode: widget.autovalidateMode,
       initialValue: _rating,
@@ -117,7 +118,8 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
             widget.externalErrorText!.isNotEmpty) {
           return widget.externalErrorText;
         }
-        if (widget.isRequired && (v == null || v == 0)) {
+        // Treat `null` as empty/unset. `0` is a valid rating value.
+        if (widget.isRequired && v == null) {
           return widget.label != null
               ? l.select(widget.label!.toTitleCases)
               : l.select('rating');
@@ -127,7 +129,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
         }
         return null;
       },
-      builder: (FormFieldState<int> state) {
+      builder: (FormFieldState<int?> state) {
         final labelWidget = (widget.label != null && widget.label!.isNotEmpty)
             ? Padding(
                 padding: const EdgeInsets.only(left: 12.0, bottom: 4.0),
@@ -142,7 +144,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List<Widget>.generate(widget.maxRating, (index) {
             final i = index + 1;
-            final filled = i <= (state.value ?? _rating);
+            final filled = i <= (state.value ?? _rating ?? 0);
             final iconWidget = filled
                 ? (widget.filledIcon ??
                     // When caller doesn't provide a custom icon, allow theme to
