@@ -27,7 +27,7 @@ flutter pub get
 ## 2) Android / iOS platform setup
 
 Follow the official Firebase setup guides for Android and iOS to register
-your app, add `google-services.json` / `GoogleService-Info.plist`, and
+your app, add ``/`GoogleService-Info.plist`, and
 configure application IDs and entitlements. Also enable background
 messaging capabilities on iOS as described in the Firebase docs.
 

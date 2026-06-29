@@ -1,0 +1,60 @@
+{
+  "info": {
+    "name": "FCM Test Collection",
+    "_postman_id": "fcm-test-collection",
+    "description": "Collection to send test FCM messages (legacy and HTTP v1).\nReplace `{{server_key}}` or `{{access_token}}` before sending.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Send via Legacy FCM",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "key {{server_key}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": \"{{fcm_token}}\",\n  \"notification\": { \"title\": \"Test\", \"body\": \"Hello from Postman\" },\n  \"data\": { \"click_action\": \"FLUTTER_NOTIFICATION_CLICK\" }\n}"
+        },
+        "url": {
+          "raw": "https://fcm.googleapis.com/fcm/send",
+          "protocol": "https",
+          "host": ["fcm", "googleapis", "com"],
+          "path": ["fcm", "send"]
+        }
+      }
+    },
+    {
+      "name": "Send via HTTP v1",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json; UTF-8" },
+          { "key": "Authorization", "value": "Bearer {{access_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": {\n    \"token\": \"{{fcm_token}}\",\n    \"notification\": { \"title\": \"Test\", \"body\": \"Hello from Postman (HTTP v1)\" }\n  }\n}"
+        },
+        "url": {
+          "raw": "https://fcm.googleapis.com/v1/projects/{{project_id}}/messages:send",
+          "protocol": "https",
+          "host": ["fcm", "googleapis", "com"],
+          "path": ["v1", "projects", "{{project_id}}", "messages:send"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "fcm_token",
+      "value": "c2m7m3e6RtOcfCFB_FEaNZ:APA91bHMpeY2VeSuFSvfwDWgIzdP1G8Oho1gPZ1wOl_UZiio2Z-Ax1GoUkgKxc34W_FK0_PUsVw9AHuntmexp90CzQRgRAqeD60TxHqP7UqSJzwx6NzdZp8",
+      "type": "string"
+    },
+    { "key": "server_key", "value": "", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "project_id", "value": "example-formfield", "type": "string" }
+  ]
+}

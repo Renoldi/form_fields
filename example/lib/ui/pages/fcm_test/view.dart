@@ -10,6 +10,8 @@ class View extends PresenterState {
     return ChangeNotifierProvider(
       create: (_) => ViewModel(),
       child: Consumer<ViewModel>(builder: (context, vm, _) {
+        final args = ModalRoute.of(context)?.settings.arguments;
+        final payload = args is Map ? args : null;
         return Scaffold(
           appBar: AppBar(title: const Text('FCM Test')),
           body: Padding(
@@ -17,6 +19,12 @@ class View extends PresenterState {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (payload != null) ...[
+                  Text('Notification payload:'),
+                  const SizedBox(height: 8),
+                  Text(payload.toString()),
+                  const SizedBox(height: 12),
+                ],
                 ElevatedButton(
                   onPressed: () async {
                     final ctx = context;
