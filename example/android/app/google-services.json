@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "939270936662",
+    "project_id": "example-formfield",
+    "storage_bucket": "example-formfield.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939270936662:android:5aa105bf4d6b9bc98103f7",
+        "android_client_info": {
+          "package_name": "com.example.form_fields_example.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYnsXQ6WsM5DMig1Hzd352BqXjhG7mKwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
