@@ -127,6 +127,10 @@ export 'src/service/workmanager_service.dart'
     show WorkmanagerService, workmanagerCallbackDispatcher;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
+// Firebase Cloud Messaging (FCM) service (internal - public API: FCMService)
+export 'src/service/fcm_service.dart'
+    show FCMService, fcmBackgroundHandler, FCMOptions;
+export 'model/fcm_models.dart' show FCMMessage, FCMNotification;
 // `FlushState` moved into `WorkmanagerService` as `isFlushing`.
 export 'src/service/flush_types.dart'
     show SubmitHandler, FlushAllHandler, FlushOneHandler;

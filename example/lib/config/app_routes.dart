@@ -58,6 +58,7 @@ enum AppRoute {
     name: 'barcode_scan',
     title: 'Barcode Scan',
   ),
+  fcmTest(name: 'fcm_test', title: 'FCM Test'),
   safeScaffoldDemo(name: 'safe_scaffold_demo', title: 'SafeScaffold Demo'),
   selectionExamples(name: 'selection_examples', title: 'Selection Examples');
 
