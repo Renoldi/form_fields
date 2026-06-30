@@ -43,8 +43,21 @@ class User {
   Map<String, dynamic> toJson() => _$UserToJson(this);
 
   String? get displayName {
-    final fullName = '$firstName $lastName'.trim();
-    return fullName.isEmpty ? username : fullName;
+    String sanitize(String? s) {
+      if (s == null) return '';
+      final t = s.trim();
+      if (t.isEmpty) return '';
+      if (t.toLowerCase() == 'null') return '';
+      return t;
+    }
+
+    final f = sanitize(firstName);
+    final l = sanitize(lastName);
+    final fullName = ('$f $l').trim();
+    if (fullName.isNotEmpty) return fullName;
+
+    final user = sanitize(username);
+    return user.isNotEmpty ? user : null;
   }
 
   User copyWith({

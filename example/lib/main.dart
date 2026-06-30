@@ -273,7 +273,7 @@ Future<void> main() async {
 
             // Default: navigate to the notification page and pass payload
             try {
-              ctx.goNamed(AppRoute.notification.name, extra: msg.data);
+              ctx.pushNamed(AppRoute.notification.name, extra: msg.data);
             } catch (_) {
               Navigator.of(ctx).push(MaterialPageRoute(
                 builder: (_) => notification.Presenter(payload: msg.data),
@@ -303,25 +303,22 @@ Future<void> main() async {
           }
         }
       },
-    );
-    // Retrieve and persist FCM token immediately after initialization
-    try {
-      final token = await FCMService.instance.getToken();
-      logger.i('FCM token: $token');
-      final prefs = await SharedPreferences.getInstance();
-      if (token != null && token.isNotEmpty) {
-        await prefs.setString('fcm_token', token);
-      }
-
-      // Listen for token refreshes and persist them (centralized)
-      FCMService.registerOnTokenRefresh((newToken) async {
+      onToken: (token) async {
+        logger.i('FCM token: $token');
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (token.isNotEmpty) await prefs.setString('fcm_token', token);
+        } catch (_) {}
+      },
+      onTokenRefresh: (newToken) async {
         logger.i('FCM token refreshed: $newToken');
-        final p = await SharedPreferences.getInstance();
-        await p.setString('fcm_token', newToken);
-      });
-    } catch (e) {
-      logger.w('Failed to obtain FCM token: $e');
-    }
+        try {
+          final p = await SharedPreferences.getInstance();
+          await p.setString('fcm_token', newToken);
+        } catch (_) {}
+      },
+    );
+    // FCM token retrieval and refresh handling moved into FCMService.initialize().
   } catch (e, st) {
     logger.w('FCM initialization failed (example): $e\n$st');
   }
@@ -514,6 +511,53 @@ abstract class PresenterState extends State<MyApp> {
 /// View for MyApp - renders the app UI with theming and routing
 class View extends PresenterState {
   @override
+  void initState() {
+    super.initState();
+
+    // Consume any initial FCM message that opened the app (terminated -> launched)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Capture the global dialog service and its context BEFORE the async
+      // callback to avoid using a BuildContext across async gaps.
+      final agds = AppGlobalDialogService.instance;
+      if (!agds.isConfigured) {
+        logger.w(
+            'AppGlobalDialogService not configured; cannot navigate on initial notification.');
+        return;
+      }
+      FCMService.instance.consumeInitialMessage().then((initial) {
+        try {
+          if (initial == null) return;
+
+          logger
+              .i('Handling initial FCM message (app launch): ${initial.data}');
+          final data = initial.data;
+
+          // Prefer using go_router so navigation integrates with router state.
+          try {
+            viewModel.routerConfig
+                .goNamed(AppRoute.notification.name, extra: data);
+            return;
+          } catch (_) {
+            // Fallback to direct navigator push if router fails.
+            final navigator = viewModel.rootNavigatorKey.currentState;
+            if (navigator == null) {
+              logger.w(
+                  'Root navigator not available; cannot navigate on initial notification.');
+              return;
+            }
+            navigator.push(MaterialPageRoute(
+              builder: (_) => notification.Presenter(payload: data),
+              settings: RouteSettings(arguments: data),
+            ));
+          }
+        } catch (e, st) {
+          logger.w('Failed to handle initial FCM message: $e\n$st');
+        }
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: viewModel.appState,
@@ -561,13 +605,15 @@ class View extends PresenterState {
                   Positioned(
                     right: 16,
                     bottom: 16,
-                    child: FloatingActionButton.extended(
-                      icon: const Icon(Icons.bug_report),
-                      label: const Text('FCM Test'),
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => const fcm_test.Presenter()));
-                      },
+                    child: Builder(
+                      builder: (fabContext) => FloatingActionButton.extended(
+                        icon: const Icon(Icons.bug_report),
+                        label: const Text('FCM Test'),
+                        onPressed: () {
+                          viewModel.rootNavigatorKey.currentContext
+                              ?.pushRoute(AppRoute.fcmTest);
+                        },
+                      ),
                     ),
                   ),
                 ],

@@ -44,77 +44,76 @@ class View extends PresenterState {
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (viewModel.appState.currentUser != null)
-                        InkWell(
-                          onTap: handleOpenProfile,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+              body: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (viewModel.appState.currentUser != null)
+                      InkWell(
+                        onTap: handleOpenProfile,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: const Color(0xFF1F2937),
+                                child: Text(
+                                  viewModel.user?.displayName != null
+                                      ? viewModel.user!.displayName.toTitleCases
+                                      : '?',
+                                  style: const TextStyle(color: Colors.white),
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: const Color(0xFF1F2937),
-                                  child: Text(
-                                    viewModel.user?.displayName != null
-                                        ? viewModel
-                                            .user!.displayName.toTitleCases
-                                        : '?',
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        viewModel.user?.displayName ?? '',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      viewModel.user?.displayName ?? '',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        viewModel.user?.email ?? '',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 12,
-                                        ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      viewModel.user?.email ?? '',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 12,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                Icon(
-                                  Icons.edit,
-                                  color: Colors.grey.shade400,
-                                  size: 20,
-                                ),
-                              ],
-                            ),
+                              ),
+                              Icon(
+                                Icons.edit,
+                                color: Colors.grey.shade400,
+                                size: 20,
+                              ),
+                            ],
                           ),
                         ),
-                      ResponsiveMenuGrid(
+                      ),
+                    Expanded(
+                      child: ResponsiveMenuGrid(
+                        allowScroll: true,
                         widgets: viewModel.menuItems
                             .map((item) => Column(
                                   mainAxisSize: MainAxisSize.max,
@@ -159,8 +158,8 @@ class View extends PresenterState {
                         verticalSpacing: 8,
                         alignLeft: true,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

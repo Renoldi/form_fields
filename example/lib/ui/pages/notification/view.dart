@@ -8,7 +8,9 @@ class View extends PresenterState {
         ModalRoute.of(context)?.settings.arguments) as Map<String, dynamic>?;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification')),
+      appBar: AppBar(
+        title: const Text('Notification'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
