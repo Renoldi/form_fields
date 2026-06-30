@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
@@ -27,14 +28,41 @@ class View extends PresenterState {
                 ],
                 ElevatedButton(
                   onPressed: () async {
-                    final ctx = context;
+                    final messenger = ScaffoldMessenger.of(context);
                     final token = await FCMService.instance.getToken();
                     if (!mounted) return;
-                    if (!ctx.mounted) return;
+                    if (!context.mounted) return;
                     await showDialog<void>(
-                      context: ctx,
-                      builder: (_) =>
-                          AlertDialog(content: Text(token ?? 'No token')),
+                      context: context,
+                      builder: (dialogCtx) {
+                        final navigator = Navigator.of(dialogCtx);
+                        return AlertDialog(
+                          content: SelectableText(token ?? 'No token'),
+                          actions: [
+                            TextButton(
+                              onPressed: () async {
+                                final t = token ?? '';
+                                if (t.isNotEmpty) {
+                                  await Clipboard.setData(
+                                      ClipboardData(text: t));
+                                  if (mounted) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Token copied')),
+                                    );
+                                  }
+                                }
+                                navigator.pop();
+                              },
+                              child: const Text('Copy'),
+                            ),
+                            TextButton(
+                              onPressed: () => navigator.pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                   child: const Text('Show token'),

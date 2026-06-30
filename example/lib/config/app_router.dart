@@ -224,13 +224,9 @@ GoRouter createAppRouter(
       GoRoute(
         path: AppRoute.fcmTest.path,
         name: AppRoute.fcmTest.name,
-        builder: (context, state) => _buildExamplePage(
-          context: context,
-          route: AppRoute.fcmTest,
-          child: ChangeNotifierProvider(
-            create: (_) => fcm_test.ViewModel(),
-            child: const fcm_test.Presenter(),
-          ),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => fcm_test.ViewModel(),
+          child: const fcm_test.Presenter(),
         ),
       ),
       GoRoute(
@@ -242,11 +238,7 @@ GoRouter createAppRouter(
               : (state.uri.queryParameters.isNotEmpty
                   ? Map<String, dynamic>.from(state.uri.queryParameters)
                   : null);
-          return _buildExamplePage(
-            context: context,
-            route: AppRoute.notification,
-            child: notification.Presenter(payload: payload),
-          );
+          return notification.Presenter(payload: payload);
         },
       ),
       GoRoute(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:form_fields_example/data/models/user.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/config/error_position.dart';
@@ -22,6 +23,7 @@ class AppStateNotifier extends ChangeNotifier {
   static const String _keyAccessToken = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
   static const String _keyIsLoggedIn = 'is_logged_in';
+  static const String _keyUser = 'current_user';
 
   AppStateNotifier() {
     _initializeAuth();
@@ -34,6 +36,17 @@ class AppStateNotifier extends ChangeNotifier {
       _accessToken = prefs.getString(_keyAccessToken) ?? '';
       _refreshToken = prefs.getString(_keyRefreshToken) ?? '';
       _isLoggedIn = prefs.getBool(_keyIsLoggedIn) ?? false;
+
+      // Try to load cached user (if any) to avoid empty UI before verification
+      final userJson = prefs.getString(_keyUser);
+      if (userJson != null && userJson.isNotEmpty) {
+        try {
+          final map = jsonDecode(userJson) as Map<String, dynamic>;
+          _currentUser = User.fromJson(map);
+        } catch (_) {
+          _currentUser = null;
+        }
+      }
 
       // Load error position preference
       final errorPosString = prefs.getString('error_position');
@@ -48,8 +61,19 @@ class AppStateNotifier extends ChangeNotifier {
         // Try to verify the token by fetching user data
         try {
           final user = await User.getMe(accessToken: _accessToken);
-          _currentUser = user;
-          _userError = null;
+          // If API returns invalid user data (e.g. literal "null" fields),
+          // treat as invalid token and clear auth so user must re-login.
+          if (user.displayName == null) {
+            _isLoggedIn = false;
+            _accessToken = '';
+            _refreshToken = '';
+            _currentUser = null;
+            DioUtil.clearAuthToken();
+            await _clearAuthState();
+          } else {
+            _currentUser = user;
+            _userError = null;
+          }
         } catch (e) {
           // Token is invalid, clear stored auth
           _isLoggedIn = false;
@@ -76,6 +100,13 @@ class AppStateNotifier extends ChangeNotifier {
       await prefs.setString(_keyAccessToken, _accessToken);
       await prefs.setString(_keyRefreshToken, _refreshToken);
       await prefs.setBool(_keyIsLoggedIn, _isLoggedIn);
+      if (_currentUser != null) {
+        try {
+          await prefs.setString(_keyUser, jsonEncode(_currentUser!.toJson()));
+        } catch (_) {}
+      } else {
+        await prefs.remove(_keyUser);
+      }
     } catch (e) {
       // Handle error silently
     }
@@ -88,6 +119,7 @@ class AppStateNotifier extends ChangeNotifier {
       await prefs.remove(_keyAccessToken);
       await prefs.remove(_keyRefreshToken);
       await prefs.remove(_keyIsLoggedIn);
+      await prefs.remove(_keyUser);
     } catch (e) {
       // Handle error silently
     }
@@ -161,6 +193,8 @@ class AppStateNotifier extends ChangeNotifier {
     }
 
     notifyListeners();
+    // persist updated user
+    _saveAuthState();
   }
 
   Future<bool> loginWithCredentials({
@@ -179,17 +213,8 @@ class AppStateNotifier extends ChangeNotifier {
         username: username,
         password: password,
       );
-      _currentUser = user;
-      _userError = null;
-      _isLoggedIn = true;
-
-      // Set auth token in global HTTP service
-      if (_accessToken.isNotEmpty) {
-        DioUtil.setAuthToken(_accessToken);
-      }
-
-      _accessToken = user.accessToken ?? '';
-      _refreshToken = user.refreshToken ?? '';
+      // Centralize state updates so tokens are saved and auth persisted
+      updateUserAfterLogin(user: user);
       return true;
     } catch (error) {
       _currentUser = null;
