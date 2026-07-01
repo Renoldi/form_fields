@@ -85,11 +85,11 @@ class BuildConfig {
   static String _getEnvironmentSpecificMapsKey() {
     switch (EnvironmentConfig.current) {
       case AppEnvironment.production:
-        return 'PROD_GOOGLE_MAPS_API_KEY'; // Replace with production key
+        return 'AIzaSyB9ajaXlTbNq6KZcgXXLscc0fIAf8mWkoo'; // Replace with production key
       case AppEnvironment.beta:
-        return 'BETA_GOOGLE_MAPS_API_KEY'; // Replace with beta key
+        return 'AIzaSyB9ajaXlTbNq6KZcgXXLscc0fIAf8mWkoo'; // Replace with beta key
       case AppEnvironment.debug:
-        return 'DEBUG_GOOGLE_MAPS_API_KEY'; // Replace with debug key
+        return 'AIzaSyB9ajaXlTbNq6KZcgXXLscc0fIAf8mWkoo'; // Replace with debug key
     }
   }
 
@@ -321,13 +321,13 @@ class BuildConfig {
     namespace = "$androidNamespace"
     compileSdk = $androidCompileSdk
     ndkVersion = "$ndkVersion"
-    
+
     defaultConfig {
         minSdk = $androidMinSdk
         targetSdk = $androidTargetSdk
         versionCode = $versionCode
         versionName = "$versionName"
-        
+
         // Maps API Key
         manifestPlaceholders = ["MAPS_API_KEY": "$androidMapsApiKey"]
     }
@@ -441,17 +441,17 @@ BuildConfig (${EnvironmentConfig.currentName}):
     - targetSdk: $androidTargetSdk
     - Maps API Key: ${androidMapsApiKey.replaceRange(4, androidMapsApiKey.length - 4, '****')}
     - Permissions: ${uniqueAndroidPermissions.length} configured
-  
+
   Version:
     - versionCode: $versionCode
     - versionName: $versionName
-  
+
   Platforms:
     - iOS minimum: $iosMinimumDeploymentTarget
     - macOS minimum: $macosMinimumDeploymentTarget
     - Windows minimum: Windows $windowsMinimumVersion
     - Web domain: $webDomain
-  
+
   Status: ${isProductionReady ? '✅ Production Ready' : '⚠️ Needs API Keys'}
 ''';
   }

@@ -9,7 +9,7 @@ android {
     namespace = "com.example.form_fields_example.debug"
     compileSdk = 36
     // Use highest required NDK version to satisfy plugins (backward compatible)
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -29,7 +29,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
-        manifestPlaceholders["MAPS_API_KEY"] = "DEBUG_GOOGLE_MAPS_API_KEY"}
+        manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyB9ajaXlTbNq6KZcgXXLscc0fIAf8mWkoo"}
 
     buildTypes {
         release {

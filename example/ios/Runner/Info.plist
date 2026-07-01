@@ -19,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>1.0.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -43,7 +43,21 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-				</dict>
+					<key>NSCameraUsageDescription</key>
+	<string>Camera is required to capture images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Gallery access is required to select images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo library access is required to save images.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Notifications are used to keep you updated.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location access is required for location-based features.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Location access is required for location-based features.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Location access is required for location-based features.</string>
+</dict>
 			</array>
 		</dict>
 	</dict>
