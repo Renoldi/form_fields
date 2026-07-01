@@ -6,7 +6,8 @@ class SelectionExamplesViewModel extends ChangeNotifier {
   bool? checkboxValue = false;
   bool switchValue = false;
   String listTileResult = '';
-  int rating = 0;
+  int? rating;
+  int? ratingCustom;
   // grouped selection state
   List<String> checkboxListSelected = [];
   String? radioSelected;
@@ -31,6 +32,11 @@ class SelectionExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setRatingCustom(int v) {
+    ratingCustom = v;
+    notifyListeners();
+  }
+
   void setCheckboxList(List<String> v) {
     checkboxListSelected = v;
     notifyListeners();
@@ -45,7 +51,8 @@ class SelectionExamplesViewModel extends ChangeNotifier {
     checkboxValue = false;
     switchValue = false;
     listTileResult = '';
-    rating = 0;
+    rating = null;
+    ratingCustom = null;
     checkboxListSelected = [];
     radioSelected = null;
     notifyListeners();

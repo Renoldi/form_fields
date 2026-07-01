@@ -29,8 +29,8 @@ class View extends PresenterState {
             // Example: custom icon widgets (uses `filledIcon` / `emptyIcon`)
             FormFieldsRating(
               label: 'Rate App (custom icons)',
-              initialRating: vm.rating,
-              onChanged: (v) => vm.setRating(v),
+              initialRating: vm.ratingCustom,
+              onChanged: (v) => vm.setRatingCustom(v),
               isRequired: true,
               borderType: BorderType.none,
               filledIcon: Icon(Icons.star, color: Colors.amber),
