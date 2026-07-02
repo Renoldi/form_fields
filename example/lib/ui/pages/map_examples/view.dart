@@ -34,7 +34,7 @@ class View extends PresenterState {
                       children: [
                         ElevatedButton(
                           onPressed: () => vm.generateDemoData(
-                              markerCount: 10000, shapeCount: 20),
+                              markerCount: 20, shapeCount: 20),
                           child: const Text('Generate 10,000 markers + shapes'),
                         ),
                         ElevatedButton(
@@ -61,6 +61,7 @@ class View extends PresenterState {
                               value: vm.useCanvasMarkers,
                               onChanged: (v) {
                                 vm.useCanvasMarkers = v;
+                                vm.commit();
                               },
                             ),
                             const SizedBox(width: 12),
@@ -185,10 +186,23 @@ class View extends PresenterState {
                           size: 36,
                         ),
                         onMarkerTap: (m) {
+                          final title = (m is Map)
+                              ? (m['title'] ?? m['label'])
+                              : m?.title;
+                          final subtitle =
+                              (m is Map) ? m['subtitle'] : m?.subtitle;
+                          final coords = (m is Map)
+                              ? (m['point'] != null
+                                  ? '${(m['point'] as LatLng).latitude}, ${(m['point'] as LatLng).longitude}'
+                                  : '')
+                              : (m?.point != null
+                                  ? '${m.point.latitude}, ${m.point.longitude}'
+                                  : '');
+                          final msg = (title != null)
+                              ? '$title${subtitle != null ? ': $subtitle' : ''}${coords.isNotEmpty ? ' — $coords' : ''}'
+                              : 'Marker: $coords';
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    'Marker: ${m.point.latitude}, ${m.point.longitude}')),
+                            SnackBar(content: Text(msg)),
                           );
                         },
                         initialCenter: vm.center,

@@ -8,6 +8,10 @@ class FormFieldsMapController {
 
   // Optional ValueNotifiers to represent loading state per controller id.
   static final Map<String, ValueNotifier<bool>> _loadingNotifiers = {};
+  // Optional global handlers for marker taps keyed by controller id. This
+  // allows external marker widgets to invoke the map-level `onMarkerTap`
+  // callback by calling `invokeOnMarkerTap` with the controller id.
+  static final Map<String, ValueChanged<dynamic>?> _onMarkerTapHandlers = {};
 
   /// Returns an existing controller for [id], or creates one if missing.
   static MapController getOrCreate(String id) {
@@ -25,6 +29,47 @@ class FormFieldsMapController {
   static void setLoading(String id, bool value) {
     _loadingNotifiers.putIfAbsent(id, () => ValueNotifier<bool>(false)).value =
         value;
+  }
+
+  /// Register a handler to be invoked when a marker is tapped. The map
+  /// widget will call this during init and update, and it will be removed
+  /// when the widget disposes.
+  static void registerOnMarkerTap(String id, ValueChanged<dynamic>? handler) {
+    _onMarkerTapHandlers[id] = handler;
+    if (handler == null) {
+      // allow explicit unregistering
+      // ignore: avoid_print
+      debugPrint('FormFieldsMapController: registerOnMarkerTap($id) -> null');
+    } else {
+      // ignore: avoid_print
+      debugPrint(
+          'FormFieldsMapController: registerOnMarkerTap($id) -> registered');
+    }
+  }
+
+  /// Invoke the registered `onMarkerTap` handler (if any) for [id]. This
+  /// is safe to call from anywhere (e.g., marker widget tap callbacks).
+  static void invokeOnMarkerTap(String id, dynamic payload) {
+    final handler = _onMarkerTapHandlers[id];
+    if (handler == null) {
+      // ignore: avoid_print
+      debugPrint(
+          'FormFieldsMapController.invokeOnMarkerTap: no handler for $id');
+      return;
+    }
+    try {
+      // ignore: avoid_print
+      debugPrint('FormFieldsMapController.invokeOnMarkerTap: invoking for $id');
+      handler.call(payload);
+    } catch (e, st) {
+      // ignore: avoid_print
+      debugPrint('FormFieldsMapController.invokeOnMarkerTap error: $e\n$st');
+    }
+  }
+
+  /// Remove any registered onMarkerTap handler for [id].
+  static void removeOnMarkerTap(String id) {
+    _onMarkerTapHandlers.remove(id);
   }
 
   /// Optionally remove a controller (e.g., on dispose of a long-lived form)

@@ -365,6 +365,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
     with AutomaticKeepAliveClientMixin<FormFieldsMap> {
   late final MapController _mapController;
   Timer? _debounceTimer;
+  // Internal notifier used when the consumer doesn't supply one. We keep a
+  // persistent instance to avoid recreating a new notifier on every build
+  // (which can cause notifyListeners/setState to fire during framework
+  // builds and trigger the "setState() or markNeedsBuild() called during
+  // build" exception).
+  late FormFieldsMapNotifier _internalNotifier;
+  bool _ownsInternalNotifier = false;
 
   // Track last known center/zoom to support zoom controls without relying
   // on MapController internals (some flutter_map versions differ).
@@ -384,6 +391,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
   void initState() {
     super.initState();
     _mapController = FormFieldsMapController.getOrCreate(widget.controllerId);
+    // Create or reuse an internal notifier once to avoid allocating a new
+    // notifier on each build.
+    _ownsInternalNotifier = widget.notifier == null;
+    _internalNotifier = widget.notifier ?? FormFieldsMapNotifier();
     _resolveCanvasMarkerIcon();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Ensure map starts at requested position in a version-agnostic way.
@@ -392,6 +403,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
       } catch (_) {}
       widget.onMapReady?.call();
     });
+    // Register onMarkerTap handler so external marker widgets can call
+    // FormFieldsMapController.invokeOnMarkerTap(id, payload) and have the
+    // map-level callback receive it.
+    FormFieldsMapController.registerOnMarkerTap(
+        widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
   }
 
   @override
@@ -399,6 +415,24 @@ class FormFieldsMapState extends State<FormFieldsMap>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.canvasMarkerIcon != widget.canvasMarkerIcon) {
       _resolveCanvasMarkerIcon();
+    }
+    // If the user supplied a different notifier, update the internal
+    // reference and dispose the previously owned one if necessary.
+    if (oldWidget.notifier != widget.notifier) {
+      if (_ownsInternalNotifier) {
+        try {
+          _internalNotifier.dispose();
+        } catch (_) {}
+      }
+      _ownsInternalNotifier = widget.notifier == null;
+      _internalNotifier = widget.notifier ?? FormFieldsMapNotifier();
+    }
+    // If controller id or onMarkerTap changed, update registration.
+    if (oldWidget.controllerId != widget.controllerId ||
+        oldWidget.onMarkerTap != widget.onMarkerTap) {
+      FormFieldsMapController.removeOnMarkerTap(oldWidget.controllerId);
+      FormFieldsMapController.registerOnMarkerTap(
+          widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
     }
   }
 
@@ -570,6 +604,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _canvasMarkerImageStream!
           .removeListener(_canvasMarkerImageStreamListener!);
     }
+    if (_ownsInternalNotifier) {
+      try {
+        _internalNotifier.dispose();
+      } catch (_) {}
+    }
+    FormFieldsMapController.removeOnMarkerTap(widget.controllerId);
     super.dispose();
   }
 
@@ -640,7 +680,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     final tileProvider = NetworkTileProvider();
 
-    final notifier = widget.notifier ?? FormFieldsMapNotifier();
+    final notifier = widget.notifier ?? _internalNotifier;
+    // Ensure the controller has the latest onMarkerTap handler registered.
+    FormFieldsMapController.registerOnMarkerTap(
+        widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
 
     return Stack(
       children: [
@@ -675,12 +718,24 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     final rawMarkers = notifier.rawMarkers;
                     if (rawMarkers.isEmpty) return const SizedBox.shrink();
                     final curZoom = _lastZoom ?? widget.initialZoom;
-                    _kdTree = buildKDTreeFromRawCoords(
-                        rawMarkers,
-                        curZoom,
-                        _CanvasMarkerPainter._worldX,
-                        _CanvasMarkerPainter._worldY);
-                    _kdTreeZoom = curZoom;
+
+                    // Build KD-tree after the current build frame to avoid
+                    // mutating state or triggering markNeedsBuild during
+                    // the framework's build phase. If a tap happens before
+                    // the KD-tree is ready, fallback hit-testing will apply.
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      // Avoid rebuilding the KD-tree unnecessarily when zoom
+                      // hasn't changed and we already have a tree.
+                      if (_kdTreeZoom == curZoom && _kdTree != null) return;
+                      _kdTree = buildKDTreeFromRawCoords(
+                          rawMarkers,
+                          curZoom,
+                          _CanvasMarkerPainter._worldX,
+                          _CanvasMarkerPainter._worldY);
+                      _kdTreeZoom = curZoom;
+                    });
+
                     return _CanvasRawMarkerLayer(
                       rawMarkers: rawMarkers,
                       center: _lastCenter ?? widget.initialCenter,
@@ -886,6 +941,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
       final double worldSize = 256 * pow(2, kdZoom).toDouble();
 
       dynamic hit;
+      dynamic hitCandidate;
+      double? hitCandLat;
+      double? hitCandLon;
       // Query at three wrapped X positions to account for antimeridian.
       // We query the KD-tree with a large radius (worldSize) and then
       // validate the nearest candidate in screen coordinates against the
@@ -953,12 +1011,37 @@ class FormFieldsMapState extends State<FormFieldsMap>
           // Create a lightweight tap result with a `point` property so
           // consumers can access `.point.latitude` / `.point.longitude`.
           hit = _TapResult(LatLng(candLat, candLon));
+          hitCandidate = candidate;
+          hitCandLat = candLat;
+          hitCandLon = candLon;
           break;
         }
       }
 
       if (hit != null) {
-        (widget.onMarkerTap as dynamic)?.call(hit);
+        // Normalize the hit into a Map payload so consumers receive the
+        // same shape as widget markers (title, subtitle, point).
+        String? title;
+        String? subtitle;
+        // Use the captured candidate from the loop.
+        final cand = hitCandidate;
+        if (cand is Map) {
+          title = (cand['title'] ?? cand['label'])?.toString();
+          subtitle = cand['subtitle']?.toString();
+        } else if (cand is List && cand.length >= 3) {
+          title = cand[2]?.toString();
+          if (cand.length >= 4) subtitle = cand[3]?.toString();
+        }
+
+        final payload = {
+          'title': title,
+          'subtitle': subtitle,
+          'point': LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0),
+        };
+
+        // Invoke via controller so both example widget markers and canvas
+        // markers use the same delivery path.
+        FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, payload);
         return;
       }
     }
