@@ -795,6 +795,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 useSafeArea: false,
                 heroTag: null,
                 onPressed: () async {
+                  // Avoid using `BuildContext` across async gaps: capture the
+                  // ScaffoldMessenger synchronously and check `mounted` after
+                  // any awaits.
+                  final messenger = ScaffoldMessenger.maybeOf(context);
                   LatLng? target;
                   if (widget.myLocationMarker != null) {
                     target = widget.myLocationMarker!.point;
@@ -805,12 +809,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       target = null;
                     }
                   }
+                  if (!mounted) return;
                   if (target != null) {
                     final currentZoom = _lastZoom ?? widget.initialZoom;
                     await animateTo(target, currentZoom);
                     return;
                   }
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  messenger?.showSnackBar(const SnackBar(
                       content: Text('Current location not available')));
                 },
               ),
