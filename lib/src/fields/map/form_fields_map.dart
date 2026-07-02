@@ -297,6 +297,7 @@ class FormFieldsMap extends StatefulWidget {
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
     this.showMyLocation = false,
     this.myLocationMarker,
+    this.onRequestCurrentLocation,
   });
 
   final String controllerId;
@@ -350,6 +351,11 @@ class FormFieldsMap extends StatefulWidget {
   /// Simple location layer toggle. Provide a custom marker if desired.
   final bool showMyLocation;
   final Marker? myLocationMarker;
+
+  /// Optional async callback used to obtain the device's current location
+  /// when the built-in current-location button is pressed. If omitted and
+  /// `myLocationMarker` is provided, the widget will center on that marker.
+  final Future<LatLng>? Function()? onRequestCurrentLocation;
 
   @override
   FormFieldsMapState createState() => FormFieldsMapState();
@@ -753,6 +759,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Current zoom display
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 6.0),
+                  child: Text(
+                    'Zoom: ${(_lastZoom ?? widget.initialZoom).toStringAsFixed(1)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               AppButton(
                 type: AppButtonType.fab,
                 size: AppSize.small,
@@ -765,6 +784,34 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   final newZoom =
                       (currentZoom + 1).clamp(widget.minZoom, widget.maxZoom);
                   animateTo(center, newZoom);
+                },
+              ),
+              const SizedBox(height: 8),
+              // Current location button
+              AppButton(
+                type: AppButtonType.fab,
+                size: AppSize.small,
+                icon: const Icon(Icons.my_location),
+                useSafeArea: false,
+                heroTag: null,
+                onPressed: () async {
+                  LatLng? target;
+                  if (widget.myLocationMarker != null) {
+                    target = widget.myLocationMarker!.point;
+                  } else if (widget.onRequestCurrentLocation != null) {
+                    try {
+                      target = await widget.onRequestCurrentLocation!();
+                    } catch (_) {
+                      target = null;
+                    }
+                  }
+                  if (target != null) {
+                    final currentZoom = _lastZoom ?? widget.initialZoom;
+                    await animateTo(target, currentZoom);
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Current location not available')));
                 },
               ),
               const SizedBox(height: 8),

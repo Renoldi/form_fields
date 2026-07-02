@@ -173,6 +173,7 @@ class View extends PresenterState {
                       child: FormFieldsMap(
                         notifier: vm.mapNotifier,
                         useCanvasMarkers: vm.useCanvasMarkers,
+                        onRequestCurrentLocation: () async => vm.center,
                         // Make canvas marker larger so icon appears at expected size
                         canvasMarkerRadius: 20.0,
                         // Use custom canvas marker icon from example assets.
