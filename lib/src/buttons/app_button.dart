@@ -59,6 +59,11 @@ class AppButton<T> extends StatelessWidget {
   /// already manages layout/insets and you need full control over sizing.
   final bool useSafeArea;
 
+  /// Optional hero tag to pass to underlying FABs. Set to `null` to disable
+  /// the Hero transition or to a unique value to avoid conflicts when
+  /// multiple FABs exist in the same route subtree.
+  final Object? heroTag;
+
   const AppButton({
     super.key,
     this.onPressed,
@@ -82,6 +87,7 @@ class AppButton<T> extends StatelessWidget {
     this.respectSafeArea = true,
     this.avoidKeyboard = true,
     this.useSafeArea = true,
+    this.heroTag,
   }) : assert(
           text != null || child != null || icon != null,
           'Provide at least one of text, child, or icon.',
@@ -338,12 +344,14 @@ class AppButton<T> extends StatelessWidget {
         case AppSize.small:
           return FloatingActionButton.small(
             onPressed: effectiveOnPressed,
+            heroTag: heroTag,
             backgroundColor: resolvedFabBg,
             child: iconWidget,
           );
         case AppSize.large:
           return FloatingActionButton.large(
             onPressed: effectiveOnPressed,
+            heroTag: heroTag,
             backgroundColor: resolvedFabBg,
             child: iconWidget,
           );
@@ -351,6 +359,7 @@ class AppButton<T> extends StatelessWidget {
         case AppSize.custom:
           return FloatingActionButton(
             onPressed: effectiveOnPressed,
+            heroTag: heroTag,
             backgroundColor: resolvedFabBg,
             child: iconWidget,
           );
@@ -379,6 +388,7 @@ class AppButton<T> extends StatelessWidget {
 
       return FloatingActionButton.extended(
         onPressed: effectiveOnPressed,
+        heroTag: heroTag,
         icon: icon,
         label: labelWidget,
         backgroundColor: resolvedFabBgExt,

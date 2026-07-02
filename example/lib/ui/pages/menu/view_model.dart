@@ -134,6 +134,13 @@ class ViewModel extends ChangeNotifier {
           routeName: AppRoute.myImage.name,
         ),
         AppMenuItemData(
+          title: 'Map Example',
+          subtitle: 'Contoh integrasi peta (flutter_map)',
+          icon: Icons.map,
+          color: Colors.lightBlue,
+          routeName: AppRoute.mapExample.name,
+        ),
+        AppMenuItemData(
           title: 'List Data',
           subtitle: 'Contoh ListDataComponent',
           icon: Icons.list,

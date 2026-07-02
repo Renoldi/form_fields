@@ -33,6 +33,10 @@ enum AppRoute {
     name: 'modal_bottom_sheet_shape_examples',
     title: 'Bottom Sheet Shapes',
   ),
+  mapExample(
+    name: 'map_example',
+    title: 'Map Example',
+  ),
   myImage(
     name: 'myimage',
     title: 'MyImage',

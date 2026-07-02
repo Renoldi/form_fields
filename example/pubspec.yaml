@@ -29,6 +29,8 @@ dependencies:
   path_provider: any
   path: any
   geolocator: any
+  flutter_map: any
+  latlong2: any
 
 dev_dependencies:
   flutter_test:

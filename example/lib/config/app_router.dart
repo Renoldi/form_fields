@@ -46,6 +46,8 @@ import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart
     as form_fields_signature_pad;
 import 'package:form_fields_example/ui/pages/responsive_menu_grid_examples/main.dart'
     as responsive_menu_grid_examples;
+import 'package:form_fields_example/ui/pages/map_examples/main.dart'
+    as map_examples;
 import 'package:form_fields_example/localization/localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
@@ -377,6 +379,15 @@ GoRouter createAppRouter(
           ),
         ),
       ),
+      GoRoute(
+        path: AppRoute.mapExample.path,
+        name: AppRoute.mapExample.name,
+        builder: (context, state) => _buildExamplePage(
+          context: context,
+          route: AppRoute.mapExample,
+          child: const map_examples.Presenter(),
+        ),
+      ),
     ],
 
     // Error handling
@@ -501,5 +512,7 @@ String _routeTitleKey(AppRoute route) {
       return 'selectionExamples';
     case AppRoute.safeScaffoldDemo:
       return 'safeScaffoldDemo';
+    case AppRoute.mapExample:
+      return 'mapExample';
   }
 }
