@@ -1,5 +1,6 @@
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:form_fields/form_fields.dart';
 
 class _KDPoint {
   _KDPoint(this.x, this.y, this.payload);
@@ -103,6 +104,10 @@ KDTree buildKDTreeFromRawCoords(
     } else if (c is List && c.length >= 2) {
       lat = (c[0] as num).toDouble();
       lon = (c[1] as num).toDouble();
+      payload = c;
+    } else if (c is ShapeMeta) {
+      lat = c.lat;
+      lon = c.lon;
       payload = c;
     } else if (c is Map) {
       // support {'lat': ..., 'lon': ..., 'title': ..., 'subtitle': ...}

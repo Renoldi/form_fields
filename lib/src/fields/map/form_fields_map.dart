@@ -106,6 +106,20 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Remove a raw marker or shape placeholder by ID (works for
+  /// `ShapeMeta` entries and Map entries containing an `id` key).
+  bool removeRawMarker(String id) {
+    final before = _rawMarkersCache.length;
+    _rawMarkersCache = _rawMarkersCache.where((m) {
+      if (m is ShapeMeta) return m.id != id;
+      if (m is Map) return m['id'] != id;
+      return true;
+    }).toList(growable: false);
+    final removed = _rawMarkersCache.length != before;
+    if (removed) notifyListeners();
+    return removed;
+  }
+
   set polygons(List<Polygon> p) {
     _polygonMap = {};
     for (var i = 0; i < p.length; i++) {
@@ -162,7 +176,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   void clearMarkers() {
     _markerMap.clear();
-    _markersCache = const [];
+    _markersCache = _markerMap.values.toList(growable: false);
     notifyListeners();
   }
 
@@ -194,7 +208,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   void clearPolygons() {
     _polygonMap.clear();
-    _polygonsCache = const [];
+    _polygonsCache = _polygonMap.values.toList(growable: false);
     notifyListeners();
   }
 
@@ -226,7 +240,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   void clearPolylines() {
     _polylineMap.clear();
-    _polylinesCache = const [];
+    _polylinesCache = _polylineMap.values.toList(growable: false);
     notifyListeners();
   }
 
@@ -258,7 +272,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   void clearCircles() {
     _circleMap.clear();
-    _circlesCache = const [];
+    _circlesCache = _circleMap.values.toList(growable: false);
     notifyListeners();
   }
 }
@@ -283,14 +297,14 @@ class FormFieldsMap extends StatefulWidget {
     this.panBuffer = 2,
     this.keepAlive = true,
     this.useCanvasMarkers = false,
-    this.canvasMarkerRadius = 4.0,
+    this.canvasMarkerRadius = 20.0,
     this.canvasMarkerIcon,
     this.useViewportCulling = false,
     this.cullingBuffer = 1.25,
     this.notifier,
     this.onMapReady,
     this.onPositionChanged,
-    this.onTap,
+    this.onMapTap,
     this.onTapShape,
     this.onLongPress,
     this.onCameraIdle,
@@ -343,7 +357,7 @@ class FormFieldsMap extends StatefulWidget {
 
   final VoidCallback? onMapReady;
   final ValueChanged<dynamic>? onPositionChanged;
-  final ValueChanged<LatLng>? onTap;
+  final ValueChanged<LatLng>? onMapTap;
   final ValueChanged<LatLng>? onLongPress;
   final VoidCallback? onCameraIdle;
   final Duration cameraIdleDebounce;
@@ -382,6 +396,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
   ui.Image? _canvasMarkerImage;
   ImageStream? _canvasMarkerImageStream;
   ImageStreamListener? _canvasMarkerImageStreamListener;
+  // When true, the next map-level onTap should be suppressed because the
+  // canvas layer already handled the event (avoid double-calling callbacks).
+  bool _suppressNextMapTap = false;
 
   // Loading state is shared via FormFieldsMapController so external
   // viewmodels can toggle it and the widget's ValueListenableBuilder will
@@ -652,6 +669,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     });
   }
 
+  void _suppressNextTap() {
+    _suppressNextMapTap = true;
+  }
+
   // Animate move: simple linear interpolation over duration.
   Future<void> animateTo(LatLng dest, double zoom,
       {Duration duration = const Duration(milliseconds: 400)}) async {
@@ -767,11 +788,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       radius: widget.canvasMarkerRadius,
                       iconImage: _canvasMarkerImage,
                       controllerId: widget.controllerId,
-                      polygonsMap: notifier._polygonMap,
-                      polylinesMap: notifier._polylineMap,
-                      circlesMap: notifier._circleMap,
-                      onTap: widget.onTap,
                       onTapShape: widget.onTapShape,
+                      onMapTap: widget.onMapTap,
+                      onHandledTap: _suppressNextTap,
                     );
                   },
                 )
@@ -797,6 +816,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
                             'lat': m.point.latitude,
                             'lon': m.point.longitude,
                           });
+                          try {
+                            debugPrint('WidgetMarker tapped id=$id');
+                          } catch (_) {}
+                          // Call the widget-level handler immediately for
+                          // consumers that provided `onTapShape`.
+                          try {
+                            widget.onTapShape?.call(sm);
+                          } catch (_) {}
                           FormFieldsMapController.invokeOnMarkerTap(
                               widget.controllerId, sm);
                         },
@@ -807,20 +834,39 @@ class FormFieldsMapState extends State<FormFieldsMap>
                             'lat': m.point.latitude,
                             'lon': m.point.longitude,
                           });
+                          try {
+                            debugPrint('WidgetMarker longpress id=$id');
+                          } catch (_) {}
+                          try {
+                            widget.onTapShape?.call(sm);
+                          } catch (_) {}
                           FormFieldsMapController.invokeOnMarkerTap(
                               widget.controllerId, sm);
                         },
                         child: m.child,
                       );
 
+                      // Ensure a reasonable minimum visual size for
+                      // non-canvas (widget) markers so they match
+                      // the canvas default appearance.
+                      const minWidgetMarker = 80.0;
+                      final effectiveWidth =
+                          m.width < minWidgetMarker ? minWidgetMarker : m.width;
+                      final effectiveHeight = m.height < minWidgetMarker
+                          ? minWidgetMarker
+                          : m.height;
                       wrapped.add(Marker(
                         key: m.key,
                         point: m.point,
-                        width: m.width,
-                        height: m.height,
+                        width: effectiveWidth,
+                        height: effectiveHeight,
                         alignment: m.alignment,
                         rotate: m.rotate,
-                        child: wrappedChild,
+                        child: SizedBox(
+                          width: effectiveWidth,
+                          height: effectiveHeight,
+                          child: Center(child: wrappedChild),
+                        ),
                       ));
                     });
 
@@ -967,6 +1013,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
   }
 
   void _handleTap(TapPosition tapPosition, LatLng latlng) {
+    // If the canvas layer has already handled the most recent tap, skip
+    // the map-level onTap to avoid double-calling handlers.
+    if (_suppressNextMapTap) {
+      _suppressNextMapTap = false;
+      return;
+    }
     // First try marker hit-testing when canvas markers are active.
     if (widget.useCanvasMarkers && _kdTree != null) {
       final tapZoom = _lastZoom ?? widget.initialZoom;
@@ -1009,6 +1061,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (candidate is Marker) {
           candLon = candidate.point.longitude;
           candLat = candidate.point.latitude;
+        } else if (candidate is ShapeMeta) {
+          candLon = candidate.lon;
+          candLat = candidate.lat;
         } else if (candidate is LatLng) {
           candLon = candidate.longitude;
           candLat = candidate.latitude;
@@ -1076,7 +1131,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
         // keep any extra metadata (like `id` or `shapeType`) if present.
         final cand = hitCandidate;
         final payload = <String, dynamic>{};
-        if (cand is Map) {
+        if (cand is ShapeMeta) {
+          payload.addAll(cand.toMap());
+        } else if (cand is Map) {
           payload.addAll(Map<String, dynamic>.from(cand));
         } else if (cand is List && cand.length >= 3) {
           payload['title'] = cand[2]?.toString();
@@ -1086,6 +1143,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
         // Invoke via controller so both widget markers and canvas
         // markers use the same delivery path. Convert payload to `ShapeMeta`.
+        try {
+          debugPrint('FormFieldsMap: building ShapeMeta from payload=$payload');
+        } catch (_) {}
         final sm = ShapeMeta.fromMap(payload);
         FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, sm);
         return;
@@ -1110,6 +1170,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
           mapPayload['shapeType'] = 'polygon';
           mapPayload['lat'] = latlng.latitude;
           mapPayload['lon'] = latlng.longitude;
+          try {
+            debugPrint(
+                'FormFieldsMap: building ShapeMeta from mapPayload=$mapPayload');
+          } catch (_) {}
           final sm = ShapeMeta.fromMap(mapPayload);
           widget.onTapShape?.call(sm);
           return;
@@ -1135,6 +1199,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = 'polyline';
             mapPayload['lat'] = latlng.latitude;
             mapPayload['lon'] = latlng.longitude;
+            try {
+              debugPrint(
+                  'FormFieldsMap: building ShapeMeta from mapPayload=$mapPayload');
+            } catch (_) {}
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
             return;
@@ -1168,9 +1236,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final lonDiff = (center.longitude - latlng.longitude).abs();
           if (sqrt(latDiff * latDiff + lonDiff * lonDiff) <= approxDeg) {
             final meta = _findMetaForShape(notifier, cid);
-            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            try {
+              debugPrint(
+                  'FormFieldsMap: building ShapeMeta from payload=$payload');
+            } catch (_) {}
             final sm = ShapeMeta.fromMap(payload);
             widget.onTapShape?.call(sm);
             return;
@@ -1179,7 +1251,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
     } catch (_) {}
 
-    widget.onTap?.call(latlng);
+    widget.onMapTap?.call(latlng);
   }
 
   void _handleLongPress(TapPosition tapPosition, LatLng latlng) {
@@ -1301,7 +1373,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final poly = entry.value;
         if (_pointInPolygon(latlng, poly.points)) {
           final meta = _findMetaForShape(notifier, pid);
-          final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
+          final payload = <String, dynamic>{'id': pid, 'shapeType': 'polygon'};
           if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
           payload['point'] = latlng;
           final sm = ShapeMeta.fromMap(payload);
@@ -1322,7 +1394,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final d = distance.distance(mid, latlng);
           if (d <= threshMeters) {
             final meta = _findMetaForShape(notifier, lid);
-            final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
+            final payload = <String, dynamic>{
+              'id': lid,
+              'shapeType': 'polyline'
+            };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
             final sm = ShapeMeta.fromMap(payload);
@@ -1340,7 +1415,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (c.useRadiusInMeter) {
           if (d <= c.radius) {
             final meta = _findMetaForShape(notifier, cid);
-            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
             final sm = ShapeMeta.fromMap(payload);
@@ -1353,7 +1428,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final lonDiff = (center.longitude - latlng.longitude).abs();
           if (sqrt(latDiff * latDiff + lonDiff * lonDiff) <= approxDeg) {
             final meta = _findMetaForShape(notifier, cid);
-            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
             final sm = ShapeMeta.fromMap(payload);
@@ -1485,11 +1560,9 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
     required this.radius,
     this.iconImage,
     required this.controllerId,
-    this.polygonsMap,
-    this.polylinesMap,
-    this.circlesMap,
-    this.onTap,
     this.onTapShape,
+    this.onMapTap,
+    this.onHandledTap,
   });
 
   final List<dynamic> rawMarkers;
@@ -1498,13 +1571,9 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
   final double radius;
   final ui.Image? iconImage;
   final String controllerId;
-
-  final Map<String, Polygon>? polygonsMap;
-  final Map<String, Polyline>? polylinesMap;
-  final Map<String, CircleMarker>? circlesMap;
-
-  final ValueChanged<LatLng>? onTap;
   final ValueChanged<ShapeMeta>? onTapShape;
+  final ValueChanged<LatLng>? onMapTap;
+  final VoidCallback? onHandledTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1584,7 +1653,51 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
 
                 final dist =
                     sqrt(pow(candDx - local.dx, 2) + pow(candDy - local.dy, 2));
-                if (dist <= radius) {
+
+                // Also treat taps on the title/subtitle label above the pin
+                // as hits. Estimate the label rect using the same geometry
+                // as the painter. Use MediaQuery devicePixelRatio to estimate
+                // font size so hit area matches visual size reasonably well.
+                final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                final radiusToUse = max(radius, 6.0);
+                final headCenter = Offset(candDx, candDy - radiusToUse * 0.6);
+                final headRadius = radiusToUse * 0.9;
+                String? titleStr;
+                String? subtitleStr;
+                if (m is ShapeMeta) {
+                  titleStr = m.title;
+                  subtitleStr = m.subtitle;
+                } else if (m is List) {
+                  if (m.length >= 3) titleStr = m[2]?.toString();
+                  if (m.length >= 4) subtitleStr = m[3]?.toString();
+                } else if (m is Map) {
+                  titleStr = m['title']?.toString();
+                  subtitleStr = m['subtitle']?.toString();
+                }
+                var labelHit = false;
+                if ((titleStr != null && titleStr.isNotEmpty) ||
+                    (subtitleStr != null && subtitleStr.isNotEmpty)) {
+                  final lines = <String>[];
+                  if (titleStr != null && titleStr.isNotEmpty) lines.add(titleStr);
+                  if (subtitleStr != null && subtitleStr.isNotEmpty) lines.add(subtitleStr);
+                  final fontSize = max(10.0, devicePixelRatio * 6);
+                  final pad = 4.0;
+                  final textHeight = fontSize * lines.length;
+                  final bgHeight = textHeight + pad * 2;
+                  final bgCenterY = headCenter.dy - headRadius - bgHeight / 2 - 6.0;
+                  final bgTop = bgCenterY - bgHeight / 2;
+                  final bgBottom = bgCenterY + bgHeight / 2;
+                  // Estimate width conservatively relative to marker size
+                  final bgWidthEst = max(48.0, headRadius * 2 + 24.0);
+                  final bgLeft = headCenter.dx - bgWidthEst / 2;
+                  final bgRight = headCenter.dx + bgWidthEst / 2;
+                  if (local.dx >= bgLeft && local.dx <= bgRight &&
+                      local.dy >= bgTop && local.dy <= bgBottom) {
+                    labelHit = true;
+                  }
+                }
+
+                if (dist <= radius || labelHit) {
                   final payload = <String, dynamic>{};
                   if (m is Map) {
                     payload.addAll(Map<String, dynamic>.from(m));
@@ -1600,14 +1713,24 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                         'CanvasRawMarkerLayer: marker tap -> controller=$controllerId payload=$payload');
                   } catch (_) {}
                   final sm = ShapeMeta.fromMap(payload);
+                  try {
+                    onTapShape?.call(sm);
+                  } catch (_) {}
+                  // Notify parent that canvas handled this tap so the
+                  // map-level onTap can be suppressed to avoid duplication.
+                  try {
+                    onHandledTap?.call();
+                  } catch (_) {}
                   FormFieldsMapController.invokeOnMarkerTap(controllerId, sm);
                   return;
                 }
               }
 
               // 2) Polygons
-              if (polygonsMap != null && polygonsMap!.isNotEmpty) {
-                for (final entry in polygonsMap!.entries) {
+              final notifier =
+                  Provider.of<FormFieldsMapNotifier>(context, listen: false);
+              if (notifier._polygonMap.isNotEmpty) {
+                for (final entry in notifier._polygonMap.entries) {
                   final pid = entry.key;
                   final poly = entry.value;
                   final screenPts = <Offset>[];
@@ -1643,17 +1766,20 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                     } catch (_) {}
                     final sm = ShapeMeta.fromMap(payload);
                     onTapShape?.call(sm);
+                    try {
+                      onHandledTap?.call();
+                    } catch (_) {}
                     return;
                   }
                 }
               }
 
               // 3) Polylines (distance to segment)
-              if (polylinesMap != null && polylinesMap!.isNotEmpty) {
+              if (notifier._polylineMap.isNotEmpty) {
                 const double baseThreshPx = 24.0;
                 double minPolyDist = double.infinity;
                 String? minPolyId;
-                for (final entry in polylinesMap!.entries) {
+                for (final entry in notifier._polylineMap.entries) {
                   final lid = entry.key;
                   final pl = entry.value;
                   final pts = pl.points;
@@ -1710,7 +1836,10 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                             'CanvasRawMarkerLayer: polyline tap id=$lid -> controller=$controllerId payload=$payload');
                       } catch (_) {}
                       final sm = ShapeMeta.fromMap(payload);
-                      onTapShape?.call(sm);
+                        onTapShape?.call(sm);
+                        try {
+                          onHandledTap?.call();
+                        } catch (_) {}
                       return;
                     }
                   }
@@ -1722,9 +1851,9 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
               }
 
               // 4) Circles
-              if (circlesMap != null && circlesMap!.isNotEmpty) {
+              if (notifier._circleMap.isNotEmpty) {
                 final distance = Distance();
-                for (final entry in circlesMap!.entries) {
+                for (final entry in notifier._circleMap.entries) {
                   final cid = entry.key;
                   final c = entry.value;
                   final cx =
@@ -1780,19 +1909,22 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                             'CanvasRawMarkerLayer: circle tap id=$cid -> controller=$controllerId payload=$payload');
                       } catch (_) {}
                       final sm = ShapeMeta.fromMap(payload);
-                      onTapShape?.call(sm);
+                        onTapShape?.call(sm);
+                        try {
+                          onHandledTap?.call();
+                        } catch (_) {}
                       return;
                     }
                   }
                 }
               }
 
-              // If nothing handled, call generic onTap with computed LatLng
+              // If nothing handled, call regular map `onTap` with point payload
               try {
                 debugPrint(
                     'CanvasRawMarkerLayer: generic tap at ${LatLng(tapLat, tapLon)} for controller=$controllerId');
               } catch (_) {}
-              onTap?.call(LatLng(tapLat, tapLon));
+              onMapTap?.call(LatLng(tapLat, tapLon));
             } catch (_) {}
           },
           onLongPressStart: (details) {
@@ -1885,8 +2017,10 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
 
               // fallback: reuse onTap detection for shapes but call long-press callbacks
               // Polygons
-              if (polygonsMap != null && polygonsMap!.isNotEmpty) {
-                for (final entry in polygonsMap!.entries) {
+              final notifier =
+                  Provider.of<FormFieldsMapNotifier>(context, listen: false);
+              if (notifier._polygonMap.isNotEmpty) {
+                for (final entry in notifier._polygonMap.entries) {
                   final pid = entry.key;
                   final poly = entry.value;
                   final screenPts = <Offset>[];

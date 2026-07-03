@@ -89,28 +89,15 @@ class MapExamplesViewModel extends ChangeNotifier {
           shapeType: 'marker',
         ));
       } else {
+        // Ensure widget markers visually match canvas markers (fast mode).
+        // Canvas radius defaults to ~20 -> choose an 80x80 widget box and
+        // larger icon so appearance is similar.
         final m = Marker(
-            point: LatLng(lat, lng),
-            // width: 36,
-            // height: 36,
-            // child: markerChild,
-            width: 60,
-            height: 60,
-            child: const Icon(Icons.location_on, color: Colors.red)
-            // GestureDetector(
-            //   onTap: () {
-            //     // Trigger the shared map onMarkerTap handler via controller id.\
-            //     debugPrint('Marker tapped: $title, $subtitle');
-            //     FormFieldsMapController.invokeOnMarkerTap('default', {
-            //       'title': title,
-            //       'subtitle': subtitle,
-            //       'point': LatLng(lat, lng),
-            //     });
-            //   },
-            //   child:
-            //       const Icon(Icons.location_pin, size: 60, color: Colors.black),
-            // ),
-            );
+          point: LatLng(lat, lng),
+          width: 60,
+          height: 60,
+          child: const Icon(Icons.location_on, color: Colors.red, size: 48),
+        );
         mapNotifier.addMarker(m);
         markers.add(m);
       }

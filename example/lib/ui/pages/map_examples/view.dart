@@ -132,7 +132,11 @@ class View extends PresenterState {
                                     TextButton(
                                       onPressed: () {
                                         if (id.startsWith('m\$')) {
-                                          vm.mapNotifier.removeMarker(id);
+                                          if (vm.useCanvasMarkers) {
+                                            vm.mapNotifier.removeRawMarker(id);
+                                          } else {
+                                            vm.mapNotifier.removeMarker(id);
+                                          }
                                         } else if (id.startsWith('p\$')) {
                                           vm.mapNotifier.removePolygon(id);
                                         } else if (id.startsWith('l\$')) {
@@ -159,7 +163,7 @@ class View extends PresenterState {
                       },
                       initialCenter: vm.center,
                       initialZoom: 12.0,
-                      onTap: (latlng) {
+                      onMapTap: (latlng) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text(
                                 'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
