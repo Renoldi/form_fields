@@ -10,6 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
 import 'canvas_kdtree.dart';
 
+// Extra padding (pixels) added to hit areas to make shapes easier to tap.
+const double _tapPad = 12.0;
+
 // `FormFieldsMapController` is exported via the package public API.
 
 /// ChangeNotifier holding map layer collections. Use with
@@ -474,7 +477,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _canvasMarkerImageStreamListener =
           ImageStreamListener((ImageInfo info, bool _) {
         _canvasMarkerImage = info.image;
-        if (mounted) setState(() {});
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {});
+        });
       });
       stream.addListener(_canvasMarkerImageStreamListener!);
       return;
@@ -484,7 +490,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     if (provider is Icon) {
       _renderIconToImage(provider).then((img) {
         _canvasMarkerImage = img;
-        if (mounted) setState(() {});
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {});
+        });
       });
       return;
     }
@@ -495,7 +504,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _rasterizeWidgetToImage(provider).then((img) {
         if (img != null) {
           _canvasMarkerImage = img;
-          if (mounted) setState(() {});
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            setState(() {});
+          });
         }
       });
       return;
@@ -636,6 +648,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
   void _onPositionChanged(dynamic position, bool hasGesture) {
     widget.onPositionChanged?.call(position);
     // Try to extract center/zoom from position if available.
+    // Adjusting the distance check to include tap padding.
     try {
       final dynamic pos = position;
       if (pos != null) {
@@ -1114,7 +1127,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
         final dist =
             sqrt(pow(candDx - localPos.dx, 2) + pow(candDy - localPos.dy, 2));
-        if (dist <= widget.canvasMarkerRadius) {
+        if (dist <= widget.canvasMarkerRadius + _tapPad) {
           // Create a lightweight tap result with a `point` property so
           // consumers can access `.point.latitude` / `.point.longitude`.
           hit = _TapResult(LatLng(candLat, candLon));
@@ -1180,18 +1193,67 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
       }
 
-      // Polylines: approximate by checking distance to segment midpoints
-      const threshMeters = 200.0;
-      final distance = Distance();
+      // Polylines: precise per-segment hit-testing in screen pixels.
+      // This is more accurate than midpoint heuristics and avoids
+      // missing narrow or angled segments.
+      Offset local;
+      try {
+        local = (tapPosition as dynamic).localPosition as Offset;
+      } catch (_) {
+        try {
+          local = (tapPosition as dynamic).local as Offset;
+        } catch (_) {
+          local = Offset(
+              (context.size?.width ?? 0) / 2, (context.size?.height ?? 0) / 2);
+        }
+      }
+      final tapZoom = _lastZoom ?? widget.initialZoom;
+      final center = _lastCenter ?? widget.initialCenter;
+      final centerX =
+          _CanvasRawMarkerPainter._worldX(center.longitude, tapZoom);
+      final centerY = _CanvasRawMarkerPainter._worldY(center.latitude, tapZoom);
+      final double worldSize = 256 * pow(2, tapZoom).toDouble();
+      const double baseThreshPx = 24.0 + _tapPad;
+      double minPolyDist = double.infinity;
+      String? minPolyId;
       for (final entry in notifier._polylineMap.entries) {
         final lid = entry.key;
         final pl = entry.value;
         final pts = pl.points;
+        final stroke = pl.strokeWidth;
+        final threshPx = max(baseThreshPx, stroke * 2.0 + 12.0);
         for (var i = 0; i < pts.length - 1; i++) {
-          final mid = LatLng((pts[i].latitude + pts[i + 1].latitude) / 2,
-              (pts[i].longitude + pts[i + 1].longitude) / 2);
-          final d = distance.distance(mid, latlng);
-          if (d <= threshMeters) {
+          final p0 = pts[i];
+          final p1 = pts[i + 1];
+          final x0 = _CanvasRawMarkerPainter._worldX(p0.longitude, tapZoom);
+          final y0 = _CanvasRawMarkerPainter._worldY(p0.latitude, tapZoom);
+          var dx0 = (x0 - centerX) + (context.size?.width ?? 0) / 2;
+          var dy0 = (y0 - centerY) + (context.size?.height ?? 0) / 2;
+          if (dx0.abs() > worldSize / 2) {
+            if (dx0 > 0) {
+              dx0 -= worldSize;
+            } else {
+              dx0 += worldSize;
+            }
+          }
+          final x1 = _CanvasRawMarkerPainter._worldX(p1.longitude, tapZoom);
+          final y1 = _CanvasRawMarkerPainter._worldY(p1.latitude, tapZoom);
+          var dx1 = (x1 - centerX) + (context.size?.width ?? 0) / 2;
+          var dy1 = (y1 - centerY) + (context.size?.height ?? 0) / 2;
+          if (dx1.abs() > worldSize / 2) {
+            if (dx1 > 0) {
+              dx1 -= worldSize;
+            } else {
+              dx1 += worldSize;
+            }
+          }
+          final distPx = _pointToSegmentDistance(
+              local, Offset(dx0, dy0), Offset(dx1, dy1));
+          if (distPx < minPolyDist) {
+            minPolyDist = distPx;
+            minPolyId = lid;
+          }
+          if (distPx <= threshPx) {
             final meta = _findMetaForShape(notifier, lid);
             final mapPayload = <String, dynamic>{};
             if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
@@ -1201,7 +1263,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['lon'] = latlng.longitude;
             try {
               debugPrint(
-                  'FormFieldsMap: building ShapeMeta from mapPayload=$mapPayload');
+                  'FormFieldsMap: polyline tap id=$lid payload=$mapPayload');
             } catch (_) {}
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
@@ -1209,7 +1271,28 @@ class FormFieldsMapState extends State<FormFieldsMap>
           }
         }
       }
+      // If no strict hit, use a relaxed fallback based on nearest distance.
+      const double relaxMul = 3.0;
+      if (minPolyId != null &&
+          minPolyDist.isFinite &&
+          minPolyDist <= baseThreshPx * relaxMul) {
+        final meta = _findMetaForShape(notifier, minPolyId);
+        final mapPayload = <String, dynamic>{};
+        if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
+        mapPayload['id'] = minPolyId;
+        mapPayload['shapeType'] = 'polyline';
+        mapPayload['lat'] = latlng.latitude;
+        mapPayload['lon'] = latlng.longitude;
+        try {
+          debugPrint(
+              'FormFieldsMap: polyline fallback id=$minPolyId payload=$mapPayload minDistPx=$minPolyDist');
+        } catch (_) {}
+        final sm = ShapeMeta.fromMap(mapPayload);
+        widget.onTapShape?.call(sm);
+        return;
+      }
 
+      final distance = Distance();
       // Circles: distance to center (meters if useRadiusInMeter true)
       for (final entry in notifier._circleMap.entries) {
         final cid = entry.key;
@@ -1658,7 +1741,8 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                 // as hits. Estimate the label rect using the same geometry
                 // as the painter. Use MediaQuery devicePixelRatio to estimate
                 // font size so hit area matches visual size reasonably well.
-                final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+                final devicePixelRatio =
+                    MediaQuery.of(context).devicePixelRatio;
                 final radiusToUse = max(radius, 6.0);
                 final headCenter = Offset(candDx, candDy - radiusToUse * 0.6);
                 final headRadius = radiusToUse * 0.9;
@@ -1678,21 +1762,33 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                 if ((titleStr != null && titleStr.isNotEmpty) ||
                     (subtitleStr != null && subtitleStr.isNotEmpty)) {
                   final lines = <String>[];
-                  if (titleStr != null && titleStr.isNotEmpty) lines.add(titleStr);
-                  if (subtitleStr != null && subtitleStr.isNotEmpty) lines.add(subtitleStr);
+                  if (titleStr != null && titleStr.isNotEmpty) {
+                    lines.add(titleStr);
+                  }
+                  if (subtitleStr != null && subtitleStr.isNotEmpty) {
+                    lines.add(subtitleStr);
+                  }
                   final fontSize = max(10.0, devicePixelRatio * 6);
                   final pad = 4.0;
-                  final textHeight = fontSize * lines.length;
+                  final tp = TextPainter(
+                    text: TextSpan(
+                        children:
+                            lines.map((l) => TextSpan(text: '$l\n')).toList(),
+                        style: TextStyle(fontSize: fontSize, color: Colors.black, fontWeight: FontWeight.w600)),
+                    textDirection: TextDirection.ltr,
+                  );
+                  tp.textAlign = TextAlign.center;
+                  tp.layout(minWidth: 0, maxWidth: w);
+                  final textHeight = tp.height;
+                  final textWidth = tp.width;
                   final bgHeight = textHeight + pad * 2;
                   final bgCenterY = headCenter.dy - headRadius - bgHeight / 2 - 6.0;
                   final bgTop = bgCenterY - bgHeight / 2;
                   final bgBottom = bgCenterY + bgHeight / 2;
-                  // Estimate width conservatively relative to marker size
-                  final bgWidthEst = max(48.0, headRadius * 2 + 24.0);
-                  final bgLeft = headCenter.dx - bgWidthEst / 2;
-                  final bgRight = headCenter.dx + bgWidthEst / 2;
-                  if (local.dx >= bgLeft && local.dx <= bgRight &&
-                      local.dy >= bgTop && local.dy <= bgBottom) {
+                  final bgWidth = max(48.0, textWidth) + pad * 2 + _tapPad * 2;
+                  final bgLeft = headCenter.dx - bgWidth / 2;
+                  final bgRight = headCenter.dx + bgWidth / 2;
+                  if (local.dx >= bgLeft && local.dx <= bgRight && local.dy >= bgTop && local.dy <= bgBottom) {
                     labelHit = true;
                   }
                 }
@@ -1754,7 +1850,7 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                     final meta = _findMetaForShapeMap(rawMarkers, pid);
                     final payload = <String, dynamic>{
                       'id': pid,
-                      'type': 'polygon'
+                      'shapeType': 'polygon'
                     };
                     if (meta is Map) {
                       payload.addAll(Map<String, dynamic>.from(meta));
@@ -1771,12 +1867,97 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                     } catch (_) {}
                     return;
                   }
+                  // If tap missed polygon geometry, also check label/meta
+                  // position (centroid) so tapping the title triggers callback.
+                  final meta = _findMetaForShapeMap(rawMarkers, pid);
+                  double labelLat;
+                  double labelLon;
+                  if (meta is Map) {
+                    labelLat = (meta['lat'] as num?)?.toDouble() ??
+                        (meta['latitude'] as num?)?.toDouble() ??
+                        0.0;
+                    labelLon = (meta['lon'] as num?)?.toDouble() ??
+                        (meta['longitude'] as num?)?.toDouble() ??
+                        0.0;
+                  } else {
+                    final avgLat = poly.points
+                            .map((p) => p.latitude)
+                            .reduce((a, b) => a + b) /
+                        poly.points.length;
+                    final avgLon = poly.points
+                            .map((p) => p.longitude)
+                            .reduce((a, b) => a + b) /
+                        poly.points.length;
+                    labelLat = avgLat;
+                    labelLon = avgLon;
+                  }
+                  final lx = _CanvasRawMarkerPainter._worldX(labelLon, zoom);
+                  final ly = _CanvasRawMarkerPainter._worldY(labelLat, zoom);
+                  var ldx = (lx - centerX) + w / 2;
+                  var ldy = (ly - centerY) + h / 2;
+                  if (ldx.abs() > worldSize / 2) {
+                    if (ldx > 0) {
+                      ldx -= worldSize;
+                    } else {
+                      ldx += worldSize;
+                    }
+                  }
+                  final devicePixelRatio =
+                      MediaQuery.of(context).devicePixelRatio;
+                  final fontSize = max(10.0, devicePixelRatio * 6);
+                  final lines = <String>[];
+                  if (meta is Map) {
+                    if ((meta['title'] as String?)?.isNotEmpty ?? false) {
+                      lines.add(meta['title']);
+                    }
+                    if ((meta['subtitle'] as String?)?.isNotEmpty ?? false) {
+                      lines.add(meta['subtitle']);
+                    }
+                  }
+                  if (lines.isNotEmpty) {
+                    final pad = 4.0;
+                    final tp = TextPainter(
+                      text: TextSpan(
+                        children: lines.map((l) => TextSpan(text: '$l\n')).toList(),
+                        style: TextStyle(fontSize: fontSize, color: Colors.black, fontWeight: FontWeight.w600),
+                      ),
+                      textDirection: TextDirection.ltr,
+                    );
+                    tp.textAlign = TextAlign.center;
+                    tp.layout(minWidth: 0, maxWidth: w);
+                    final textHeight = tp.height;
+                    final textWidth = tp.width;
+                    final bgHeight = textHeight + pad * 2;
+                    final bgCenterY = ldy - (max(radius, 6.0) * 0.9) - bgHeight / 2 - 6.0;
+                    final bgTop = bgCenterY - bgHeight / 2;
+                    final bgBottom = bgCenterY + bgHeight / 2;
+                    final bgWidth = max(48.0, textWidth) + pad * 2 + _tapPad * 2;
+                    final bgLeft = ldx - bgWidth / 2;
+                    final bgRight = ldx + bgWidth / 2;
+                    if (local.dx >= bgLeft && local.dx <= bgRight && local.dy >= bgTop && local.dy <= bgBottom) {
+                      final payload2 = <String, dynamic>{
+                        'id': pid,
+                        'shapeType': 'polygon'
+                      };
+                      if (meta is Map) {
+                        payload2.addAll(Map<String, dynamic>.from(meta));
+                      }
+                      payload2['point'] = LatLng(tapLat, tapLon);
+                      try {
+                        debugPrint(
+                            'CanvasRawMarkerLayer: polygon label tap id=$pid -> controller=$controllerId payload=$payload2');
+                      } catch (_) {}
+                      final sm2 = ShapeMeta.fromMap(payload2);
+                      onTapShape?.call(sm2);
+                      return;
+                    }
+                  }
                 }
               }
 
               // 3) Polylines (distance to segment)
               if (notifier._polylineMap.isNotEmpty) {
-                const double baseThreshPx = 24.0;
+                const double baseThreshPx = 24.0 + _tapPad;
                 double minPolyDist = double.infinity;
                 String? minPolyId;
                 for (final entry in notifier._polylineMap.entries) {
@@ -1825,7 +2006,7 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                       final meta = _findMetaForShapeMap(rawMarkers, lid);
                       final payload = <String, dynamic>{
                         'id': lid,
-                        'type': 'polyline'
+                        'shapeType': 'polyline'
                       };
                       if (meta is Map) {
                         payload.addAll(Map<String, dynamic>.from(meta));
@@ -1836,10 +2017,81 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                             'CanvasRawMarkerLayer: polyline tap id=$lid -> controller=$controllerId payload=$payload');
                       } catch (_) {}
                       final sm = ShapeMeta.fromMap(payload);
-                        onTapShape?.call(sm);
-                        try {
-                          onHandledTap?.call();
-                        } catch (_) {}
+                      onTapShape?.call(sm);
+                      try {
+                        onHandledTap?.call();
+                      } catch (_) {}
+                      return;
+                    }
+                  }
+                }
+                // If no polyline segment was hit, check midpoint labels
+                for (final entryLabel in notifier._polylineMap.entries) {
+                  final lid = entryLabel.key;
+                  final pl = entryLabel.value;
+                  final midIndex = pl.points.length ~/ 2;
+                  final mid = pl.points[midIndex];
+                  final mx =
+                      _CanvasRawMarkerPainter._worldX(mid.longitude, zoom);
+                  final my =
+                      _CanvasRawMarkerPainter._worldY(mid.latitude, zoom);
+                  var mdx = (mx - centerX) + w / 2;
+                  var mdy = (my - centerY) + h / 2;
+                  if (mdx.abs() > worldSize / 2) {
+                    if (mdx > 0) {
+                      mdx -= worldSize;
+                    } else {
+                      mdx += worldSize;
+                    }
+                  }
+                  final meta = _findMetaForShapeMap(rawMarkers, lid);
+                  final devicePixelRatio =
+                      MediaQuery.of(context).devicePixelRatio;
+                  final fontSize = max(10.0, devicePixelRatio * 6);
+                  final lines = <String>[];
+                  if (meta is Map) {
+                    if ((meta['title'] as String?)?.isNotEmpty ?? false) {
+                      lines.add(meta['title']);
+                    }
+                    if ((meta['subtitle'] as String?)?.isNotEmpty ?? false) {
+                      lines.add(meta['subtitle']);
+                    }
+                  }
+                  if (lines.isNotEmpty) {
+                    final pad = 4.0;
+                    final tp = TextPainter(
+                      text: TextSpan(
+                        children: lines.map((l) => TextSpan(text: '$l\n')).toList(),
+                        style: TextStyle(fontSize: fontSize, color: Colors.black, fontWeight: FontWeight.w600),
+                      ),
+                      textDirection: TextDirection.ltr,
+                    );
+                    tp.textAlign = TextAlign.center;
+                    tp.layout(minWidth: 0, maxWidth: w);
+                    final textHeight = tp.height;
+                    final textWidth = tp.width;
+                    final bgHeight = textHeight + pad * 2;
+                    final bgCenterY = mdy - (max(radius, 6.0) * 0.9) - bgHeight / 2 - 6.0;
+                    final bgTop = bgCenterY - bgHeight / 2;
+                    final bgBottom = bgCenterY + bgHeight / 2;
+                    final bgWidth = max(48.0, textWidth) + pad * 2 + _tapPad * 2;
+                    final bgLeft = mdx - bgWidth / 2;
+                    final bgRight = mdx + bgWidth / 2;
+                    if (local.dx >= bgLeft && local.dx <= bgRight && local.dy >= bgTop && local.dy <= bgBottom) {
+                      final payload = <String, dynamic>{
+                        'id': lid,
+                        'shapeType': 'polyline'
+                      };
+                      if (meta is Map) {
+                        payload.addAll(Map<String, dynamic>.from(meta));
+                      }
+                      payload['point'] = LatLng(tapLat, tapLon);
+                      try {
+                        debugPrint(
+                            'CanvasRawMarkerLayer: polyline label tap id=$lid -> controller=$controllerId payload=$payload');
+                      } catch (_) {}
+                      final sm2 = ShapeMeta.fromMap(payload);
+                      onTapShape?.call(sm2);
                       return;
                     }
                   }
@@ -1848,6 +2100,34 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                   debugPrint(
                       'CanvasRawMarkerLayer: nearest polyline id=$minPolyId minDist=${minPolyDist.toStringAsFixed(1)}px baseThresh=$baseThreshPx');
                 } catch (_) {}
+                // Fallback: if the nearest polyline is reasonably close
+                // but missed the stricter per-segment threshold, still
+                // treat it as a hit to improve UX for thin or fast-rendered
+                // polylines. Use a relaxed multiplier.
+                const double relaxMul = 3.0;
+                if (minPolyId != null &&
+                    minPolyDist.isFinite &&
+                    minPolyDist <= baseThreshPx * relaxMul) {
+                  final meta = _findMetaForShapeMap(rawMarkers, minPolyId);
+                  final payload = <String, dynamic>{
+                    'id': minPolyId,
+                    'shapeType': 'polyline'
+                  };
+                  if (meta is Map) {
+                    payload.addAll(Map<String, dynamic>.from(meta));
+                  }
+                  payload['point'] = LatLng(tapLat, tapLon);
+                  try {
+                    debugPrint(
+                        'CanvasRawMarkerLayer: polyline fallback tap id=$minPolyId -> controller=$controllerId payload=$payload');
+                  } catch (_) {}
+                  final sm = ShapeMeta.fromMap(payload);
+                  onTapShape?.call(sm);
+                  try {
+                    onHandledTap?.call();
+                  } catch (_) {}
+                  return;
+                }
               }
 
               // 4) Circles
@@ -1879,7 +2159,7 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                       final meta = _findMetaForShapeMap(rawMarkers, cid);
                       final payload = <String, dynamic>{
                         'id': cid,
-                        'type': 'circle'
+                        'shapeType': 'circle'
                       };
                       if (meta is Map) {
                         payload.addAll(Map<String, dynamic>.from(meta));
@@ -1894,11 +2174,11 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                       return;
                     }
                   } else {
-                    if (pixelDist <= c.radius) {
+                    if (pixelDist <= c.radius + _tapPad) {
                       final meta = _findMetaForShapeMap(rawMarkers, cid);
                       final payload = <String, dynamic>{
                         'id': cid,
-                        'type': 'circle'
+                        'shapeType': 'circle'
                       };
                       if (meta is Map) {
                         payload.addAll(Map<String, dynamic>.from(meta));
@@ -1909,10 +2189,10 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                             'CanvasRawMarkerLayer: circle tap id=$cid -> controller=$controllerId payload=$payload');
                       } catch (_) {}
                       final sm = ShapeMeta.fromMap(payload);
-                        onTapShape?.call(sm);
-                        try {
-                          onHandledTap?.call();
-                        } catch (_) {}
+                      onTapShape?.call(sm);
+                      try {
+                        onHandledTap?.call();
+                      } catch (_) {}
                       return;
                     }
                   }
@@ -2044,7 +2324,7 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
                     final meta = _findMetaForShapeMap(rawMarkers, pid);
                     final payload = <String, dynamic>{
                       'id': pid,
-                      'type': 'polygon'
+                      'shapeType': 'polygon'
                     };
                     if (meta is Map) {
                       payload.addAll(Map<String, dynamic>.from(meta));
