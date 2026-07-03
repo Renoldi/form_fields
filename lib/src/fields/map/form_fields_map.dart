@@ -2438,14 +2438,17 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       double lon;
       String? title;
       String? subtitle;
+      String? shapeType;
       if (m is Marker) {
         lat = m.point.latitude;
         lon = m.point.longitude;
+        shapeType = 'marker';
       } else if (m is ShapeMeta) {
         lat = m.lat;
         lon = m.lon;
         title = m.title;
         subtitle = m.subtitle;
+        shapeType = m.shapeType;
       } else if (m is LatLng) {
         lat = m.latitude;
         lon = m.longitude;
@@ -2454,6 +2457,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
         lon = (m[1] as num).toDouble();
         if (m.length >= 3) title = m[2]?.toString();
         if (m.length >= 4) subtitle = m[3]?.toString();
+        if (m.length >= 5) shapeType = m[4]?.toString();
       } else if (m is Map) {
         lat = (m['lat'] as num?)?.toDouble() ??
             (m['latitude'] as num?)?.toDouble() ??
@@ -2463,6 +2467,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
             0.0;
         title = m['title']?.toString();
         subtitle = m['subtitle']?.toString();
+        shapeType = m['shapeType']?.toString();
       } else {
         continue;
       }
@@ -2499,7 +2504,8 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       final headCenter = Offset(dx, dy - radiusToUse * 0.6);
       final headRadius = radiusToUse * 0.9;
 
-      if (iconImage != null) {
+      final drawPin = shapeType == null || shapeType == 'marker';
+      if (drawPin && iconImage != null) {
         final src = Rect.fromLTWH(
             0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
         final destSize = headRadius * 2.0;
@@ -2507,7 +2513,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
             center: headCenter, width: destSize, height: destSize);
         paint.isAntiAlias = true;
         canvas.drawImageRect(iconImage!, src, dst, paint);
-      } else {
+      } else if (drawPin) {
         canvas.drawCircle(headCenter, headRadius, pinPaint);
         canvas.drawCircle(headCenter, headRadius, strokePaint);
 
