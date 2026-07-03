@@ -19,238 +19,225 @@ class View extends PresenterState {
         builder: (context, vm, _) {
           final content = Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(context.tr('mapExampleDescription')),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _ActionButton(
-                          label: 'Generate 10,000 markers + shapes',
-                          icon: Icons.auto_awesome,
-                          onPressed: () => vm.generateDemoData(
-                              markerCount: 10000, shapeCount: 20),
-                        ),
-                        _ActionButton(
-                          label: 'Generate Polygons (20)',
-                          icon: Icons.change_history,
-                          onPressed: () => vm.generatePolygons(shapeCount: 20),
-                        ),
-                        _ActionButton(
-                          label: 'Generate Polylines (20)',
-                          icon: Icons.timeline,
-                          onPressed: () => vm.generatePolylines(shapeCount: 20),
-                        ),
-                        _ActionButton(
-                          label: 'Generate Circles (20)',
-                          icon: Icons.circle,
-                          onPressed: () => vm.generateCircles(shapeCount: 20),
-                        ),
-                        _ActionButton(
-                          label: 'Clear',
-                          icon: Icons.clear,
-                          outlined: true,
-                          color: Colors.red,
-                          onPressed: () => vm.clearDemoData(),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 8),
+                        Text(context.tr('mapExampleDescription')),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            const Text('Fast markers'),
-                            Switch(
-                              value: vm.useCanvasMarkers,
-                              onChanged: (v) {
-                                vm.useCanvasMarkers = v;
-                                vm.commit();
-                              },
+                            _ActionButton(
+                              label: 'Generate 10,000 markers',
+                              icon: Icons.auto_awesome,
+                              onPressed: () => vm.generateMarkers(10000),
+                            ),
+                            _ActionButton(
+                              label: 'Generate Polygons (20)',
+                              icon: Icons.change_history,
+                              onPressed: () =>
+                                  vm.generatePolygons(shapeCount: 20),
+                            ),
+                            _ActionButton(
+                              label: 'Generate Polylines (20)',
+                              icon: Icons.timeline,
+                              onPressed: () =>
+                                  vm.generatePolylines(shapeCount: 20),
+                            ),
+                            _ActionButton(
+                              label: 'Generate Circles (20)',
+                              icon: Icons.circle,
+                              onPressed: () =>
+                                  vm.generateCircles(shapeCount: 20),
+                            ),
+                            _ActionButton(
+                              label: 'Clear',
+                              icon: Icons.clear,
+                              outlined: true,
+                              color: Colors.red,
+                              onPressed: () => vm.clearDemoData(),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('Fast markers'),
+                                Switch(
+                                  value: vm.useCanvasMarkers,
+                                  onChanged: (v) {
+                                    vm.useCanvasMarkers = v;
+                                    vm.commit();
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: FormFieldsMap(
-                        notifier: vm.mapNotifier,
-                        useCanvasMarkers: vm.useCanvasMarkers,
-                        onRequestCurrentLocation: () async => vm.center,
-                        canvasMarkerRadius: 20.0,
-                        canvasMarkerIcon: const Icon(
-                          Icons.location_pin,
-                          color: Colors.red,
-                          size: 36,
-                        ),
-                        onMarkerTap: (m) async {
-                          final payload = (m is Map)
-                              ? Map<String, dynamic>.from(m)
-                              : <String, dynamic>{};
-                          final title =
-                              payload['title'] ?? (m?.title) ?? 'Detail';
-                          final subtitle =
-                              payload['subtitle'] ?? (m?.subtitle) ?? '';
-                          final id = payload['id'] as String?;
-                          final LatLng? pt = payload['point'] is LatLng
-                              ? payload['point'] as LatLng
-                              : (m?.point as LatLng?);
+                  ),
+                  Expanded(
+                    child: FormFieldsMap(
+                      notifier: vm.mapNotifier,
+                      useCanvasMarkers: vm.useCanvasMarkers,
+                      onRequestCurrentLocation: () async => vm.center,
+                      canvasMarkerRadius: 20.0,
+                      canvasMarkerIcon: const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 36,
+                      ),
+                      onMarkerTap: (m) async {
+                        final payload = (m is Map)
+                            ? Map<String, dynamic>.from(m)
+                            : <String, dynamic>{};
+                        final title =
+                            payload['title'] ?? (m?.title) ?? 'Detail';
+                        final subtitle =
+                            payload['subtitle'] ?? (m?.subtitle) ?? '';
+                        final id = payload['id'] as String?;
+                        final LatLng? pt = payload['point'] is LatLng
+                            ? payload['point'] as LatLng
+                            : (m?.point as LatLng?);
 
-                          await showDialog<void>(
-                            context: context,
-                            builder: (ctx) {
-                              return AlertDialog(
-                                title: Text(title.toString()),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (subtitle != null &&
-                                        subtitle.toString().isNotEmpty)
-                                      Text(subtitle.toString()),
-                                    if (id != null) ...[
-                                      const SizedBox(height: 8),
-                                      Text('ID: $id',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
-                                    ],
-                                    if (pt != null) ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                          'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
-                                    ]
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: Text(title.toString()),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (subtitle != null &&
+                                      subtitle.toString().isNotEmpty)
+                                    Text(subtitle.toString()),
+                                  if (id != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text('ID: $id',
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey)),
                                   ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.of(ctx).pop(),
-                                      child: const Text('Close')),
-                                  if (id != null)
-                                    TextButton(
-                                      onPressed: () {
-                                        if (id.startsWith('m\$')) {
-                                          vm.mapNotifier.removeMarker(id);
-                                        } else if (id.startsWith('p\$')) {
-                                          vm.mapNotifier.removePolygon(id);
-                                        } else if (id.startsWith('l\$')) {
-                                          vm.mapNotifier.removePolyline(id);
-                                        } else if (id.startsWith('c\$')) {
-                                          vm.mapNotifier.removeCircle(id);
-                                        }
-                                        Navigator.of(ctx).pop();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                                content: Text('Deleted')));
-                                      },
-                                      child: const Text('Delete',
-                                          style: TextStyle(color: Colors.red)),
-                                    ),
-                                  if (id != null)
-                                    TextButton(
-                                      onPressed: () {
-                                        if (id.startsWith('p\$')) {
-                                          final poly =
-                                              vm.mapNotifier.getPolygon(id);
-                                          if (poly != null) {
-                                            final newPoly = Polygon(
-                                                points: poly.points,
-                                                color: poly.color ==
-                                                        Colors.green.withValues(
-                                                            alpha: 0.25)
-                                                    ? Colors.purple
-                                                        .withValues(alpha: 0.25)
-                                                    : Colors.green.withValues(
-                                                        alpha: 0.25),
-                                                borderColor: poly.borderColor ==
-                                                        Colors.green
-                                                    ? Colors.purple
-                                                    : Colors.green,
-                                                borderStrokeWidth:
-                                                    poly.borderStrokeWidth);
-                                            vm.mapNotifier.addOrUpdatePolygon(
-                                                id, newPoly);
-                                          }
-                                        } else if (id.startsWith('l\$')) {
-                                          final line =
-                                              vm.mapNotifier.getPolyline(id);
-                                          if (line != null) {
-                                            final newLine = Polyline(
-                                                points: line.points,
-                                                strokeWidth: line.strokeWidth,
-                                                color: line.color == Colors.blue
-                                                    ? Colors.purple
-                                                    : Colors.blue);
-                                            vm.mapNotifier.addOrUpdatePolyline(
-                                                id, newLine);
-                                          }
-                                        } else if (id.startsWith('c\$')) {
-                                          final circ =
-                                              vm.mapNotifier.getCircle(id);
-                                          if (circ != null) {
-                                            final newCirc = CircleMarker(
-                                                point: circ.point,
-                                                color: circ.color ==
-                                                        Colors.orange
-                                                            .withValues(
-                                                                alpha: 0.35)
-                                                    ? Colors.purple
-                                                        .withValues(alpha: 0.35)
-                                                    : Colors.orange.withValues(
-                                                        alpha: 0.35),
-                                                borderStrokeWidth:
-                                                    circ.borderStrokeWidth,
-                                                borderColor: circ.borderColor ==
-                                                        Colors.orange
-                                                    ? Colors.purple
-                                                    : Colors.orange,
-                                                useRadiusInMeter:
-                                                    circ.useRadiusInMeter,
-                                                radius: circ.radius);
-                                            vm.mapNotifier
-                                                .addOrUpdateCircle(id, newCirc);
-                                          }
-                                        }
-                                        Navigator.of(ctx).pop();
-                                      },
-                                      child: const Text('Toggle Color'),
-                                    ),
+                                  if (pt != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                        'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
+                                  ]
                                 ],
-                              );
-                            },
-                          );
-                        },
-                        initialCenter: vm.center,
-                        initialZoom: 12.0,
-                        onTap: (latlng) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
-                        },
-                      ),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text('Close')),
+                                if (id != null)
+                                  TextButton(
+                                    onPressed: () {
+                                      if (id.startsWith('m\$')) {
+                                        vm.mapNotifier.removeMarker(id);
+                                      } else if (id.startsWith('p\$')) {
+                                        vm.mapNotifier.removePolygon(id);
+                                      } else if (id.startsWith('l\$')) {
+                                        vm.mapNotifier.removePolyline(id);
+                                      } else if (id.startsWith('c\$')) {
+                                        vm.mapNotifier.removeCircle(id);
+                                      }
+                                      Navigator.of(ctx).pop();
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('Deleted')));
+                                    },
+                                    child: const Text('Delete',
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                                if (id != null)
+                                  TextButton(
+                                    onPressed: () {
+                                      if (id.startsWith('p\$')) {
+                                        final poly =
+                                            vm.mapNotifier.getPolygon(id);
+                                        if (poly != null) {
+                                          final newPoly = Polygon(
+                                              points: poly.points,
+                                              color: poly.color ==
+                                                      Colors.green.withValues(
+                                                          alpha: 0.25)
+                                                  ? Colors.purple
+                                                      .withValues(alpha: 0.25)
+                                                  : Colors.green
+                                                      .withValues(alpha: 0.25),
+                                              borderColor: poly.borderColor ==
+                                                      Colors.green
+                                                  ? Colors.purple
+                                                  : Colors.green,
+                                              borderStrokeWidth:
+                                                  poly.borderStrokeWidth);
+                                          vm.mapNotifier
+                                              .addOrUpdatePolygon(id, newPoly);
+                                        }
+                                      } else if (id.startsWith('l\$')) {
+                                        final line =
+                                            vm.mapNotifier.getPolyline(id);
+                                        if (line != null) {
+                                          final newLine = Polyline(
+                                              points: line.points,
+                                              strokeWidth: line.strokeWidth,
+                                              color: line.color == Colors.blue
+                                                  ? Colors.purple
+                                                  : Colors.blue);
+                                          vm.mapNotifier
+                                              .addOrUpdatePolyline(id, newLine);
+                                        }
+                                      } else if (id.startsWith('c\$')) {
+                                        final circ =
+                                            vm.mapNotifier.getCircle(id);
+                                        if (circ != null) {
+                                          final newCirc = CircleMarker(
+                                              point: circ.point,
+                                              color: circ.color ==
+                                                      Colors.orange.withValues(
+                                                          alpha: 0.35)
+                                                  ? Colors.purple
+                                                      .withValues(alpha: 0.35)
+                                                  : Colors.orange
+                                                      .withValues(alpha: 0.35),
+                                              borderStrokeWidth:
+                                                  circ.borderStrokeWidth,
+                                              borderColor: circ.borderColor ==
+                                                      Colors.orange
+                                                  ? Colors.purple
+                                                  : Colors.orange,
+                                              useRadiusInMeter:
+                                                  circ.useRadiusInMeter,
+                                              radius: circ.radius);
+                                          vm.mapNotifier
+                                              .addOrUpdateCircle(id, newCirc);
+                                        }
+                                      }
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: const Text('Toggle Color'),
+                                  ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      initialCenter: vm.center,
+                      initialZoom: 12.0,
+                      onTap: (latlng) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
+                      },
                     ),
-                    const SizedBox(height: 12),
-                    Text('Code example',
-                        style: Theme.of(context).textTheme.titleSmall),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const SelectableText(
-                        "FormFieldsMap(center: LatLong(-6.2, 106.8166), zoom: 12.0)",
-                        style: TextStyle(fontFamily: 'monospace'),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               // _DraggablePositioned(
               //   initialRight: 16,

@@ -285,7 +285,7 @@ class FormFieldsMap extends StatefulWidget {
     this.useCanvasMarkers = false,
     this.canvasMarkerRadius = 4.0,
     this.canvasMarkerIcon,
-    this.useViewportCulling = true,
+    this.useViewportCulling = false,
     this.cullingBuffer = 1.25,
     this.notifier,
     this.onMapReady,
