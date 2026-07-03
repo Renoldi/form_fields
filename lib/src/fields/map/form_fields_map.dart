@@ -292,6 +292,13 @@ class FormFieldsMap extends StatefulWidget {
     this.onPositionChanged,
     this.onTap,
     this.onMarkerTap,
+    this.onMarkerLongPress,
+    this.onPolygonTap,
+    this.onPolygonLongPress,
+    this.onPolylineTap,
+    this.onPolylineLongPress,
+    this.onCircleTap,
+    this.onCircleLongPress,
     this.onLongPress,
     this.onCameraIdle,
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
@@ -340,6 +347,13 @@ class FormFieldsMap extends StatefulWidget {
   /// If omitted, a fresh `FormFieldsMapNotifier` is created for this widget.
   final FormFieldsMapNotifier? notifier;
   final ValueChanged<dynamic>? onMarkerTap;
+  final ValueChanged<dynamic>? onMarkerLongPress;
+  final ValueChanged<dynamic>? onPolygonTap;
+  final ValueChanged<dynamic>? onPolygonLongPress;
+  final ValueChanged<dynamic>? onPolylineTap;
+  final ValueChanged<dynamic>? onPolylineLongPress;
+  final ValueChanged<dynamic>? onCircleTap;
+  final ValueChanged<dynamic>? onCircleLongPress;
 
   final VoidCallback? onMapReady;
   final ValueChanged<dynamic>? onPositionChanged;
@@ -700,7 +714,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
               onPositionChanged: (pos, hasGesture) =>
                   _onPositionChanged(pos, hasGesture),
               onTap: (tapPos, latlng) => _handleTap(tapPos, latlng),
-              onLongPress: (_, latlng) => widget.onLongPress?.call(latlng),
+              onLongPress: (tapPos, latlng) => _handleLongPress(tapPos, latlng),
             ),
             children: [
               TileLayer(
@@ -746,13 +760,54 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   },
                 )
               else
-                Selector<FormFieldsMapNotifier, List<Marker>>(
-                  selector: (_, n) => n.markers,
-                  builder: (context, markers, _) {
-                    if (markers.isEmpty) return const SizedBox.shrink();
+                // Use Consumer so we can access the notifier's internal map
+                // entries (ids) and wrap each Marker.child with a
+                // GestureDetector that invokes the map-level marker tap
+                // handler. This enables consumers to receive marker tap
+                // events without embedding their own GestureDetector.
+                Consumer<FormFieldsMapNotifier>(
+                  builder: (context, notifier, _) {
+                    final markersMap = notifier._markerMap;
+                    if (markersMap.isEmpty) return const SizedBox.shrink();
+
+                    final wrapped = <Marker>[];
+                    markersMap.forEach((id, m) {
+                      final wrappedChild = GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          final payload = <String, dynamic>{
+                            'id': id,
+                            'type': 'marker',
+                            'point': m.point,
+                          };
+                          FormFieldsMapController.invokeOnMarkerTap(
+                              widget.controllerId, payload);
+                        },
+                        onLongPress: () {
+                          final payload = <String, dynamic>{
+                            'id': id,
+                            'type': 'marker_longpress',
+                            'point': m.point,
+                          };
+                          FormFieldsMapController.invokeOnMarkerTap(
+                              widget.controllerId, payload);
+                        },
+                        child: m.child,
+                      );
+
+                      wrapped.add(Marker(
+                        key: m.key,
+                        point: m.point,
+                        width: m.width,
+                        height: m.height,
+                        alignment: m.alignment,
+                        rotate: m.rotate,
+                        child: wrappedChild,
+                      ));
+                    });
 
                     if (!widget.useViewportCulling) {
-                      return MarkerLayer(markers: markers);
+                      return MarkerLayer(markers: wrapped);
                     }
 
                     final center = _lastCenter ?? widget.initialCenter;
@@ -762,7 +817,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     final buffer = widget.cullingBuffer;
                     final radiusDeg = halfViewportDeg * buffer;
 
-                    final visible = markers.where((m) {
+                    final visible = wrapped.where((m) {
                       final lat = m.point.latitude;
                       final lng = m.point.longitude;
                       return (lat - center.latitude).abs() <= radiusDeg &&
@@ -1032,8 +1087,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
         payload['point'] = LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0);
 
-        // Invoke via controller so both example widget markers and canvas
-        // markers use the same delivery path.
+        // Invoke via controller so both widget markers and canvas
+        // markers use the same delivery path. The controller is already
+        // registered to forward to `widget.onMarkerTap`, so calling the
+        // controller avoids duplicate delivery.
         FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, payload);
         return;
       }
@@ -1054,6 +1111,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
           if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
           payload['point'] = latlng;
+          // Call per-shape callback if provided, then invoke controller
+          widget.onPolygonTap?.call(payload);
           FormFieldsMapController.invokeOnMarkerTap(
               widget.controllerId, payload);
           return;
@@ -1076,6 +1135,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            widget.onPolylineTap?.call(payload);
             FormFieldsMapController.invokeOnMarkerTap(
                 widget.controllerId, payload);
             return;
@@ -1095,6 +1155,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            widget.onCircleTap?.call(payload);
             FormFieldsMapController.invokeOnMarkerTap(
                 widget.controllerId, payload);
             return;
@@ -1109,6 +1170,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            widget.onCircleTap?.call(payload);
             FormFieldsMapController.invokeOnMarkerTap(
                 widget.controllerId, payload);
             return;
@@ -1118,6 +1180,195 @@ class FormFieldsMapState extends State<FormFieldsMap>
     } catch (_) {}
 
     widget.onTap?.call(latlng);
+  }
+
+  void _handleLongPress(TapPosition tapPosition, LatLng latlng) {
+    // Similar to _handleTap but routes to long-press callbacks.
+    // First try marker hit-testing when canvas markers are active.
+    // Prepare notifier early so fallback linear hit-test can access rawMarkers.
+    if (widget.useCanvasMarkers) {
+      // If we have a KD-tree use it (fast). Otherwise fall back to a
+      // linear scan of `rawMarkers` so taps work immediately after
+      // `appendRawMarkers` without waiting for the post-frame KD-tree build.
+      if (_kdTree != null) {
+        final tapZoom = _lastZoom ?? widget.initialZoom;
+        final qxTap = _CanvasMarkerPainter._worldX(latlng.longitude, tapZoom);
+        final qyTap = _CanvasMarkerPainter._worldY(latlng.latitude, tapZoom);
+
+        double qx = qxTap;
+        double qy = qyTap;
+        final kdZoom = _kdTreeZoom ?? tapZoom;
+        if (kdZoom != tapZoom) {
+          final double scale = pow(2, kdZoom - tapZoom).toDouble();
+          qx = qxTap * scale;
+          qy = qyTap * scale;
+        }
+
+        final double worldSize = 256 * pow(2, kdZoom).toDouble();
+
+        dynamic hitCandidate;
+        double? hitCandLat;
+        double? hitCandLon;
+        for (final wrap in [0.0, -worldSize, worldSize]) {
+          final candidate = _kdTree!.nearest(qx + wrap, qy, worldSize);
+          if (candidate == null) continue;
+
+          double candLon;
+          double candLat;
+          if (candidate is Marker) {
+            candLon = candidate.point.longitude;
+            candLat = candidate.point.latitude;
+          } else if (candidate is LatLng) {
+            candLon = candidate.longitude;
+            candLat = candidate.latitude;
+          } else if (candidate is List && candidate.length >= 2) {
+            candLat = (candidate[0] as num).toDouble();
+            candLon = (candidate[1] as num).toDouble();
+          } else if (candidate is Map) {
+            candLat = (candidate['lat'] as num?)?.toDouble() ??
+                (candidate['latitude'] as num?)?.toDouble() ??
+                0.0;
+            candLon = (candidate['lon'] as num?)?.toDouble() ??
+                (candidate['longitude'] as num?)?.toDouble() ??
+                0.0;
+          } else {
+            continue;
+          }
+
+          final candX = _CanvasMarkerPainter._worldX(candLon, kdZoom);
+          final candY = _CanvasMarkerPainter._worldY(candLat, kdZoom);
+          final centerLon = (_lastCenter ?? widget.initialCenter).longitude;
+          final centerLat = (_lastCenter ?? widget.initialCenter).latitude;
+          final centerX = _CanvasMarkerPainter._worldX(centerLon, kdZoom);
+          final centerY = _CanvasMarkerPainter._worldY(centerLat, kdZoom);
+
+          var candDx = (candX - centerX) + (context.size?.width ?? 0) / 2;
+          var candDy = (candY - centerY) + (context.size?.height ?? 0) / 2;
+
+          if (candDx.abs() > worldSize / 2) {
+            if (candDx > 0) {
+              candDx -= worldSize;
+            } else {
+              candDx += worldSize;
+            }
+          }
+
+          Offset localPos;
+          try {
+            localPos = (tapPosition as dynamic).localPosition as Offset;
+          } catch (_) {
+            try {
+              localPos = (tapPosition as dynamic).local as Offset;
+            } catch (_) {
+              localPos = Offset((context.size?.width ?? 0) / 2,
+                  (context.size?.height ?? 0) / 2);
+            }
+          }
+          final dist =
+              sqrt(pow(candDx - localPos.dx, 2) + pow(candDy - localPos.dy, 2));
+          if (dist <= widget.canvasMarkerRadius) {
+            hitCandidate = candidate;
+            hitCandLat = candLat;
+            hitCandLon = candLon;
+            break;
+          }
+        }
+
+        if (hitCandidate != null) {
+          final cand = hitCandidate;
+          final payload = <String, dynamic>{};
+          if (cand is Map) {
+            payload.addAll(Map<String, dynamic>.from(cand));
+          } else if (cand is List && cand.length >= 3) {
+            payload['title'] = cand[2]?.toString();
+            if (cand.length >= 4) payload['subtitle'] = cand[3]?.toString();
+          }
+          payload['point'] = LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0);
+          widget.onMarkerLongPress?.call(payload);
+          FormFieldsMapController.invokeOnMarkerTap(
+              widget.controllerId, payload);
+          return;
+        }
+      }
+    }
+
+    // Fallback: shapes long-press
+    try {
+      final notifier = widget.notifier ?? _internalNotifier;
+
+      for (final entry in notifier._polygonMap.entries) {
+        final pid = entry.key;
+        final poly = entry.value;
+        if (_pointInPolygon(latlng, poly.points)) {
+          final meta = _findMetaForShape(notifier, pid);
+          final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
+          if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+          payload['point'] = latlng;
+          widget.onPolygonLongPress?.call(payload);
+          FormFieldsMapController.invokeOnMarkerTap(
+              widget.controllerId, payload);
+          return;
+        }
+      }
+
+      const threshMeters = 20.0;
+      final distance = Distance();
+      for (final entry in notifier._polylineMap.entries) {
+        final lid = entry.key;
+        final pl = entry.value;
+        final pts = pl.points;
+        for (var i = 0; i < pts.length - 1; i++) {
+          final mid = LatLng((pts[i].latitude + pts[i + 1].latitude) / 2,
+              (pts[i].longitude + pts[i + 1].longitude) / 2);
+          final d = distance.distance(mid, latlng);
+          if (d <= threshMeters) {
+            final meta = _findMetaForShape(notifier, lid);
+            final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            widget.onPolylineLongPress?.call(payload);
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        }
+      }
+
+      for (final entry in notifier._circleMap.entries) {
+        final cid = entry.key;
+        final c = entry.value;
+        final center = c.point;
+        final d = Distance().distance(center, latlng);
+        if (c.useRadiusInMeter) {
+          if (d <= c.radius) {
+            final meta = _findMetaForShape(notifier, cid);
+            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            widget.onCircleLongPress?.call(payload);
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        } else {
+          final approxDeg = 0.01;
+          final latDiff = (center.latitude - latlng.latitude).abs();
+          final lonDiff = (center.longitude - latlng.longitude).abs();
+          if (sqrt(latDiff * latDiff + lonDiff * lonDiff) <= approxDeg) {
+            final meta = _findMetaForShape(notifier, cid);
+            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            widget.onCircleLongPress?.call(payload);
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+
+    widget.onLongPress?.call(latlng);
   }
 
   dynamic _findMetaForShape(FormFieldsMapNotifier notifier, String id) {

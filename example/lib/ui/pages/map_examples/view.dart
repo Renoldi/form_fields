@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
@@ -37,7 +36,7 @@ class View extends PresenterState {
                             _ActionButton(
                               label: 'Generate 10,000 markers',
                               icon: Icons.auto_awesome,
-                              onPressed: () => vm.generateMarkers(10000),
+                              onPressed: () => vm.generateMarkers(10),
                             ),
                             _ActionButton(
                               label: 'Generate Polygons (20)',
@@ -392,24 +391,20 @@ class _ActionButton extends StatelessWidget {
 
 /// A small helper that allows a child placed in a Stack to be dragged
 /// around by the user. It accepts optional initial positioning via
-/// `initialLeft`/`initialTop` or `initialRight`/`initialBottom`. For
+/// `initialTop` or `initialRight`. For
 /// convenience callers can provide estimated `initWidth`/`initHeight` used
-/// to compute initial left/top when right/bottom are supplied.
+/// to compute initial left/top when right is supplied.
 class _DraggablePositioned extends StatefulWidget {
   const _DraggablePositioned({
-    this.initialLeft,
     this.initialTop,
     this.initialRight,
-    this.initialBottom,
     this.initWidth = 56.0,
     this.initHeight = 56.0,
     required this.child,
   });
 
-  final double? initialLeft;
   final double? initialTop;
   final double? initialRight;
-  final double? initialBottom;
   final double initWidth;
   final double initHeight;
   final Widget child;
@@ -430,9 +425,7 @@ class _DraggablePositionedState extends State<_DraggablePositioned> {
     final size = MediaQuery.of(context).size;
     final w = childWidth ?? widget.initWidth;
     final h = childHeight ?? widget.initHeight;
-    if (widget.initialLeft != null) {
-      left = widget.initialLeft;
-    } else if (widget.initialRight != null) {
+    if (widget.initialRight != null) {
       left = size.width - widget.initialRight! - w;
     } else {
       left = 16.0;
@@ -440,8 +433,6 @@ class _DraggablePositionedState extends State<_DraggablePositioned> {
 
     if (widget.initialTop != null) {
       top = widget.initialTop;
-    } else if (widget.initialBottom != null) {
-      top = size.height - widget.initialBottom! - h;
     } else {
       top = size.height - h - 16.0;
     }

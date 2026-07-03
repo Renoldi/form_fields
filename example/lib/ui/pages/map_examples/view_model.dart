@@ -89,43 +89,29 @@ class MapExamplesViewModel extends ChangeNotifier {
           'shapeType': 'marker',
         });
       } else {
-        String? markerId;
-        final markerChild = GestureDetector(
-          onTap: () {
-            FormFieldsMapController.invokeOnMarkerTap('default', {
-              'title': title,
-              'subtitle': subtitle,
-              'point': LatLng(lat, lng),
-              'id': markerId,
-              'shapeType': 'marker',
-            });
-          },
-          child: const Icon(Icons.location_on, color: Colors.red),
-        );
         final m = Marker(
-          point: LatLng(lat, lng),
-          // width: 36,
-          // height: 36,
-          // child: markerChild,
-          width: 60,
-          height: 60,
-          child: markerChild,
-          // GestureDetector(
-          //   onTap: () {
-          //     // Trigger the shared map onMarkerTap handler via controller id.\
-          //     debugPrint('Marker tapped: $title, $subtitle');
-          //     FormFieldsMapController.invokeOnMarkerTap('default', {
-          //       'title': title,
-          //       'subtitle': subtitle,
-          //       'point': LatLng(lat, lng),
-          //     });
-          //   },
-          //   child:
-          //       const Icon(Icons.location_pin, size: 60, color: Colors.black),
-          // ),
-        );
-        final mid = mapNotifier.addMarker(m);
-        markerId = mid;
+            point: LatLng(lat, lng),
+            // width: 36,
+            // height: 36,
+            // child: markerChild,
+            width: 60,
+            height: 60,
+            child: const Icon(Icons.location_on, color: Colors.red)
+            // GestureDetector(
+            //   onTap: () {
+            //     // Trigger the shared map onMarkerTap handler via controller id.\
+            //     debugPrint('Marker tapped: $title, $subtitle');
+            //     FormFieldsMapController.invokeOnMarkerTap('default', {
+            //       'title': title,
+            //       'subtitle': subtitle,
+            //       'point': LatLng(lat, lng),
+            //     });
+            //   },
+            //   child:
+            //       const Icon(Icons.location_pin, size: 60, color: Colors.black),
+            // ),
+            );
+        mapNotifier.addMarker(m);
         markers.add(m);
       }
 
