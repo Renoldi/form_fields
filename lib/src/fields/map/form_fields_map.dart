@@ -1020,24 +1020,17 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
       if (hit != null) {
         // Normalize the hit into a Map payload so consumers receive the
-        // same shape as widget markers (title, subtitle, point).
-        String? title;
-        String? subtitle;
-        // Use the captured candidate from the loop.
+        // same shape as widget markers (title, subtitle, point), but also
+        // keep any extra metadata (like `id` or `shapeType`) if present.
         final cand = hitCandidate;
+        final payload = <String, dynamic>{};
         if (cand is Map) {
-          title = (cand['title'] ?? cand['label'])?.toString();
-          subtitle = cand['subtitle']?.toString();
+          payload.addAll(Map<String, dynamic>.from(cand));
         } else if (cand is List && cand.length >= 3) {
-          title = cand[2]?.toString();
-          if (cand.length >= 4) subtitle = cand[3]?.toString();
+          payload['title'] = cand[2]?.toString();
+          if (cand.length >= 4) payload['subtitle'] = cand[3]?.toString();
         }
-
-        final payload = {
-          'title': title,
-          'subtitle': subtitle,
-          'point': LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0),
-        };
+        payload['point'] = LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0);
 
         // Invoke via controller so both example widget markers and canvas
         // markers use the same delivery path.
@@ -1047,7 +1040,107 @@ class FormFieldsMapState extends State<FormFieldsMap>
     }
 
     // Fallback: regular map tap callback
+    // If no marker hit, try shapes (polygons / polylines / circles)
+    try {
+      final notifier = widget.notifier ?? _internalNotifier;
+
+      // Polygons: point-in-polygon test
+      for (final entry in notifier._polygonMap.entries) {
+        final pid = entry.key;
+        final poly = entry.value;
+        if (_pointInPolygon(latlng, poly.points)) {
+          // try to find metadata in rawMarkers if present
+          final meta = _findMetaForShape(notifier, pid);
+          final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
+          if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+          payload['point'] = latlng;
+          FormFieldsMapController.invokeOnMarkerTap(
+              widget.controllerId, payload);
+          return;
+        }
+      }
+
+      // Polylines: approximate by checking distance to segment midpoints
+      const threshMeters = 20.0;
+      final distance = Distance();
+      for (final entry in notifier._polylineMap.entries) {
+        final lid = entry.key;
+        final pl = entry.value;
+        final pts = pl.points;
+        for (var i = 0; i < pts.length - 1; i++) {
+          final mid = LatLng((pts[i].latitude + pts[i + 1].latitude) / 2,
+              (pts[i].longitude + pts[i + 1].longitude) / 2);
+          final d = distance.distance(mid, latlng);
+          if (d <= threshMeters) {
+            final meta = _findMetaForShape(notifier, lid);
+            final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        }
+      }
+
+      // Circles: distance to center (meters if useRadiusInMeter true)
+      for (final entry in notifier._circleMap.entries) {
+        final cid = entry.key;
+        final c = entry.value;
+        final center = c.point;
+        final d = distance.distance(center, latlng);
+        if (c.useRadiusInMeter) {
+          if (d <= c.radius) {
+            final meta = _findMetaForShape(notifier, cid);
+            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        } else {
+          // radius in pixels/deg: approximate with small threshold
+          final approxDeg = 0.01; // conservative fallback
+          final latDiff = (center.latitude - latlng.latitude).abs();
+          final lonDiff = (center.longitude - latlng.longitude).abs();
+          if (sqrt(latDiff * latDiff + lonDiff * lonDiff) <= approxDeg) {
+            final meta = _findMetaForShape(notifier, cid);
+            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
+            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
+            payload['point'] = latlng;
+            FormFieldsMapController.invokeOnMarkerTap(
+                widget.controllerId, payload);
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+
     widget.onTap?.call(latlng);
+  }
+
+  dynamic _findMetaForShape(FormFieldsMapNotifier notifier, String id) {
+    // rawMarkers may contain a Map with an `id` pointing to shape metadata.
+    for (final m in notifier.rawMarkers) {
+      if (m is Map && m['id'] == id) return m;
+    }
+    return null;
+  }
+
+  bool _pointInPolygon(LatLng p, List<LatLng> polygon) {
+    var inside = false;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      final xi = polygon[i].longitude;
+      final yi = polygon[i].latitude;
+      final xj = polygon[j].longitude;
+      final yj = polygon[j].latitude;
+
+      final intersect = ((yi > p.latitude) != (yj > p.latitude)) &&
+          (p.longitude < (xj - xi) * (p.latitude - yi) / (yj - yi + 0.0) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
   }
 
   Widget _buildMyLocationLayer() {

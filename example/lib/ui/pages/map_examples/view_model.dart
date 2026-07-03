@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:path/path.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
   final FormFieldsMapNotifier mapNotifier = FormFieldsMapNotifier();
@@ -80,20 +79,25 @@ class MapExamplesViewModel extends ChangeNotifier {
       // If using canvas markers, only append raw coords (with metadata)
       // for fast rendering
       if (useCanvasMarkers) {
+        final id = 'm\$${DateTime.now().microsecondsSinceEpoch}_$i';
         rawBatch.add({
           'lat': lat,
           'lon': lng,
           'title': title,
           'subtitle': subtitle,
+          'id': id,
+          'shapeType': 'marker',
         });
       } else {
-        String id = '';
+        String? markerId;
         final markerChild = GestureDetector(
           onTap: () {
             FormFieldsMapController.invokeOnMarkerTap('default', {
               'title': title,
               'subtitle': subtitle,
               'point': LatLng(lat, lng),
+              'id': markerId,
+              'shapeType': 'marker',
             });
           },
           child: const Icon(Icons.location_on, color: Colors.red),
@@ -120,7 +124,8 @@ class MapExamplesViewModel extends ChangeNotifier {
           //       const Icon(Icons.location_pin, size: 60, color: Colors.black),
           // ),
         );
-        id = mapNotifier.addMarker(m);
+        final mid = mapNotifier.addMarker(m);
+        markerId = mid;
         markers.add(m);
       }
 
@@ -166,7 +171,22 @@ class MapExamplesViewModel extends ChangeNotifier {
         borderColor: Colors.green,
         borderStrokeWidth: 2,
       );
-      mapNotifier.addPolygon(poly);
+      final id = mapNotifier.addPolygon(poly);
+      // add a small raw marker at centroid for interaction & metadata
+      final avgLat =
+          pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
+      final avgLng =
+          pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
+      mapNotifier.appendRawMarkers([
+        {
+          'lat': avgLat,
+          'lon': avgLng,
+          'title': 'Polygon #${i + 1}',
+          'subtitle': id,
+          'id': id,
+          'shapeType': 'polygon',
+        }
+      ]);
       generatedPolygons = i + 1;
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1));
@@ -188,7 +208,20 @@ class MapExamplesViewModel extends ChangeNotifier {
             baseLng + (rnd.nextDouble() - 0.5) * step));
       }
       final pl = Polyline(points: pts, strokeWidth: 3.0, color: Colors.blue);
-      mapNotifier.addPolyline(pl);
+      final id = mapNotifier.addPolyline(pl);
+      // place raw marker at polyline midpoint for interaction
+      final midIndex = pts.length ~/ 2;
+      final mid = pts[midIndex];
+      mapNotifier.appendRawMarkers([
+        {
+          'lat': mid.latitude,
+          'lon': mid.longitude,
+          'title': 'Polyline #${i + 1}',
+          'subtitle': id,
+          'id': id,
+          'shapeType': 'polyline',
+        }
+      ]);
       generatedPolylines = i + 1;
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1));
@@ -211,7 +244,17 @@ class MapExamplesViewModel extends ChangeNotifier {
         useRadiusInMeter: true,
         radius: 800.0,
       );
-      mapNotifier.addCircle(c);
+      final id = mapNotifier.addCircle(c);
+      mapNotifier.appendRawMarkers([
+        {
+          'lat': lat,
+          'lon': lng,
+          'title': 'Circle #${i + 1}',
+          'subtitle': id,
+          'id': id,
+          'shapeType': 'circle',
+        }
+      ]);
       generatedCircles = i + 1;
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1));
