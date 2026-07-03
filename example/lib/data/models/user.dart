@@ -43,7 +43,7 @@ class User {
   Map<String, dynamic> toJson() => _$UserToJson(this);
 
   String? get displayName {
-    final fullName = '$firstName $lastName'.trim();
+    final fullName = '${firstName ?? ""} ${lastName ?? ""}'.trim();
     return fullName.isEmpty ? username : fullName;
   }
 

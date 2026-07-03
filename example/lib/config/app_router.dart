@@ -86,6 +86,15 @@ GoRouter createAppRouter(
         return AppRoute.login.path;
       }
 
+      // If we have a logged-in session but the user object is invalid
+      // (missing display name), force logout and redirect to login so
+      // the user can re-authenticate.
+      if (isLoggedIn && appState.currentUser?.displayName == null) {
+        // clear auth state and redirect to login
+        appState.logout();
+        return AppRoute.login.path;
+      }
+
       // Redirect to menu if already logged in and trying to access login
       if (isLoggedIn && isLoggingIn) {
         return AppRoute.menu.path;

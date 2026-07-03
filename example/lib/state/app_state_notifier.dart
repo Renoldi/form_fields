@@ -263,7 +263,23 @@ class AppStateNotifier extends ChangeNotifier {
     // Clear auth state from persistent storage
     _clearAuthState();
 
-    notifyListeners();
+    // Defer notifying listeners to avoid calling setState/markNeedsBuild
+    // during the framework's build phase (which can happen when logout is
+    // triggered during route redirects). Schedule a post-frame callback
+    // so widgets are safe to rebuild.
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          notifyListeners();
+        } catch (_) {}
+      });
+    } catch (_) {
+      // If WidgetsBinding isn't available for some reason, fall back to
+      // immediate notification.
+      try {
+        notifyListeners();
+      } catch (_) {}
+    }
   }
 
   void _setUserLoading(bool value) {

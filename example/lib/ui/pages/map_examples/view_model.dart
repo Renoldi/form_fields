@@ -80,14 +80,14 @@ class MapExamplesViewModel extends ChangeNotifier {
       // for fast rendering
       if (useCanvasMarkers) {
         final id = 'm\$${DateTime.now().microsecondsSinceEpoch}_$i';
-        rawBatch.add({
-          'lat': lat,
-          'lon': lng,
-          'title': title,
-          'subtitle': subtitle,
-          'id': id,
-          'shapeType': 'marker',
-        });
+        rawBatch.add(ShapeMeta(
+          lat: lat,
+          lon: lng,
+          title: title,
+          subtitle: subtitle,
+          id: id,
+          shapeType: 'marker',
+        ));
       } else {
         final m = Marker(
             point: LatLng(lat, lng),
@@ -164,14 +164,14 @@ class MapExamplesViewModel extends ChangeNotifier {
       final avgLng =
           pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
       mapNotifier.appendRawMarkers([
-        {
-          'lat': avgLat,
-          'lon': avgLng,
-          'title': 'Polygon #${i + 1}',
-          'subtitle': id,
-          'id': id,
-          'shapeType': 'polygon',
-        }
+        ShapeMeta(
+          lat: avgLat,
+          lon: avgLng,
+          title: 'Polygon #${i + 1}',
+          subtitle: id,
+          id: id,
+          shapeType: 'polygon',
+        )
       ]);
       generatedPolygons = i + 1;
       notifyListeners();
@@ -193,20 +193,20 @@ class MapExamplesViewModel extends ChangeNotifier {
         pts.add(LatLng(baseLat + (s - segs / 2) * step,
             baseLng + (rnd.nextDouble() - 0.5) * step));
       }
-      final pl = Polyline(points: pts, strokeWidth: 3.0, color: Colors.blue);
+      final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.blue);
       final id = mapNotifier.addPolyline(pl);
       // place raw marker at polyline midpoint for interaction
       final midIndex = pts.length ~/ 2;
       final mid = pts[midIndex];
       mapNotifier.appendRawMarkers([
-        {
-          'lat': mid.latitude,
-          'lon': mid.longitude,
-          'title': 'Polyline #${i + 1}',
-          'subtitle': id,
-          'id': id,
-          'shapeType': 'polyline',
-        }
+        ShapeMeta(
+          lat: mid.latitude,
+          lon: mid.longitude,
+          title: 'Polyline #${i + 1}',
+          subtitle: id,
+          id: id,
+          shapeType: 'polyline',
+        )
       ]);
       generatedPolylines = i + 1;
       notifyListeners();
@@ -232,14 +232,14 @@ class MapExamplesViewModel extends ChangeNotifier {
       );
       final id = mapNotifier.addCircle(c);
       mapNotifier.appendRawMarkers([
-        {
-          'lat': lat,
-          'lon': lng,
-          'title': 'Circle #${i + 1}',
-          'subtitle': id,
-          'id': id,
-          'shapeType': 'circle',
-        }
+        ShapeMeta(
+          lat: lat,
+          lon: lng,
+          title: 'Circle #${i + 1}',
+          subtitle: id,
+          id: id,
+          shapeType: 'circle',
+        )
       ]);
       generatedCircles = i + 1;
       notifyListeners();

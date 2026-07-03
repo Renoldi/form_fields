@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'presenter.dart';
 import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 
 // `flutter_map` is used internally by the package; example doesn't import it directly.
@@ -83,6 +81,7 @@ class View extends PresenterState {
                   ),
                   Expanded(
                     child: FormFieldsMap(
+                      // controllerId: 'map_example',
                       notifier: vm.mapNotifier,
                       useCanvasMarkers: vm.useCanvasMarkers,
                       onRequestCurrentLocation: () async => vm.center,
@@ -92,140 +91,71 @@ class View extends PresenterState {
                         color: Colors.red,
                         size: 36,
                       ),
-                      onMarkerTap: (m) async {
-                        final payload = (m is Map)
-                            ? Map<String, dynamic>.from(m)
-                            : <String, dynamic>{};
-                        final title =
-                            payload['title'] ?? (m?.title) ?? 'Detail';
-                        final subtitle =
-                            payload['subtitle'] ?? (m?.subtitle) ?? '';
-                        final id = payload['id'] as String?;
-                        final LatLng? pt = payload['point'] is LatLng
-                            ? payload['point'] as LatLng
-                            : (m?.point as LatLng?);
+                      onTapShape: (sm) async {
+                        // `sm` is a ShapeMeta
+                        final title = sm.title ?? 'Detail';
+                        final subtitle = sm.subtitle ?? '';
+                        final id = sm.id;
+                        final pt = sm.point;
 
-                        await showDialog<void>(
-                          context: context,
-                          builder: (ctx) {
-                            return AlertDialog(
-                              title: Text(title.toString()),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (subtitle != null &&
-                                      subtitle.toString().isNotEmpty)
-                                    Text(subtitle.toString()),
-                                  if (id != null) ...[
-                                    const SizedBox(height: 8),
-                                    Text('ID: $id',
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Colors.grey)),
+                        if (sm.shapeType == 'marker' ||
+                            (id != null && id.startsWith('m\$'))) {
+                          await showDialog<void>(
+                            context: context,
+                            builder: (ctx) {
+                              return AlertDialog(
+                                title: Text(title.toString()),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (subtitle.isNotEmpty) Text(subtitle),
+                                    if (id != null) ...[
+                                      const SizedBox(height: 8),
+                                      Text('ID: $id',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey)),
+                                    ],
+                                    ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                          'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
+                                    ]
                                   ],
-                                  if (pt != null) ...[
-                                    const SizedBox(height: 8),
-                                    Text(
-                                        'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
-                                  ]
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('Close')),
+                                  if (id != null)
+                                    TextButton(
+                                      onPressed: () {
+                                        if (id.startsWith('m\$')) {
+                                          vm.mapNotifier.removeMarker(id);
+                                        } else if (id.startsWith('p\$')) {
+                                          vm.mapNotifier.removePolygon(id);
+                                        } else if (id.startsWith('l\$')) {
+                                          vm.mapNotifier.removePolyline(id);
+                                        } else if (id.startsWith('c\$')) {
+                                          vm.mapNotifier.removeCircle(id);
+                                        }
+                                        Navigator.of(ctx).pop();
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                                content: Text('Deleted')));
+                                      },
+                                      child: const Text('Delete',
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
                                 ],
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(),
-                                    child: const Text('Close')),
-                                if (id != null)
-                                  TextButton(
-                                    onPressed: () {
-                                      if (id.startsWith('m\$')) {
-                                        vm.mapNotifier.removeMarker(id);
-                                      } else if (id.startsWith('p\$')) {
-                                        vm.mapNotifier.removePolygon(id);
-                                      } else if (id.startsWith('l\$')) {
-                                        vm.mapNotifier.removePolyline(id);
-                                      } else if (id.startsWith('c\$')) {
-                                        vm.mapNotifier.removeCircle(id);
-                                      }
-                                      Navigator.of(ctx).pop();
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text('Deleted')));
-                                    },
-                                    child: const Text('Delete',
-                                        style: TextStyle(color: Colors.red)),
-                                  ),
-                                if (id != null)
-                                  TextButton(
-                                    onPressed: () {
-                                      if (id.startsWith('p\$')) {
-                                        final poly =
-                                            vm.mapNotifier.getPolygon(id);
-                                        if (poly != null) {
-                                          final newPoly = Polygon(
-                                              points: poly.points,
-                                              color: poly.color ==
-                                                      Colors.green.withValues(
-                                                          alpha: 0.25)
-                                                  ? Colors.purple
-                                                      .withValues(alpha: 0.25)
-                                                  : Colors.green
-                                                      .withValues(alpha: 0.25),
-                                              borderColor: poly.borderColor ==
-                                                      Colors.green
-                                                  ? Colors.purple
-                                                  : Colors.green,
-                                              borderStrokeWidth:
-                                                  poly.borderStrokeWidth);
-                                          vm.mapNotifier
-                                              .addOrUpdatePolygon(id, newPoly);
-                                        }
-                                      } else if (id.startsWith('l\$')) {
-                                        final line =
-                                            vm.mapNotifier.getPolyline(id);
-                                        if (line != null) {
-                                          final newLine = Polyline(
-                                              points: line.points,
-                                              strokeWidth: line.strokeWidth,
-                                              color: line.color == Colors.blue
-                                                  ? Colors.purple
-                                                  : Colors.blue);
-                                          vm.mapNotifier
-                                              .addOrUpdatePolyline(id, newLine);
-                                        }
-                                      } else if (id.startsWith('c\$')) {
-                                        final circ =
-                                            vm.mapNotifier.getCircle(id);
-                                        if (circ != null) {
-                                          final newCirc = CircleMarker(
-                                              point: circ.point,
-                                              color: circ.color ==
-                                                      Colors.orange.withValues(
-                                                          alpha: 0.35)
-                                                  ? Colors.purple
-                                                      .withValues(alpha: 0.35)
-                                                  : Colors.orange
-                                                      .withValues(alpha: 0.35),
-                                              borderStrokeWidth:
-                                                  circ.borderStrokeWidth,
-                                              borderColor: circ.borderColor ==
-                                                      Colors.orange
-                                                  ? Colors.purple
-                                                  : Colors.orange,
-                                              useRadiusInMeter:
-                                                  circ.useRadiusInMeter,
-                                              radius: circ.radius);
-                                          vm.mapNotifier
-                                              .addOrUpdateCircle(id, newCirc);
-                                        }
-                                      }
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: const Text('Toggle Color'),
-                                  ),
-                              ],
-                            );
-                          },
-                        );
+                              );
+                            },
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Tapped: ${sm.shapeType}')));
+                        }
                       },
                       initialCenter: vm.center,
                       initialZoom: 12.0,

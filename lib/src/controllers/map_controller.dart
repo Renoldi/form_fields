@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:form_fields/form_fields.dart';
 
 /// A persistent controller provider for `MapController` instances.
 /// Controllers are keyed by an `id` so they are not recreated on widget rebuilds.
@@ -11,7 +12,9 @@ class FormFieldsMapController {
   // Optional global handlers for marker taps keyed by controller id. This
   // allows external marker widgets to invoke the map-level `onMarkerTap`
   // callback by calling `invokeOnMarkerTap` with the controller id.
-  static final Map<String, ValueChanged<dynamic>?> _onMarkerTapHandlers = {};
+  static final Map<String, ValueChanged<ShapeMeta>?> _onMarkerTapHandlers = {};
+  // Timestamp of last invoke per controller id to suppress rapid duplicate
+  static final Map<String, DateTime?> _lastInvokeAt = {};
 
   /// Returns an existing controller for [id], or creates one if missing.
   static MapController getOrCreate(String id) {
@@ -34,7 +37,7 @@ class FormFieldsMapController {
   /// Register a handler to be invoked when a marker is tapped. The map
   /// widget will call this during init and update, and it will be removed
   /// when the widget disposes.
-  static void registerOnMarkerTap(String id, ValueChanged<dynamic>? handler) {
+  static void registerOnMarkerTap(String id, ValueChanged<ShapeMeta>? handler) {
     _onMarkerTapHandlers[id] = handler;
     if (handler == null) {
       // allow explicit unregistering
@@ -49,7 +52,7 @@ class FormFieldsMapController {
 
   /// Invoke the registered `onMarkerTap` handler (if any) for [id]. This
   /// is safe to call from anywhere (e.g., marker widget tap callbacks).
-  static void invokeOnMarkerTap(String id, dynamic payload) {
+  static void invokeOnMarkerTap(String id, ShapeMeta payload) {
     final handler = _onMarkerTapHandlers[id];
     if (handler == null) {
       // ignore: avoid_print
@@ -57,6 +60,19 @@ class FormFieldsMapController {
           'FormFieldsMapController.invokeOnMarkerTap: no handler for $id');
       return;
     }
+
+    // suppress duplicate invocations within a short window
+    final now = DateTime.now();
+    final last = _lastInvokeAt[id];
+    const window = Duration(milliseconds: 500);
+    if (last != null && now.difference(last) <= window) {
+      // ignore: avoid_print
+      debugPrint(
+          'FormFieldsMapController.invokeOnMarkerTap: suppressed duplicate for $id');
+      return;
+    }
+
+    _lastInvokeAt[id] = now;
     try {
       // ignore: avoid_print
       debugPrint('FormFieldsMapController.invokeOnMarkerTap: invoking for $id');

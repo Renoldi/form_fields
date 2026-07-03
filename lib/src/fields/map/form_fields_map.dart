@@ -291,14 +291,7 @@ class FormFieldsMap extends StatefulWidget {
     this.onMapReady,
     this.onPositionChanged,
     this.onTap,
-    this.onMarkerTap,
-    this.onMarkerLongPress,
-    this.onPolygonTap,
-    this.onPolygonLongPress,
-    this.onPolylineTap,
-    this.onPolylineLongPress,
-    this.onCircleTap,
-    this.onCircleLongPress,
+    this.onTapShape,
     this.onLongPress,
     this.onCameraIdle,
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
@@ -346,14 +339,7 @@ class FormFieldsMap extends StatefulWidget {
   /// Optional ChangeNotifier to manage layers (`FormFieldsMapNotifier`).
   /// If omitted, a fresh `FormFieldsMapNotifier` is created for this widget.
   final FormFieldsMapNotifier? notifier;
-  final ValueChanged<dynamic>? onMarkerTap;
-  final ValueChanged<dynamic>? onMarkerLongPress;
-  final ValueChanged<dynamic>? onPolygonTap;
-  final ValueChanged<dynamic>? onPolygonLongPress;
-  final ValueChanged<dynamic>? onPolylineTap;
-  final ValueChanged<dynamic>? onPolylineLongPress;
-  final ValueChanged<dynamic>? onCircleTap;
-  final ValueChanged<dynamic>? onCircleLongPress;
+  final ValueChanged<ShapeMeta>? onTapShape;
 
   final VoidCallback? onMapReady;
   final ValueChanged<dynamic>? onPositionChanged;
@@ -419,9 +405,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     });
     // Register onMarkerTap handler so external marker widgets can call
     // FormFieldsMapController.invokeOnMarkerTap(id, payload) and have the
-    // map-level callback receive it.
+    // map-level callback receive it. We forward payloads as `ShapeMeta`.
     FormFieldsMapController.registerOnMarkerTap(
-        widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
+        widget.controllerId, widget.onTapShape);
   }
 
   @override
@@ -443,10 +429,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     }
     // If controller id or onMarkerTap changed, update registration.
     if (oldWidget.controllerId != widget.controllerId ||
-        oldWidget.onMarkerTap != widget.onMarkerTap) {
+        oldWidget.onTapShape != widget.onTapShape) {
       FormFieldsMapController.removeOnMarkerTap(oldWidget.controllerId);
       FormFieldsMapController.registerOnMarkerTap(
-          widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
+          widget.controllerId, widget.onTapShape);
     }
   }
 
@@ -695,9 +681,6 @@ class FormFieldsMapState extends State<FormFieldsMap>
     final tileProvider = NetworkTileProvider();
 
     final notifier = widget.notifier ?? _internalNotifier;
-    // Ensure the controller has the latest onMarkerTap handler registered.
-    FormFieldsMapController.registerOnMarkerTap(
-        widget.controllerId, (payload) => widget.onMarkerTap?.call(payload));
 
     return Stack(
       children: [
@@ -725,7 +708,34 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 minZoom: widget.minZoom,
               ),
 
-              // Markers (rebuilds only when markers list changes)
+              // Polygons
+              Selector<FormFieldsMapNotifier, List<Polygon>>(
+                selector: (_, n) => n.polygons,
+                builder: (context, polygons, _) {
+                  if (polygons.isEmpty) return const SizedBox.shrink();
+                  return PolygonLayer(polygons: polygons);
+                },
+              ),
+
+              // Polylines
+              Selector<FormFieldsMapNotifier, List<Polyline>>(
+                selector: (_, n) => n.polylines,
+                builder: (context, polylines, _) {
+                  if (polylines.isEmpty) return const SizedBox.shrink();
+                  return PolylineLayer(polylines: polylines);
+                },
+              ),
+
+              // Circles
+              Selector<FormFieldsMapNotifier, List<CircleMarker>>(
+                selector: (_, n) => n.circles,
+                builder: (context, circles, _) {
+                  if (circles.isEmpty) return const SizedBox.shrink();
+                  return CircleLayer(circles: circles);
+                },
+              ),
+
+              // Markers (render above shapes)
               if (widget.useCanvasMarkers)
                 Consumer<FormFieldsMapNotifier>(
                   builder: (context, notifier, _) {
@@ -756,6 +766,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       zoom: curZoom,
                       radius: widget.canvasMarkerRadius,
                       iconImage: _canvasMarkerImage,
+                      controllerId: widget.controllerId,
+                      polygonsMap: notifier._polygonMap,
+                      polylinesMap: notifier._polylineMap,
+                      circlesMap: notifier._circleMap,
+                      onTap: widget.onTap,
+                      onTapShape: widget.onTapShape,
                     );
                   },
                 )
@@ -775,22 +791,24 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       final wrappedChild = GestureDetector(
                         behavior: HitTestBehavior.translucent,
                         onTap: () {
-                          final payload = <String, dynamic>{
+                          final sm = ShapeMeta.fromMap({
                             'id': id,
-                            'type': 'marker',
-                            'point': m.point,
-                          };
+                            'shapeType': 'marker',
+                            'lat': m.point.latitude,
+                            'lon': m.point.longitude,
+                          });
                           FormFieldsMapController.invokeOnMarkerTap(
-                              widget.controllerId, payload);
+                              widget.controllerId, sm);
                         },
                         onLongPress: () {
-                          final payload = <String, dynamic>{
+                          final sm = ShapeMeta.fromMap({
                             'id': id,
-                            'type': 'marker_longpress',
-                            'point': m.point,
-                          };
+                            'shapeType': 'marker_longpress',
+                            'lat': m.point.latitude,
+                            'lon': m.point.longitude,
+                          });
                           FormFieldsMapController.invokeOnMarkerTap(
-                              widget.controllerId, payload);
+                              widget.controllerId, sm);
                         },
                         child: m.child,
                       );
@@ -828,33 +846,6 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     return MarkerLayer(markers: visible);
                   },
                 ),
-
-              // Polygons
-              Selector<FormFieldsMapNotifier, List<Polygon>>(
-                selector: (_, n) => n.polygons,
-                builder: (context, polygons, _) {
-                  if (polygons.isEmpty) return const SizedBox.shrink();
-                  return PolygonLayer(polygons: polygons);
-                },
-              ),
-
-              // Polylines
-              Selector<FormFieldsMapNotifier, List<Polyline>>(
-                selector: (_, n) => n.polylines,
-                builder: (context, polylines, _) {
-                  if (polylines.isEmpty) return const SizedBox.shrink();
-                  return PolylineLayer(polylines: polylines);
-                },
-              ),
-
-              // Circles
-              Selector<FormFieldsMapNotifier, List<CircleMarker>>(
-                selector: (_, n) => n.circles,
-                builder: (context, circles, _) {
-                  if (circles.isEmpty) return const SizedBox.shrink();
-                  return CircleLayer(circles: circles);
-                },
-              ),
 
               // Optional my-location marker
               if (widget.showMyLocation) _buildMyLocationLayer(),
@@ -1005,6 +996,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // configured `canvasMarkerRadius`.
       for (final wrap in [0.0, -worldSize, worldSize]) {
         final candidate = _kdTree!.nearest(qx + wrap, qy, worldSize);
+        if (candidate is Map) {
+          final shapeType = candidate['shapeType'] as String?;
+          if (shapeType != null && shapeType != 'marker') {
+            continue; // skip shape placeholders stored in rawMarkers
+          }
+        }
         if (candidate == null) continue;
 
         double candLon;
@@ -1088,10 +1085,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
         payload['point'] = LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0);
 
         // Invoke via controller so both widget markers and canvas
-        // markers use the same delivery path. The controller is already
-        // registered to forward to `widget.onMarkerTap`, so calling the
-        // controller avoids duplicate delivery.
-        FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, payload);
+        // markers use the same delivery path. Convert payload to `ShapeMeta`.
+        final sm = ShapeMeta.fromMap(payload);
+        FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, sm);
         return;
       }
     }
@@ -1106,21 +1102,22 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final pid = entry.key;
         final poly = entry.value;
         if (_pointInPolygon(latlng, poly.points)) {
-          // try to find metadata in rawMarkers if present
+          // try to find metadata in rawMarkers if present and convert to ShapeMeta
           final meta = _findMetaForShape(notifier, pid);
-          final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
-          if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
-          payload['point'] = latlng;
-          // Call per-shape callback if provided, then invoke controller
-          widget.onPolygonTap?.call(payload);
-          FormFieldsMapController.invokeOnMarkerTap(
-              widget.controllerId, payload);
+          final mapPayload = <String, dynamic>{};
+          if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
+          mapPayload['id'] = pid;
+          mapPayload['shapeType'] = 'polygon';
+          mapPayload['lat'] = latlng.latitude;
+          mapPayload['lon'] = latlng.longitude;
+          final sm = ShapeMeta.fromMap(mapPayload);
+          widget.onTapShape?.call(sm);
           return;
         }
       }
 
       // Polylines: approximate by checking distance to segment midpoints
-      const threshMeters = 20.0;
+      const threshMeters = 200.0;
       final distance = Distance();
       for (final entry in notifier._polylineMap.entries) {
         final lid = entry.key;
@@ -1132,12 +1129,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final d = distance.distance(mid, latlng);
           if (d <= threshMeters) {
             final meta = _findMetaForShape(notifier, lid);
-            final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
-            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
-            payload['point'] = latlng;
-            widget.onPolylineTap?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final mapPayload = <String, dynamic>{};
+            if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
+            mapPayload['id'] = lid;
+            mapPayload['shapeType'] = 'polyline';
+            mapPayload['lat'] = latlng.latitude;
+            mapPayload['lon'] = latlng.longitude;
+            final sm = ShapeMeta.fromMap(mapPayload);
+            widget.onTapShape?.call(sm);
             return;
           }
         }
@@ -1152,12 +1151,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (c.useRadiusInMeter) {
           if (d <= c.radius) {
             final meta = _findMetaForShape(notifier, cid);
-            final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
-            if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
-            payload['point'] = latlng;
-            widget.onCircleTap?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final mapPayload = <String, dynamic>{};
+            if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
+            mapPayload['id'] = cid;
+            mapPayload['shapeType'] = 'circle';
+            mapPayload['lat'] = latlng.latitude;
+            mapPayload['lon'] = latlng.longitude;
+            final sm = ShapeMeta.fromMap(mapPayload);
+            widget.onTapShape?.call(sm);
             return;
           }
         } else {
@@ -1170,9 +1171,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
-            widget.onCircleTap?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final sm = ShapeMeta.fromMap(payload);
+            widget.onTapShape?.call(sm);
             return;
           }
         }
@@ -1284,9 +1284,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
             if (cand.length >= 4) payload['subtitle'] = cand[3]?.toString();
           }
           payload['point'] = LatLng(hitCandLat ?? 0.0, hitCandLon ?? 0.0);
-          widget.onMarkerLongPress?.call(payload);
-          FormFieldsMapController.invokeOnMarkerTap(
-              widget.controllerId, payload);
+          final sm = ShapeMeta.fromMap(payload);
+          widget.onTapShape?.call(sm);
+          FormFieldsMapController.invokeOnMarkerTap(widget.controllerId, sm);
           return;
         }
       }
@@ -1304,14 +1304,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final payload = <String, dynamic>{'id': pid, 'type': 'polygon'};
           if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
           payload['point'] = latlng;
-          widget.onPolygonLongPress?.call(payload);
-          FormFieldsMapController.invokeOnMarkerTap(
-              widget.controllerId, payload);
+          final sm = ShapeMeta.fromMap(payload);
+          widget.onTapShape?.call(sm);
           return;
         }
       }
 
-      const threshMeters = 20.0;
+      const threshMeters = 200.0;
       final distance = Distance();
       for (final entry in notifier._polylineMap.entries) {
         final lid = entry.key;
@@ -1326,9 +1325,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': lid, 'type': 'polyline'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
-            widget.onPolylineLongPress?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final sm = ShapeMeta.fromMap(payload);
+            widget.onTapShape?.call(sm);
             return;
           }
         }
@@ -1345,9 +1343,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
-            widget.onCircleLongPress?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final sm = ShapeMeta.fromMap(payload);
+            widget.onTapShape?.call(sm);
             return;
           }
         } else {
@@ -1359,9 +1356,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'type': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
-            widget.onCircleLongPress?.call(payload);
-            FormFieldsMapController.invokeOnMarkerTap(
-                widget.controllerId, payload);
+            final sm = ShapeMeta.fromMap(payload);
+            widget.onTapShape?.call(sm);
             return;
           }
         }
@@ -1488,6 +1484,12 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
     required this.zoom,
     required this.radius,
     this.iconImage,
+    required this.controllerId,
+    this.polygonsMap,
+    this.polylinesMap,
+    this.circlesMap,
+    this.onTap,
+    this.onTapShape,
   });
 
   final List<dynamic> rawMarkers;
@@ -1495,26 +1497,480 @@ class _CanvasRawMarkerLayer extends StatelessWidget {
   final double zoom;
   final double radius;
   final ui.Image? iconImage;
+  final String controllerId;
+
+  final Map<String, Polygon>? polygonsMap;
+  final Map<String, Polyline>? polylinesMap;
+  final Map<String, CircleMarker>? circlesMap;
+
+  final ValueChanged<LatLng>? onTap;
+  final ValueChanged<ShapeMeta>? onTapShape;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
+      final w = constraints.maxWidth;
+      final h = constraints.maxHeight;
       return SizedBox(
-        width: constraints.maxWidth,
-        height: constraints.maxHeight,
-        child: CustomPaint(
-          painter: _CanvasRawMarkerPainter(
-            rawMarkers: rawMarkers,
-            center: center,
-            zoom: zoom,
-            radius: radius,
-            devicePixelRatio: MediaQuery.of(context).devicePixelRatio,
-            iconImage: iconImage,
+        width: w,
+        height: h,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) {
+            try {
+              final local = details.localPosition;
+              final centerX =
+                  _CanvasRawMarkerPainter._worldX(center.longitude, zoom);
+              final centerY =
+                  _CanvasRawMarkerPainter._worldY(center.latitude, zoom);
+              final double worldSize = 256 * pow(2, zoom).toDouble();
+
+              // Helper: convert local tap to world coords and lat/lon
+              double worldTapX = centerX + local.dx - w / 2;
+              double worldTapY = centerY + local.dy - h / 2;
+              // wrap X
+              if (worldTapX < 0) worldTapX += worldSize;
+              if (worldTapX > worldSize) worldTapX -= worldSize;
+              final tapLon =
+                  _CanvasRawMarkerPainter._lonFromWorldX(worldTapX, zoom);
+              final tapLat =
+                  _CanvasRawMarkerPainter._latFromWorldY(worldTapY, zoom);
+
+              // 1) Marker hit-test (rawMarkers)
+              for (final m in rawMarkers) {
+                double lat;
+                double lon;
+                ShapeMeta? smCandidate;
+                if (m is Marker) {
+                  lat = m.point.latitude;
+                  lon = m.point.longitude;
+                } else if (m is ShapeMeta) {
+                  smCandidate = m;
+                  lat = smCandidate.lat;
+                  lon = smCandidate.lon;
+                } else if (m is LatLng) {
+                  lat = m.latitude;
+                  lon = m.longitude;
+                } else if (m is List && m.length >= 2) {
+                  lat = (m[0] as num).toDouble();
+                  lon = (m[1] as num).toDouble();
+                } else if (m is Map) {
+                  final shapeType = m['shapeType'] as String?;
+                  if (shapeType != null && shapeType != 'marker') {
+                    continue; // skip shape placeholder markers
+                  }
+                  lat = (m['lat'] as num?)?.toDouble() ??
+                      (m['latitude'] as num?)?.toDouble() ??
+                      0.0;
+                  lon = (m['lon'] as num?)?.toDouble() ??
+                      (m['longitude'] as num?)?.toDouble() ??
+                      0.0;
+                } else {
+                  continue;
+                }
+
+                final candX = _CanvasRawMarkerPainter._worldX(lon, zoom);
+                final candY = _CanvasRawMarkerPainter._worldY(lat, zoom);
+                var candDx = (candX - centerX) + w / 2;
+                var candDy = (candY - centerY) + h / 2;
+
+                if (candDx.abs() > worldSize / 2) {
+                  if (candDx > 0) {
+                    candDx -= worldSize;
+                  } else {
+                    candDx += worldSize;
+                  }
+                }
+
+                final dist =
+                    sqrt(pow(candDx - local.dx, 2) + pow(candDy - local.dy, 2));
+                if (dist <= radius) {
+                  final payload = <String, dynamic>{};
+                  if (m is Map) {
+                    payload.addAll(Map<String, dynamic>.from(m));
+                  } else if (m is List && m.length >= 3) {
+                    payload['title'] = m[2]?.toString();
+                    if (m.length >= 4) payload['subtitle'] = m[3]?.toString();
+                  } else if (smCandidate != null) {
+                    payload.addAll(smCandidate.toMap());
+                  }
+                  payload['point'] = LatLng(lat, lon);
+                  try {
+                    debugPrint(
+                        'CanvasRawMarkerLayer: marker tap -> controller=$controllerId payload=$payload');
+                  } catch (_) {}
+                  final sm = ShapeMeta.fromMap(payload);
+                  FormFieldsMapController.invokeOnMarkerTap(controllerId, sm);
+                  return;
+                }
+              }
+
+              // 2) Polygons
+              if (polygonsMap != null && polygonsMap!.isNotEmpty) {
+                for (final entry in polygonsMap!.entries) {
+                  final pid = entry.key;
+                  final poly = entry.value;
+                  final screenPts = <Offset>[];
+                  for (final pt in poly.points) {
+                    final px =
+                        _CanvasRawMarkerPainter._worldX(pt.longitude, zoom);
+                    final py =
+                        _CanvasRawMarkerPainter._worldY(pt.latitude, zoom);
+                    var dx = (px - centerX) + w / 2;
+                    var dy = (py - centerY) + h / 2;
+                    if (dx.abs() > worldSize / 2) {
+                      if (dx > 0) {
+                        dx -= worldSize;
+                      } else {
+                        dx += worldSize;
+                      }
+                    }
+                    screenPts.add(Offset(dx, dy));
+                  }
+                  if (_pointInPolygonScreen(local, screenPts)) {
+                    final meta = _findMetaForShapeMap(rawMarkers, pid);
+                    final payload = <String, dynamic>{
+                      'id': pid,
+                      'type': 'polygon'
+                    };
+                    if (meta is Map) {
+                      payload.addAll(Map<String, dynamic>.from(meta));
+                    }
+                    payload['point'] = LatLng(tapLat, tapLon);
+                    try {
+                      debugPrint(
+                          'CanvasRawMarkerLayer: polygon tap id=$pid -> controller=$controllerId payload=$payload');
+                    } catch (_) {}
+                    final sm = ShapeMeta.fromMap(payload);
+                    onTapShape?.call(sm);
+                    return;
+                  }
+                }
+              }
+
+              // 3) Polylines (distance to segment)
+              if (polylinesMap != null && polylinesMap!.isNotEmpty) {
+                const double baseThreshPx = 24.0;
+                double minPolyDist = double.infinity;
+                String? minPolyId;
+                for (final entry in polylinesMap!.entries) {
+                  final lid = entry.key;
+                  final pl = entry.value;
+                  final pts = pl.points;
+                  // Compute per-polyline hit radius in pixels, scaled by stroke width
+                  final stroke = pl.strokeWidth;
+                  final threshPx = max(baseThreshPx, stroke * 2.0 + 12.0);
+                  for (var i = 0; i < pts.length - 1; i++) {
+                    final p0 = pts[i];
+                    final p1 = pts[i + 1];
+                    final x0 =
+                        _CanvasRawMarkerPainter._worldX(p0.longitude, zoom);
+                    final y0 =
+                        _CanvasRawMarkerPainter._worldY(p0.latitude, zoom);
+                    var dx0 = (x0 - centerX) + w / 2;
+                    var dy0 = (y0 - centerY) + h / 2;
+                    if (dx0.abs() > worldSize / 2) {
+                      if (dx0 > 0) {
+                        dx0 -= worldSize;
+                      } else {
+                        dx0 += worldSize;
+                      }
+                    }
+                    final x1 =
+                        _CanvasRawMarkerPainter._worldX(p1.longitude, zoom);
+                    final y1 =
+                        _CanvasRawMarkerPainter._worldY(p1.latitude, zoom);
+                    var dx1 = (x1 - centerX) + w / 2;
+                    var dy1 = (y1 - centerY) + h / 2;
+                    if (dx1.abs() > worldSize / 2) {
+                      if (dx1 > 0) {
+                        dx1 -= worldSize;
+                      } else {
+                        dx1 += worldSize;
+                      }
+                    }
+                    final dist = _pointToSegmentDistance(
+                        local, Offset(dx0, dy0), Offset(dx1, dy1));
+                    if (dist < minPolyDist) {
+                      minPolyDist = dist;
+                      minPolyId = lid;
+                    }
+                    if (dist <= threshPx) {
+                      final meta = _findMetaForShapeMap(rawMarkers, lid);
+                      final payload = <String, dynamic>{
+                        'id': lid,
+                        'type': 'polyline'
+                      };
+                      if (meta is Map) {
+                        payload.addAll(Map<String, dynamic>.from(meta));
+                      }
+                      payload['point'] = LatLng(tapLat, tapLon);
+                      try {
+                        debugPrint(
+                            'CanvasRawMarkerLayer: polyline tap id=$lid -> controller=$controllerId payload=$payload');
+                      } catch (_) {}
+                      final sm = ShapeMeta.fromMap(payload);
+                      onTapShape?.call(sm);
+                      return;
+                    }
+                  }
+                }
+                try {
+                  debugPrint(
+                      'CanvasRawMarkerLayer: nearest polyline id=$minPolyId minDist=${minPolyDist.toStringAsFixed(1)}px baseThresh=$baseThreshPx');
+                } catch (_) {}
+              }
+
+              // 4) Circles
+              if (circlesMap != null && circlesMap!.isNotEmpty) {
+                final distance = Distance();
+                for (final entry in circlesMap!.entries) {
+                  final cid = entry.key;
+                  final c = entry.value;
+                  final cx =
+                      _CanvasRawMarkerPainter._worldX(c.point.longitude, zoom);
+                  final cy =
+                      _CanvasRawMarkerPainter._worldY(c.point.latitude, zoom);
+                  var dx = (cx - centerX) + w / 2;
+                  var dy = (cy - centerY) + h / 2;
+                  if (dx.abs() > worldSize / 2) {
+                    if (dx > 0) {
+                      dx -= worldSize;
+                    } else {
+                      dx += worldSize;
+                    }
+                  }
+                  final pixelDist =
+                      sqrt(pow(dx - local.dx, 2) + pow(dy - local.dy, 2));
+                  if (c.useRadiusInMeter) {
+                    // compare geographic distance using converted tap lat/lon
+                    final d =
+                        distance.distance(c.point, LatLng(tapLat, tapLon));
+                    if (d <= c.radius) {
+                      final meta = _findMetaForShapeMap(rawMarkers, cid);
+                      final payload = <String, dynamic>{
+                        'id': cid,
+                        'type': 'circle'
+                      };
+                      if (meta is Map) {
+                        payload.addAll(Map<String, dynamic>.from(meta));
+                      }
+                      payload['point'] = LatLng(tapLat, tapLon);
+                      try {
+                        debugPrint(
+                            'CanvasRawMarkerLayer: circle tap id=$cid -> controller=$controllerId payload=$payload');
+                      } catch (_) {}
+                      final sm = ShapeMeta.fromMap(payload);
+                      onTapShape?.call(sm);
+                      return;
+                    }
+                  } else {
+                    if (pixelDist <= c.radius) {
+                      final meta = _findMetaForShapeMap(rawMarkers, cid);
+                      final payload = <String, dynamic>{
+                        'id': cid,
+                        'type': 'circle'
+                      };
+                      if (meta is Map) {
+                        payload.addAll(Map<String, dynamic>.from(meta));
+                      }
+                      payload['point'] = LatLng(tapLat, tapLon);
+                      try {
+                        debugPrint(
+                            'CanvasRawMarkerLayer: circle tap id=$cid -> controller=$controllerId payload=$payload');
+                      } catch (_) {}
+                      final sm = ShapeMeta.fromMap(payload);
+                      onTapShape?.call(sm);
+                      return;
+                    }
+                  }
+                }
+              }
+
+              // If nothing handled, call generic onTap with computed LatLng
+              try {
+                debugPrint(
+                    'CanvasRawMarkerLayer: generic tap at ${LatLng(tapLat, tapLon)} for controller=$controllerId');
+              } catch (_) {}
+              onTap?.call(LatLng(tapLat, tapLon));
+            } catch (_) {}
+          },
+          onLongPressStart: (details) {
+            try {
+              final local = details.localPosition;
+              final centerX =
+                  _CanvasRawMarkerPainter._worldX(center.longitude, zoom);
+              final centerY =
+                  _CanvasRawMarkerPainter._worldY(center.latitude, zoom);
+              final double worldSize = 256 * pow(2, zoom).toDouble();
+
+              double worldTapX = centerX + local.dx - w / 2;
+              double worldTapY = centerY + local.dy - h / 2;
+              if (worldTapX < 0) worldTapX += worldSize;
+              if (worldTapX > worldSize) worldTapX -= worldSize;
+              final tapLon =
+                  _CanvasRawMarkerPainter._lonFromWorldX(worldTapX, zoom);
+              final tapLat =
+                  _CanvasRawMarkerPainter._latFromWorldY(worldTapY, zoom);
+
+              // Marker long-press
+              for (final m in rawMarkers) {
+                double lat;
+                double lon;
+                ShapeMeta? smCandidate;
+                if (m is Marker) {
+                  lat = m.point.latitude;
+                  lon = m.point.longitude;
+                } else if (m is ShapeMeta) {
+                  smCandidate = m;
+                  lat = smCandidate.lat;
+                  lon = smCandidate.lon;
+                } else if (m is LatLng) {
+                  lat = m.latitude;
+                  lon = m.longitude;
+                } else if (m is List && m.length >= 2) {
+                  lat = (m[0] as num).toDouble();
+                  lon = (m[1] as num).toDouble();
+                } else if (m is Map) {
+                  final shapeType = m['shapeType'] as String?;
+                  if (shapeType != null && shapeType != 'marker') {
+                    continue; // skip shape placeholder markers
+                  }
+                  lat = (m['lat'] as num?)?.toDouble() ??
+                      (m['latitude'] as num?)?.toDouble() ??
+                      0.0;
+                  lon = (m['lon'] as num?)?.toDouble() ??
+                      (m['longitude'] as num?)?.toDouble() ??
+                      0.0;
+                } else {
+                  continue;
+                }
+
+                final candX = _CanvasRawMarkerPainter._worldX(lon, zoom);
+                final candY = _CanvasRawMarkerPainter._worldY(lat, zoom);
+                var candDx = (candX - centerX) + w / 2;
+                var candDy = (candY - centerY) + h / 2;
+
+                if (candDx.abs() > worldSize / 2) {
+                  if (candDx > 0) {
+                    candDx -= worldSize;
+                  } else {
+                    candDx += worldSize;
+                  }
+                }
+
+                final dist =
+                    sqrt(pow(candDx - local.dx, 2) + pow(candDy - local.dy, 2));
+                if (dist <= radius) {
+                  final payload = <String, dynamic>{};
+                  if (m is Map) {
+                    payload.addAll(Map<String, dynamic>.from(m));
+                  } else if (m is List && m.length >= 3) {
+                    payload['title'] = m[2]?.toString();
+                    if (m.length >= 4) payload['subtitle'] = m[3]?.toString();
+                  } else if (smCandidate != null) {
+                    payload.addAll(smCandidate.toMap());
+                  }
+                  payload['point'] = LatLng(lat, lon);
+                  try {
+                    debugPrint(
+                        'CanvasRawMarkerLayer: marker longpress -> controller=$controllerId payload=$payload');
+                  } catch (_) {}
+                  final sm = ShapeMeta.fromMap(payload);
+                  onTapShape?.call(sm);
+                  FormFieldsMapController.invokeOnMarkerTap(controllerId, sm);
+                  return;
+                }
+              }
+
+              // fallback: reuse onTap detection for shapes but call long-press callbacks
+              // Polygons
+              if (polygonsMap != null && polygonsMap!.isNotEmpty) {
+                for (final entry in polygonsMap!.entries) {
+                  final pid = entry.key;
+                  final poly = entry.value;
+                  final screenPts = <Offset>[];
+                  for (final pt in poly.points) {
+                    final px =
+                        _CanvasRawMarkerPainter._worldX(pt.longitude, zoom);
+                    final py =
+                        _CanvasRawMarkerPainter._worldY(pt.latitude, zoom);
+                    var dx = (px - centerX) + w / 2;
+                    var dy = (py - centerY) + h / 2;
+                    if (dx.abs() > worldSize / 2) {
+                      if (dx > 0) {
+                        dx -= worldSize;
+                      } else {
+                        dx += worldSize;
+                      }
+                    }
+                    screenPts.add(Offset(dx, dy));
+                  }
+                  if (_pointInPolygonScreen(local, screenPts)) {
+                    final meta = _findMetaForShapeMap(rawMarkers, pid);
+                    final payload = <String, dynamic>{
+                      'id': pid,
+                      'type': 'polygon'
+                    };
+                    if (meta is Map) {
+                      payload.addAll(Map<String, dynamic>.from(meta));
+                    }
+                    payload['point'] = LatLng(tapLat, tapLon);
+                    try {
+                      debugPrint(
+                          'CanvasRawMarkerLayer: polygon longpress id=$pid -> controller=$controllerId payload=$payload');
+                    } catch (_) {}
+                    final sm = ShapeMeta.fromMap(payload);
+                    onTapShape?.call(sm);
+                    return;
+                  }
+                }
+              }
+            } catch (_) {}
+          },
+          child: CustomPaint(
+            painter: _CanvasRawMarkerPainter(
+              rawMarkers: rawMarkers,
+              center: center,
+              zoom: zoom,
+              radius: radius,
+              devicePixelRatio: MediaQuery.of(context).devicePixelRatio,
+              iconImage: iconImage,
+            ),
           ),
         ),
       );
     });
   }
+}
+
+// Utility helpers used by the layer for hit-testing
+double _pointToSegmentDistance(Offset p, Offset v, Offset w) {
+  final l2 = pow((v.dx - w.dx), 2) + pow((v.dy - w.dy), 2);
+  if (l2 == 0) return (p - v).distance;
+  var t = ((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2;
+  t = t.clamp(0.0, 1.0);
+  final proj = Offset(v.dx + t * (w.dx - v.dx), v.dy + t * (w.dy - v.dy));
+  return (p - proj).distance;
+}
+
+bool _pointInPolygonScreen(Offset p, List<Offset> polygon) {
+  var inside = false;
+  for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    final xi = polygon[i].dx, yi = polygon[i].dy;
+    final xj = polygon[j].dx, yj = polygon[j].dy;
+    final intersect = ((yi > p.dy) != (yj > p.dy)) &&
+        (p.dx < (xj - xi) * (p.dy - yi) / (yj - yi + 0.0) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+dynamic _findMetaForShapeMap(List<dynamic> rawMarkers, String id) {
+  for (final m in rawMarkers) {
+    if (m is Map && m['id'] == id) return m;
+  }
+  return null;
 }
 
 class _CanvasRawMarkerPainter extends CustomPainter {
@@ -1542,6 +1998,18 @@ class _CanvasRawMarkerPainter extends CustomPainter {
     return _CanvasMarkerPainter._worldY(lat, zoom);
   }
 
+  static double _lonFromWorldX(double x, double zoom) {
+    final double worldSize = 256 * pow(2, zoom).toDouble();
+    return x / worldSize * 360.0 - 180.0;
+  }
+
+  static double _latFromWorldY(double y, double zoom) {
+    final double worldSize = 256 * pow(2, zoom).toDouble();
+    final n = pi * (1 - 2 * y / worldSize);
+    final s = (exp(n) - exp(-n)) / 2.0; // sinh(n)
+    return atan(s) * 180.0 / pi;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = Colors.red.withValues(alpha: 0.95);
@@ -1559,6 +2027,11 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       if (m is Marker) {
         lat = m.point.latitude;
         lon = m.point.longitude;
+      } else if (m is ShapeMeta) {
+        lat = m.lat;
+        lon = m.lon;
+        title = m.title;
+        subtitle = m.subtitle;
       } else if (m is LatLng) {
         lat = m.latitude;
         lon = m.longitude;
