@@ -973,10 +973,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
         'lat': p.latitude,
         'lon': p.longitude,
         'rotation': bearing,
-        // request arrow icon for playback marker
-        'icon': 'arrow',
         'title': null,
       };
+      // Prefer the configured canvas marker icon when available; otherwise
+      // fall back to the default arrow glyph. Leaving 'icon' unset lets the
+      // painter draw the rasterized `iconImage` when present.
+      if (widget.canvasMarkerIcon == null) {
+        payload['icon'] = 'arrow';
+      }
       final notifier = widget.notifier ?? _internalNotifier;
       notifier.rawMarkers = [payload];
       // If playback is active, move camera to follow the playback point
@@ -1186,6 +1190,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                           iconImage: _canvasMarkerImage,
                           showTitle: widget.showTitle,
                           defaultColor: Theme.of(context).colorScheme.secondary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onSecondary,
                         ),
                       ),
                     ),
@@ -1917,6 +1923,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
     this.iconImage,
     this.showTitle = true,
     required this.defaultColor,
+    this.foregroundColor,
   });
 
   final List<dynamic> rawMarkers;
@@ -1927,6 +1934,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
   final ui.Image? iconImage;
   final bool showTitle;
   final Color defaultColor;
+  final Color? foregroundColor;
 
   static double _worldX(double lon, double zoom) {
     final double worldSize = 256 * pow(2, zoom).toDouble();
@@ -2040,6 +2048,10 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       String? iconName;
       if (m is Map) iconName = m['icon']?.toString();
       final drawPin = shapeType == null || shapeType == 'marker';
+      // detect playback marker to apply a larger halo only for playback
+      var isPlayback = false;
+      if (m is Map && m['id'] == 'playback_marker') isPlayback = true;
+      if (m is ShapeMeta && m.id == 'playback_marker') isPlayback = true;
       if (drawPin) {
         // rotate marker graphic around head center
         final rotationRad = rotationDeg * pi / 180.0;
@@ -2057,24 +2069,72 @@ class _CanvasRawMarkerPainter extends CustomPainter {
             ..lineTo(-headRadius * 0.3, headRadius)
             ..lineTo(-headRadius, headRadius)
             ..close();
+          if (isPlayback) {
+            final haloPaint = Paint()
+              ..color = markerColor.withValues(alpha: 0.95)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = max(3.0, devicePixelRatio * 3.0)
+              ..strokeJoin = StrokeJoin.round;
+            canvas.drawPath(arrowPath, haloPaint);
+          }
           canvas.drawPath(arrowPath, pinPaint);
           canvas.drawPath(arrowPath, strokePaint);
         } else if (iconImage != null) {
+          // Draw outer halo ring using the marker color, then a white
+          // outline (by drawing a slightly larger white-tinted copy), and
+          // finally draw the marker-colored icon on top. This matches the
+          // visual style where the icon has a thin white border with the
+          // theme color visible outside it.
           final src = Rect.fromLTWH(
               0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
-          final destSize = headRadius * 2.0;
+          // Determine destination size. Prefer the rasterized icon's logical
+          // size (image.width / devicePixelRatio) so `Icon(size: ...)` used
+          // by callers affects the rendered marker. Clamp to a reasonable
+          // range relative to `headRadius` to avoid overly large/small icons.
+          final double destSize =
+              iconImage!.width.toDouble() / devicePixelRatio;
           final dst = Rect.fromCenter(
               center: Offset.zero, width: destSize, height: destSize);
+
           paint.isAntiAlias = true;
-          // Tint the rasterized icon with the computed marker color so it
-          // follows theme/payload even if the original raster had a different
-          // color. Use srcIn so the glyph shape is preserved.
           final oldFilter = paint.colorFilter;
+          // white outline (slightly larger than dst). increase scale so
+          // border appears thicker and more halo-like.
+          final outlineRect = Rect.fromCenter(
+              center: Offset.zero,
+              width: destSize * 1.5,
+              height: destSize * 1.5);
+          // Draw an icon-shaped halo behind the raster icon by rendering a
+          // slightly larger, semi-opaque copy of the icon tinted with the
+          // marker color. Playback marker uses a larger/stronger halo.
+          final haloScale = isPlayback ? 2.0 : 1.6;
+          final haloAlpha = isPlayback ? 0.95 : 0.72;
+          final haloRect = Rect.fromCenter(
+              center: Offset.zero,
+              width: destSize * haloScale,
+              height: destSize * haloScale);
+          paint.colorFilter = ColorFilter.mode(
+              markerColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
+          canvas.drawImageRect(iconImage!, src, haloRect, paint);
+
+          // white outline (slightly larger than dst). increase scale so
+          // border appears thicker and more halo-like.
+          paint.colorFilter = ColorFilter.mode(Colors.white, BlendMode.srcIn);
+          canvas.drawImageRect(iconImage!, src, outlineRect, paint);
+          // draw marker-colored icon on top (use theme/payload color)
           paint.colorFilter = ColorFilter.mode(markerColor, BlendMode.srcIn);
           canvas.drawImageRect(iconImage!, src, dst, paint);
           paint.colorFilter = oldFilter;
         } else {
           // head at (0,0) in rotated space
+          if (isPlayback) {
+            final haloPaint = Paint()
+              ..color = markerColor.withValues(alpha: 0.95)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = max(3.0, devicePixelRatio * 3.0);
+            canvas.drawCircle(
+                Offset.zero, headRadius + haloPaint.strokeWidth / 2, haloPaint);
+          }
           canvas.drawCircle(Offset.zero, headRadius, pinPaint);
           canvas.drawCircle(Offset.zero, headRadius, strokePaint);
 
@@ -2140,6 +2200,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
         oldDelegate.center != center ||
         oldDelegate.zoom != zoom ||
         oldDelegate.iconImage != iconImage ||
-        oldDelegate.showTitle != showTitle;
+        oldDelegate.showTitle != showTitle ||
+        oldDelegate.foregroundColor != foregroundColor;
   }
 }

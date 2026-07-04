@@ -104,7 +104,7 @@ class View extends PresenterState {
                       canvasMarkerRadius: 20.0,
                       canvasMarkerIcon: const Icon(
                         Icons.location_pin,
-                        size: 36,
+                        size: 150,
                       ),
                       showTitle: vm.showTitle,
                       onCenterChanged: (value) {
