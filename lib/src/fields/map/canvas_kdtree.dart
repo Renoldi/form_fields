@@ -1,4 +1,3 @@
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
 
@@ -69,15 +68,37 @@ class KDTree {
 /// Helper to build KDTree from a list of markers at a given zoom using
 /// world pixel projection functions supplied by the caller.
 KDTree buildKDTreeFromMarkers(
-    List<Marker> markers,
+    List<dynamic> markers,
     double zoom,
     double Function(double lon, double zoom) worldX,
     double Function(double lat, double zoom) worldY) {
   final pts = <_KDPoint>[];
   for (final m in markers) {
-    final x = worldX(m.point.longitude, zoom);
-    final y = worldY(m.point.latitude, zoom);
-    pts.add(_KDPoint(x, y, m));
+    double lon;
+    double lat;
+    dynamic payload = m;
+    if (m is LatLng) {
+      lat = m.latitude;
+      lon = m.longitude;
+    } else if (m is List && m.length >= 2) {
+      lat = (m[0] as num).toDouble();
+      lon = (m[1] as num).toDouble();
+    } else if (m is ShapeMeta) {
+      lat = m.lat;
+      lon = m.lon;
+    } else if (m is Map) {
+      lat = (m['lat'] as num?)?.toDouble() ??
+          (m['latitude'] as num?)?.toDouble() ??
+          0.0;
+      lon = (m['lon'] as num?)?.toDouble() ??
+          (m['longitude'] as num?)?.toDouble() ??
+          0.0;
+    } else {
+      continue;
+    }
+    final x = worldX(lon, zoom);
+    final y = worldY(lat, zoom);
+    pts.add(_KDPoint(x, y, payload));
   }
   return KDTree._fromPoints(pts);
 }
@@ -93,11 +114,7 @@ KDTree buildKDTreeFromRawCoords(
     double lat;
     double lon;
     dynamic payload = c;
-    if (c is Marker) {
-      lat = c.point.latitude;
-      lon = c.point.longitude;
-      payload = c;
-    } else if (c is LatLng) {
+    if (c is LatLng) {
       lat = c.latitude;
       lon = c.longitude;
       payload = c;

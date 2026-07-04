@@ -5,6 +5,14 @@ import 'view_model.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 
+// Simple integer formatter for thousands separators without adding
+// an external dependency.
+String formatNumber(int value) {
+  final s = value.toString();
+  final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
+  return s.replaceAllMapped(reg, (m) => ',');
+}
+
 // `flutter_map` is used internally by the package; example doesn't import it directly.
 
 class View extends PresenterState {
@@ -32,27 +40,32 @@ class View extends PresenterState {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             _ActionButton(
-                              label: 'Generate 10,000 markers',
+                              label:
+                                  'Generate ${formatNumber(vm.createMarkers)} markers',
                               icon: Icons.auto_awesome,
-                              onPressed: () => vm.generateMarkers(10),
+                              onPressed: () => vm.generateMarkers(
+                                  markerCount: vm.createMarkers),
                             ),
                             _ActionButton(
-                              label: 'Generate Polygons (20)',
+                              label:
+                                  'Generate Polygons (${formatNumber(vm.createPolygons)})',
                               icon: Icons.change_history,
-                              onPressed: () =>
-                                  vm.generatePolygons(shapeCount: 20),
+                              onPressed: () => vm.generatePolygons(
+                                  shapeCount: vm.createPolygons),
                             ),
                             _ActionButton(
-                              label: 'Generate Polylines (20)',
+                              label:
+                                  'Generate Polylines (${formatNumber(vm.createPolylines)})',
                               icon: Icons.timeline,
-                              onPressed: () =>
-                                  vm.generatePolylines(shapeCount: 20),
+                              onPressed: () => vm.generatePolylines(
+                                  shapeCount: vm.createPolylines),
                             ),
                             _ActionButton(
-                              label: 'Generate Circles (20)',
+                              label:
+                                  'Generate Circles (${formatNumber(vm.createCircles)})',
                               icon: Icons.circle,
-                              onPressed: () =>
-                                  vm.generateCircles(shapeCount: 20),
+                              onPressed: () => vm.generateCircles(
+                                  shapeCount: vm.createCircles),
                             ),
                             _ActionButton(
                               label: 'Clear',
@@ -64,13 +77,11 @@ class View extends PresenterState {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('Fast markers'),
-                                Switch(
-                                  value: vm.useCanvasMarkers,
-                                  onChanged: (v) {
-                                    vm.useCanvasMarkers = v;
-                                    vm.commit();
-                                  },
+                                const Text('Show titles'),
+                                const SizedBox(width: 6),
+                                Switch.adaptive(
+                                  value: vm.showTitle,
+                                  onChanged: (v) => vm.setShowTitle(v),
                                 ),
                               ],
                             ),
@@ -81,9 +92,7 @@ class View extends PresenterState {
                   ),
                   Expanded(
                     child: FormFieldsMap(
-                      // controllerId: 'map_example',
                       notifier: vm.mapNotifier,
-                      useCanvasMarkers: vm.useCanvasMarkers,
                       onRequestCurrentLocation: () async => vm.center,
                       canvasMarkerRadius: 20.0,
                       canvasMarkerIcon: const Icon(
@@ -91,6 +100,7 @@ class View extends PresenterState {
                         color: Colors.red,
                         size: 36,
                       ),
+                      showTitle: vm.showTitle,
                       onTapShape: (sm) async {
                         // `sm` is a ShapeMeta
                         final title = sm.title ?? 'Detail';
@@ -117,6 +127,13 @@ class View extends PresenterState {
                                               fontSize: 12,
                                               color: Colors.grey)),
                                     ],
+                                    if (sm.shapeType != null) ...[
+                                      const SizedBox(height: 8),
+                                      Text('Type: ${sm.shapeType}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey)),
+                                    ],
                                     ...[
                                       const SizedBox(height: 8),
                                       Text(
@@ -132,11 +149,8 @@ class View extends PresenterState {
                                     TextButton(
                                       onPressed: () {
                                         if (id.startsWith('m\$')) {
-                                          if (vm.useCanvasMarkers) {
-                                            vm.mapNotifier.removeRawMarker(id);
-                                          } else {
-                                            vm.mapNotifier.removeMarker(id);
-                                          }
+                                          // always remove raw marker (markers removed from API)
+                                          vm.mapNotifier.removeRawMarker(id);
                                         } else if (id.startsWith('p\$')) {
                                           vm.mapNotifier.removePolygon(id);
                                         } else if (id.startsWith('l\$')) {
@@ -157,8 +171,10 @@ class View extends PresenterState {
                             },
                           );
                         } else {
+                          final _id = sm.id;
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('Tapped: ${sm.shapeType}')));
+                              content: Text(
+                                  'Tapped: ${sm.shapeType}${_id != null ? ' (ID: $_id)' : ''}')));
                         }
                       },
                       initialCenter: vm.center,
@@ -210,7 +226,7 @@ class View extends PresenterState {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              'Markers: ${vm.generatedMarkers}/${vm.totalMarkers}'),
+                              'Markers: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
                           if (vm.totalMarkers > 0)
                             SizedBox(
                               width: 180,
@@ -221,7 +237,7 @@ class View extends PresenterState {
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Polygons: ${vm.generatedPolygons}/${vm.totalPolygons}'),
+                              'Polygons: ${formatNumber(vm.generatedPolygons)}/${formatNumber(vm.totalPolygons)}'),
                           if (vm.totalPolygons > 0)
                             SizedBox(
                               width: 180,
@@ -232,7 +248,7 @@ class View extends PresenterState {
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Polylines: ${vm.generatedPolylines}/${vm.totalPolylines}'),
+                              'Polylines: ${formatNumber(vm.generatedPolylines)}/${formatNumber(vm.totalPolylines)}'),
                           if (vm.totalPolylines > 0)
                             SizedBox(
                               width: 180,
@@ -244,7 +260,7 @@ class View extends PresenterState {
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Circles: ${vm.generatedCircles}/${vm.totalCircles}'),
+                              'Circles: ${formatNumber(vm.generatedCircles)}/${formatNumber(vm.totalCircles)}'),
                           if (vm.totalCircles > 0)
                             SizedBox(
                               width: 180,

@@ -12,6 +12,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   LatLng center = const LatLng(-6.2, 106.8166);
 
   bool useCanvasMarkers = false;
+  bool showTitle = true;
 
   // Progress counters
   bool isLoading = false;
@@ -27,7 +28,17 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
+  int createMarkers = 1000000;
+  int createPolygons = 20;
+  int createPolylines = 20;
+  int createCircles = 20;
+
   void commit() {
+    notifyListeners();
+  }
+
+  void setShowTitle(bool v) {
+    showTitle = v;
     notifyListeners();
   }
 
@@ -37,7 +48,6 @@ class MapExamplesViewModel extends ChangeNotifier {
     generatedPolygons = totalPolygons = 0;
     generatedPolylines = totalPolylines = 0;
     generatedCircles = totalCircles = 0;
-    mapNotifier.clearMarkers();
     mapNotifier.clearRawMarkers();
     mapNotifier.clearPolygons();
     mapNotifier.clearPolylines();
@@ -53,73 +63,11 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    await generateMarkers(markerCount);
     // await generatePolygons(shapeCount: shapeCount);
     // await generatePolylines(shapeCount: shapeCount);
     // await generateCircles(shapeCount: shapeCount);
 
     isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> generateMarkers(int count) async {
-    generatedMarkers = 0;
-    final rnd = math.Random(12345);
-    final markers = <Marker>[];
-    final rawBatch = <dynamic>[];
-
-    // Build in small batches so UI can update progress.
-    for (var i = 0; i < count; i++) {
-      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 0.5;
-      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 0.5;
-      // Title/subtitle for this marker
-      final title = 'Marker #${i + 1}';
-      final subtitle = 'Generated';
-
-      // If using canvas markers, only append raw coords (with metadata)
-      // for fast rendering
-      if (useCanvasMarkers) {
-        final id = 'm\$${DateTime.now().microsecondsSinceEpoch}_$i';
-        rawBatch.add(ShapeMeta(
-          lat: lat,
-          lon: lng,
-          title: title,
-          subtitle: subtitle,
-          id: id,
-          shapeType: 'marker',
-        ));
-      } else {
-        // Ensure widget markers visually match canvas markers (fast mode).
-        // Canvas radius defaults to ~20 -> choose an 80x80 widget box and
-        // larger icon so appearance is similar.
-        final m = Marker(
-          point: LatLng(lat, lng),
-          width: 60,
-          height: 60,
-          child: const Icon(Icons.location_on, color: Colors.red, size: 48),
-        );
-        mapNotifier.addMarker(m);
-        markers.add(m);
-      }
-
-      if ((i + 1) % 100 == 0) {
-        generatedMarkers = i + 1;
-        // append raw batch for canvas markers
-        if (rawBatch.isNotEmpty) {
-          mapNotifier.appendRawMarkers(List<dynamic>.from(rawBatch));
-          rawBatch.clear();
-        }
-        notifyListeners();
-        // yield to event loop
-        await Future.delayed(const Duration(milliseconds: 1));
-      }
-    }
-
-    // append any remaining raw markers
-    if (rawBatch.isNotEmpty) {
-      mapNotifier.appendRawMarkers(List<dynamic>.from(rawBatch));
-    }
-    generatedMarkers = count;
     notifyListeners();
   }
 
@@ -164,6 +112,52 @@ class MapExamplesViewModel extends ChangeNotifier {
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1));
     }
+  }
+
+  Future<void> generateMarkers({int markerCount = 1000}) async {
+    generatedMarkers = 0;
+    totalMarkers = markerCount;
+    isLoading = true;
+    notifyListeners();
+    final rnd = math.Random(424242);
+
+    // We'll emit raw ShapeMeta markers (consistent with polygons/polylines/circles)
+    // Batch them to avoid large numbers of notifyListeners calls.
+    final batch = <dynamic>[];
+    for (var i = 0; i < markerCount; i++) {
+      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 1.2;
+      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 1.2;
+
+      final meta = ShapeMeta(
+        lat: lat,
+        lon: lng,
+        title: 'Marker #${i + 1}',
+        subtitle:
+            'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
+        id: 'm\$${DateTime.now().microsecondsSinceEpoch}_\$i',
+        shapeType: 'marker',
+      );
+      batch.add(meta);
+
+      generatedMarkers = i + 1;
+
+      if ((i & 0x1FF) == 0) {
+        // flush batch every 512 items
+        if (batch.isNotEmpty) {
+          mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
+          batch.clear();
+        }
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 1));
+      }
+    }
+
+    if (batch.isNotEmpty) {
+      mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
+    }
+
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<void> generatePolylines({int shapeCount = 5}) async {
