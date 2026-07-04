@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
 
 /// A persistent controller provider for `MapController` instances.
@@ -73,6 +74,19 @@ class FormFieldsMapController {
   /// Remove any registered onMarkerTap handler for [id].
   static void removeOnMarkerTap(String id) {
     _onMarkerTapHandlers.remove(id);
+  }
+
+  /// Returns the current map center for the controller with [id], or `null`
+  /// if the controller isn't available or the camera info is not yet
+  /// initialized. This uses `mapController.camera.center` when possible.
+  static LatLng? getCenter(String id) {
+    final controller = _controllers[id];
+    if (controller == null) return null;
+    try {
+      return controller.camera.center;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Optionally remove a controller (e.g., on dispose of a long-lived form)

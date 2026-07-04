@@ -291,10 +291,13 @@ class FormFieldsMap extends StatefulWidget {
     this.canvasMarkerRadius = 20.0,
     this.canvasMarkerIcon,
     this.showTitle = true,
+    this.showMarkerInCenter = false,
+    this.centerMarker,
     this.useViewportCulling = false,
     this.cullingBuffer = 1.25,
     this.notifier,
     this.onMapReady,
+    this.onCenterChanged,
     this.onPositionChanged,
     this.onMapTap,
     this.onTapShape,
@@ -320,6 +323,12 @@ class FormFieldsMap extends StatefulWidget {
 
   final bool showTitle;
 
+  final bool showMarkerInCenter;
+
+  /// Optional widget drawn at the viewport center when `showMarkerInCenter`
+  /// is true. If null, a default pin icon is used.
+  final Widget? centerMarker;
+
   final bool useViewportCulling;
 
   final double cullingBuffer;
@@ -328,6 +337,7 @@ class FormFieldsMap extends StatefulWidget {
   final ValueChanged<ShapeMeta>? onTapShape;
 
   final VoidCallback? onMapReady;
+  final ValueChanged<LatLng>? onCenterChanged;
   final ValueChanged<dynamic>? onPositionChanged;
   final ValueChanged<LatLng>? onMapTap;
   final ValueChanged<LatLng>? onLongPress;
@@ -612,6 +622,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _debounceTimer?.cancel();
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
       FormFieldsMapController.setLoading(widget.controllerId, false);
+      // Only notify center after camera becomes idle so consumers get the
+      // final/last center rather than a rapid stream of intermediate values.
+      try {
+        if (_lastCenter != null) widget.onCenterChanged?.call(_lastCenter!);
+      } catch (_) {}
       widget.onCameraIdle?.call();
     });
   }
@@ -621,6 +636,17 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _mapController.move(dest, zoom);
     _lastCenter = dest;
     _lastZoom = zoom;
+  }
+
+  /// Returns the current map center if available, using the internal
+  /// `MapController.camera.center` when possible, otherwise falling back to
+  /// the last known center or `null`.
+  LatLng? getCenter() {
+    try {
+      return _mapController.camera.center;
+    } catch (_) {
+      return _lastCenter;
+    }
   }
 
   Future<void> fitBounds(LatLngBounds bounds,
@@ -715,6 +741,42 @@ class FormFieldsMapState extends State<FormFieldsMap>
             ],
           ),
         ),
+        if (widget.showMarkerInCenter)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Builder(builder: (ctx) {
+                  // Priority: explicit `centerMarker` widget -> rasterized
+                  // `_canvasMarkerImage` -> provided `canvasMarkerIcon`
+                  if (widget.centerMarker != null) return widget.centerMarker!;
+                  if (_canvasMarkerImage != null) {
+                    return RawImage(
+                      image: _canvasMarkerImage,
+                      width: widget.canvasMarkerRadius * 2,
+                      height: widget.canvasMarkerRadius * 2,
+                      fit: BoxFit.contain,
+                    );
+                  }
+                  final provider = widget.canvasMarkerIcon;
+                  if (provider is Widget) return provider;
+                  if (provider is Icon) return provider;
+                  if (provider is ImageProvider) {
+                    return Image(
+                      image: provider,
+                      width: widget.canvasMarkerRadius * 2,
+                      height: widget.canvasMarkerRadius * 2,
+                      fit: BoxFit.contain,
+                    );
+                  }
+                  return const Icon(
+                    Icons.location_pin,
+                    color: Colors.red,
+                    size: 36,
+                  );
+                }),
+              ),
+            ),
+          ),
         Positioned(
           right: 12,
           top: 10,

@@ -101,6 +101,10 @@ class View extends PresenterState {
                         size: 36,
                       ),
                       showTitle: vm.showTitle,
+                      onCenterChanged: (value) {
+                        debugPrint('onCenterChanged: $value');
+                      },
+                      showMarkerInCenter: true,
                       onTapShape: (sm) async {
                         // `sm` is a ShapeMeta
                         final title = sm.title ?? 'Detail';
