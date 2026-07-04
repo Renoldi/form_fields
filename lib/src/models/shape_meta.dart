@@ -8,7 +8,9 @@ class ShapeMeta {
     this.title,
     this.subtitle,
     this.id,
+    this.address,
     this.shapeType,
+    this.rotation,
   });
 
   double lat;
@@ -16,6 +18,8 @@ class ShapeMeta {
   String? title;
   String? subtitle;
   String? id;
+  String? address;
+  double? rotation;
   String? shapeType;
 
   LatLng get point => LatLng(lat, lon);
@@ -26,6 +30,8 @@ class ShapeMeta {
         if (title != null) 'title': title,
         if (subtitle != null) 'subtitle': subtitle,
         if (id != null) 'id': id,
+        if (address != null) 'address': address,
+        if (rotation != null) 'rotation': rotation,
         if (shapeType != null) 'shapeType': shapeType,
       };
 
@@ -47,7 +53,10 @@ class ShapeMeta {
       title: m['title']?.toString(),
       subtitle: m['subtitle']?.toString(),
       id: m['id']?.toString(),
+      address: m['address']?.toString(),
       shapeType: m['shapeType']?.toString(),
+      rotation: (m['rotation'] as num?)?.toDouble() ??
+          (m['bearing'] as num?)?.toDouble(),
     );
   }
 

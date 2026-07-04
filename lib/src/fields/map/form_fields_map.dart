@@ -307,7 +307,7 @@ class FormFieldsMap extends StatefulWidget {
     this.onRequestCurrentLocation,
     this.enablePolylinePlayback = false,
     this.playbackInterval = const Duration(seconds: 1),
-    this.playbackInterpolationSteps = 4,
+    this.playbackInterpolationSteps = 0,
     this.showBuiltinPlaybackControls = true,
   });
 
@@ -892,11 +892,36 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (!mounted) return;
       if (_playbackPoints.isEmpty) return;
       final p = _playbackPoints[_playbackIndex];
+      // compute bearing for rotation (degrees)
+      double bearing = 0.0;
+      try {
+        if (_playbackPoints.length > 1) {
+          LatLng from;
+          if (_playbackIndex > 0) {
+            from = _playbackPoints[_playbackIndex - 1];
+          } else {
+            from = _playbackPoints[
+                (_playbackIndex + 1).clamp(0, _playbackPoints.length - 1)];
+          }
+          final lat1 = from.latitude * pi / 180.0;
+          final lat2 = p.latitude * pi / 180.0;
+          final dLon = (p.longitude - from.longitude) * pi / 180.0;
+          final y = sin(dLon) * cos(lat2);
+          final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+          var brng = atan2(y, x) * 180.0 / pi;
+          brng = (brng + 360.0) % 360.0;
+          bearing = brng;
+        }
+      } catch (_) {}
+
       final payload = <String, dynamic>{
         'id': 'playback_marker',
         'shapeType': 'marker',
         'lat': p.latitude,
         'lon': p.longitude,
+        'rotation': bearing,
+        // request arrow icon for playback marker
+        'icon': 'arrow',
         'title': null,
       };
       final notifier = widget.notifier ?? _internalNotifier;
@@ -1697,12 +1722,14 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       String? title;
       String? subtitle;
       String? shapeType;
+      double rotationDeg = 0.0;
       if (m is ShapeMeta) {
         lat = m.lat;
         lon = m.lon;
         title = m.title;
         subtitle = m.subtitle;
         shapeType = m.shapeType;
+        rotationDeg = m.rotation ?? 0.0;
       } else if (m is LatLng) {
         lat = m.latitude;
         lon = m.longitude;
@@ -1722,6 +1749,10 @@ class _CanvasRawMarkerPainter extends CustomPainter {
         title = m['title']?.toString();
         subtitle = m['subtitle']?.toString();
         shapeType = m['shapeType']?.toString();
+        // accept either 'rotation' or 'bearing' keys
+        rotationDeg = (m['rotation'] as num?)?.toDouble() ??
+            (m['bearing'] as num?)?.toDouble() ??
+            rotationDeg;
       } else {
         continue;
       }
@@ -1758,28 +1789,53 @@ class _CanvasRawMarkerPainter extends CustomPainter {
       final headCenter = Offset(dx, dy - radiusToUse * 0.6);
       final headRadius = radiusToUse * 0.9;
 
+      String? iconName;
+      if (m is Map) iconName = m['icon']?.toString();
       final drawPin = shapeType == null || shapeType == 'marker';
-      if (drawPin && iconImage != null) {
-        final src = Rect.fromLTWH(
-            0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
-        final destSize = headRadius * 2.0;
-        final dst = Rect.fromCenter(
-            center: headCenter, width: destSize, height: destSize);
-        paint.isAntiAlias = true;
-        canvas.drawImageRect(iconImage!, src, dst, paint);
-      } else if (drawPin) {
-        canvas.drawCircle(headCenter, headRadius, pinPaint);
-        canvas.drawCircle(headCenter, headRadius, strokePaint);
+      if (drawPin) {
+        // rotate marker graphic around head center
+        final rotationRad = rotationDeg * pi / 180.0;
+        canvas.save();
+        canvas.translate(headCenter.dx, headCenter.dy);
+        canvas.rotate(rotationRad);
+        if (iconName == 'arrow') {
+          // draw a simple arrowhead pointing up (local -y) and rotated
+          final arrowPath = ui.Path()
+            ..moveTo(0, -headRadius)
+            ..lineTo(headRadius, headRadius)
+            ..lineTo(headRadius * 0.3, headRadius)
+            ..lineTo(headRadius * 0.3, headRadius * 1.6)
+            ..lineTo(-headRadius * 0.3, headRadius * 1.6)
+            ..lineTo(-headRadius * 0.3, headRadius)
+            ..lineTo(-headRadius, headRadius)
+            ..close();
+          canvas.drawPath(arrowPath, pinPaint);
+          canvas.drawPath(arrowPath, strokePaint);
+        } else if (iconImage != null) {
+          final src = Rect.fromLTWH(
+              0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
+          final destSize = headRadius * 2.0;
+          final dst = Rect.fromCenter(
+              center: Offset.zero, width: destSize, height: destSize);
+          paint.isAntiAlias = true;
+          canvas.drawImageRect(iconImage!, src, dst, paint);
+        } else {
+          // head at (0,0) in rotated space
+          canvas.drawCircle(Offset.zero, headRadius, pinPaint);
+          canvas.drawCircle(Offset.zero, headRadius, strokePaint);
 
-        // triangular tail pointing down
-        final tailTopY = dy - radiusToUse * 0.1;
-        final tailPath = ui.Path()
-          ..moveTo(dx, dy + radiusToUse * 1.6)
-          ..lineTo(dx - radiusToUse, tailTopY)
-          ..lineTo(dx + radiusToUse, tailTopY)
-          ..close();
-        canvas.drawPath(tailPath, pinPaint);
-        canvas.drawPath(tailPath, strokePaint);
+          // triangular tail pointing down in local coords
+          final tailTopY = radiusToUse * 0.5;
+          final tailPath = ui.Path()
+            ..moveTo(0, radiusToUse * 2.2)
+            ..lineTo(-radiusToUse, tailTopY)
+            ..lineTo(radiusToUse, tailTopY)
+            ..close();
+          canvas.drawPath(tailPath, pinPaint);
+          canvas.drawPath(tailPath, strokePaint);
+        }
+
+        canvas.restore();
       }
 
       // Draw title / subtitle if present and enabled

@@ -32,7 +32,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// Local UI state for selected playback interval and interpolation steps
   /// so buttons in the example can reflect current selection.
   Duration playbackInterval = const Duration(seconds: 1);
-  int playbackInterpolationSteps = 4;
+  int playbackInterpolationSteps = 0;
 
   void setPlaybackPlaying(bool v) {
     isPlaybackPlaying = v;
@@ -301,8 +301,29 @@ class MapExamplesViewModel extends ChangeNotifier {
     final pl =
         Polyline(points: routePoints, strokeWidth: 10.0, color: Colors.purple);
     final id = mapNotifier.addPolyline(pl);
-    // add a marker at midpoint for interactivity
-    final mid = routePoints[routePoints.length ~/ 2];
+    // add a marker at midpoint for interactivity and compute rotation
+    final midIndex = routePoints.length ~/ 2;
+    final mid = routePoints[midIndex];
+    double rotation = 0.0;
+    try {
+      if (routePoints.length > 1) {
+        final from = midIndex > 0
+            ? routePoints[midIndex - 1]
+            : routePoints[(midIndex + 1).clamp(0, routePoints.length - 1)];
+        final lat1 = from.latitude * math.pi / 180.0;
+        final lat2 = mid.latitude * math.pi / 180.0;
+        final dLon = (mid.longitude - from.longitude) * math.pi / 180.0;
+        final y = math.sin(dLon) * math.cos(lat2);
+        final x = math.cos(lat1) * math.sin(lat2) -
+            math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+        var brng = math.atan2(y, x) * 180.0 / math.pi;
+        brng = (brng + 360.0) % 360.0;
+        rotation = brng;
+      }
+    } catch (_) {
+      rotation = 0.0;
+    }
+
     mapNotifier.appendRawMarkers([
       ShapeMeta(
         lat: mid.latitude,
@@ -311,6 +332,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         subtitle: id,
         id: id,
         shapeType: 'polyline',
+        rotation: rotation,
       )
     ]);
     playbackPolylineId = id;
