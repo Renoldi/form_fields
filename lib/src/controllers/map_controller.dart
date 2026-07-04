@@ -98,6 +98,43 @@ class FormFieldsMapController {
   static final Map<String, FormFieldsMapPlaybackHandler?> _playbackHandlers =
       {};
 
+  // Whether consumers should receive center updates during internal
+  // playback-driven camera moves. Defaults to `false` (suppress updates
+  // while playback is active). Callers may set this per-controller id to
+  // opt into receiving updates during playback.
+  static final Map<String, bool> _notifyCenterDuringPlayback = {};
+
+  /// Configure whether `onCenterChanged` callbacks should be invoked while
+  /// internal playback is active for controller [id]. Defaults to `false`.
+  static void setNotifyCenterDuringPlayback(String id, bool value) {
+    _notifyCenterDuringPlayback[id] = value;
+  }
+
+  /// Returns whether center updates are allowed during internal playback for
+  /// [id]. Defaults to `false` when not configured.
+  static bool getNotifyCenterDuringPlayback(String id) {
+    return _notifyCenterDuringPlayback.putIfAbsent(id, () => false);
+  }
+
+  // Playback playing notifiers so external UI can reflect authoritative
+  // playback state. Created on demand per controller id.
+  static final Map<String, ValueNotifier<bool>> _playbackPlayingNotifiers = {};
+
+  /// Returns a `ValueListenable<bool>` that emits `true` while playback is
+  /// active for controller [id]. The notifier is created on demand.
+  static ValueListenable<bool> getPlaybackPlayingListenable(String id) {
+    return _playbackPlayingNotifiers.putIfAbsent(
+        id, () => ValueNotifier<bool>(false));
+  }
+
+  /// Set the authoritative playback playing state for [id]. This will
+  /// create the notifier if necessary and update its value.
+  static void setPlaybackPlaying(String id, bool value) {
+    _playbackPlayingNotifiers
+        .putIfAbsent(id, () => ValueNotifier<bool>(false))
+        .value = value;
+  }
+
   /// Register a playback handler for a given controller id. Pass `null`
   /// to unregister.
   static void registerPlaybackHandler(

@@ -737,6 +737,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _debounceTimer?.cancel();
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
       FormFieldsMapController.setLoading(widget.controllerId, false);
+      // If playback is active, consult controller preference to decide
+      // whether to suppress center/change callbacks. By default the
+      // controller returns `false` (suppress), but callers may opt-in to
+      // receive updates during playback via
+      // `FormFieldsMapController.setNotifyCenterDuringPlayback(id, true)`.
+      final allowDuringPlayback =
+          FormFieldsMapController.getNotifyCenterDuringPlayback(
+              widget.controllerId);
+      if (_isPlaying && !allowDuringPlayback) return;
       // Only notify center after camera becomes idle so consumers get the
       // final/last center rather than a rapid stream of intermediate values.
       try {
@@ -832,6 +841,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (_playbackPolylineId == id && _playbackPoints.isNotEmpty) {
         if (_playbackIndex < _playbackPoints.length - 1) {
           _isPlaying = true;
+          // ensure external listeners are notified when resuming playback
+          try {
+            FormFieldsMapController.setPlaybackPlaying(
+                widget.controllerId, true);
+          } catch (_) {}
           _safeSetState(() {});
           _playbackTimer?.cancel();
           _playbackTimer = Timer.periodic(
@@ -849,6 +863,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
       _playbackIndex = 0;
       _isPlaying = true;
+      // publish authoritative playing state
+      try {
+        FormFieldsMapController.setPlaybackPlaying(widget.controllerId, true);
+      } catch (_) {}
       _safeSetState(() {});
       _playbackTimer?.cancel();
       _playbackTimer = Timer.periodic(
@@ -870,12 +888,35 @@ class FormFieldsMapState extends State<FormFieldsMap>
   void _pausePolylinePlayback() {
     _isPlaying = false;
     _playbackTimer?.cancel();
+    try {
+      FormFieldsMapController.setPlaybackPlaying(widget.controllerId, false);
+    } catch (_) {}
     _safeSetState(() {});
   }
 
   void _restartPolylinePlayback() {
+    // If no playback polyline is currently selected, attempt to pick the
+    // first available polyline from the notifier so external callers can
+    // reliably restart immediately after generating a polyline.
+    final notifier = widget.notifier ?? _internalNotifier;
+    if (_playbackPolylineId == null) {
+      if (notifier._polylineMap.isEmpty) return;
+      _playbackPolylineId = notifier._polylineMap.keys.first;
+      final pl = notifier._polylineMap[_playbackPolylineId];
+      if (pl != null) {
+        _playbackPoints =
+            _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+      }
+    }
+
+    // If still no points, nothing to restart.
+    if (_playbackPoints.isEmpty) return;
+
     _playbackIndex = 0;
     _isPlaying = true;
+    try {
+      FormFieldsMapController.setPlaybackPlaying(widget.controllerId, true);
+    } catch (_) {}
     _safeSetState(() {});
     _playbackTimer?.cancel();
     _playbackTimer =
@@ -892,6 +933,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // stop at end
       _isPlaying = false;
       _playbackTimer?.cancel();
+      try {
+        FormFieldsMapController.setPlaybackPlaying(widget.controllerId, false);
+      } catch (_) {}
     }
     _updatePlaybackMarker();
   }
@@ -1170,13 +1214,20 @@ class FormFieldsMapState extends State<FormFieldsMap>
               const SizedBox(height: 8),
               if (widget.enablePolylinePlayback &&
                   widget.showBuiltinPlaybackControls) ...[
-                AppButton(
-                  type: AppButtonType.fab,
-                  size: AppSize.small,
-                  icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                  useSafeArea: false,
-                  heroTag: null,
-                  onPressed: () => _togglePolylinePlayback(null),
+                ValueListenableBuilder<bool>(
+                  valueListenable:
+                      FormFieldsMapController.getPlaybackPlayingListenable(
+                          widget.controllerId),
+                  builder: (context, playing, _) {
+                    return AppButton(
+                      type: AppButtonType.fab,
+                      size: AppSize.small,
+                      icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                      useSafeArea: false,
+                      heroTag: null,
+                      onPressed: () => _togglePolylinePlayback(null),
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 AppButton(

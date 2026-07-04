@@ -230,24 +230,32 @@ class View extends PresenterState {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: Icon(vm.isPlaybackPlaying
-                                    ? Icons.pause
-                                    : Icons.play_arrow),
-                                onPressed: () {
-                                  FormFieldsMapController
-                                      .togglePolylinePlayback(
-                                          'default', vm.playbackPolylineId);
-                                  vm.setPlaybackPlaying(!vm.isPlaybackPlaying);
+                              ValueListenableBuilder<bool>(
+                                valueListenable: FormFieldsMapController
+                                    .getPlaybackPlayingListenable('default'),
+                                builder: (context, playing, _) {
+                                  return IconButton(
+                                    icon: Icon(playing
+                                        ? Icons.pause
+                                        : Icons.play_arrow),
+                                    onPressed: () {
+                                      if (playing) {
+                                        FormFieldsMapController
+                                            .pausePolylinePlayback('default');
+                                      } else {
+                                        FormFieldsMapController
+                                            .startPolylinePlayback('default',
+                                                vm.playbackPolylineId);
+                                      }
+                                    },
+                                    tooltip: playing ? 'Pause' : 'Play',
+                                  );
                                 },
-                                tooltip:
-                                    vm.isPlaybackPlaying ? 'Pause' : 'Play',
                               ),
                               IconButton(
                                 icon: const Icon(Icons.replay),
                                 onPressed: () => FormFieldsMapController
                                     .restartPolylinePlayback('default'),
-                                tooltip: 'Restart',
                               ),
                             ],
                           ),
