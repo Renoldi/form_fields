@@ -1049,29 +1049,123 @@ class FormFieldsMapState extends State<FormFieldsMap>
               Selector<FormFieldsMapNotifier, List<Polygon>>(
                 selector: (_, n) => n.polygons,
                 builder: (context, polygons, _) {
-                  if (polygons.isEmpty) return const SizedBox.shrink();
-                  return PolygonLayer(polygons: polygons);
+                  final notifierLocal = widget.notifier ?? _internalNotifier;
+                  if (notifierLocal._polygonMap.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final themeColor = Theme.of(context).colorScheme.primary;
+                  final mapped = notifierLocal._polygonMap.entries.map((e) {
+                    final id = e.key;
+                    final p = e.value;
+                    final dynColor =
+                        _extractColorPayloadForId(notifierLocal, id);
+                    final parsed = ShapeMeta.parseColor(dynColor);
+                    return Polygon(
+                      points: p.points,
+                      color: parsed != null
+                          ? parsed.withValues(alpha: 0.25)
+                          : themeColor.withValues(alpha: 0.25),
+                      borderColor: parsed ?? themeColor,
+                      borderStrokeWidth: p.borderStrokeWidth,
+                    );
+                  }).toList(growable: false);
+                  if (mapped.isEmpty) return const SizedBox.shrink();
+                  return PolygonLayer(polygons: mapped);
                 },
               ),
               Selector<FormFieldsMapNotifier, List<Polyline>>(
                 selector: (_, n) => n.polylines,
                 builder: (context, polylines, _) {
-                  if (polylines.isEmpty) return const SizedBox.shrink();
-                  return PolylineLayer(polylines: polylines);
+                  final notifierLocal = widget.notifier ?? _internalNotifier;
+                  if (notifierLocal._polylineMap.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final themeColor = Theme.of(context).colorScheme.primary;
+                  final mapped = notifierLocal._polylineMap.entries.map((e) {
+                    final id = e.key;
+                    final l = e.value;
+                    final dynColor =
+                        _extractColorPayloadForId(notifierLocal, id);
+                    final parsed = ShapeMeta.parseColor(dynColor);
+                    return Polyline(
+                      points: l.points,
+                      strokeWidth: l.strokeWidth,
+                      color: parsed ?? themeColor,
+                    );
+                  }).toList(growable: false);
+                  if (mapped.isEmpty) return const SizedBox.shrink();
+                  return PolylineLayer(polylines: mapped);
                 },
               ),
               Selector<FormFieldsMapNotifier, List<CircleMarker>>(
                 selector: (_, n) => n.circles,
                 builder: (context, circles, _) {
-                  if (circles.isEmpty) return const SizedBox.shrink();
-                  return CircleLayer(circles: circles);
+                  final notifierLocal = widget.notifier ?? _internalNotifier;
+                  if (notifierLocal._circleMap.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final themeColor = Theme.of(context).colorScheme.primary;
+                  final mapped = notifierLocal._circleMap.entries.map((e) {
+                    final id = e.key;
+                    final c = e.value;
+                    final dynColor =
+                        _extractColorPayloadForId(notifierLocal, id);
+                    final parsed = ShapeMeta.parseColor(dynColor);
+                    return CircleMarker(
+                      point: c.point,
+                      color: parsed != null
+                          ? parsed.withValues(alpha: 0.35)
+                          : themeColor.withValues(alpha: 0.35),
+                      borderStrokeWidth: c.borderStrokeWidth,
+                      borderColor: parsed ?? themeColor,
+                      useRadiusInMeter: c.useRadiusInMeter,
+                      radius: c.radius,
+                    );
+                  }).toList(growable: false);
+                  if (mapped.isEmpty) return const SizedBox.shrink();
+                  return CircleLayer(circles: mapped);
                 },
               ),
               Selector<FormFieldsMapNotifier, List<Marker>>(
                 selector: (_, n) => n.markers,
                 builder: (context, markers, _) {
                   if (markers.isEmpty) return const SizedBox.shrink();
-                  return MarkerLayer(markers: markers);
+                  final notifierLocal = widget.notifier ?? _internalNotifier;
+                  final themeColor = Theme.of(context).colorScheme.primary;
+                  final mapped = markers.map((m) {
+                    // try to find a color for this marker from rawMarkers (by point)
+                    final dynColor =
+                        _extractColorPayloadForPoint(notifierLocal, m.point);
+                    final parsed = ShapeMeta.parseColor(dynColor);
+                    final overrideColor = parsed ?? themeColor;
+                    final child = m.child;
+                    Widget themedChild;
+                    if (child is Icon) {
+                      themedChild = Icon(
+                        child.icon,
+                        size: child.size,
+                        semanticLabel: child.semanticLabel,
+                        textDirection: child.textDirection,
+                        color: overrideColor,
+                      );
+                    } else {
+                      themedChild = IconTheme(
+                        data: IconThemeData(color: overrideColor),
+                        child: DefaultTextStyle.merge(
+                          style: TextStyle(color: overrideColor),
+                          child: child,
+                        ),
+                      );
+                    }
+                    return Marker(
+                      point: m.point,
+                      width: m.width,
+                      height: m.height,
+                      rotate: m.rotate,
+                      child: themedChild,
+                    );
+                  }).toList(growable: false);
+                  return MarkerLayer(markers: mapped);
                 },
               ),
               Selector<FormFieldsMapNotifier, List<dynamic>>(
@@ -1090,6 +1184,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               MediaQuery.of(context).devicePixelRatio,
                           iconImage: _canvasMarkerImage,
                           showTitle: widget.showTitle,
+                          defaultColor: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -1317,6 +1412,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           mapPayload['shapeType'] = 'polygon';
           mapPayload['lat'] = latlng.latitude;
           mapPayload['lon'] = latlng.longitude;
+          final cVal = _extractColorPayloadForId(notifier, pid);
+          if (cVal != null) mapPayload['color'] = cVal;
           // building ShapeMeta from mapPayload (log removed)
           final sm = ShapeMeta.fromMap(mapPayload);
           widget.onTapShape?.call(sm);
@@ -1364,6 +1461,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = 'polygon';
             mapPayload['lat'] = latlng.latitude;
             mapPayload['lon'] = latlng.longitude;
+            final cVal = _extractColorPayloadForId(notifier, pid);
+            if (cVal != null) mapPayload['color'] = cVal;
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
             return;
@@ -1421,6 +1520,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = 'polyline';
             mapPayload['lat'] = latlng.latitude;
             mapPayload['lon'] = latlng.longitude;
+            final cVal = _extractColorPayloadForId(notifier, lid);
+            if (cVal != null) mapPayload['color'] = cVal;
             // polyline tap handled (log removed)
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
@@ -1440,6 +1541,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
         mapPayload['shapeType'] = 'polyline';
         mapPayload['lat'] = latlng.latitude;
         mapPayload['lon'] = latlng.longitude;
+        final cVal = _extractColorPayloadForId(notifier, minPolyId);
+        if (cVal != null) mapPayload['color'] = cVal;
         // polyline fallback handled (log removed)
         final sm = ShapeMeta.fromMap(mapPayload);
         widget.onTapShape?.call(sm);
@@ -1468,6 +1571,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = 'circle';
             mapPayload['lat'] = latlng.latitude;
             mapPayload['lon'] = latlng.longitude;
+            final cVal = _extractColorPayloadForId(notifier, cid);
+            if (cVal != null) mapPayload['color'] = cVal;
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
             return;
@@ -1563,6 +1668,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['lat'] = lat;
             mapPayload['lon'] = lon;
             if (id != null) mapPayload['id'] = id;
+            if (id != null) {
+              final cVal = _extractColorPayloadForId(notifier, id);
+              if (cVal != null) mapPayload['color'] = cVal;
+            }
             mapPayload['shapeType'] = shapeType ?? 'marker';
             if (title != null) mapPayload['title'] = title;
             if (subtitle != null) mapPayload['subtitle'] = subtitle;
@@ -1608,6 +1717,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 mapPayload['lat'] = lat;
                 mapPayload['lon'] = lon;
                 if (id != null) mapPayload['id'] = id;
+                if (id != null) {
+                  final cVal = _extractColorPayloadForId(notifier, id);
+                  if (cVal != null) mapPayload['color'] = cVal;
+                }
                 mapPayload['shapeType'] = shapeType ?? 'marker';
                 if (title != null) mapPayload['title'] = title;
                 if (subtitle != null) mapPayload['subtitle'] = subtitle;
@@ -1637,6 +1750,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final payload = <String, dynamic>{'id': pid, 'shapeType': 'polygon'};
           if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
           payload['point'] = latlng;
+          final cVal = _extractColorPayloadForId(notifier, pid);
+          if (cVal != null) payload['color'] = cVal;
           final sm = ShapeMeta.fromMap(payload);
           widget.onTapShape?.call(sm);
           return;
@@ -1661,6 +1776,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            final cVal = _extractColorPayloadForId(notifier, lid);
+            if (cVal != null) payload['color'] = cVal;
             final sm = ShapeMeta.fromMap(payload);
             widget.onTapShape?.call(sm);
             return;
@@ -1679,6 +1796,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            final cVal = _extractColorPayloadForId(notifier, cid);
+            if (cVal != null) payload['color'] = cVal;
             final sm = ShapeMeta.fromMap(payload);
             widget.onTapShape?.call(sm);
             return;
@@ -1692,6 +1811,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
+            final cVal = _extractColorPayloadForId(notifier, cid);
+            if (cVal != null) payload['color'] = cVal;
             final sm = ShapeMeta.fromMap(payload);
             widget.onTapShape?.call(sm);
             return;
@@ -1707,6 +1828,55 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // rawMarkers may contain a Map with an `id` pointing to shape metadata.
     for (final m in notifier.rawMarkers) {
       if (m is Map && m['id'] == id) return m;
+    }
+    return null;
+  }
+
+  /// Search rawMarkers for a color associated with `id`. Returns an ARGB
+  /// int or a string as stored in payloads, or null if not found.
+  dynamic _extractColorPayloadForId(FormFieldsMapNotifier notifier, String id) {
+    for (final r in notifier.rawMarkers) {
+      if (r is ShapeMeta && r.id == id && r.color != null) {
+        try {
+          return r.color!.toARGB32();
+        } catch (_) {
+          return r.color!.toARGB32();
+        }
+      }
+      if (r is Map && r['id'] == id && r['color'] != null) {
+        return r['color'];
+      }
+    }
+    return null;
+  }
+
+  /// Search rawMarkers for a color associated with a LatLng `point`.
+  /// Returns the stored color value (int, String, or Color) or null.
+  dynamic _extractColorPayloadForPoint(
+      FormFieldsMapNotifier notifier, LatLng point) {
+    const tol = 0.00001; // ~1m tolerance
+    for (final r in notifier.rawMarkers) {
+      if (r is ShapeMeta) {
+        final lat = r.lat;
+        final lon = r.lon;
+        if ((lat - point.latitude).abs() <= tol &&
+            (lon - point.longitude).abs() <= tol) {
+          if (r.color != null) return r.color;
+          return null;
+        }
+      }
+      if (r is Map) {
+        final lat = (r['lat'] as num?)?.toDouble() ??
+            (r['latitude'] as num?)?.toDouble();
+        final lon = (r['lon'] as num?)?.toDouble() ??
+            (r['longitude'] as num?)?.toDouble();
+        if (lat != null && lon != null) {
+          if ((lat - point.latitude).abs() <= tol &&
+              (lon - point.longitude).abs() <= tol) {
+            return r['color'];
+          }
+        }
+      }
     }
     return null;
   }
@@ -1745,6 +1915,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
     required this.devicePixelRatio,
     this.iconImage,
     this.showTitle = true,
+    required this.defaultColor,
   });
 
   final List<dynamic> rawMarkers;
@@ -1754,6 +1925,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
   final double devicePixelRatio;
   final ui.Image? iconImage;
   final bool showTitle;
+  final Color defaultColor;
 
   static double _worldX(double lon, double zoom) {
     final double worldSize = 256 * pow(2, zoom).toDouble();
@@ -1769,7 +1941,7 @@ class _CanvasRawMarkerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.red.withValues(alpha: 0.95);
+    final paint = Paint();
 
     final centerX = _worldX(center.longitude, zoom);
     final centerY = _worldY(center.latitude, zoom);
@@ -1840,6 +2012,21 @@ class _CanvasRawMarkerPainter extends CustomPainter {
 
       // Draw a simple pin icon: circular head + triangular tail.
       final pinPaint = paint;
+      // Decide marker color: prefer a ShapeMeta.color, then check Map
+      // payloads for a 'color' entry, otherwise fall back to theme default.
+      Color? metaColor;
+      if (m is ShapeMeta) {
+        metaColor = m.color;
+      } else if (m is Map && m['color'] != null) {
+        try {
+          metaColor = ShapeMeta.parseColor(m['color']);
+        } catch (_) {
+          metaColor = null;
+        }
+      }
+      final Color markerColor =
+          metaColor ?? defaultColor.withValues(alpha: 0.95);
+      pinPaint.color = markerColor;
       final strokePaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
@@ -1878,7 +2065,13 @@ class _CanvasRawMarkerPainter extends CustomPainter {
           final dst = Rect.fromCenter(
               center: Offset.zero, width: destSize, height: destSize);
           paint.isAntiAlias = true;
+          // Tint the rasterized icon with the computed marker color so it
+          // follows theme/payload even if the original raster had a different
+          // color. Use srcIn so the glyph shape is preserved.
+          final oldFilter = paint.colorFilter;
+          paint.colorFilter = ColorFilter.mode(markerColor, BlendMode.srcIn);
           canvas.drawImageRect(iconImage!, src, dst, paint);
+          paint.colorFilter = oldFilter;
         } else {
           // head at (0,0) in rotated space
           canvas.drawCircle(Offset.zero, headRadius, pinPaint);
