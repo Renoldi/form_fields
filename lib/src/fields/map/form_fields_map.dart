@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +44,25 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _circlesCache = _circleMap.values.toList(growable: false);
   }
 
+  void _safeNotify() {
+    try {
+      final phase = SchedulerBinding.instance.schedulerPhase;
+      if (phase == SchedulerPhase.idle) {
+        notifyListeners();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            notifyListeners();
+          } catch (_) {}
+        });
+      }
+    } catch (_) {
+      try {
+        notifyListeners();
+      } catch (_) {}
+    }
+  }
+
   Map<String, Polygon> _polygonMap;
   Map<String, Polyline> _polylineMap;
   Map<String, CircleMarker> _circleMap;
@@ -59,18 +79,18 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   set rawMarkers(List<dynamic> coords) {
     _rawMarkersCache = coords;
-    notifyListeners();
+    _safeNotify();
   }
 
   void appendRawMarkers(List<dynamic> coords) {
     final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
     _rawMarkersCache = List<dynamic>.from(combined);
-    notifyListeners();
+    _safeNotify();
   }
 
   void clearRawMarkers() {
     _rawMarkersCache = const [];
-    notifyListeners();
+    _safeNotify();
   }
 
   bool removeRawMarker(String id) {
@@ -81,7 +101,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       return true;
     }).toList(growable: false);
     final removed = _rawMarkersCache.length != before;
-    if (removed) notifyListeners();
+    if (removed) _safeNotify();
     return removed;
   }
 
@@ -91,7 +111,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _polygonMap['p\$i'] = p[i];
     }
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   set polylines(List<Polyline> p) {
@@ -100,7 +120,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _polylineMap['l\$i'] = p[i];
     }
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   set circles(List<CircleMarker> c) {
@@ -109,7 +129,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _circleMap['c\$i'] = c[i];
     }
     _circlesCache = _circleMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   // Polygons
@@ -117,14 +137,14 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
     _polygonMap[id] = p;
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
     return id;
   }
 
   void addOrUpdatePolygon(String id, Polygon polygon) {
     _polygonMap[id] = polygon;
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   Polygon? getPolygon(String id) => _polygonMap[id];
@@ -133,7 +153,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _polygonMap.remove(id) != null;
     if (removed) {
       _polygonsCache = _polygonMap.values.toList(growable: false);
-      notifyListeners();
+      _safeNotify();
     }
     return removed;
   }
@@ -141,7 +161,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void clearPolygons() {
     _polygonMap.clear();
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   // Polylines
@@ -149,14 +169,14 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
     _polylineMap[id] = p;
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
     return id;
   }
 
   void addOrUpdatePolyline(String id, Polyline polyline) {
     _polylineMap[id] = polyline;
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   Polyline? getPolyline(String id) => _polylineMap[id];
@@ -165,7 +185,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _polylineMap.remove(id) != null;
     if (removed) {
       _polylinesCache = _polylineMap.values.toList(growable: false);
-      notifyListeners();
+      _safeNotify();
     }
     return removed;
   }
@@ -173,21 +193,21 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void clearPolylines() {
     _polylineMap.clear();
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   String addCircle(CircleMarker c) {
     final id = 'c\$${DateTime.now().microsecondsSinceEpoch}';
     _circleMap[id] = c;
     _circlesCache = _circleMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
     return id;
   }
 
   void addOrUpdateCircle(String id, CircleMarker circle) {
     _circleMap[id] = circle;
     _circlesCache = _circleMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   CircleMarker? getCircle(String id) => _circleMap[id];
@@ -196,7 +216,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _circleMap.remove(id) != null;
     if (removed) {
       _circlesCache = _circleMap.values.toList(growable: false);
-      notifyListeners();
+      _safeNotify();
     }
     return removed;
   }
@@ -204,7 +224,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void clearCircles() {
     _circleMap.clear();
     _circlesCache = _circleMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   // Markers
@@ -221,21 +241,21 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _markerMap[id] = m[i];
     }
     _markersCache = _markerMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   String addMarker(Marker m) {
     final id = 'm\$${DateTime.now().microsecondsSinceEpoch}';
     _markerMap[id] = m;
     _markersCache = _markerMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
     return id;
   }
 
   void addOrUpdateMarker(String id, Marker marker) {
     _markerMap[id] = marker;
     _markersCache = _markerMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 
   Marker? getMarker(String id) => _markerMap[id];
@@ -244,7 +264,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _markerMap.remove(id) != null;
     if (removed) {
       _markersCache = _markerMap.values.toList(growable: false);
-      notifyListeners();
+      _safeNotify();
     }
     return removed;
   }
@@ -252,7 +272,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void clearMarkers() {
     _markerMap.clear();
     _markersCache = _markerMap.values.toList(growable: false);
-    notifyListeners();
+    _safeNotify();
   }
 }
 
@@ -359,6 +379,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
         widget.controllerId, widget.onTapShape);
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.idle) {
+      setState(fn);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(fn);
+      });
+    }
+  }
+
   @override
   void didUpdateWidget(covariant FormFieldsMap oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -402,10 +435,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _canvasMarkerImageStreamListener =
           ImageStreamListener((ImageInfo info, bool _) {
         _canvasMarkerImage = info.image;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(() {});
-        });
+        _safeSetState(() {});
       });
       stream.addListener(_canvasMarkerImageStreamListener!);
       return;
@@ -414,10 +444,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     if (provider is Icon) {
       _renderIconToImage(provider).then((img) {
         _canvasMarkerImage = img;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(() {});
-        });
+        _safeSetState(() {});
       });
       return;
     }
@@ -426,10 +453,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _rasterizeWidgetToImage(provider).then((img) {
         if (img != null) {
           _canvasMarkerImage = img;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            setState(() {});
-          });
+          _safeSetState(() {});
         }
       });
       return;
@@ -579,7 +603,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             try {
               FormFieldsMapController.setLoading(widget.controllerId, true);
             } catch (_) {}
-            if (mounted) setState(() {});
+            _safeSetState(() {});
           });
         }
       }
