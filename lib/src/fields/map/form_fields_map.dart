@@ -1131,13 +1131,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 builder: (context, markers, _) {
                   if (markers.isEmpty) return const SizedBox.shrink();
                   final notifierLocal = widget.notifier ?? _internalNotifier;
-                  final themeColor = Theme.of(context).colorScheme.primary;
                   final mapped = markers.map((m) {
                     // try to find a color for this marker from rawMarkers (by point)
                     final dynColor =
                         _extractColorPayloadForPoint(notifierLocal, m.point);
-                    final parsed = ShapeMeta.parseColor(dynColor);
-                    final overrideColor = parsed ?? themeColor;
+                    ShapeMeta.parseColor(dynColor);
+                    // use idiomatic colorScheme.onSecondary for marker foreground
+                    final markerForeground =
+                        Theme.of(context).colorScheme.onSecondary;
                     final child = m.child;
                     Widget themedChild;
                     if (child is Icon) {
@@ -1146,13 +1147,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
                         size: child.size,
                         semanticLabel: child.semanticLabel,
                         textDirection: child.textDirection,
-                        color: overrideColor,
+                        color: markerForeground,
                       );
                     } else {
                       themedChild = IconTheme(
-                        data: IconThemeData(color: overrideColor),
+                        data: IconThemeData(color: markerForeground),
                         child: DefaultTextStyle.merge(
-                          style: TextStyle(color: overrideColor),
+                          style: TextStyle(color: markerForeground),
                           child: child,
                         ),
                       );
@@ -1184,7 +1185,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               MediaQuery.of(context).devicePixelRatio,
                           iconImage: _canvasMarkerImage,
                           showTitle: widget.showTitle,
-                          defaultColor: Theme.of(context).colorScheme.primary,
+                          defaultColor: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -1221,9 +1222,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       fit: BoxFit.contain,
                     );
                   }
-                  return const Icon(
+                  return Icon(
                     Icons.location_pin,
-                    color: Colors.red,
+                    color: Theme.of(context).colorScheme.onSecondary,
                     size: 36,
                   );
                 }),
