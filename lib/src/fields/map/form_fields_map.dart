@@ -805,7 +805,30 @@ class FormFieldsMapState extends State<FormFieldsMap>
     try {
       final notifier = widget.notifier ?? _internalNotifier;
 
-      // Polygons: point-in-polygon test
+      // Compute local tap offset once for pixel-based hit tests.
+      Offset local;
+      try {
+        local = (tapPosition as dynamic).localPosition as Offset;
+      } catch (_) {
+        try {
+          local = (tapPosition as dynamic).local as Offset;
+        } catch (_) {
+          local = Offset(
+              (context.size?.width ?? 0) / 2, (context.size?.height ?? 0) / 2);
+        }
+      }
+
+      // Polygons: point-in-polygon test. If point-in-polygon fails, also
+      // perform an edge-distance fallback so thin polygons or borders are
+      // still tappable.
+      final tapZoom = _lastZoom ?? widget.initialZoom;
+      final center = _lastCenter ?? widget.initialCenter;
+      final centerX =
+          _CanvasRawMarkerPainter._worldX(center.longitude, tapZoom);
+      final centerY = _CanvasRawMarkerPainter._worldY(center.latitude, tapZoom);
+      final double worldSize = 256 * pow(2, tapZoom).toDouble();
+      const double baseThreshPx = 24.0 + _tapPad;
+
       for (final entry in notifier._polygonMap.entries) {
         final pid = entry.key;
         final poly = entry.value;
@@ -826,29 +849,58 @@ class FormFieldsMapState extends State<FormFieldsMap>
           widget.onTapShape?.call(sm);
           return;
         }
+        // Fallback: check distance to polygon edges in screen space. This
+        // helps when polygon is thin or user taps near its border.
+        try {
+          double minEdgeDist = double.infinity;
+          final pts = poly.points;
+          for (var i = 0; i < pts.length; i++) {
+            final p0 = pts[i];
+            final p1 = pts[(i + 1) % pts.length];
+            final x0 = _CanvasRawMarkerPainter._worldX(p0.longitude, tapZoom);
+            final y0 = _CanvasRawMarkerPainter._worldY(p0.latitude, tapZoom);
+            var dx0 = (x0 - centerX) + (context.size?.width ?? 0) / 2;
+            var dy0 = (y0 - centerY) + (context.size?.height ?? 0) / 2;
+            if (dx0.abs() > worldSize / 2) {
+              if (dx0 > 0) {
+                dx0 -= worldSize;
+              } else {
+                dx0 += worldSize;
+              }
+            }
+            final x1 = _CanvasRawMarkerPainter._worldX(p1.longitude, tapZoom);
+            final y1 = _CanvasRawMarkerPainter._worldY(p1.latitude, tapZoom);
+            var dx1 = (x1 - centerX) + (context.size?.width ?? 0) / 2;
+            var dy1 = (y1 - centerY) + (context.size?.height ?? 0) / 2;
+            if (dx1.abs() > worldSize / 2) {
+              if (dx1 > 0) {
+                dx1 -= worldSize;
+              } else {
+                dx1 += worldSize;
+              }
+            }
+            final distPx = _pointToSegmentDistance(
+                local, Offset(dx0, dy0), Offset(dx1, dy1));
+            if (distPx < minEdgeDist) minEdgeDist = distPx;
+          }
+          if (minEdgeDist <= max(baseThreshPx, 16.0)) {
+            final meta = _findMetaForShape(notifier, pid);
+            final mapPayload = <String, dynamic>{};
+            if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));
+            mapPayload['id'] = pid;
+            mapPayload['shapeType'] = 'polygon';
+            mapPayload['lat'] = latlng.latitude;
+            mapPayload['lon'] = latlng.longitude;
+            final sm = ShapeMeta.fromMap(mapPayload);
+            widget.onTapShape?.call(sm);
+            return;
+          }
+        } catch (_) {}
       }
 
-      // Polylines: precise per-segment hit-testing in screen pixels.
-      // This is more accurate than midpoint heuristics and avoids
-      // missing narrow or angled segments.
-      Offset local;
-      try {
-        local = (tapPosition as dynamic).localPosition as Offset;
-      } catch (_) {
-        try {
-          local = (tapPosition as dynamic).local as Offset;
-        } catch (_) {
-          local = Offset(
-              (context.size?.width ?? 0) / 2, (context.size?.height ?? 0) / 2);
-        }
-      }
-      final tapZoom = _lastZoom ?? widget.initialZoom;
-      final center = _lastCenter ?? widget.initialCenter;
-      final centerX =
-          _CanvasRawMarkerPainter._worldX(center.longitude, tapZoom);
-      final centerY = _CanvasRawMarkerPainter._worldY(center.latitude, tapZoom);
-      final double worldSize = 256 * pow(2, tapZoom).toDouble();
-      const double baseThreshPx = 24.0 + _tapPad;
+      // Polylines: precise per-segment hit-testing in screen pixels. Increase
+      // threshold based on stroke width and add a relaxed fallback so thin
+      // or angled segments are easier to tap.
       double minPolyDist = double.infinity;
       String? minPolyId;
       for (final entry in notifier._polylineMap.entries) {
@@ -856,7 +908,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final pl = entry.value;
         final pts = pl.points;
         final stroke = pl.strokeWidth;
-        final threshPx = max(baseThreshPx, stroke * 2.0 + 12.0);
+        final threshPx = max(baseThreshPx, stroke * 3.0 + 16.0);
         for (var i = 0; i < pts.length - 1; i++) {
           final p0 = pts[i];
           final p1 = pts[i + 1];
@@ -907,7 +959,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
       }
       // If no strict hit, use a relaxed fallback based on nearest distance.
-      const double relaxMul = 3.0;
+      const double relaxMul = 4.0;
       if (minPolyId != null &&
           minPolyDist.isFinite &&
           minPolyDist <= baseThreshPx * relaxMul) {
@@ -929,13 +981,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
       final distance = Distance();
       // Circles: distance to center (meters if useRadiusInMeter true)
+      // compute meters per pixel at current latitude/zoom so we can expand
+      // meter-based radii by a sensible touch padding.
+      final metersPerPixel =
+          (156543.03392 * cos((latlng.latitude) * pi / 180)) / pow(2, tapZoom);
+      final touchPadMeters = metersPerPixel * (_tapPad + 8.0);
+
       for (final entry in notifier._circleMap.entries) {
         final cid = entry.key;
         final c = entry.value;
         final center = c.point;
         final d = distance.distance(center, latlng);
         if (c.useRadiusInMeter) {
-          if (d <= c.radius) {
+          if (d <= c.radius + touchPadMeters) {
             final meta = _findMetaForShape(notifier, cid);
             final mapPayload = <String, dynamic>{};
             if (meta is Map) mapPayload.addAll(Map<String, dynamic>.from(meta));

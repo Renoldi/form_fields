@@ -171,10 +171,10 @@ class View extends PresenterState {
                             },
                           );
                         } else {
-                          final _id = sm.id;
+                          final shapeId = sm.id;
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(
-                                  'Tapped: ${sm.shapeType}${_id != null ? ' (ID: $_id)' : ''}')));
+                                  'Tapped: ${sm.shapeType}${shapeId != null ? ' (ID: $shapeId)' : ''}')));
                         }
                       },
                       initialCenter: vm.center,
