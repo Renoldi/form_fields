@@ -851,7 +851,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _CanvasRawMarkerPainter._worldX(center.longitude, tapZoom);
       final centerY = _CanvasRawMarkerPainter._worldY(center.latitude, tapZoom);
       final double worldSize = 256 * pow(2, tapZoom).toDouble();
-      const double baseThreshPx = 24.0 + _tapPad;
+      // Increase hit padding slightly and scale with device pixel ratio so
+      // taps are easier on denser screens and at intermediate zoom levels.
+      final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+      final double extraTapPad = max(_tapPad, devicePixelRatio * 6.0) + 8.0;
+      final double baseThreshPx = 24.0 + extraTapPad;
 
       for (final entry in notifier._polygonMap.entries) {
         final pid = entry.key;
@@ -1115,8 +1119,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
           final headCenter = Offset(dx, dy - radiusToUse * headOffsetMul);
           final headRadius = radiusToUse * headRadiusMul;
+          final headHitRadius = headRadius + extraTapPad;
           final dist = (local - headCenter).distance;
-          if (dist <= headRadius + _tapPad) {
+          if (dist <= headHitRadius) {
             final mapPayload = <String, dynamic>{};
             if (m is Map) mapPayload.addAll(Map<String, dynamic>.from(m));
             mapPayload['lat'] = lat;
@@ -1163,7 +1168,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   width: bgWidth,
                   height: bgHeight);
 
-              if (bgRect.inflate(6.0).contains(local)) {
+              if (bgRect.inflate(extraTapPad).contains(local)) {
                 final mapPayload = <String, dynamic>{};
                 if (m is Map) mapPayload.addAll(Map<String, dynamic>.from(m));
                 mapPayload['lat'] = lat;
