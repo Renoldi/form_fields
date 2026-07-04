@@ -27,8 +27,31 @@ class MapExamplesViewModel extends ChangeNotifier {
   String? playbackPolylineId;
   bool isPlaybackPlaying = false;
 
+  /// Local UI state for selected playback interval and interpolation steps
+  /// so buttons in the example can reflect current selection.
+  Duration playbackInterval = const Duration(seconds: 1);
+  int playbackInterpolationSteps = 4;
+
   void setPlaybackPlaying(bool v) {
     isPlaybackPlaying = v;
+    notifyListeners();
+  }
+
+  void setPlaybackInterval(Duration d) {
+    playbackInterval = d;
+    // forward to controller so the map uses the new interval
+    try {
+      FormFieldsMapController.setPolylinePlaybackInterval('default', d);
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  void setPlaybackInterpolationSteps(int s) {
+    playbackInterpolationSteps = s;
+    try {
+      FormFieldsMapController.setPolylinePlaybackInterpolationSteps(
+          'default', s);
+    } catch (_) {}
     notifyListeners();
   }
 
@@ -231,6 +254,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     ]);
     playbackPolylineId = id;
     generatedPolylines = generatedPolylines + 1;
+    // Ensure totalPolylines reflects that a playback polyline exists so
+    // example UI that checks `totalPolylines > 0` will show controls.
+    totalPolylines = (totalPolylines >= 1) ? totalPolylines : 1;
     notifyListeners();
   }
 

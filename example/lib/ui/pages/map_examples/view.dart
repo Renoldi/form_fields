@@ -212,9 +212,10 @@ class View extends PresenterState {
               // ),
               if (vm.totalPolylines > 0)
                 _DraggablePositioned(
-                  initialRight: 16,
+                  // initialRight: 0,
                   initWidth: 260,
                   initHeight: 140,
+                  initialTop: 0,
                   child: Card(
                     elevation: 6,
                     child: Padding(
@@ -257,21 +258,12 @@ class View extends PresenterState {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Text('Interval:'),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterval('default',
-                                          const Duration(milliseconds: 500)),
-                                  child: const Text('0.5s')),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterval('default',
-                                          const Duration(seconds: 1)),
-                                  child: const Text('1s')),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterval('default',
-                                          const Duration(seconds: 2)),
-                                  child: const Text('2s')),
+                              _intervalButton(vm, '0.5s',
+                                  const Duration(milliseconds: 500)),
+                              _intervalButton(
+                                  vm, '1s', const Duration(seconds: 1)),
+                              _intervalButton(
+                                  vm, '2s', const Duration(seconds: 2)),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -281,26 +273,10 @@ class View extends PresenterState {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Text('Interp:'),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterpolationSteps(
-                                          'default', 0),
-                                  child: const Text('0')),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterpolationSteps(
-                                          'default', 2),
-                                  child: const Text('2')),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterpolationSteps(
-                                          'default', 4),
-                                  child: const Text('4')),
-                              TextButton(
-                                  onPressed: () => FormFieldsMapController
-                                      .setPolylinePlaybackInterpolationSteps(
-                                          'default', 8),
-                                  child: const Text('8')),
+                              _interpButton(vm, '0', 0),
+                              _interpButton(vm, '2', 2),
+                              _interpButton(vm, '4', 4),
+                              _interpButton(vm, '8', 8),
                             ],
                           ),
                         ],
@@ -392,6 +368,32 @@ class View extends PresenterState {
       ),
     );
   }
+}
+
+Widget _intervalButton(MapExamplesViewModel vm, String label, Duration d) {
+  final selected = vm.playbackInterval.inMilliseconds == d.inMilliseconds;
+  return TextButton(
+    onPressed: () => vm.setPlaybackInterval(d),
+    style: TextButton.styleFrom(
+      backgroundColor: selected ? Colors.lightGreen : null,
+      foregroundColor: selected ? Colors.white : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    child: Text(label),
+  );
+}
+
+Widget _interpButton(MapExamplesViewModel vm, String label, int steps) {
+  final selected = vm.playbackInterpolationSteps == steps;
+  return TextButton(
+    onPressed: () => vm.setPlaybackInterpolationSteps(steps),
+    style: TextButton.styleFrom(
+      backgroundColor: selected ? Colors.lightGreen : null,
+      foregroundColor: selected ? Colors.white : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    child: Text(label),
+  );
 }
 
 class _ActionButton extends StatelessWidget {
