@@ -693,7 +693,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         ),
         Positioned(
           right: 12,
-          bottom: 12,
+          top: 10,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
