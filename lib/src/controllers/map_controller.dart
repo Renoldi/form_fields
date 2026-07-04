@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
@@ -10,6 +12,10 @@ class FormFieldsMapController {
 
   // Optional ValueNotifiers to represent loading state per controller id.
   static final Map<String, ValueNotifier<bool>> _loadingNotifiers = {};
+  // Separate notifiers for full-screen (blocking) loading used for
+  // data fetch operations where the UI should be modal and interaction
+  // must be prevented.
+  static final Map<String, ValueNotifier<bool>> _blockingLoadingNotifiers = {};
   // Optional global handlers for marker taps keyed by controller id. This
   // allows external marker widgets to invoke the map-level `onMarkerTap`
   // callback by calling `invokeOnMarkerTap` with the controller id.
@@ -31,8 +37,56 @@ class FormFieldsMapController {
 
   /// Convenience setter to change the loading value for [id].
   static void setLoading(String id, bool value) {
-    _loadingNotifiers.putIfAbsent(id, () => ValueNotifier<bool>(false)).value =
-        value;
+    final notifier =
+        _loadingNotifiers.putIfAbsent(id, () => ValueNotifier<bool>(false));
+    try {
+      final phase = SchedulerBinding.instance.schedulerPhase;
+      if (phase == SchedulerPhase.idle) {
+        notifier.value = value;
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            notifier.value = value;
+          } catch (_) {}
+        });
+      }
+    } catch (_) {
+      try {
+        notifier.value = value;
+      } catch (_) {}
+    }
+  }
+
+  /// Returns a `ValueListenable<bool>` representing a blocking loading
+  /// state for the controller with [id]. This is intended for long-running
+  /// data loads where the map UI should be modal/blocked (full-screen
+  /// overlay). Notifier is created on demand.
+  static ValueListenable<bool> getBlockingLoadingListenable(String id) {
+    return _blockingLoadingNotifiers.putIfAbsent(
+        id, () => ValueNotifier<bool>(false));
+  }
+
+  /// Setter for blocking loading state for [id]. Use this when you need
+  /// to present a full-screen blocking overlay (e.g., while fetching data).
+  static void setBlockingLoading(String id, bool value) {
+    final notifier = _blockingLoadingNotifiers.putIfAbsent(
+        id, () => ValueNotifier<bool>(false));
+    try {
+      final phase = SchedulerBinding.instance.schedulerPhase;
+      if (phase == SchedulerPhase.idle) {
+        notifier.value = value;
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            notifier.value = value;
+          } catch (_) {}
+        });
+      }
+    } catch (_) {
+      try {
+        notifier.value = value;
+      } catch (_) {}
+    }
   }
 
   /// Register a handler to be invoked when a marker is tapped. The map

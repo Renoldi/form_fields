@@ -60,7 +60,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 20;
+  int createMarkers = 100000;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
@@ -95,6 +95,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     totalPolygons = totalPolylines = totalCircles = shapeCount;
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
 
     // await generatePolygons(shapeCount: shapeCount);
     // await generatePolylines(shapeCount: shapeCount);
@@ -102,11 +105,17 @@ class MapExamplesViewModel extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', false);
+    } catch (_) {}
   }
 
   Future<void> generatePolygons({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
     try {
       generatedPolygons = 0;
       final rnd = math.Random(54321);
@@ -151,6 +160,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+      try {
+        FormFieldsMapController.setBlockingLoading('default', false);
+      } catch (_) {}
     }
   }
 
@@ -159,6 +171,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     totalMarkers = markerCount;
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
     final rnd = math.Random(424242);
 
     // We'll emit raw ShapeMeta markers (consistent with polygons/polylines/circles)
@@ -198,11 +213,17 @@ class MapExamplesViewModel extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', false);
+    } catch (_) {}
   }
 
   Future<void> generatePolylines({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
     try {
       generatedPolylines = 0;
       final rnd = math.Random(98765);
@@ -239,6 +260,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+      try {
+        FormFieldsMapController.setBlockingLoading('default', false);
+      } catch (_) {}
     }
   }
 
@@ -253,6 +277,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   Future<void> generatePlaybackPolyline({bool useRoads = true}) async {
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
     try {
       final rnd = math.Random();
 
@@ -361,12 +388,18 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+      try {
+        FormFieldsMapController.setBlockingLoading('default', false);
+      } catch (_) {}
     }
   }
 
   Future<void> generateCircles({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
+    try {
+      FormFieldsMapController.setBlockingLoading('default', true);
+    } catch (_) {}
     try {
       generatedCircles = 0;
       final rnd = math.Random(19283);
@@ -401,6 +434,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+      try {
+        FormFieldsMapController.setBlockingLoading('default', false);
+      } catch (_) {}
     }
   }
 }

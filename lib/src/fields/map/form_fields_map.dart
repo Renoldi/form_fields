@@ -1173,28 +1173,37 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   return MarkerLayer(markers: mapped);
                 },
               ),
-              Selector<FormFieldsMapNotifier, List<dynamic>>(
-                selector: (_, n) => n.rawMarkers,
-                builder: (context, rawMarkers, _) {
-                  if (rawMarkers.isEmpty) return const SizedBox.shrink();
-                  return Positioned.fill(
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: _CanvasRawMarkerPainter(
-                          rawMarkers: rawMarkers,
-                          center: _lastCenter ?? widget.initialCenter,
-                          zoom: _lastZoom ?? widget.initialZoom,
-                          radius: widget.canvasMarkerRadius,
-                          devicePixelRatio:
-                              MediaQuery.of(context).devicePixelRatio,
-                          iconImage: _canvasMarkerImage,
-                          showTitle: widget.showTitle,
-                          defaultColor: Theme.of(context).colorScheme.secondary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onSecondary,
+              ValueListenableBuilder<bool>(
+                valueListenable:
+                    FormFieldsMapController.getBlockingLoadingListenable(
+                        widget.controllerId),
+                builder: (context, isBlocking, __) {
+                  return Selector<FormFieldsMapNotifier, List<dynamic>>(
+                    selector: (_, n) => n.rawMarkers,
+                    builder: (context, rawMarkers, _) {
+                      if (rawMarkers.isEmpty) return const SizedBox.shrink();
+                      return Positioned.fill(
+                        child: IgnorePointer(
+                          child: CustomPaint(
+                            painter: _CanvasRawMarkerPainter(
+                              rawMarkers: rawMarkers,
+                              center: _lastCenter ?? widget.initialCenter,
+                              zoom: _lastZoom ?? widget.initialZoom,
+                              radius: widget.canvasMarkerRadius,
+                              devicePixelRatio:
+                                  MediaQuery.of(context).devicePixelRatio,
+                              iconImage: _canvasMarkerImage,
+                              // hide titles while blocking loading is active
+                              showTitle: widget.showTitle && !isBlocking,
+                              defaultColor:
+                                  Theme.of(context).colorScheme.secondary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSecondary,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               ),
@@ -1344,6 +1353,48 @@ class FormFieldsMapState extends State<FormFieldsMap>
             ],
           ),
         ),
+        // Full-screen blocking overlay for data loads.
+        ValueListenableBuilder<bool>(
+          valueListenable: FormFieldsMapController.getBlockingLoadingListenable(
+              widget.controllerId),
+          builder: (context, isBlocking, _) {
+            if (isBlocking) {
+              return Positioned.fill(
+                child: Stack(
+                  children: [
+                    const ModalBarrier(
+                        dismissible: false, color: Colors.black38),
+                    Center(
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: CircularProgressIndicator(),
+                              ),
+                              SizedBox(height: 12),
+                              Text('Loading…', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+
+        // Small non-blocking indicator for brief camera/position updates.
         ValueListenableBuilder<bool>(
           valueListenable:
               FormFieldsMapController.getLoadingListenable(widget.controllerId),

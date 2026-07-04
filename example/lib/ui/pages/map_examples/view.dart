@@ -99,7 +99,7 @@ class View extends PresenterState {
                     child: FormFieldsMap(
                       notifier: vm.mapNotifier,
                       onRequestCurrentLocation: () async => vm.center,
-                      showBuiltinPlaybackControls: true,
+                      showBuiltinPlaybackControls: false,
                       enablePolylinePlayback: true,
                       canvasMarkerRadius: 20.0,
                       canvasMarkerIcon: const Icon(
