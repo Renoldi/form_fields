@@ -844,6 +844,16 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _playbackTimer?.cancel();
       _playbackTimer = Timer.periodic(
           _playbackSubstepInterval, (_) => _advancePlaybackStep());
+      // Zoom to level 17 (clamped to allowed min/max) when starting playback
+      try {
+        final initialPoint =
+            _playbackPoints.isNotEmpty ? _playbackPoints[_playbackIndex] : null;
+        if (initialPoint != null) {
+          final targetZoom = (17.0).clamp(widget.minZoom, widget.maxZoom);
+          // animateTo is async but we don't need to await inside timer callbacks
+          animateTo(initialPoint, targetZoom);
+        }
+      } catch (_) {}
       _updatePlaybackMarker();
     } catch (_) {}
   }
@@ -891,6 +901,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
       };
       final notifier = widget.notifier ?? _internalNotifier;
       notifier.rawMarkers = [payload];
+      // If playback is active, move camera to follow the playback point
+      try {
+        if (_isPlaying) {
+          final targetZoom = (17.0).clamp(widget.minZoom, widget.maxZoom);
+          animateTo(p, targetZoom);
+        }
+      } catch (_) {}
     } catch (_) {}
   }
 

@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'dart:convert';
+// Use the package's Dio utility for HTTP requests instead of HttpClient.
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -228,20 +230,79 @@ class MapExamplesViewModel extends ChangeNotifier {
 
   /// Generate a single polyline near the current center and mark it as the
   /// playback polyline (so the example UI can start playback for this one).
-  void generatePlaybackPolyline() {
+  /// Generate a single polyline for playback.
+  ///
+  /// If [useRoads] is true this will try to request a routed path from the
+  /// public OSRM demo server between two nearby points so the polyline follows
+  /// roads. If the network request fails, falls back to a simple circular
+  /// polyline near the center.
+  Future<void> generatePlaybackPolyline({bool useRoads = true}) async {
     final rnd = math.Random();
-    final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
-    final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
-    final pts = <LatLng>[];
-    for (var s = 0; s < 6; s++) {
-      final ang = (s / 6) * math.pi * 2;
-      pts.add(LatLng(
-          baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
+
+    List<LatLng>? routePoints;
+
+    if (useRoads) {
+      try {
+        // pick start/end near center with small offsets
+        final startLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
+        final startLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
+        final endLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
+        final endLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
+
+        final url =
+            'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson';
+        try {
+          final resp = await DioUtil.get(url);
+          if (resp.statusCode == 200 && resp.data != null) {
+            final dynamic parsed = resp.data is String
+                ? json.decode(resp.data as String)
+                : resp.data;
+            if (parsed is Map &&
+                parsed['routes'] is List &&
+                parsed['routes'].isNotEmpty) {
+              final geom = parsed['routes'][0]['geometry'];
+              if (geom is Map && geom['coordinates'] is List) {
+                final coords = geom['coordinates'] as List;
+                routePoints = coords
+                    .map<LatLng?>((c) {
+                      if (c is List && c.length >= 2) {
+                        final lon = (c[0] as num).toDouble();
+                        final lat = (c[1] as num).toDouble();
+                        return LatLng(lat, lon);
+                      }
+                      return null;
+                    })
+                    .whereType<LatLng>()
+                    .toList(growable: false);
+              }
+            }
+          }
+        } catch (_) {
+          routePoints = null;
+        }
+      } catch (_) {
+        routePoints = null;
+      }
     }
-    final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.purple);
+
+    // Fallback: circular polyline near center
+    if (routePoints == null || routePoints.isEmpty) {
+      final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
+      final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
+      final pts = <LatLng>[];
+      for (var s = 0; s < 6; s++) {
+        final ang = (s / 6) * math.pi * 2;
+        pts.add(LatLng(
+            baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
+      }
+      routePoints = pts;
+    }
+
+    final pl =
+        Polyline(points: routePoints, strokeWidth: 10.0, color: Colors.purple);
     final id = mapNotifier.addPolyline(pl);
     // add a marker at midpoint for interactivity
-    final mid = pts[pts.length ~/ 2];
+    final mid = routePoints[routePoints.length ~/ 2];
     mapNotifier.appendRawMarkers([
       ShapeMeta(
         lat: mid.latitude,
