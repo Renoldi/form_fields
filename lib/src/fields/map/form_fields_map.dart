@@ -740,9 +740,18 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // Only notify center after camera becomes idle so consumers get the
       // final/last center rather than a rapid stream of intermediate values.
       try {
-        if (_lastCenter != null) widget.onCenterChanged?.call(_lastCenter!);
+        // Call the callbacks in a post-frame callback so user-provided
+        // handlers can safely call setState() without triggering the
+        // "setState() or markNeedsBuild() called during build" exception.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (_lastCenter != null) widget.onCenterChanged?.call(_lastCenter!);
+          } catch (_) {}
+          try {
+            widget.onCameraIdle?.call();
+          } catch (_) {}
+        });
       } catch (_) {}
-      widget.onCameraIdle?.call();
     });
   }
 
