@@ -41,12 +41,8 @@ class FormFieldsMapController {
     _onMarkerTapHandlers[id] = handler;
     if (handler == null) {
       // allow explicit unregistering
-      // ignore: avoid_print
-      debugPrint('FormFieldsMapController: registerOnMarkerTap($id) -> null');
     } else {
-      // ignore: avoid_print
-      debugPrint(
-          'FormFieldsMapController: registerOnMarkerTap($id) -> registered');
+      // registering handler (silent)
     }
   }
 
@@ -55,9 +51,6 @@ class FormFieldsMapController {
   static void invokeOnMarkerTap(String id, ShapeMeta payload) {
     final handler = _onMarkerTapHandlers[id];
     if (handler == null) {
-      // ignore: avoid_print
-      debugPrint(
-          'FormFieldsMapController.invokeOnMarkerTap: no handler for $id');
       return;
     }
 
@@ -66,20 +59,14 @@ class FormFieldsMapController {
     final last = _lastInvokeAt[id];
     const window = Duration(milliseconds: 500);
     if (last != null && now.difference(last) <= window) {
-      // ignore: avoid_print
-      debugPrint(
-          'FormFieldsMapController.invokeOnMarkerTap: suppressed duplicate for $id');
       return;
     }
 
     _lastInvokeAt[id] = now;
     try {
-      // ignore: avoid_print
-      debugPrint('FormFieldsMapController.invokeOnMarkerTap: invoking for $id');
       handler.call(payload);
-    } catch (e, st) {
-      // ignore: avoid_print
-      debugPrint('FormFieldsMapController.invokeOnMarkerTap error: $e\n$st');
+    } catch (_) {
+      // swallow errors from handlers to avoid affecting map internals
     }
   }
 

@@ -869,10 +869,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           mapPayload['shapeType'] = 'polygon';
           mapPayload['lat'] = latlng.latitude;
           mapPayload['lon'] = latlng.longitude;
-          try {
-            debugPrint(
-                'FormFieldsMap: building ShapeMeta from mapPayload=$mapPayload');
-          } catch (_) {}
+          // building ShapeMeta from mapPayload (log removed)
           final sm = ShapeMeta.fromMap(mapPayload);
           widget.onTapShape?.call(sm);
           return;
@@ -976,10 +973,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = 'polyline';
             mapPayload['lat'] = latlng.latitude;
             mapPayload['lon'] = latlng.longitude;
-            try {
-              debugPrint(
-                  'FormFieldsMap: polyline tap id=$lid payload=$mapPayload');
-            } catch (_) {}
+            // polyline tap handled (log removed)
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
             return;
@@ -998,10 +992,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         mapPayload['shapeType'] = 'polyline';
         mapPayload['lat'] = latlng.latitude;
         mapPayload['lon'] = latlng.longitude;
-        try {
-          debugPrint(
-              'FormFieldsMap: polyline fallback id=$minPolyId payload=$mapPayload minDistPx=$minPolyDist');
-        } catch (_) {}
+        // polyline fallback handled (log removed)
         final sm = ShapeMeta.fromMap(mapPayload);
         widget.onTapShape?.call(sm);
         return;
@@ -1043,10 +1034,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final payload = <String, dynamic>{'id': cid, 'shapeType': 'circle'};
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
-            try {
-              debugPrint(
-                  'FormFieldsMap: building ShapeMeta from payload=$payload');
-            } catch (_) {}
+            // building ShapeMeta from payload (log removed)
             final sm = ShapeMeta.fromMap(payload);
             widget.onTapShape?.call(sm);
             return;
@@ -1130,9 +1118,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mapPayload['shapeType'] = shapeType ?? 'marker';
             if (title != null) mapPayload['title'] = title;
             if (subtitle != null) mapPayload['subtitle'] = subtitle;
-            try {
-              debugPrint('FormFieldsMap: raw marker tap payload=$mapPayload');
-            } catch (_) {}
+            // raw marker tap handled (log removed)
             final sm = ShapeMeta.fromMap(mapPayload);
             widget.onTapShape?.call(sm);
             return;
@@ -1177,10 +1163,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 mapPayload['shapeType'] = shapeType ?? 'marker';
                 if (title != null) mapPayload['title'] = title;
                 if (subtitle != null) mapPayload['subtitle'] = subtitle;
-                try {
-                  debugPrint(
-                      'FormFieldsMap: raw marker label tap payload=$mapPayload');
-                } catch (_) {}
+                // raw marker label tap handled (log removed)
                 final sm = ShapeMeta.fromMap(mapPayload);
                 widget.onTapShape?.call(sm);
                 return;
