@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
 // Use the package's Dio utility for HTTP requests instead of HttpClient.
@@ -9,6 +10,12 @@ import 'package:form_fields/form_fields.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
   final FormFieldsMapNotifier mapNotifier = FormFieldsMapNotifier();
+
+  // Timer for periodic marker updates
+  Timer? _markerUpdateTimer;
+  // Timer for countdown UI updates (1s ticks)
+  Timer? _markerCountdownTimer;
+  final math.Random _updateRnd = math.Random();
 
   // Default center (Jakarta)
   LatLng center = const LatLng(-6.2, 106.8166);
@@ -60,10 +67,23 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 100000;
+  int createMarkers = 3000000;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
+
+  // Periodic update interval and countdown state
+  Duration markerUpdateInterval = const Duration(minutes: 1);
+  int markerUpdateRemainingSeconds = 0;
+
+  /// If true, periodic updates will assign fully random coordinates
+  /// (within `markerUpdateRandomRangeDegrees` around `center`) instead of
+  /// small nudges.
+  bool markerUpdateRandomizeCoordinates = true;
+
+  /// Range in degrees used when `markerUpdateRandomizeCoordinates` is true.
+  /// Default ~3 degrees box (same scale as initial generation).
+  double markerUpdateRandomRangeDegrees = 3.0;
 
   void commit() {
     notifyListeners();
@@ -167,6 +187,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   }
 
   Future<void> generateMarkers({int markerCount = 1000}) async {
+    debugPrint('generateMarkers called with count=$markerCount');
     generatedMarkers = 0;
     totalMarkers = markerCount;
     isLoading = true;
@@ -180,8 +201,8 @@ class MapExamplesViewModel extends ChangeNotifier {
     // Batch them to avoid large numbers of notifyListeners calls.
     final batch = <dynamic>[];
     for (var i = 0; i < markerCount; i++) {
-      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 1.2;
-      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 1.2;
+      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 3;
+      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 3;
 
       final meta = ShapeMeta(
         lat: lat,
@@ -200,6 +221,8 @@ class MapExamplesViewModel extends ChangeNotifier {
         // flush batch every 512 items
         if (batch.isNotEmpty) {
           mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
+          debugPrint(
+              'generateMarkers appended a batch, generated=$generatedMarkers');
           batch.clear();
         }
         notifyListeners();
@@ -209,10 +232,16 @@ class MapExamplesViewModel extends ChangeNotifier {
 
     if (batch.isNotEmpty) {
       mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
+      debugPrint(
+          'generateMarkers appended final batch, generated=$generatedMarkers');
     }
+
+    // Start periodic updates after markers are generated.
+    startPeriodicMarkerUpdates();
 
     isLoading = false;
     notifyListeners();
+    debugPrint('generateMarkers finished, total generated=$generatedMarkers');
     try {
       FormFieldsMapController.setBlockingLoading('default', false);
     } catch (_) {}
@@ -263,6 +292,151 @@ class MapExamplesViewModel extends ChangeNotifier {
       try {
         FormFieldsMapController.setBlockingLoading('default', false);
       } catch (_) {}
+    }
+  }
+
+  /// Start periodic updates of existing raw markers. Each tick will slightly
+  /// perturb marker coordinates to simulate movement. Default interval is
+  /// 1 minute.
+  void startPeriodicMarkerUpdates(
+      {Duration interval = const Duration(minutes: 1), bool randomize = true}) {
+    stopPeriodicMarkerUpdates();
+    markerUpdateInterval = interval;
+    markerUpdateRemainingSeconds = interval.inSeconds;
+    markerUpdateRandomizeCoordinates = randomize;
+    // Timer that performs the actual marker update
+    _markerUpdateTimer = Timer.periodic(interval, (_) {
+      _updateMarkersOnce();
+      markerUpdateRemainingSeconds = interval.inSeconds;
+      notifyListeners();
+    });
+    // Countdown timer for UI (updates every second)
+    _markerCountdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (markerUpdateRemainingSeconds > 0) {
+        markerUpdateRemainingSeconds -= 1;
+      } else {
+        markerUpdateRemainingSeconds = interval.inSeconds;
+      }
+      notifyListeners();
+    });
+  }
+
+  /// Stop periodic marker updates.
+  void stopPeriodicMarkerUpdates() {
+    try {
+      _markerUpdateTimer?.cancel();
+    } catch (_) {}
+    try {
+      _markerCountdownTimer?.cancel();
+    } catch (_) {}
+    _markerUpdateTimer = null;
+    _markerCountdownTimer = null;
+    markerUpdateRemainingSeconds = 0;
+    notifyListeners();
+  }
+
+  /// Perform a single in-place update of `mapNotifier.rawMarkers` by nudging
+  /// each `ShapeMeta` (or map-style marker) by a small random delta.
+  void _updateMarkersOnce() {
+    try {
+      try {
+        FormFieldsMapController.setBlockingLoading('default', true);
+      } catch (_) {}
+
+      debugPrint(
+          '_updateMarkersOnce called, current=${mapNotifier.rawMarkers.length}');
+      final current = mapNotifier.rawMarkers;
+      if (current.isEmpty) return;
+      final updated = <dynamic>[];
+      for (final m in current) {
+        if (m is ShapeMeta) {
+          double newLat;
+          double newLon;
+          if (markerUpdateRandomizeCoordinates) {
+            // assign completely random coordinates within range around center
+            newLat = center.latitude +
+                (_updateRnd.nextDouble() - 0.5) *
+                    markerUpdateRandomRangeDegrees;
+            newLon = center.longitude +
+                (_updateRnd.nextDouble() - 0.5) *
+                    markerUpdateRandomRangeDegrees;
+          } else {
+            // small movement in degrees (~up to ~0.005 deg)
+            final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
+            final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
+            newLat = m.lat + dLat;
+            newLon = m.lon + dLon;
+          }
+          final cm = ShapeMeta(
+            lat: newLat,
+            lon: newLon,
+            title: m.title,
+            subtitle: m.subtitle,
+            id: m.id,
+            address: m.address,
+            shapeType: m.shapeType,
+            rotation: m.rotation,
+            color: m.color,
+          );
+          updated.add(cm);
+        } else if (m is Map) {
+          double newLat;
+          double newLon;
+          if (markerUpdateRandomizeCoordinates) {
+            newLat = center.latitude +
+                (_updateRnd.nextDouble() - 0.5) *
+                    markerUpdateRandomRangeDegrees;
+            newLon = center.longitude +
+                (_updateRnd.nextDouble() - 0.5) *
+                    markerUpdateRandomRangeDegrees;
+          } else {
+            final lat = (m['lat'] as num?)?.toDouble() ?? 0.0;
+            final lon = (m['lon'] as num?)?.toDouble() ?? 0.0;
+            final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
+            final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
+            newLat = lat + dLat;
+            newLon = lon + dLon;
+          }
+          final copy = Map<String, dynamic>.from(m);
+          copy['lat'] = newLat;
+          copy['lon'] = newLon;
+          updated.add(copy);
+        } else {
+          updated.add(m);
+        }
+      }
+      mapNotifier.rawMarkers = List<dynamic>.from(updated);
+      notifyListeners();
+      debugPrint('_updateMarkersOnce completed, updated=${updated.length}');
+    } catch (_) {
+      // ignore
+    } finally {
+      try {
+        FormFieldsMapController.setBlockingLoading('default', false);
+      } catch (_) {}
+    }
+  }
+
+  /// Whether periodic marker updates are currently active.
+  bool get markerUpdatesActive => _markerUpdateTimer != null;
+
+  /// Human-friendly mm:ss countdown until next marker update.
+  String get markerUpdateCountdownFormatted {
+    final s = markerUpdateRemainingSeconds;
+    final m = s ~/ 60;
+    final sec = s % 60;
+    final mm = m.toString().padLeft(2, '0');
+    final ss = sec.toString().padLeft(2, '0');
+    return '$mm:$ss';
+  }
+
+  @override
+  void dispose() {
+    stopPeriodicMarkerUpdates();
+    try {
+      super.dispose();
+    } catch (_) {
+      // ignore
     }
   }
 

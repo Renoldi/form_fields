@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
+import 'package:form_fields/src/utils/safe_notify.dart';
 
 class FormFieldsMyImageProvider extends ChangeNotifier {
   List<MyImageResult> _images = [];
@@ -93,6 +94,6 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
       debugPrint(
           'FormFieldsMyImageProvider.commit -> images=${_images.length}');
     }
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 }

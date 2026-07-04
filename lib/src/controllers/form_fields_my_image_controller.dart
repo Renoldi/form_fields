@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
+import 'package:form_fields/src/utils/safe_notify.dart';
 
 class FormFieldsMyImageController extends ChangeNotifier {
   FormFieldsMyImageController({List<MyImageResult>? initialImages})
@@ -25,13 +26,13 @@ class FormFieldsMyImageController extends ChangeNotifier {
 
   set images(List<MyImageResult> value) {
     _images = List<MyImageResult>.from(value);
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Replaces all images.
   void setImages(List<MyImageResult> images) {
     _images = List<MyImageResult>.from(images);
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Backward-compatible alias (optional).
@@ -44,12 +45,12 @@ class FormFieldsMyImageController extends ChangeNotifier {
 
   void addImage(MyImageResult image) {
     _images.add(image);
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void clear() {
     _images.clear();
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   // ── Capture integration ──────────────────────────────────────────────────

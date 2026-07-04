@@ -394,7 +394,10 @@ GoRouter createAppRouter(
         builder: (context, state) => _buildExamplePage(
           context: context,
           route: AppRoute.mapExample,
-          child: const map_examples.Presenter(),
+          child: ChangeNotifierProvider(
+            create: (_) => map_examples.MapExamplesViewModel(),
+            child: const map_examples.Presenter(),
+          ),
         ),
       ),
     ],

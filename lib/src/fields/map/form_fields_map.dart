@@ -283,9 +283,9 @@ class FormFieldsMap extends StatefulWidget {
     this.tileUrlTemplate = 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
     this.tileAttribution = '© Google',
     this.initialCenter = const LatLng(0, 0),
-    this.initialZoom = 2,
+    this.initialZoom = 13,
     this.maxZoom = 19,
-    this.minZoom = 1,
+    this.minZoom = 4,
     this.panBuffer = 2,
     this.keepAlive = true,
     this.canvasMarkerRadius = 20.0,
@@ -309,6 +309,7 @@ class FormFieldsMap extends StatefulWidget {
     this.playbackInterval = const Duration(seconds: 1),
     this.playbackInterpolationSteps = 0,
     this.showBuiltinPlaybackControls = true,
+    this.maxRenderedRawMarkers = 10000,
   });
 
   final String controllerId;
@@ -328,6 +329,14 @@ class FormFieldsMap extends StatefulWidget {
   final bool showTitle;
 
   final bool showMarkerInCenter;
+
+  /// Maximum number of `rawMarkers` items to render/process. When the
+  /// notifier contains more items than this threshold, only the first
+  /// `maxRenderedRawMarkers` entries are considered for painting and hit
+  /// testing. This prevents out-of-memory and extreme CPU work when
+  /// consumers accidentally provide very large lists (e.g. 1,000,000
+  /// markers).
+  final int maxRenderedRawMarkers;
 
   /// Optional widget drawn at the viewport center when `showMarkerInCenter`
   /// is true. If null, a default pin icon is used.
@@ -1182,11 +1191,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     selector: (_, n) => n.rawMarkers,
                     builder: (context, rawMarkers, _) {
                       if (rawMarkers.isEmpty) return const SizedBox.shrink();
+                      final renderedRawMarkers = rawMarkers.length >
+                              widget.maxRenderedRawMarkers
+                          ? rawMarkers.sublist(0, widget.maxRenderedRawMarkers)
+                          : rawMarkers;
                       return Positioned.fill(
                         child: IgnorePointer(
                           child: CustomPaint(
                             painter: _CanvasRawMarkerPainter(
-                              rawMarkers: rawMarkers,
+                              rawMarkers: renderedRawMarkers,
                               center: _lastCenter ?? widget.initialCenter,
                               zoom: _lastZoom ?? widget.initialZoom,
                               radius: widget.canvasMarkerRadius,
@@ -1658,7 +1671,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final headOffsetMul = 0.6;
         final headRadiusMul = 0.9;
         final size = context.size ?? Size.zero;
-        for (final m in notifier.rawMarkers) {
+        for (final m in _rawMarkersForProcessing(notifier)) {
           double lat;
           double lon;
           String? title;
@@ -1882,9 +1895,22 @@ class FormFieldsMapState extends State<FormFieldsMap>
     widget.onLongPress?.call(latlng);
   }
 
+  /// Return a capped view of `notifier.rawMarkers` suitable for painting and
+  /// hit-testing. Limits the number of items to `widget.maxRenderedRawMarkers`.
+  List<dynamic> _rawMarkersForProcessing(FormFieldsMapNotifier notifier) {
+    final list = notifier.rawMarkers;
+    final max = widget.maxRenderedRawMarkers;
+    if (list.length <= max) return list;
+    try {
+      return list.sublist(0, max);
+    } catch (_) {
+      return list;
+    }
+  }
+
   dynamic _findMetaForShape(FormFieldsMapNotifier notifier, String id) {
     // rawMarkers may contain a Map with an `id` pointing to shape metadata.
-    for (final m in notifier.rawMarkers) {
+    for (final m in _rawMarkersForProcessing(notifier)) {
       if (m is Map && m['id'] == id) return m;
     }
     return null;
@@ -1893,7 +1919,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
   /// Search rawMarkers for a color associated with `id`. Returns an ARGB
   /// int or a string as stored in payloads, or null if not found.
   dynamic _extractColorPayloadForId(FormFieldsMapNotifier notifier, String id) {
-    for (final r in notifier.rawMarkers) {
+    for (final r in _rawMarkersForProcessing(notifier)) {
       if (r is ShapeMeta && r.id == id && r.color != null) {
         try {
           return r.color!.toARGB32();
@@ -1913,7 +1939,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
   dynamic _extractColorPayloadForPoint(
       FormFieldsMapNotifier notifier, LatLng point) {
     const tol = 0.00001; // ~1m tolerance
-    for (final r in notifier.rawMarkers) {
+    for (final r in _rawMarkersForProcessing(notifier)) {
       if (r is ShapeMeta) {
         final lat = r.lat;
         final lon = r.lon;

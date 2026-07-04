@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_fields/src/utils/safe_notify.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utilities/signature_pad_export_result.dart';
 
@@ -64,7 +65,7 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   /// The attached widget will synchronize its preview state on the next frame.
   void setExportResult(SignaturePadExportResult result) {
     _exportResult = result;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Convenience helper — update only the signature, keeping live-capture.
@@ -73,7 +74,7 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
       signature: signature,
       liveCapture: _exportResult?.liveCapture ?? MyImageResult(),
     );
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Clear signature and live-capture.
@@ -81,7 +82,7 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   /// The attached widget will switch back to drawing mode on the next frame.
   void clear() {
     _exportResult = null;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   // ── Internal integration — called only by FormFieldsSignaturePad ──────────
@@ -99,13 +100,13 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   /// @internal — called by the widget after export.
   void updateFromWidget(SignaturePadExportResult result) {
     _exportResult = result;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// @internal — called by the widget after a clear action.
   void clearFromWidget() {
     _exportResult = null;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Programmatically clear the attached [FormFieldsSignaturePad] widget,

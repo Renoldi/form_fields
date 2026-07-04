@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
+import 'package:form_fields/src/utils/safe_notify.dart';
 
 class FormFieldsSignaturePadProvider extends ChangeNotifier {
   double? _uploadProgress;
@@ -15,22 +16,22 @@ class FormFieldsSignaturePadProvider extends ChangeNotifier {
 
   void startUpload({double? initialProgress}) {
     _uploadProgress = initialProgress;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void setUploadProgress(double progress) {
     _uploadProgress = progress.clamp(0.0, 1.0);
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void completeUpload() {
     _uploadProgress = 1.0;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void clearUpload() {
     _uploadProgress = null;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void setPreviewResults({
@@ -39,12 +40,12 @@ class FormFieldsSignaturePadProvider extends ChangeNotifier {
   }) {
     _previewSignatureResult = signature;
     _previewLiveCaptureResult = liveCapture;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   void clearPreviewResults() {
     _previewSignatureResult = null;
     _previewLiveCaptureResult = null;
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 }

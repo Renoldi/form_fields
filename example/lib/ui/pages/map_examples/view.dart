@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
-import 'view_model.dart';
+import 'package:form_fields_example/ui/pages/map_examples/view_model.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 
@@ -18,361 +18,369 @@ String formatNumber(int value) {
 class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => MapExamplesViewModel(),
-      child: Consumer<MapExamplesViewModel>(
-        builder: (context, vm, _) {
-          final content = Stack(
-            children: [
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
+    return Consumer<MapExamplesViewModel>(
+      builder: (context, vm, _) {
+        final content = Stack(
+          children: [
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      Text(context.tr('mapExampleDescription')),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _ActionButton(
+                            label:
+                                'Generate ${formatNumber(vm.createMarkers)} markers',
+                            icon: Icons.auto_awesome,
+                            onPressed: () => vm.generateMarkers(
+                                markerCount: vm.createMarkers),
+                          ),
+                          _ActionButton(
+                            label:
+                                'Generate Polygons (${formatNumber(vm.createPolygons)})',
+                            icon: Icons.change_history,
+                            onPressed: () => vm.generatePolygons(
+                                shapeCount: vm.createPolygons),
+                          ),
+                          _ActionButton(
+                            label:
+                                'Generate Polylines (${formatNumber(vm.createPolylines)})',
+                            icon: Icons.timeline,
+                            onPressed: () => vm.generatePolylines(
+                                shapeCount: vm.createPolylines),
+                          ),
+                          _ActionButton(
+                            label: 'Generate 1 Polyline (for playback)',
+                            icon: Icons.add_road,
+                            onPressed: () => vm.generatePlaybackPolyline(),
+                          ),
+                          _ActionButton(
+                            label:
+                                'Generate Circles (${formatNumber(vm.createCircles)})',
+                            icon: Icons.circle,
+                            onPressed: () => vm.generateCircles(
+                                shapeCount: vm.createCircles),
+                          ),
+                          _ActionButton(
+                            label: 'Clear',
+                            icon: Icons.clear,
+                            outlined: true,
+                            color: Colors.red,
+                            onPressed: () => vm.clearDemoData(),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Show titles'),
+                              const SizedBox(width: 6),
+                              Switch.adaptive(
+                                value: vm.showTitle,
+                                onChanged: (v) => vm.setShowTitle(v),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: FormFieldsMap(
+                    notifier: vm.mapNotifier,
+                    onRequestCurrentLocation: () async => vm.center,
+                    showBuiltinPlaybackControls: false,
+                    enablePolylinePlayback: true,
+                    canvasMarkerRadius: 20.0,
+                    canvasMarkerIcon: const Icon(
+                      Icons.location_pin,
+                      size: 100,
+                    ),
+                    showTitle: vm.showTitle,
+                    onCenterChanged: (value) {
+                      debugPrint('onCenterChanged: $value');
+                    },
+                    // showMarkerInCenter: true,
+                    onTapShape: (sm) async {
+                      // `sm` is a ShapeMeta
+                      final title = sm.title ?? 'Detail';
+                      final subtitle = sm.subtitle ?? '';
+                      final id = sm.id;
+                      final pt = sm.point;
+
+                      if (sm.shapeType == 'marker' ||
+                          (id != null && id.startsWith('m\$'))) {
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: Text(title.toString()),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (subtitle.isNotEmpty) Text(subtitle),
+                                  if (id != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text('ID: $id',
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey)),
+                                  ],
+                                  if (sm.shapeType != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text('Type: ${sm.shapeType}',
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.grey)),
+                                  ],
+                                  ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                        'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
+                                  ]
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text('Close')),
+                                if (id != null)
+                                  TextButton(
+                                    onPressed: () {
+                                      if (id.startsWith('m\$')) {
+                                        // always remove raw marker (markers removed from API)
+                                        vm.mapNotifier.removeRawMarker(id);
+                                      } else if (id.startsWith('p\$')) {
+                                        vm.mapNotifier.removePolygon(id);
+                                      } else if (id.startsWith('l\$')) {
+                                        vm.mapNotifier.removePolyline(id);
+                                      } else if (id.startsWith('c\$')) {
+                                        vm.mapNotifier.removeCircle(id);
+                                      }
+                                      Navigator.of(ctx).pop();
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('Deleted')));
+                                    },
+                                    child: const Text('Delete',
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        final shapeId = sm.id;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Tapped: ${sm.shapeType}${shapeId != null ? ' (ID: $shapeId)' : ''}')));
+                      }
+                    },
+                    initialCenter: vm.center,
+                    // initialZoom: 12.0,
+                    onMapTap: (latlng) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
+                    },
+                  ),
+                ),
+              ],
+            ),
+            // _DraggablePositioned(
+            //   initialRight: 16,
+            //   initialBottom: 16,
+            //   initWidth: 220,
+            //   initHeight: 56,
+            //   child: FloatingActionButton.extended(
+            //     onPressed: zoomToGeneratedBounds,
+            //     icon: const Icon(Icons.zoom_out_map),
+            //     label: const Text('Zoom to generated bounds'),
+            //   ),
+            // ),
+            if (vm.totalPolylines > 0)
+              _DraggablePositioned(
+                // initialRight: 0,
+                initWidth: 260,
+                initHeight: 140,
+                initialTop: 0,
+                child: Card(
+                  elevation: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text('Polyline Playback',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
-                        Text(context.tr('mapExampleDescription')),
-                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ValueListenableBuilder<bool>(
+                              valueListenable: FormFieldsMapController
+                                  .getPlaybackPlayingListenable('default'),
+                              builder: (context, playing, _) {
+                                return IconButton(
+                                  icon: Icon(
+                                      playing ? Icons.pause : Icons.play_arrow),
+                                  onPressed: () {
+                                    if (playing) {
+                                      FormFieldsMapController
+                                          .pausePolylinePlayback('default');
+                                    } else {
+                                      FormFieldsMapController
+                                          .startPolylinePlayback(
+                                              'default', vm.playbackPolylineId);
+                                    }
+                                  },
+                                  tooltip: playing ? 'Pause' : 'Play',
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.replay),
+                              onPressed: () => FormFieldsMapController
+                                  .restartPolylinePlayback('default'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
                         Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
+                          spacing: 8,
+                          runSpacing: 6,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            _ActionButton(
-                              label:
-                                  'Generate ${formatNumber(vm.createMarkers)} markers',
-                              icon: Icons.auto_awesome,
-                              onPressed: () => vm.generateMarkers(
-                                  markerCount: vm.createMarkers),
-                            ),
-                            _ActionButton(
-                              label:
-                                  'Generate Polygons (${formatNumber(vm.createPolygons)})',
-                              icon: Icons.change_history,
-                              onPressed: () => vm.generatePolygons(
-                                  shapeCount: vm.createPolygons),
-                            ),
-                            _ActionButton(
-                              label:
-                                  'Generate Polylines (${formatNumber(vm.createPolylines)})',
-                              icon: Icons.timeline,
-                              onPressed: () => vm.generatePolylines(
-                                  shapeCount: vm.createPolylines),
-                            ),
-                            _ActionButton(
-                              label: 'Generate 1 Polyline (for playback)',
-                              icon: Icons.add_road,
-                              onPressed: () => vm.generatePlaybackPolyline(),
-                            ),
-                            _ActionButton(
-                              label:
-                                  'Generate Circles (${formatNumber(vm.createCircles)})',
-                              icon: Icons.circle,
-                              onPressed: () => vm.generateCircles(
-                                  shapeCount: vm.createCircles),
-                            ),
-                            _ActionButton(
-                              label: 'Clear',
-                              icon: Icons.clear,
-                              outlined: true,
-                              color: Colors.red,
-                              onPressed: () => vm.clearDemoData(),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('Show titles'),
-                                const SizedBox(width: 6),
-                                Switch.adaptive(
-                                  value: vm.showTitle,
-                                  onChanged: (v) => vm.setShowTitle(v),
-                                ),
-                              ],
-                            ),
+                            const Text('Interval:'),
+                            _intervalButton(
+                                vm, '0.5s', const Duration(milliseconds: 500)),
+                            _intervalButton(
+                                vm, '1s', const Duration(seconds: 1)),
+                            _intervalButton(
+                                vm, '2s', const Duration(seconds: 2)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            const Text('Interp:'),
+                            _interpButton(vm, '0', 0),
+                            _interpButton(vm, '2', 2),
+                            _interpButton(vm, '4', 4),
+                            _interpButton(vm, '8', 8),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  Expanded(
-                    child: FormFieldsMap(
-                      notifier: vm.mapNotifier,
-                      onRequestCurrentLocation: () async => vm.center,
-                      showBuiltinPlaybackControls: false,
-                      enablePolylinePlayback: true,
-                      canvasMarkerRadius: 20.0,
-                      canvasMarkerIcon: const Icon(
-                        Icons.location_pin,
-                        size: 150,
-                      ),
-                      showTitle: vm.showTitle,
-                      onCenterChanged: (value) {
-                        debugPrint('onCenterChanged: $value');
-                      },
-                      // showMarkerInCenter: true,
-                      onTapShape: (sm) async {
-                        // `sm` is a ShapeMeta
-                        final title = sm.title ?? 'Detail';
-                        final subtitle = sm.subtitle ?? '';
-                        final id = sm.id;
-                        final pt = sm.point;
-
-                        if (sm.shapeType == 'marker' ||
-                            (id != null && id.startsWith('m\$'))) {
-                          await showDialog<void>(
-                            context: context,
-                            builder: (ctx) {
-                              return AlertDialog(
-                                title: Text(title.toString()),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (subtitle.isNotEmpty) Text(subtitle),
-                                    if (id != null) ...[
-                                      const SizedBox(height: 8),
-                                      Text('ID: $id',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
-                                    ],
-                                    if (sm.shapeType != null) ...[
-                                      const SizedBox(height: 8),
-                                      Text('Type: ${sm.shapeType}',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
-                                    ],
-                                    ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                          'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
-                                    ]
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () => Navigator.of(ctx).pop(),
-                                      child: const Text('Close')),
-                                  if (id != null)
-                                    TextButton(
-                                      onPressed: () {
-                                        if (id.startsWith('m\$')) {
-                                          // always remove raw marker (markers removed from API)
-                                          vm.mapNotifier.removeRawMarker(id);
-                                        } else if (id.startsWith('p\$')) {
-                                          vm.mapNotifier.removePolygon(id);
-                                        } else if (id.startsWith('l\$')) {
-                                          vm.mapNotifier.removePolyline(id);
-                                        } else if (id.startsWith('c\$')) {
-                                          vm.mapNotifier.removeCircle(id);
-                                        }
-                                        Navigator.of(ctx).pop();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                                content: Text('Deleted')));
-                                      },
-                                      child: const Text('Delete',
-                                          style: TextStyle(color: Colors.red)),
-                                    ),
-                                ],
-                              );
-                            },
-                          );
-                        } else {
-                          final shapeId = sm.id;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  'Tapped: ${sm.shapeType}${shapeId != null ? ' (ID: $shapeId)' : ''}')));
-                        }
-                      },
-                      initialCenter: vm.center,
-                      initialZoom: 12.0,
-                      onMapTap: (latlng) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
-              // _DraggablePositioned(
-              //   initialRight: 16,
-              //   initialBottom: 16,
-              //   initWidth: 220,
-              //   initHeight: 56,
-              //   child: FloatingActionButton.extended(
-              //     onPressed: zoomToGeneratedBounds,
-              //     icon: const Icon(Icons.zoom_out_map),
-              //     label: const Text('Zoom to generated bounds'),
-              //   ),
-              // ),
-              if (vm.totalPolylines > 0)
-                _DraggablePositioned(
-                  // initialRight: 0,
-                  initWidth: 260,
-                  initHeight: 140,
-                  initialTop: 0,
-                  child: Card(
-                    elevation: 6,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Polyline Playback',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        );
+
+        // Progress overlay
+        final showProgress = vm.isLoading ||
+            vm.generatedMarkers > 0 ||
+            vm.generatedPolygons > 0 ||
+            vm.generatedPolylines > 0 ||
+            vm.generatedCircles > 0;
+        if (showProgress) {
+          return Stack(
+            children: [
+              content,
+              _DraggablePositioned(
+                initialRight: 12,
+                initialTop: 12,
+                initWidth: 220,
+                initHeight: 160,
+                child: Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            'Markers: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
+                        if (vm.totalMarkers > 0)
+                          SizedBox(
+                            width: 180,
+                            child: LinearProgressIndicator(
+                                value: vm.totalMarkers > 0
+                                    ? vm.generatedMarkers / vm.totalMarkers
+                                    : null),
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                            'Polygons: ${formatNumber(vm.generatedPolygons)}/${formatNumber(vm.totalPolygons)}'),
+                        if (vm.totalPolygons > 0)
+                          SizedBox(
+                            width: 180,
+                            child: LinearProgressIndicator(
+                                value: vm.totalPolygons > 0
+                                    ? vm.generatedPolygons / vm.totalPolygons
+                                    : null),
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                            'Polylines: ${formatNumber(vm.generatedPolylines)}/${formatNumber(vm.totalPolylines)}'),
+                        if (vm.totalPolylines > 0)
+                          SizedBox(
+                            width: 180,
+                            child: LinearProgressIndicator(
+                                value: vm.totalPolylines > 0
+                                    ? vm.generatedPolylines / vm.totalPolylines
+                                    : null),
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                            'Circles: ${formatNumber(vm.generatedCircles)}/${formatNumber(vm.totalCircles)}'),
+                        if (vm.totalCircles > 0)
+                          SizedBox(
+                            width: 180,
+                            child: LinearProgressIndicator(
+                                value: vm.totalCircles > 0
+                                    ? vm.generatedCircles / vm.totalCircles
+                                    : null),
+                          ),
+                        if (vm.markerUpdatesActive) ...[
                           const SizedBox(height: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ValueListenableBuilder<bool>(
-                                valueListenable: FormFieldsMapController
-                                    .getPlaybackPlayingListenable('default'),
-                                builder: (context, playing, _) {
-                                  return IconButton(
-                                    icon: Icon(playing
-                                        ? Icons.pause
-                                        : Icons.play_arrow),
-                                    onPressed: () {
-                                      if (playing) {
-                                        FormFieldsMapController
-                                            .pausePolylinePlayback('default');
-                                      } else {
-                                        FormFieldsMapController
-                                            .startPolylinePlayback('default',
-                                                vm.playbackPolylineId);
-                                      }
-                                    },
-                                    tooltip: playing ? 'Pause' : 'Play',
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.replay),
-                                onPressed: () => FormFieldsMapController
-                                    .restartPolylinePlayback('default'),
-                              ),
-                            ],
-                          ),
+                          Text(
+                              'Next update in: ${vm.markerUpdateCountdownFormatted}'),
                           const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              const Text('Interval:'),
-                              _intervalButton(vm, '0.5s',
-                                  const Duration(milliseconds: 500)),
-                              _intervalButton(
-                                  vm, '1s', const Duration(seconds: 1)),
-                              _intervalButton(
-                                  vm, '2s', const Duration(seconds: 2)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              const Text('Interp:'),
-                              _interpButton(vm, '0', 0),
-                              _interpButton(vm, '2', 2),
-                              _interpButton(vm, '4', 4),
-                              _interpButton(vm, '8', 8),
-                            ],
+                          SizedBox(
+                            width: 180,
+                            child: LinearProgressIndicator(
+                                value: vm.markerUpdateInterval.inSeconds > 0
+                                    ? (vm.markerUpdateInterval.inSeconds -
+                                            vm.markerUpdateRemainingSeconds) /
+                                        vm.markerUpdateInterval.inSeconds
+                                    : null),
                           ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
+              ),
             ],
           );
+        }
 
-          // Progress overlay
-          final showProgress = vm.isLoading ||
-              vm.generatedMarkers > 0 ||
-              vm.generatedPolygons > 0 ||
-              vm.generatedPolylines > 0 ||
-              vm.generatedCircles > 0;
-          if (showProgress) {
-            return Stack(
-              children: [
-                content,
-                _DraggablePositioned(
-                  initialRight: 12,
-                  initialTop: 12,
-                  initWidth: 220,
-                  initHeight: 160,
-                  child: Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              'Markers: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
-                          if (vm.totalMarkers > 0)
-                            SizedBox(
-                              width: 180,
-                              child: LinearProgressIndicator(
-                                  value: vm.totalMarkers > 0
-                                      ? vm.generatedMarkers / vm.totalMarkers
-                                      : null),
-                            ),
-                          const SizedBox(height: 6),
-                          Text(
-                              'Polygons: ${formatNumber(vm.generatedPolygons)}/${formatNumber(vm.totalPolygons)}'),
-                          if (vm.totalPolygons > 0)
-                            SizedBox(
-                              width: 180,
-                              child: LinearProgressIndicator(
-                                  value: vm.totalPolygons > 0
-                                      ? vm.generatedPolygons / vm.totalPolygons
-                                      : null),
-                            ),
-                          const SizedBox(height: 6),
-                          Text(
-                              'Polylines: ${formatNumber(vm.generatedPolylines)}/${formatNumber(vm.totalPolylines)}'),
-                          if (vm.totalPolylines > 0)
-                            SizedBox(
-                              width: 180,
-                              child: LinearProgressIndicator(
-                                  value: vm.totalPolylines > 0
-                                      ? vm.generatedPolylines /
-                                          vm.totalPolylines
-                                      : null),
-                            ),
-                          const SizedBox(height: 6),
-                          Text(
-                              'Circles: ${formatNumber(vm.generatedCircles)}/${formatNumber(vm.totalCircles)}'),
-                          if (vm.totalCircles > 0)
-                            SizedBox(
-                              width: 180,
-                              child: LinearProgressIndicator(
-                                  value: vm.totalCircles > 0
-                                      ? vm.generatedCircles / vm.totalCircles
-                                      : null),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-
-          return content;
-        },
-      ),
+        return content;
+      },
     );
   }
 }

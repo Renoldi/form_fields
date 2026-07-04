@@ -2,13 +2,14 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:form_fields/src/utils/safe_notify.dart';
 import 'package:form_fields/form_fields.dart';
 
 /// Controller for managing FormFields state
 class FormFieldsController extends ChangeNotifier {
   /// Notify listeners of changes
   void commit() {
-    notifyListeners();
+    safeNotify(() => notifyListeners());
   }
 
   /// Form value storage
