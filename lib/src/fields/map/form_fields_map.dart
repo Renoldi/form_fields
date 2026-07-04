@@ -305,6 +305,10 @@ class FormFieldsMap extends StatefulWidget {
     this.onCameraIdle,
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
     this.onRequestCurrentLocation,
+    this.enablePolylinePlayback = false,
+    this.playbackInterval = const Duration(seconds: 1),
+    this.playbackInterpolationSteps = 4,
+    this.showBuiltinPlaybackControls = true,
   });
 
   final String controllerId;
@@ -346,6 +350,25 @@ class FormFieldsMap extends StatefulWidget {
 
   final Future<LatLng>? Function()? onRequestCurrentLocation;
 
+  /// Enable an on-map polyline playback control. When enabled a small set
+  /// of playback buttons are shown and the internal playback API is wired
+  /// so external callers can also control playback via
+  /// `FormFieldsMapController`.
+  final bool enablePolylinePlayback;
+
+  /// Interval between playback steps. Defaults to 1 second.
+  final Duration playbackInterval;
+
+  /// Number of interpolated points to insert between each pair of original
+  /// polyline points. Higher values make movement smoother but increase the
+  /// number of rendered steps.
+  final int playbackInterpolationSteps;
+
+  /// Whether to show the package's built-in on-map playback FAB controls.
+  /// Set to `false` to hide them (for example when providing a custom
+  /// external UI), defaults to `true` to preserve previous behavior.
+  final bool showBuiltinPlaybackControls;
+
   @override
   FormFieldsMapState createState() => FormFieldsMapState();
 }
@@ -361,6 +384,21 @@ class FormFieldsMapState extends State<FormFieldsMap>
   // build" exception).
   late FormFieldsMapNotifier _internalNotifier;
   bool _ownsInternalNotifier = false;
+
+  // Playback state
+  Timer? _playbackTimer;
+
+  /// Desired interval between original polyline points (user-facing).
+  Duration _playbackInterval = const Duration(seconds: 1);
+
+  /// Actual timer tick interval used for sub-steps (computed from
+  /// `_playbackInterval` and interpolation steps).
+  Duration _playbackSubstepInterval = const Duration(seconds: 1);
+  bool _isPlaying = false;
+  List<LatLng> _playbackPoints = [];
+  int _playbackIndex = 0;
+  String? _playbackPolylineId;
+  int _playbackInterpolationSteps = 4;
 
   LatLng? _lastCenter;
   double? _lastZoom;
@@ -378,6 +416,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _ownsInternalNotifier = widget.notifier == null;
     _internalNotifier = widget.notifier ?? FormFieldsMapNotifier();
     _resolveCanvasMarkerIcon();
+    _playbackInterval = widget.playbackInterval;
+    _playbackInterpolationSteps = widget.playbackInterpolationSteps;
+    _playbackSubstepInterval =
+        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
         _mapController.move(widget.initialCenter, widget.initialZoom);
@@ -387,6 +429,39 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     FormFieldsMapController.registerOnMarkerTap(
         widget.controllerId, widget.onTapShape);
+
+    // Register playback handler so external callers can control playback via
+    // `FormFieldsMapController`.
+    if (widget.enablePolylinePlayback) {
+      FormFieldsMapController.registerPlaybackHandler(
+          widget.controllerId,
+          FormFieldsMapPlaybackHandler(
+            start: (polylineId) => _startPolylinePlayback(polylineId),
+            pause: () => _pausePolylinePlayback(),
+            restart: () => _restartPolylinePlayback(),
+            setInterval: (d) => _setPolylinePlaybackInterval(d),
+            setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
+            toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+          ));
+    }
+  }
+
+  List<LatLng> _buildInterpolatedPoints(List<LatLng> pts, int steps) {
+    if (pts.length < 2 || steps <= 0) return List<LatLng>.from(pts);
+    final out = <LatLng>[];
+    for (var i = 0; i < pts.length - 1; i++) {
+      final a = pts[i];
+      final b = pts[i + 1];
+      out.add(a);
+      for (var s = 1; s <= steps; s++) {
+        final t = s / (steps + 1);
+        final lat = a.latitude + (b.latitude - a.latitude) * t;
+        final lon = a.longitude + (b.longitude - a.longitude) * t;
+        out.add(LatLng(lat, lon));
+      }
+    }
+    out.add(pts.last);
+    return out;
   }
 
   void _safeSetState(VoidCallback fn) {
@@ -424,6 +499,44 @@ class FormFieldsMapState extends State<FormFieldsMap>
       FormFieldsMapController.removeOnMarkerTap(oldWidget.controllerId);
       FormFieldsMapController.registerOnMarkerTap(
           widget.controllerId, widget.onTapShape);
+      // Move playback handler registration when controller id changes.
+      FormFieldsMapController.unregisterPlaybackHandler(oldWidget.controllerId);
+      if (widget.enablePolylinePlayback) {
+        FormFieldsMapController.registerPlaybackHandler(
+            widget.controllerId,
+            FormFieldsMapPlaybackHandler(
+              start: (polylineId) => _startPolylinePlayback(polylineId),
+              pause: () => _pausePolylinePlayback(),
+              restart: () => _restartPolylinePlayback(),
+              setInterval: (d) => _setPolylinePlaybackInterval(d),
+              setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
+              toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+            ));
+      }
+    }
+
+    // Handle changes to playback configuration
+    if (oldWidget.playbackInterval != widget.playbackInterval ||
+        oldWidget.playbackInterpolationSteps !=
+            widget.playbackInterpolationSteps) {
+      _playbackInterval = widget.playbackInterval;
+      _playbackInterpolationSteps = widget.playbackInterpolationSteps;
+      _playbackSubstepInterval = _computeSubstepInterval(
+          _playbackInterval, _playbackInterpolationSteps);
+      if (_isPlaying) {
+        _playbackTimer?.cancel();
+        _playbackTimer = Timer.periodic(
+            _playbackSubstepInterval, (_) => _advancePlaybackStep());
+      }
+      // rebuild points if playing
+      if (_playbackPolylineId != null) {
+        final notifier = widget.notifier ?? _internalNotifier;
+        final pl = notifier._polylineMap[_playbackPolylineId];
+        if (pl != null) {
+          _playbackPoints =
+              _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+        }
+      }
     }
   }
 
@@ -577,6 +690,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _playbackTimer?.cancel();
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
       _canvasMarkerImageStream!
@@ -588,6 +702,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       } catch (_) {}
     }
     FormFieldsMapController.removeOnMarkerTap(widget.controllerId);
+    FormFieldsMapController.unregisterPlaybackHandler(widget.controllerId);
     super.dispose();
   }
 
@@ -629,6 +744,154 @@ class FormFieldsMapState extends State<FormFieldsMap>
       } catch (_) {}
       widget.onCameraIdle?.call();
     });
+  }
+
+  void _setPolylinePlaybackInterval(Duration interval) {
+    _playbackInterval = interval;
+    _playbackSubstepInterval =
+        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
+    if (_isPlaying) {
+      _playbackTimer?.cancel();
+      _playbackTimer = Timer.periodic(
+          _playbackSubstepInterval, (_) => _advancePlaybackStep());
+    }
+  }
+
+  // Allow runtime update of interpolation steps
+  void _setPlaybackInterpolationSteps(int steps) {
+    _playbackInterpolationSteps = steps.clamp(0, 1000);
+    _playbackSubstepInterval =
+        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
+    // rebuild playback list if currently playing
+    if (_playbackPolylineId != null) {
+      final notifier = widget.notifier ?? _internalNotifier;
+      final pl = notifier._polylineMap[_playbackPolylineId];
+      if (pl != null) {
+        final currentPoint = _playbackPoints.isNotEmpty &&
+                _playbackIndex < _playbackPoints.length
+            ? _playbackPoints[_playbackIndex]
+            : null;
+        _playbackPoints =
+            _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+        // re-find closest index to currentPoint
+        if (currentPoint != null) {
+          var best = 0;
+          var bestDist = double.infinity;
+          for (var i = 0; i < _playbackPoints.length; i++) {
+            final d = pow(
+                    (_playbackPoints[i].latitude - currentPoint.latitude), 2) +
+                pow((_playbackPoints[i].longitude - currentPoint.longitude), 2);
+            if (d < bestDist) {
+              bestDist = d as double;
+              best = i;
+            }
+          }
+          _playbackIndex = best;
+        }
+      }
+    }
+  }
+
+  void _togglePolylinePlayback(String? polylineId) {
+    if (_isPlaying) {
+      _pausePolylinePlayback();
+    } else {
+      _startPolylinePlayback(polylineId);
+    }
+  }
+
+  Duration _computeSubstepInterval(Duration perPoint, int steps) {
+    final div = (steps <= 0) ? 1 : (steps + 1);
+    final ms = (perPoint.inMilliseconds / div).round();
+    return Duration(milliseconds: max(1, ms));
+  }
+
+  void _startPolylinePlayback(String? polylineId) {
+    try {
+      final notifier = widget.notifier ?? _internalNotifier;
+      String? id = polylineId ??
+          (notifier._polylineMap.isNotEmpty
+              ? notifier._polylineMap.keys.first
+              : null);
+      if (id == null) return;
+      final pl = notifier._polylineMap[id];
+      if (pl == null || pl.points.isEmpty) return;
+      // If we're starting the same polyline that was previously playing and
+      // there are existing playback points, treat this as a resume rather
+      // than always restarting from the beginning. If the playback had
+      // already reached the end, fall through and restart from zero.
+      if (_playbackPolylineId == id && _playbackPoints.isNotEmpty) {
+        if (_playbackIndex < _playbackPoints.length - 1) {
+          _isPlaying = true;
+          _safeSetState(() {});
+          _playbackTimer?.cancel();
+          _playbackTimer = Timer.periodic(
+              _playbackSubstepInterval, (_) => _advancePlaybackStep());
+          return;
+        } else {
+          // at end -> restart from beginning
+          _playbackIndex = 0;
+        }
+      }
+
+      // New polyline (or restarting finished one): build points and start
+      _playbackPolylineId = id;
+      _playbackPoints =
+          _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+      _playbackIndex = 0;
+      _isPlaying = true;
+      _safeSetState(() {});
+      _playbackTimer?.cancel();
+      _playbackTimer = Timer.periodic(
+          _playbackSubstepInterval, (_) => _advancePlaybackStep());
+      _updatePlaybackMarker();
+    } catch (_) {}
+  }
+
+  void _pausePolylinePlayback() {
+    _isPlaying = false;
+    _playbackTimer?.cancel();
+    _safeSetState(() {});
+  }
+
+  void _restartPolylinePlayback() {
+    _playbackIndex = 0;
+    _isPlaying = true;
+    _safeSetState(() {});
+    _playbackTimer?.cancel();
+    _playbackTimer =
+        Timer.periodic(_playbackSubstepInterval, (_) => _advancePlaybackStep());
+    _updatePlaybackMarker();
+  }
+
+  void _advancePlaybackStep() {
+    if (!_isPlaying) return;
+    if (_playbackPoints.isEmpty) return;
+    if (_playbackIndex < _playbackPoints.length - 1) {
+      _playbackIndex++;
+    } else {
+      // stop at end
+      _isPlaying = false;
+      _playbackTimer?.cancel();
+    }
+    _updatePlaybackMarker();
+  }
+
+  void _updatePlaybackMarker() {
+    try {
+      if (!mounted) return;
+      if (_playbackPoints.isEmpty) return;
+      final p = _playbackPoints[_playbackIndex];
+      final payload = <String, dynamic>{
+        'id': 'playback_marker',
+        'shapeType': 'marker',
+        'lat': p.latitude,
+        'lon': p.longitude,
+        'title': null,
+      };
+      final notifier = widget.notifier ?? _internalNotifier;
+      notifier.rawMarkers = [payload];
+    } catch (_) {}
   }
 
   Future<void> animateTo(LatLng dest, double zoom,
@@ -853,6 +1116,27 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   animateTo(center, newZoom);
                 },
               ),
+              const SizedBox(height: 8),
+              if (widget.enablePolylinePlayback &&
+                  widget.showBuiltinPlaybackControls) ...[
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () => _togglePolylinePlayback(null),
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.replay),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () => _restartPolylinePlayback(),
+                ),
+              ],
             ],
           ),
         ),

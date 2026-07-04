@@ -61,6 +61,11 @@ class View extends PresenterState {
                                   shapeCount: vm.createPolylines),
                             ),
                             _ActionButton(
+                              label: 'Generate 1 Polyline (for playback)',
+                              icon: Icons.add_road,
+                              onPressed: () => vm.generatePlaybackPolyline(),
+                            ),
+                            _ActionButton(
                               label:
                                   'Generate Circles (${formatNumber(vm.createCircles)})',
                               icon: Icons.circle,
@@ -94,6 +99,8 @@ class View extends PresenterState {
                     child: FormFieldsMap(
                       notifier: vm.mapNotifier,
                       onRequestCurrentLocation: () async => vm.center,
+                      showBuiltinPlaybackControls: true,
+                      enablePolylinePlayback: true,
                       canvasMarkerRadius: 20.0,
                       canvasMarkerIcon: const Icon(
                         Icons.location_pin,
@@ -203,6 +210,104 @@ class View extends PresenterState {
               //     label: const Text('Zoom to generated bounds'),
               //   ),
               // ),
+              if (vm.totalPolylines > 0)
+                _DraggablePositioned(
+                  initialRight: 16,
+                  initWidth: 260,
+                  initHeight: 140,
+                  child: Card(
+                    elevation: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Polyline Playback',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(vm.isPlaybackPlaying
+                                    ? Icons.pause
+                                    : Icons.play_arrow),
+                                onPressed: () {
+                                  FormFieldsMapController
+                                      .togglePolylinePlayback(
+                                          'default', vm.playbackPolylineId);
+                                  vm.setPlaybackPlaying(!vm.isPlaybackPlaying);
+                                },
+                                tooltip:
+                                    vm.isPlaybackPlaying ? 'Pause' : 'Play',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.replay),
+                                onPressed: () => FormFieldsMapController
+                                    .restartPolylinePlayback('default'),
+                                tooltip: 'Restart',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              const Text('Interval:'),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterval('default',
+                                          const Duration(milliseconds: 500)),
+                                  child: const Text('0.5s')),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterval('default',
+                                          const Duration(seconds: 1)),
+                                  child: const Text('1s')),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterval('default',
+                                          const Duration(seconds: 2)),
+                                  child: const Text('2s')),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              const Text('Interp:'),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterpolationSteps(
+                                          'default', 0),
+                                  child: const Text('0')),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterpolationSteps(
+                                          'default', 2),
+                                  child: const Text('2')),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterpolationSteps(
+                                          'default', 4),
+                                  child: const Text('4')),
+                              TextButton(
+                                  onPressed: () => FormFieldsMapController
+                                      .setPolylinePlaybackInterpolationSteps(
+                                          'default', 8),
+                                  child: const Text('8')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
 

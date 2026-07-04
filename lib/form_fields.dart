@@ -156,5 +156,6 @@ export 'src/localization/form_fields_localizations.dart';
 // Map widget
 export 'src/fields/map/form_fields_map.dart'
     show FormFieldsMap, FormFieldsMapNotifier;
-export 'src/controllers/map_controller.dart' show FormFieldsMapController;
+export 'src/controllers/map_controller.dart'
+    show FormFieldsMapController, FormFieldsMapPlaybackHandler;
 export 'src/models/shape_meta.dart' show ShapeMeta;

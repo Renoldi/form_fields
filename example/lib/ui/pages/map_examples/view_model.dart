@@ -24,6 +24,13 @@ class MapExamplesViewModel extends ChangeNotifier {
 
   int generatedPolylines = 0;
   int totalPolylines = 0;
+  String? playbackPolylineId;
+  bool isPlaybackPlaying = false;
+
+  void setPlaybackPlaying(bool v) {
+    isPlaybackPlaying = v;
+    notifyListeners();
+  }
 
   int generatedCircles = 0;
   int totalCircles = 0;
@@ -51,6 +58,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     mapNotifier.clearRawMarkers();
     mapNotifier.clearPolygons();
     mapNotifier.clearPolylines();
+    playbackPolylineId = null;
     mapNotifier.clearCircles();
     notifyListeners();
   }
@@ -193,6 +201,37 @@ class MapExamplesViewModel extends ChangeNotifier {
       notifyListeners();
       await Future.delayed(const Duration(milliseconds: 1));
     }
+  }
+
+  /// Generate a single polyline near the current center and mark it as the
+  /// playback polyline (so the example UI can start playback for this one).
+  void generatePlaybackPolyline() {
+    final rnd = math.Random();
+    final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
+    final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
+    final pts = <LatLng>[];
+    for (var s = 0; s < 6; s++) {
+      final ang = (s / 6) * math.pi * 2;
+      pts.add(LatLng(
+          baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
+    }
+    final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.purple);
+    final id = mapNotifier.addPolyline(pl);
+    // add a marker at midpoint for interactivity
+    final mid = pts[pts.length ~/ 2];
+    mapNotifier.appendRawMarkers([
+      ShapeMeta(
+        lat: mid.latitude,
+        lon: mid.longitude,
+        title: 'Playback Polyline',
+        subtitle: id,
+        id: id,
+        shapeType: 'polyline',
+      )
+    ]);
+    playbackPolylineId = id;
+    generatedPolylines = generatedPolylines + 1;
+    notifyListeners();
   }
 
   Future<void> generateCircles({int shapeCount = 5}) async {

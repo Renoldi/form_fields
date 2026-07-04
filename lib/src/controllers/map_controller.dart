@@ -93,4 +93,97 @@ class FormFieldsMapController {
   static void remove(String id) {
     _controllers.remove(id);
   }
+
+  // Playback handler registry for polyline playback control.
+  static final Map<String, FormFieldsMapPlaybackHandler?> _playbackHandlers =
+      {};
+
+  /// Register a playback handler for a given controller id. Pass `null`
+  /// to unregister.
+  static void registerPlaybackHandler(
+      String id, FormFieldsMapPlaybackHandler? handler) {
+    if (handler == null) {
+      _playbackHandlers.remove(id);
+    } else {
+      _playbackHandlers[id] = handler;
+    }
+  }
+
+  /// Unregister a playback handler for [id].
+  static void unregisterPlaybackHandler(String id) {
+    _playbackHandlers.remove(id);
+  }
+
+  /// Control helpers that forward to a registered playback handler (if any).
+  static void startPolylinePlayback(String id, String? polylineId) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.start(polylineId);
+    } catch (_) {}
+  }
+
+  static void pausePolylinePlayback(String id) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.pause();
+    } catch (_) {}
+  }
+
+  static void restartPolylinePlayback(String id) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.restart();
+    } catch (_) {}
+  }
+
+  static void setPolylinePlaybackInterval(String id, Duration interval) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.setInterval(interval);
+    } catch (_) {}
+  }
+
+  /// Set the number of interpolation steps used by the playback handler
+  /// for [id]. This forwards to the registered handler if present.
+  static void setPolylinePlaybackInterpolationSteps(String id, int steps) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.setInterpolationSteps(steps);
+    } catch (_) {}
+  }
+
+  /// Toggle playback (start/resume or pause) for the given controller id.
+  static void togglePolylinePlayback(String id, String? polylineId) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.toggle(polylineId);
+    } catch (_) {}
+  }
+}
+
+/// A small value-object used to bridge playback control commands from
+/// external callers (via `FormFieldsMapController`) into a concrete
+/// `FormFieldsMapState` implementation.
+class FormFieldsMapPlaybackHandler {
+  final void Function(String? polylineId) start;
+  final VoidCallback pause;
+  final VoidCallback restart;
+  final void Function(Duration) setInterval;
+  final void Function(int) setInterpolationSteps;
+  final void Function(String? polylineId) toggle;
+
+  FormFieldsMapPlaybackHandler({
+    required this.start,
+    required this.pause,
+    required this.restart,
+    required this.setInterval,
+    required this.setInterpolationSteps,
+    required this.toggle,
+  });
 }
