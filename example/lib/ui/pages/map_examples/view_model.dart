@@ -105,45 +105,52 @@ class MapExamplesViewModel extends ChangeNotifier {
   }
 
   Future<void> generatePolygons({int shapeCount = 5}) async {
-    generatedPolygons = 0;
-    final rnd = math.Random(54321);
+    isLoading = true;
+    notifyListeners();
+    try {
+      generatedPolygons = 0;
+      final rnd = math.Random(54321);
 
-    for (var i = 0; i < shapeCount; i++) {
-      final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final pts = <LatLng>[];
-      final sides = 4 + (rnd.nextInt(3));
-      final radiusDeg = 0.02 + rnd.nextDouble() * 0.06;
-      for (var s = 0; s < sides; s++) {
-        final ang = (s / sides) * math.pi * 2;
-        pts.add(LatLng(baseLat + math.sin(ang) * radiusDeg,
-            baseLng + math.cos(ang) * radiusDeg));
+      for (var i = 0; i < shapeCount; i++) {
+        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final pts = <LatLng>[];
+        final sides = 4 + (rnd.nextInt(3));
+        final radiusDeg = 0.02 + rnd.nextDouble() * 0.06;
+        for (var s = 0; s < sides; s++) {
+          final ang = (s / sides) * math.pi * 2;
+          pts.add(LatLng(baseLat + math.sin(ang) * radiusDeg,
+              baseLng + math.cos(ang) * radiusDeg));
+        }
+        final poly = Polygon(
+          points: pts,
+          color: Colors.green.withValues(alpha: 0.25),
+          borderColor: Colors.green,
+          borderStrokeWidth: 2,
+        );
+        final id = mapNotifier.addPolygon(poly);
+        // add a small raw marker at centroid for interaction & metadata
+        final avgLat =
+            pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
+        final avgLng =
+            pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
+        mapNotifier.appendRawMarkers([
+          ShapeMeta(
+            lat: avgLat,
+            lon: avgLng,
+            title: 'Polygon #${i + 1}',
+            subtitle: id,
+            id: id,
+            shapeType: 'polygon',
+          )
+        ]);
+        generatedPolygons = i + 1;
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 1));
       }
-      final poly = Polygon(
-        points: pts,
-        color: Colors.green.withValues(alpha: 0.25),
-        borderColor: Colors.green,
-        borderStrokeWidth: 2,
-      );
-      final id = mapNotifier.addPolygon(poly);
-      // add a small raw marker at centroid for interaction & metadata
-      final avgLat =
-          pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
-      final avgLng =
-          pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
-      mapNotifier.appendRawMarkers([
-        ShapeMeta(
-          lat: avgLat,
-          lon: avgLng,
-          title: 'Polygon #${i + 1}',
-          subtitle: id,
-          id: id,
-          shapeType: 'polygon',
-        )
-      ]);
-      generatedPolygons = i + 1;
+    } finally {
+      isLoading = false;
       notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 1));
     }
   }
 
@@ -194,37 +201,44 @@ class MapExamplesViewModel extends ChangeNotifier {
   }
 
   Future<void> generatePolylines({int shapeCount = 5}) async {
-    generatedPolylines = 0;
-    final rnd = math.Random(98765);
+    isLoading = true;
+    notifyListeners();
+    try {
+      generatedPolylines = 0;
+      final rnd = math.Random(98765);
 
-    for (var i = 0; i < shapeCount; i++) {
-      final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final pts = <LatLng>[];
-      final segs = 3 + rnd.nextInt(5);
-      final step = 0.02 + rnd.nextDouble() * 0.04;
-      for (var s = 0; s < segs; s++) {
-        pts.add(LatLng(baseLat + (s - segs / 2) * step,
-            baseLng + (rnd.nextDouble() - 0.5) * step));
+      for (var i = 0; i < shapeCount; i++) {
+        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final pts = <LatLng>[];
+        final segs = 3 + rnd.nextInt(5);
+        final step = 0.02 + rnd.nextDouble() * 0.04;
+        for (var s = 0; s < segs; s++) {
+          pts.add(LatLng(baseLat + (s - segs / 2) * step,
+              baseLng + (rnd.nextDouble() - 0.5) * step));
+        }
+        final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.blue);
+        final id = mapNotifier.addPolyline(pl);
+        // place raw marker at polyline midpoint for interaction
+        final midIndex = pts.length ~/ 2;
+        final mid = pts[midIndex];
+        mapNotifier.appendRawMarkers([
+          ShapeMeta(
+            lat: mid.latitude,
+            lon: mid.longitude,
+            title: 'Polyline #${i + 1}',
+            subtitle: id,
+            id: id,
+            shapeType: 'polyline',
+          )
+        ]);
+        generatedPolylines = i + 1;
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 1));
       }
-      final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.blue);
-      final id = mapNotifier.addPolyline(pl);
-      // place raw marker at polyline midpoint for interaction
-      final midIndex = pts.length ~/ 2;
-      final mid = pts[midIndex];
-      mapNotifier.appendRawMarkers([
-        ShapeMeta(
-          lat: mid.latitude,
-          lon: mid.longitude,
-          title: 'Polyline #${i + 1}',
-          subtitle: id,
-          id: id,
-          shapeType: 'polyline',
-        )
-      ]);
-      generatedPolylines = i + 1;
+    } finally {
+      isLoading = false;
       notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 1));
     }
   }
 
@@ -237,142 +251,156 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// roads. If the network request fails, falls back to a simple circular
   /// polyline near the center.
   Future<void> generatePlaybackPolyline({bool useRoads = true}) async {
-    final rnd = math.Random();
+    isLoading = true;
+    notifyListeners();
+    try {
+      final rnd = math.Random();
 
-    List<LatLng>? routePoints;
+      List<LatLng>? routePoints;
 
-    if (useRoads) {
-      try {
-        // pick start/end near center with small offsets
-        final startLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
-        final startLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
-        final endLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
-        final endLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
-
-        final url =
-            'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson';
+      if (useRoads) {
         try {
-          final resp = await DioUtil.get(url);
-          if (resp.statusCode == 200 && resp.data != null) {
-            final dynamic parsed = resp.data is String
-                ? json.decode(resp.data as String)
-                : resp.data;
-            if (parsed is Map &&
-                parsed['routes'] is List &&
-                parsed['routes'].isNotEmpty) {
-              final geom = parsed['routes'][0]['geometry'];
-              if (geom is Map && geom['coordinates'] is List) {
-                final coords = geom['coordinates'] as List;
-                routePoints = coords
-                    .map<LatLng?>((c) {
-                      if (c is List && c.length >= 2) {
-                        final lon = (c[0] as num).toDouble();
-                        final lat = (c[1] as num).toDouble();
-                        return LatLng(lat, lon);
-                      }
-                      return null;
-                    })
-                    .whereType<LatLng>()
-                    .toList(growable: false);
+          // pick start/end near center with small offsets
+          final startLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
+          final startLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
+          final endLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
+          final endLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
+
+          final url =
+              'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson';
+          try {
+            final resp = await DioUtil.get(url);
+            if (resp.statusCode == 200 && resp.data != null) {
+              final dynamic parsed = resp.data is String
+                  ? json.decode(resp.data as String)
+                  : resp.data;
+              if (parsed is Map &&
+                  parsed['routes'] is List &&
+                  parsed['routes'].isNotEmpty) {
+                final geom = parsed['routes'][0]['geometry'];
+                if (geom is Map && geom['coordinates'] is List) {
+                  final coords = geom['coordinates'] as List;
+                  routePoints = coords
+                      .map<LatLng?>((c) {
+                        if (c is List && c.length >= 2) {
+                          final lon = (c[0] as num).toDouble();
+                          final lat = (c[1] as num).toDouble();
+                          return LatLng(lat, lon);
+                        }
+                        return null;
+                      })
+                      .whereType<LatLng>()
+                      .toList(growable: false);
+                }
               }
             }
+          } catch (_) {
+            routePoints = null;
           }
         } catch (_) {
           routePoints = null;
         }
+      }
+
+      // Fallback: circular polyline near center
+      if (routePoints == null || routePoints.isEmpty) {
+        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
+        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
+        final pts = <LatLng>[];
+        for (var s = 0; s < 6; s++) {
+          final ang = (s / 6) * math.pi * 2;
+          pts.add(LatLng(
+              baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
+        }
+        routePoints = pts;
+      }
+
+      final pl = Polyline(
+          points: routePoints, strokeWidth: 10.0, color: Colors.purple);
+      final id = mapNotifier.addPolyline(pl);
+      // add a marker at midpoint for interactivity and compute rotation
+      final midIndex = routePoints.length ~/ 2;
+      final mid = routePoints[midIndex];
+      double rotation = 0.0;
+      try {
+        if (routePoints.length > 1) {
+          final from = midIndex > 0
+              ? routePoints[midIndex - 1]
+              : routePoints[(midIndex + 1).clamp(0, routePoints.length - 1)];
+          final lat1 = from.latitude * math.pi / 180.0;
+          final lat2 = mid.latitude * math.pi / 180.0;
+          final dLon = (mid.longitude - from.longitude) * math.pi / 180.0;
+          final y = math.sin(dLon) * math.cos(lat2);
+          final x = math.cos(lat1) * math.sin(lat2) -
+              math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+          var brng = math.atan2(y, x) * 180.0 / math.pi;
+          brng = (brng + 360.0) % 360.0;
+          rotation = brng;
+        }
       } catch (_) {
-        routePoints = null;
+        rotation = 0.0;
       }
-    }
 
-    // Fallback: circular polyline near center
-    if (routePoints == null || routePoints.isEmpty) {
-      final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
-      final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
-      final pts = <LatLng>[];
-      for (var s = 0; s < 6; s++) {
-        final ang = (s / 6) * math.pi * 2;
-        pts.add(LatLng(
-            baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
-      }
-      routePoints = pts;
+      mapNotifier.appendRawMarkers([
+        ShapeMeta(
+          lat: mid.latitude,
+          lon: mid.longitude,
+          title: 'Playback Polyline',
+          subtitle: id,
+          id: id,
+          shapeType: 'polyline',
+          rotation: rotation,
+        )
+      ]);
+      playbackPolylineId = id;
+      generatedPolylines = generatedPolylines + 1;
+      // Ensure totalPolylines reflects that a playback polyline exists so
+      // example UI that checks `totalPolylines > 0` will show controls.
+      totalPolylines = (totalPolylines >= 1) ? totalPolylines : 1;
+      notifyListeners();
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-
-    final pl =
-        Polyline(points: routePoints, strokeWidth: 10.0, color: Colors.purple);
-    final id = mapNotifier.addPolyline(pl);
-    // add a marker at midpoint for interactivity and compute rotation
-    final midIndex = routePoints.length ~/ 2;
-    final mid = routePoints[midIndex];
-    double rotation = 0.0;
-    try {
-      if (routePoints.length > 1) {
-        final from = midIndex > 0
-            ? routePoints[midIndex - 1]
-            : routePoints[(midIndex + 1).clamp(0, routePoints.length - 1)];
-        final lat1 = from.latitude * math.pi / 180.0;
-        final lat2 = mid.latitude * math.pi / 180.0;
-        final dLon = (mid.longitude - from.longitude) * math.pi / 180.0;
-        final y = math.sin(dLon) * math.cos(lat2);
-        final x = math.cos(lat1) * math.sin(lat2) -
-            math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
-        var brng = math.atan2(y, x) * 180.0 / math.pi;
-        brng = (brng + 360.0) % 360.0;
-        rotation = brng;
-      }
-    } catch (_) {
-      rotation = 0.0;
-    }
-
-    mapNotifier.appendRawMarkers([
-      ShapeMeta(
-        lat: mid.latitude,
-        lon: mid.longitude,
-        title: 'Playback Polyline',
-        subtitle: id,
-        id: id,
-        shapeType: 'polyline',
-        rotation: rotation,
-      )
-    ]);
-    playbackPolylineId = id;
-    generatedPolylines = generatedPolylines + 1;
-    // Ensure totalPolylines reflects that a playback polyline exists so
-    // example UI that checks `totalPolylines > 0` will show controls.
-    totalPolylines = (totalPolylines >= 1) ? totalPolylines : 1;
-    notifyListeners();
   }
 
   Future<void> generateCircles({int shapeCount = 5}) async {
-    generatedCircles = 0;
-    final rnd = math.Random(19283);
+    isLoading = true;
+    notifyListeners();
+    try {
+      generatedCircles = 0;
+      final rnd = math.Random(19283);
 
-    for (var i = 0; i < shapeCount; i++) {
-      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
-      final c = CircleMarker(
-        point: LatLng(lat, lng),
-        color: Colors.orange.withValues(alpha: 0.35),
-        borderStrokeWidth: 2,
-        borderColor: Colors.orange,
-        // Use meters so circle scales with map zoom instead of fixed pixels
-        useRadiusInMeter: true,
-        radius: 800.0,
-      );
-      final id = mapNotifier.addCircle(c);
-      mapNotifier.appendRawMarkers([
-        ShapeMeta(
-          lat: lat,
-          lon: lng,
-          title: 'Circle #${i + 1}',
-          subtitle: id,
-          id: id,
-          shapeType: 'circle',
-        )
-      ]);
-      generatedCircles = i + 1;
+      for (var i = 0; i < shapeCount; i++) {
+        final lat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final lng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
+        final c = CircleMarker(
+          point: LatLng(lat, lng),
+          color: Colors.orange.withValues(alpha: 0.35),
+          borderStrokeWidth: 2,
+          borderColor: Colors.orange,
+          // Use meters so circle scales with map zoom instead of fixed pixels
+          useRadiusInMeter: true,
+          radius: 800.0,
+        );
+        final id = mapNotifier.addCircle(c);
+        mapNotifier.appendRawMarkers([
+          ShapeMeta(
+            lat: lat,
+            lon: lng,
+            title: 'Circle #${i + 1}',
+            subtitle: id,
+            id: id,
+            shapeType: 'circle',
+          )
+        ]);
+        generatedCircles = i + 1;
+        notifyListeners();
+        await Future.delayed(const Duration(milliseconds: 1));
+      }
+    } finally {
+      isLoading = false;
       notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 1));
     }
   }
 }
