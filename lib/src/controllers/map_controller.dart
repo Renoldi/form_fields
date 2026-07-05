@@ -329,7 +329,16 @@ class FormFieldsMapController {
   /// Replace the notifier's `rawMarkers` list for [id]. No-op when no
   /// notifier is registered for [id].
   static void setRawMarkers(String id, List<dynamic> coords) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    // Ensure a notifier exists so controller-only callers don't silently
+    // fail to update raw markers (playback relies on this).
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return;
     try {
       final shouldBlock = coords.length >= _autoBlockingThreshold;
