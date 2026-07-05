@@ -54,26 +54,16 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     try {
       final phase = SchedulerBinding.instance.schedulerPhase;
       if (phase == SchedulerPhase.idle) {
-        try {
-          debugPrint(
-              '[FormFieldsMapNotifier] notifyListeners controller=$_controllerId raw=${_rawMarkersCache.length}');
-        } catch (_) {}
         notifyListeners();
       } else {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
-            try {
-              debugPrint(
-                  '[FormFieldsMapNotifier] postFrame notifyListeners controller=$_controllerId raw=${_rawMarkersCache.length}');
-            } catch (_) {}
             notifyListeners();
           } catch (_) {}
         });
       }
     } catch (_) {
       try {
-        debugPrint(
-            '[FormFieldsMapNotifier] fallback notifyListeners controller=$_controllerId raw=${_rawMarkersCache.length}');
         notifyListeners();
       } catch (_) {}
     }

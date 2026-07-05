@@ -582,14 +582,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _debounceTimer?.cancel();
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
       FormFieldsMapController.setLoading(_controllerId, false);
-      // If playback is active, consult controller preference to decide
-      // whether to suppress center/change callbacks. By default the
-      // controller returns `false` (suppress), but callers may opt-in to
-      // receive updates during playback via
-      // `FormFieldsMapController.setNotifyCenterDuringPlayback(id, true)`.
-      final allowDuringPlayback =
-          FormFieldsMapController.getNotifyCenterDuringPlayback(_controllerId);
-      if (_isPlaying && !allowDuringPlayback) return;
+      // During playback, do not notify center changes to consumers.
+      if (_isPlaying) return;
       // Only notify center after camera becomes idle so consumers get the
       // final/last center rather than a rapid stream of intermediate values.
       try {

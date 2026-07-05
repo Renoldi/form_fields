@@ -339,10 +339,8 @@ class FormFieldsMapController {
         } catch (_) {}
       }
       n.rawMarkers = List<dynamic>.from(coords);
-      try {
-        debugPrint(
-            '[FormFieldsMapController] setRawMarkers id=$id notifier=${n.hashCode} count=${n.rawMarkers.length}');
-      } catch (_) {}
+      // Intentionally not logging per-update to avoid flooding logs during
+      // high-frequency operations (playback, batches).
       if (shouldBlock) {
         try {
           setBlockingLoading(id, false);
@@ -454,7 +452,14 @@ class FormFieldsMapController {
 
   // Polygons
   static String? addPolygon(String id, Polygon p) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return null;
     try {
       return n.addPolygon(p);
@@ -491,7 +496,14 @@ class FormFieldsMapController {
 
   // Polylines
   static String? addPolyline(String id, Polyline l) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return null;
     try {
       return n.addPolyline(l);
@@ -528,7 +540,14 @@ class FormFieldsMapController {
 
   // Circles
   static String? addCircle(String id, CircleMarker c) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return null;
     try {
       return n.addCircle(c);
@@ -565,7 +584,14 @@ class FormFieldsMapController {
 
   // Markers
   static String? addMarker(String id, Marker m) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return null;
     try {
       return n.addMarker(m);
