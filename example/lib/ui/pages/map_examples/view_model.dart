@@ -70,7 +70,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 500000;
+  int createMarkers = 5000;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
@@ -141,6 +141,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     // } catch (_) {}
     try {
       generatedPolygons = 0;
+      totalPolygons = shapeCount;
       final rnd = math.Random(54321);
 
       for (var i = 0; i < shapeCount; i++) {
@@ -266,6 +267,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     // } catch (_) {}
     try {
       generatedPolylines = 0;
+      totalPolylines = shapeCount;
       final rnd = math.Random(98765);
 
       for (var i = 0; i < shapeCount; i++) {
@@ -476,11 +478,17 @@ class MapExamplesViewModel extends ChangeNotifier {
 
       if (useRoads) {
         try {
-          // pick start/end near center with small offsets
-          final startLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
-          final startLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
-          final endLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.03;
-          final endLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.03;
+          // pick start/end near center with larger offsets so the route is
+          // longer and more suitable for playback (more points / distance).
+          final offsetMultiplier = 10; // larger than previous 0.03
+          final startLat =
+              center.latitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+          final startLng =
+              center.longitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+          final endLat =
+              center.latitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+          final endLng =
+              center.longitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
 
           final url =
               'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson';
@@ -520,15 +528,39 @@ class MapExamplesViewModel extends ChangeNotifier {
 
       // Fallback: circular polyline near center
       if (routePoints == null || routePoints.isEmpty) {
-        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.01;
-        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.01;
+        // Fallback: create a larger circular polyline with more points so
+        // playback has more steps and covers a wider area.
+        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.02;
+        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.02;
         final pts = <LatLng>[];
-        for (var s = 0; s < 6; s++) {
-          final ang = (s / 6) * math.pi * 2;
-          pts.add(LatLng(
-              baseLat + math.sin(ang) * 0.02, baseLng + math.cos(ang) * 0.02));
+        const int fallbackSegments = 12; // more segments -> denser path
+        const double fallbackRadius = 0.04; // larger radius for longer route
+        for (var s = 0; s < fallbackSegments; s++) {
+          final ang = (s / fallbackSegments) * math.pi * 2;
+          pts.add(LatLng(baseLat + math.sin(ang) * fallbackRadius,
+              baseLng + math.cos(ang) * fallbackRadius));
         }
         routePoints = pts;
+      } else {
+        // If OSRM returned a very short route (few points), enrich it by
+        // interpolating extra points between consecutive coordinates so
+        // playback has smoother movement.
+        if (routePoints.length < 8) {
+          final enriched = <LatLng>[];
+          const int interpPerSegment = 3;
+          for (var i = 0; i < routePoints.length - 1; i++) {
+            final a = routePoints[i];
+            final b = routePoints[i + 1];
+            enriched.add(a);
+            for (var k = 1; k <= interpPerSegment; k++) {
+              final t = k / (interpPerSegment + 1);
+              enriched.add(LatLng(a.latitude + (b.latitude - a.latitude) * t,
+                  a.longitude + (b.longitude - a.longitude) * t));
+            }
+          }
+          enriched.add(routePoints.last);
+          routePoints = enriched;
+        }
       }
 
       final pl = Polyline(
@@ -591,6 +623,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     } catch (_) {}
     try {
       generatedCircles = 0;
+      totalCircles = shapeCount;
       final rnd = math.Random(19283);
 
       for (var i = 0; i < shapeCount; i++) {
