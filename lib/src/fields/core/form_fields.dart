@@ -403,7 +403,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   // Barcode scanner dialog for scanBarcode type
   Future<void> _showBarcodeScannerDialog({
     required ValueChanged<String> onScanned,
-    String cancelButtonLabel = 'Cancel',
+    String? cancelButtonLabel,
     Color? overlayColor,
     Color? overlayBorderColor,
     double overlayBorderWidth = 3.0,
@@ -454,7 +454,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   icon: Icon(Icons.close,
                       color: Theme.of(context).colorScheme.onSurface, size: 32),
                   onPressed: () => Navigator.of(context).pop(),
-                  tooltip: cancelButtonLabel,
+                  tooltip: cancelButtonLabel ?? context.formTr('cancel'),
                 ),
               ),
             ],
@@ -479,7 +479,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final label = widget.label.toTitleCases;
     final scanIcon = const Icon(Icons.qr_code_scanner);
     // final scanButtonLabel = 'Scan';
-    final cancelButtonLabel = 'Cancel';
+    final cancelButtonLabel = context.formTr('cancel');
     final overlayColor =
         resolveTextColor(context, muted: true).withValues(alpha: 0.5);
     final overlayBorderColor = Theme.of(context).colorScheme.onSurface;

@@ -104,4 +104,17 @@ const Map<String, String> enUSStrings = {
   'uploadSuccessMessage': 'Upload successful!',
   'uploadFailedMessage': 'Upload failed:',
   'uploadErrorMessage': 'Upload error:',
+  // Dialog / common labels
+  'ok': 'OK',
+  'stay': 'Stay',
+  'exit': 'Exit',
+  'exitApplication': 'Exit Application',
+  'exitApplicationMessage':
+      'Are you sure you want to close the application? Any unsaved changes may be lost.',
+  'loading': 'Loading...',
+  'success': 'Success',
+  'successMessage': 'Operation completed successfully.',
+  'cancelProcessTitle': 'Cancel Process?',
+  'cancelProcessMessage':
+      'The operation is still in progress. Do you want to cancel it?',
 };

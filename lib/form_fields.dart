@@ -155,8 +155,7 @@ export 'src/widgets/custom_app_bar.dart' show CustomAppBar, PreferredAppBar;
 export 'src/localization/form_fields_localizations.dart';
 // Map widget
 export 'src/fields/map/form_fields_map.dart' show FormFieldsMap;
-export 'src/fields/map/form_fields_map_notifier.dart'
-    show FormFieldsMapNotifier;
+export 'src/providers/form_fields_map_notifier.dart' show FormFieldsMapNotifier;
 export 'src/controllers/map_controller.dart'
     show
         FormFieldsMapController,

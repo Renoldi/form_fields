@@ -35,11 +35,10 @@ class AppDialogService {
     AppDialogLoadingBackBehavior loadingBackBehavior =
         AppDialogLoadingBackBehavior.allow,
     bool useSafeArea = true,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
   }) {
     if (show) {
       if (_isLoadingDialogVisible) return;
@@ -65,10 +64,11 @@ class AppDialogService {
           loadingBackBehavior: loadingBackBehavior,
           onCancelRequested: null,
           onCancelled: null,
-          cancelTitle: cancelTitle,
-          cancelMessage: cancelMessage,
-          stayLabel: stayLabel,
-          cancelLabel: cancelLabel,
+          cancelTitle: cancelTitle ?? context.formTr('cancelProcessTitle'),
+          cancelMessage:
+              cancelMessage ?? context.formTr('cancelProcessMessage'),
+          stayLabel: stayLabel ?? context.formTr('stay'),
+          cancelLabel: cancelLabel ?? context.formTr('cancel'),
         ),
         child: dialogChild,
       ).whenComplete(() {
@@ -133,9 +133,9 @@ class AppDialogService {
     AppDialogErrorMapper? mapError,
     AppDialogPosition loadingPosition = AppDialogPosition.top,
     AppDialogPosition resultPosition = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
     bool showBlockingLoading = false,
-    String loadingMessage = 'Loading...',
+    String? loadingMessage,
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
@@ -143,19 +143,24 @@ class AppDialogService {
         AppDialogLoadingBackBehavior.block,
     AppDialogCancelRequested? onCancelRequested,
     AppDialogCancelled? onCancelled,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
     bool showSuccessDialog = false,
-    String successTitle = 'Success',
-    String successMessage = 'Operation completed successfully.',
+    String? successTitle,
+    String? successMessage,
     AppDialogSuccessCallback<T>? onSuccess,
     AppDialogErrorCallback? onError,
     void Function(Map<String, List<String>> errors)? onValidationError,
   }) async {
     var loadingShown = false;
+
+    // Resolve localized fallbacks before any await to avoid using
+    // `context` across async gaps (prevents use_build_context_synchronously).
+    final resolvedSuccessTitle = successTitle ?? context.formTr('success');
+    final resolvedSuccessMessage =
+        successMessage ?? context.formTr('successMessage');
 
     try {
       if (showBlockingLoading) {
@@ -184,8 +189,8 @@ class AppDialogService {
       final result = await task();
       if (showSuccessDialog) {
         await showSuccess(
-          title: successTitle,
-          message: successMessage,
+          title: resolvedSuccessTitle,
+          message: resolvedSuccessMessage,
           position: resultPosition,
           okLabel: okLabel,
         );
@@ -231,7 +236,7 @@ class AppDialogService {
   }
 
   Future<void> showLoading({
-    String message = 'Loading...',
+    String? message,
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppDialogLoadingContainer loadingContainer = AppDialogLoadingContainer.card,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
@@ -242,11 +247,10 @@ class AppDialogService {
         AppDialogLoadingBackBehavior.block,
     AppDialogCancelRequested? onCancelRequested,
     AppDialogCancelled? onCancelled,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
     AppDialogPosition position = AppDialogPosition.bottom,
   }) {
     if (_isLoadingDialogVisible) {
@@ -254,6 +258,15 @@ class AppDialogService {
     }
 
     _isLoadingDialogVisible = true;
+    final displayMessage = message ?? context.formTr('loading');
+    // Debug: log locale and resolved loading string to help diagnose localization
+    if (kDebugMode) {
+      try {
+        final loc = Localizations.localeOf(context);
+        debugPrint('AppDialogService.showLoading - locale: $loc, '
+            "messageParam: ${message ?? '<null>'}, resolved: $displayMessage");
+      } catch (_) {}
+    }
     final Widget visual = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -264,11 +277,11 @@ class AppDialogService {
           progressValue: progressValue,
           progressNotifier: progressNotifier,
         ),
-        if (message.isNotEmpty)
+        if (displayMessage.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: Text(
-              message,
+              displayMessage,
               style: const TextStyle(fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -287,10 +300,10 @@ class AppDialogService {
         loadingBackBehavior: loadingBackBehavior,
         onCancelRequested: onCancelRequested,
         onCancelled: onCancelled,
-        cancelTitle: cancelTitle,
-        cancelMessage: cancelMessage,
-        stayLabel: stayLabel,
-        cancelLabel: cancelLabel,
+        cancelTitle: cancelTitle ?? context.formTr('cancelProcessTitle'),
+        cancelMessage: cancelMessage ?? context.formTr('cancelProcessMessage'),
+        stayLabel: stayLabel ?? context.formTr('stay'),
+        cancelLabel: cancelLabel ?? context.formTr('cancel'),
       ),
       barrierDismissible:
           loadingBackBehavior == AppDialogLoadingBackBehavior.allow,
@@ -309,7 +322,7 @@ class AppDialogService {
     required String message,
     required AppDialogType dialogType,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
     VoidCallback? onComplete,
   }) {
     return showResult(
@@ -377,7 +390,7 @@ class AppDialogService {
     required String title,
     required String message,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
     VoidCallback? onComplete,
   }) {
     return showResult(
@@ -394,7 +407,7 @@ class AppDialogService {
     required String title,
     required String message,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
   }) {
     return showResult(
       title: title,
@@ -412,7 +425,7 @@ class AppDialogService {
     required bool isSuccess,
     AppDialogType? dialogType,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
     VoidCallback? onComplete,
   }) {
     final (icon, color) = _style(context, dialogType, isSuccess);
@@ -436,6 +449,7 @@ class AppDialogService {
       extensionStyle: extensionFilledStyle,
       callerStyle: callerFilledStyle,
     );
+    final resolvedOkLabel = okLabel ?? context.formTr('ok');
     return _showProtectedDialog(
       alignment: _alignment(position),
       insetPadding: _inset(position),
@@ -471,7 +485,7 @@ class AppDialogService {
               width: double.infinity,
               child: AppButton(
                 type: AppButtonType.filled,
-                text: okLabel,
+                text: resolvedOkLabel,
                 size: AppSize.medium,
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).pop(),
@@ -487,12 +501,16 @@ class AppDialogService {
   }
 
   Future<void> showExitConfirm({
-    String title = 'Exit Application',
-    String message =
-        'Are you sure you want to close the application? Any unsaved changes may be lost.',
-    String stayLabel = 'Stay',
-    String exitLabel = 'Exit',
+    String? title,
+    String? message,
+    String? stayLabel,
+    String? exitLabel,
   }) {
+    final resolvedTitle = title ?? context.formTr('exitApplication');
+    final resolvedMessage = message ?? context.formTr('exitApplicationMessage');
+    final resolvedStay = stayLabel ?? context.formTr('stay');
+    final resolvedExit = exitLabel ?? context.formTr('exit');
+
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -504,18 +522,18 @@ class AppDialogService {
               children: [
                 Icon(Icons.exit_to_app, color: theme.colorScheme.error),
                 const SizedBox(width: 8),
-                Text(title),
+                Text(resolvedTitle),
               ],
             );
           }),
-          content: Text(message),
+          content: Text(resolvedMessage),
           actions: [
             SizedBox(
               width: 92,
               child: AppButton(
                 type: AppButtonType.outlined,
                 size: AppSize.small,
-                text: stayLabel,
+                text: resolvedStay,
                 useSafeArea: false,
                 onPressed: () =>
                     Navigator.of(dialogContext, rootNavigator: true).pop(),
@@ -526,7 +544,7 @@ class AppDialogService {
               child: AppButton(
                 type: AppButtonType.filled,
                 size: AppSize.small,
-                text: exitLabel,
+                text: resolvedExit,
                 useSafeArea: false,
                 onPressed: () async => _exitApplication(dialogContext),
               ),

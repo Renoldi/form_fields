@@ -1237,14 +1237,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              SizedBox(
+                            children: [
+                              const SizedBox(
                                 width: 40,
                                 height: 40,
                                 child: CircularProgressIndicator(),
                               ),
-                              SizedBox(height: 12),
-                              Text('Loading…', style: TextStyle(fontSize: 14)),
+                              const SizedBox(height: 12),
+                              Text(context.formTr('loading'),
+                                  style: const TextStyle(fontSize: 14)),
                             ],
                           ),
                         ),

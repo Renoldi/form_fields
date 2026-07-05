@@ -717,8 +717,17 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: SafeScaffold(
+    return MaterialApp(
+      // Provide localization delegates so loading text is localized
+      localizationsDelegates: const [
+        loc.LocalizationsDelegate(),
+        FormFieldsLocalizationsDelegate(),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: loc.Localizations.supportedLocales,
+      home: const SafeScaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),

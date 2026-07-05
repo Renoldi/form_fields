@@ -106,4 +106,17 @@ const Map<String, String> idIDStrings = {
   'uploadSuccessMessage': 'Upload berhasil!',
   'uploadFailedMessage': 'Upload gagal:',
   'uploadErrorMessage': 'Kesalahan upload:',
+  // Dialog / common labels
+  'ok': 'OK',
+  'stay': 'Tetap',
+  'exit': 'Keluar',
+  'exitApplication': 'Keluar Aplikasi',
+  'exitApplicationMessage':
+      'Apakah Anda yakin ingin menutup aplikasi? Perubahan yang belum disimpan mungkin hilang.',
+  'loading': 'Memuat...',
+  'success': 'Sukses',
+  'successMessage': 'Operasi berhasil diselesaikan.',
+  'cancelProcessTitle': 'Batalkan Proses?',
+  'cancelProcessMessage':
+      'Operasi masih berjalan. Apakah Anda ingin membatalkannya?',
 };

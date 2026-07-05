@@ -56,9 +56,9 @@ class AppGlobalDialogService {
     AppDialogErrorMapper? mapError,
     AppDialogPosition loadingPosition = AppDialogPosition.top,
     AppDialogPosition resultPosition = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
     bool showBlockingLoading = false,
-    String loadingMessage = 'Loading...',
+    String? loadingMessage,
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
@@ -66,11 +66,10 @@ class AppGlobalDialogService {
         AppDialogLoadingBackBehavior.block,
     AppDialogCancelRequested? onCancelRequested,
     AppDialogCancelled? onCancelled,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
   }) {
     return _service.guard<T>(
       task: task,
@@ -95,7 +94,7 @@ class AppGlobalDialogService {
   }
 
   Future<void> showLoading({
-    String message = 'Loading...',
+    String? message,
     AppDialogLoadingVisual loadingVisual = AppDialogLoadingVisual.indicator,
     AppLoadingVariant loadingVariant = AppLoadingVariant.spinner,
     AppProgressType progressType = AppProgressType.circular,
@@ -103,11 +102,10 @@ class AppGlobalDialogService {
         AppDialogLoadingBackBehavior.block,
     AppDialogCancelRequested? onCancelRequested,
     AppDialogCancelled? onCancelled,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
     AppDialogPosition position = AppDialogPosition.bottom,
     bool isMessageLoading = true,
     bool useSafeArea = true,
@@ -140,11 +138,10 @@ class AppGlobalDialogService {
     AppDialogLoadingBackBehavior loadingBackBehavior =
         AppDialogLoadingBackBehavior.allow,
     bool useSafeArea = true,
-    String cancelTitle = 'Cancel Process?',
-    String cancelMessage =
-        'The operation is still in progress. Do you want to cancel it?',
-    String stayLabel = 'Stay',
-    String cancelLabel = 'Cancel',
+    String? cancelTitle,
+    String? cancelMessage,
+    String? stayLabel,
+    String? cancelLabel,
     AppDialogCancelRequested? onCancelRequested,
     AppDialogCancelled? onCancelled,
   }) {
@@ -174,7 +171,7 @@ class AppGlobalDialogService {
     required String message,
     required AppDialogType dialogType,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
   }) {
     return _service.showError(
       title: title,
@@ -189,7 +186,7 @@ class AppGlobalDialogService {
     required String title,
     required String message,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
   }) {
     return _service.showSuccess(
       title: title,
@@ -203,7 +200,7 @@ class AppGlobalDialogService {
     required String title,
     required String message,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
   }) {
     return _service.showInfo(
       title: title,
@@ -219,7 +216,7 @@ class AppGlobalDialogService {
     required bool isSuccess,
     AppDialogType? dialogType,
     AppDialogPosition position = AppDialogPosition.top,
-    String okLabel = 'OK',
+    String? okLabel,
   }) {
     return _service.showResult(
       title: title,
@@ -232,11 +229,10 @@ class AppGlobalDialogService {
   }
 
   Future<void> showExitConfirm({
-    String title = 'Exit Application',
-    String message =
-        'Are you sure you want to close the application? Any unsaved changes may be lost.',
-    String stayLabel = 'Stay',
-    String exitLabel = 'Exit',
+    String? title,
+    String? message,
+    String? stayLabel,
+    String? exitLabel,
   }) {
     return _service.showExitConfirm(
       title: title,

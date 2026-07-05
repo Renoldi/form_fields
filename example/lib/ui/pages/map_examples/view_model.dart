@@ -480,7 +480,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         try {
           // pick start/end near center with larger offsets so the route is
           // longer and more suitable for playback (more points / distance).
-          final offsetMultiplier = 10; // larger than previous 0.03
+          final offsetMultiplier = 3; // larger than previous 0.03
           final startLat =
               center.latitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
           final startLng =
