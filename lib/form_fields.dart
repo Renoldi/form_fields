@@ -154,8 +154,13 @@ export 'src/widgets/custom_app_bar.dart' show CustomAppBar, PreferredAppBar;
 // -------------------
 export 'src/localization/form_fields_localizations.dart';
 // Map widget
-export 'src/fields/map/form_fields_map.dart'
-    show FormFieldsMap, FormFieldsMapNotifier;
+export 'src/fields/map/form_fields_map.dart' show FormFieldsMap;
+export 'src/fields/map/form_fields_map_notifier.dart'
+    show FormFieldsMapNotifier;
 export 'src/controllers/map_controller.dart'
-    show FormFieldsMapController, FormFieldsMapPlaybackHandler;
+    show
+        FormFieldsMapController,
+        FormFieldsMapPlaybackHandler,
+        FormFieldsMapControllerMapControllerExt;
+export 'src/controllers/form_fields_map_api.dart' show FormFieldsMapApi;
 export 'src/models/shape_meta.dart' show ShapeMeta;

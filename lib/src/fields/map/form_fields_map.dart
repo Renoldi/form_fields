@@ -12,274 +12,10 @@ import 'package:form_fields/form_fields.dart';
 
 const double _tapPad = 12.0;
 
-class FormFieldsMapNotifier extends ChangeNotifier {
-  FormFieldsMapNotifier({
-    List<Polygon>? polygons,
-    List<Polyline>? polylines,
-    List<CircleMarker>? circles,
-    Map<String, Polygon>? polygonsMap,
-    Map<String, Polyline>? polylinesMap,
-    Map<String, CircleMarker>? circlesMap,
-  })  : _polygonMap = polygonsMap ?? {},
-        _polylineMap = polylinesMap ?? {},
-        _circleMap = circlesMap ?? {} {
-    if (polygons != null) {
-      for (var i = 0; i < polygons.length; i++) {
-        _polygonMap['p\$i'] = polygons[i];
-      }
-    }
-    if (polylines != null) {
-      for (var i = 0; i < polylines.length; i++) {
-        _polylineMap['l\$i'] = polylines[i];
-      }
-    }
-    if (circles != null) {
-      for (var i = 0; i < circles.length; i++) {
-        _circleMap['c\$i'] = circles[i];
-      }
-    }
-    // initialize caches
-    _polygonsCache = _polygonMap.values.toList(growable: false);
-    _polylinesCache = _polylineMap.values.toList(growable: false);
-    _circlesCache = _circleMap.values.toList(growable: false);
-  }
-
-  void _safeNotify() {
-    try {
-      final phase = SchedulerBinding.instance.schedulerPhase;
-      if (phase == SchedulerPhase.idle) {
-        notifyListeners();
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          try {
-            notifyListeners();
-          } catch (_) {}
-        });
-      }
-    } catch (_) {
-      try {
-        notifyListeners();
-      } catch (_) {}
-    }
-  }
-
-  Map<String, Polygon> _polygonMap;
-  Map<String, Polyline> _polylineMap;
-  Map<String, CircleMarker> _circleMap;
-
-  List<dynamic> _rawMarkersCache = const [];
-  List<Polygon> _polygonsCache = const [];
-  List<Polyline> _polylinesCache = const [];
-  List<CircleMarker> _circlesCache = const [];
-
-  List<dynamic> get rawMarkers => _rawMarkersCache;
-  List<Polygon> get polygons => _polygonsCache;
-  List<Polyline> get polylines => _polylinesCache;
-  List<CircleMarker> get circles => _circlesCache;
-
-  set rawMarkers(List<dynamic> coords) {
-    _rawMarkersCache = coords;
-    _safeNotify();
-  }
-
-  void appendRawMarkers(List<dynamic> coords) {
-    final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
-    _rawMarkersCache = List<dynamic>.from(combined);
-    _safeNotify();
-  }
-
-  void clearRawMarkers() {
-    _rawMarkersCache = const [];
-    _safeNotify();
-  }
-
-  bool removeRawMarker(String id) {
-    final before = _rawMarkersCache.length;
-    _rawMarkersCache = _rawMarkersCache.where((m) {
-      if (m is ShapeMeta) return m.id != id;
-      if (m is Map) return m['id'] != id;
-      return true;
-    }).toList(growable: false);
-    final removed = _rawMarkersCache.length != before;
-    if (removed) _safeNotify();
-    return removed;
-  }
-
-  set polygons(List<Polygon> p) {
-    _polygonMap = {};
-    for (var i = 0; i < p.length; i++) {
-      _polygonMap['p\$i'] = p[i];
-    }
-    _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  set polylines(List<Polyline> p) {
-    _polylineMap = {};
-    for (var i = 0; i < p.length; i++) {
-      _polylineMap['l\$i'] = p[i];
-    }
-    _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  set circles(List<CircleMarker> c) {
-    _circleMap = {};
-    for (var i = 0; i < c.length; i++) {
-      _circleMap['c\$i'] = c[i];
-    }
-    _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  // Polygons
-  String addPolygon(Polygon p) {
-    final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
-    _polygonMap[id] = p;
-    _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
-    return id;
-  }
-
-  void addOrUpdatePolygon(String id, Polygon polygon) {
-    _polygonMap[id] = polygon;
-    _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  Polygon? getPolygon(String id) => _polygonMap[id];
-
-  bool removePolygon(String id) {
-    final removed = _polygonMap.remove(id) != null;
-    if (removed) {
-      _polygonsCache = _polygonMap.values.toList(growable: false);
-      _safeNotify();
-    }
-    return removed;
-  }
-
-  void clearPolygons() {
-    _polygonMap.clear();
-    _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  // Polylines
-  String addPolyline(Polyline p) {
-    final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
-    _polylineMap[id] = p;
-    _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
-    return id;
-  }
-
-  void addOrUpdatePolyline(String id, Polyline polyline) {
-    _polylineMap[id] = polyline;
-    _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  Polyline? getPolyline(String id) => _polylineMap[id];
-
-  bool removePolyline(String id) {
-    final removed = _polylineMap.remove(id) != null;
-    if (removed) {
-      _polylinesCache = _polylineMap.values.toList(growable: false);
-      _safeNotify();
-    }
-    return removed;
-  }
-
-  void clearPolylines() {
-    _polylineMap.clear();
-    _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  String addCircle(CircleMarker c) {
-    final id = 'c\$${DateTime.now().microsecondsSinceEpoch}';
-    _circleMap[id] = c;
-    _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
-    return id;
-  }
-
-  void addOrUpdateCircle(String id, CircleMarker circle) {
-    _circleMap[id] = circle;
-    _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  CircleMarker? getCircle(String id) => _circleMap[id];
-
-  bool removeCircle(String id) {
-    final removed = _circleMap.remove(id) != null;
-    if (removed) {
-      _circlesCache = _circleMap.values.toList(growable: false);
-      _safeNotify();
-    }
-    return removed;
-  }
-
-  void clearCircles() {
-    _circleMap.clear();
-    _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  // Markers
-  Map<String, Marker> _markerMap = {};
-
-  List<Marker> _markersCache = const [];
-
-  List<Marker> get markers => _markersCache;
-
-  set markers(List<Marker> m) {
-    _markerMap = {};
-    for (var i = 0; i < m.length; i++) {
-      final id = 'm\$${DateTime.now().microsecondsSinceEpoch}_\$i';
-      _markerMap[id] = m[i];
-    }
-    _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  String addMarker(Marker m) {
-    final id = 'm\$${DateTime.now().microsecondsSinceEpoch}';
-    _markerMap[id] = m;
-    _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
-    return id;
-  }
-
-  void addOrUpdateMarker(String id, Marker marker) {
-    _markerMap[id] = marker;
-    _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
-  }
-
-  Marker? getMarker(String id) => _markerMap[id];
-
-  bool removeMarker(String id) {
-    final removed = _markerMap.remove(id) != null;
-    if (removed) {
-      _markersCache = _markerMap.values.toList(growable: false);
-      _safeNotify();
-    }
-    return removed;
-  }
-
-  void clearMarkers() {
-    _markerMap.clear();
-    _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
-  }
-}
-
 class FormFieldsMap extends StatefulWidget {
   const FormFieldsMap({
     super.key,
-    this.controllerId = 'default',
+    this.controller,
     this.tileUrlTemplate = 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
     this.tileAttribution = '© Google',
     this.initialCenter = const LatLng(0, 0),
@@ -295,7 +31,6 @@ class FormFieldsMap extends StatefulWidget {
     this.centerMarker,
     this.useViewportCulling = false,
     this.cullingBuffer = 1.25,
-    this.notifier,
     this.onMapReady,
     this.onCenterChanged,
     this.onPositionChanged,
@@ -312,7 +47,10 @@ class FormFieldsMap extends StatefulWidget {
     this.maxRenderedRawMarkers = 10000,
   });
 
-  final String controllerId;
+  // Controller id has been removed in favor of the centralized
+  // `FormFieldsMapController` registry. Instances generate their own
+  // private id and expose controller operations through the registry.
+  final MapController? controller;
   final String tileUrlTemplate;
   final String tileAttribution;
   final LatLng initialCenter;
@@ -346,7 +84,6 @@ class FormFieldsMap extends StatefulWidget {
 
   final double cullingBuffer;
 
-  final FormFieldsMapNotifier? notifier;
   final ValueChanged<ShapeMeta>? onTapShape;
 
   final VoidCallback? onMapReady;
@@ -386,13 +123,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
     with AutomaticKeepAliveClientMixin<FormFieldsMap> {
   late final MapController _mapController;
   Timer? _debounceTimer;
-  // Internal notifier used when the consumer doesn't supply one. We keep a
-  // persistent instance to avoid recreating a new notifier on every build
-  // (which can cause notifyListeners/setState to fire during framework
-  // builds and trigger the "setState() or markNeedsBuild() called during
-  // build" exception).
-  late FormFieldsMapNotifier _internalNotifier;
-  bool _ownsInternalNotifier = false;
+  // Notifier removed from widget API. Consumers should register any
+  // FormFieldsMapNotifier instances via the FormFieldsMapController
+  // registry; internal logic will obtain the notifier from the
+  // controller when needed.
+  // Fallback notifier used when no notifier is registered in the
+  // `FormFieldsMapController` registry. This preserves previous
+  // behavior where the widget had an internal notifier when consumers
+  // did not supply one, while keeping notifier registration external.
+  late final FormFieldsMapNotifier _fallbackNotifier;
 
   // Playback state
   Timer? _playbackTimer;
@@ -417,13 +156,48 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   bool _suppressNextMapTap = false;
 
+  late String _controllerId;
+  bool _ownsController = false;
+
   @override
   void initState() {
     super.initState();
-    _mapController = FormFieldsMapController.getOrCreate(widget.controllerId);
+    // Determine controller ownership and registry id. If a MapController
+    // was provided by the consumer, register it under a stable id derived
+    // from its hashCode so it is discoverable via the registry. Otherwise
+    // create or reuse a controller in the registry using a generated id.
+    if (widget.controller != null) {
+      _mapController = widget.controller!;
+      _controllerId = 'ff_controller_${widget.controller.hashCode}';
+      FormFieldsMapController.registerController(_controllerId, _mapController);
+      _ownsController = false;
+    } else {
+      _controllerId =
+          'ff_internal_${DateTime.now().microsecondsSinceEpoch}_${identityHashCode(this)}';
+      _mapController = FormFieldsMapController.getOrCreate(_controllerId);
+      _ownsController = true;
+    }
 
-    _ownsInternalNotifier = widget.notifier == null;
-    _internalNotifier = widget.notifier ?? FormFieldsMapNotifier();
+    _fallbackNotifier = FormFieldsMapNotifier();
+
+    // Register the internal fallback notifier only when no notifier has been
+    // previously registered for this controller id. This prevents the widget
+    // from overwriting a notifier that a consumer (or example) already
+    // registered before the widget was built.
+    try {
+      final existing = FormFieldsMapController.getNotifier(_controllerId);
+      try {
+        debugPrint(
+            '[FormFieldsMap] initState controllerId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}');
+      } catch (_) {}
+      if (existing == null) {
+        FormFieldsMapController.registerNotifier(
+            _controllerId, _fallbackNotifier);
+      }
+    } catch (_) {}
+
+    // Notifier lifecycle is managed externally via FormFieldsMapController.
+    // The widget no longer accepts a `notifier` parameter.
     _resolveCanvasMarkerIcon();
     _playbackInterval = widget.playbackInterval;
     _playbackInterpolationSteps = widget.playbackInterpolationSteps;
@@ -434,24 +208,30 @@ class FormFieldsMapState extends State<FormFieldsMap>
         _mapController.move(widget.initialCenter, widget.initialZoom);
       } catch (_) {}
       widget.onMapReady?.call();
+      // Ensure the widget rebuilds after the controller move so tile layers
+      // begin fetching immediately instead of waiting for an interaction.
+      try {
+        _safeSetState(() {});
+      } catch (_) {}
     });
 
     FormFieldsMapController.registerOnMarkerTap(
-        widget.controllerId, widget.onTapShape);
+        _controllerId, widget.onTapShape);
 
     // Register playback handler so external callers can control playback via
     // `FormFieldsMapController`.
     if (widget.enablePolylinePlayback) {
       FormFieldsMapController.registerPlaybackHandler(
-          widget.controllerId,
-          FormFieldsMapPlaybackHandler(
-            start: (polylineId) => _startPolylinePlayback(polylineId),
-            pause: () => _pausePolylinePlayback(),
-            restart: () => _restartPolylinePlayback(),
-            setInterval: (d) => _setPolylinePlaybackInterval(d),
-            setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
-            toggle: (polylineId) => _togglePolylinePlayback(polylineId),
-          ));
+        _controllerId,
+        FormFieldsMapPlaybackHandler(
+          start: (polylineId) => _startPolylinePlayback(polylineId),
+          pause: () => _pausePolylinePlayback(),
+          restart: () => _restartPolylinePlayback(),
+          setInterval: (d) => _setPolylinePlaybackInterval(d),
+          setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
+          toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+        ),
+      );
     }
   }
 
@@ -493,34 +273,68 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _resolveCanvasMarkerIcon();
     }
 
-    if (oldWidget.notifier != widget.notifier) {
-      if (_ownsInternalNotifier) {
-        try {
-          _internalNotifier.dispose();
-        } catch (_) {}
+    // Notifier removed from widget API; notifier lifecycle is no-op here.
+
+    final oldId = _controllerId;
+    // If the consumer provided a different controller instance, switch to
+    // a new registry id and update registrations accordingly.
+    if (oldWidget.controller != widget.controller) {
+      // Unregister handlers from the old id
+      FormFieldsMapController.removeOnMarkerTap(oldId);
+      FormFieldsMapController.unregisterPlaybackHandler(oldId);
+
+      if (widget.controller != null) {
+        _mapController = widget.controller!;
+        _controllerId = 'ff_controller_${widget.controller.hashCode}';
+        FormFieldsMapController.registerController(
+            _controllerId, _mapController);
+        _ownsController = false;
+      } else {
+        _controllerId =
+            'ff_internal_${DateTime.now().microsecondsSinceEpoch}_${identityHashCode(this)}';
+        _mapController = FormFieldsMapController.getOrCreate(_controllerId);
+        _ownsController = true;
       }
-      _ownsInternalNotifier = widget.notifier == null;
-      _internalNotifier = widget.notifier ?? FormFieldsMapNotifier();
+      // Register new handlers below
+      // Ensure the fallback notifier is moved from the old id to the new id
+      // so controller-based mutations continue to update this widget.
+      try {
+        final existingOld = FormFieldsMapController.getNotifier(oldId);
+        if (identical(existingOld, _fallbackNotifier)) {
+          FormFieldsMapController.removeNotifier(oldId);
+        }
+      } catch (_) {}
+      try {
+        final existing = FormFieldsMapController.getNotifier(_controllerId);
+        try {
+          debugPrint(
+              '[FormFieldsMap] didUpdateWidget moved controller oldId=$oldId newId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}');
+        } catch (_) {}
+        if (existing == null) {
+          FormFieldsMapController.registerNotifier(
+              _controllerId, _fallbackNotifier);
+        }
+      } catch (_) {}
     }
 
-    if (oldWidget.controllerId != widget.controllerId ||
-        oldWidget.onTapShape != widget.onTapShape) {
-      FormFieldsMapController.removeOnMarkerTap(oldWidget.controllerId);
+    if (oldWidget.onTapShape != widget.onTapShape || oldId != _controllerId) {
+      FormFieldsMapController.removeOnMarkerTap(oldId);
       FormFieldsMapController.registerOnMarkerTap(
-          widget.controllerId, widget.onTapShape);
+          _controllerId, widget.onTapShape);
       // Move playback handler registration when controller id changes.
-      FormFieldsMapController.unregisterPlaybackHandler(oldWidget.controllerId);
+      FormFieldsMapController.unregisterPlaybackHandler(oldId);
       if (widget.enablePolylinePlayback) {
         FormFieldsMapController.registerPlaybackHandler(
-            widget.controllerId,
-            FormFieldsMapPlaybackHandler(
-              start: (polylineId) => _startPolylinePlayback(polylineId),
-              pause: () => _pausePolylinePlayback(),
-              restart: () => _restartPolylinePlayback(),
-              setInterval: (d) => _setPolylinePlaybackInterval(d),
-              setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
-              toggle: (polylineId) => _togglePolylinePlayback(polylineId),
-            ));
+          _controllerId,
+          FormFieldsMapPlaybackHandler(
+            start: (polylineId) => _startPolylinePlayback(polylineId),
+            pause: () => _pausePolylinePlayback(),
+            restart: () => _restartPolylinePlayback(),
+            setInterval: (d) => _setPolylinePlaybackInterval(d),
+            setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
+            toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+          ),
+        );
       }
     }
 
@@ -539,8 +353,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
       // rebuild points if playing
       if (_playbackPolylineId != null) {
-        final notifier = widget.notifier ?? _internalNotifier;
-        final pl = notifier._polylineMap[_playbackPolylineId];
+        final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+            _fallbackNotifier;
+        final pl = notifier.polylineMap[_playbackPolylineId];
         if (pl != null) {
           _playbackPoints =
               _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
@@ -705,13 +520,34 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _canvasMarkerImageStream!
           .removeListener(_canvasMarkerImageStreamListener!);
     }
-    if (_ownsInternalNotifier) {
-      try {
-        _internalNotifier.dispose();
-      } catch (_) {}
+    // Unregister and dispose fallback notifier if created.
+    try {
+      final existing = FormFieldsMapController.getNotifier(_controllerId);
+      if (identical(existing, _fallbackNotifier)) {
+        try {
+          FormFieldsMapController.removeNotifier(_controllerId);
+        } catch (_) {}
+        try {
+          _fallbackNotifier.dispose();
+        } catch (_) {}
+      } else {
+        // Only dispose our fallback notifier if we actually registered it.
+        try {
+          _fallbackNotifier.dispose();
+        } catch (_) {}
+      }
+    } catch (_) {}
+    // Notifier lifecycle is managed externally via FormFieldsMapController.
+    FormFieldsMapController.removeOnMarkerTap(_controllerId);
+    FormFieldsMapController.unregisterPlaybackHandler(_controllerId);
+    // Notifier registration is managed by consumers via the controller
+    // registry; nothing to remove here.
+    // If we created the controller entry for this widget instance, remove
+    // it from the registry to avoid leaking entries. Do not remove external
+    // controllers supplied by the consumer.
+    if (_ownsController) {
+      FormFieldsMapController.remove(_controllerId);
     }
-    FormFieldsMapController.removeOnMarkerTap(widget.controllerId);
-    FormFieldsMapController.unregisterPlaybackHandler(widget.controllerId);
     super.dispose();
   }
 
@@ -735,7 +571,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             try {
-              FormFieldsMapController.setLoading(widget.controllerId, true);
+              FormFieldsMapController.setLoading(_controllerId, true);
             } catch (_) {}
             _safeSetState(() {});
           });
@@ -745,15 +581,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
-      FormFieldsMapController.setLoading(widget.controllerId, false);
+      FormFieldsMapController.setLoading(_controllerId, false);
       // If playback is active, consult controller preference to decide
       // whether to suppress center/change callbacks. By default the
       // controller returns `false` (suppress), but callers may opt-in to
       // receive updates during playback via
       // `FormFieldsMapController.setNotifyCenterDuringPlayback(id, true)`.
       final allowDuringPlayback =
-          FormFieldsMapController.getNotifyCenterDuringPlayback(
-              widget.controllerId);
+          FormFieldsMapController.getNotifyCenterDuringPlayback(_controllerId);
       if (_isPlaying && !allowDuringPlayback) return;
       // Only notify center after camera becomes idle so consumers get the
       // final/last center rather than a rapid stream of intermediate values.
@@ -791,8 +626,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
         _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
     // rebuild playback list if currently playing
     if (_playbackPolylineId != null) {
-      final notifier = widget.notifier ?? _internalNotifier;
-      final pl = notifier._polylineMap[_playbackPolylineId];
+      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+          _fallbackNotifier;
+      final pl = notifier.polylineMap[_playbackPolylineId];
       if (pl != null) {
         final currentPoint = _playbackPoints.isNotEmpty &&
                 _playbackIndex < _playbackPoints.length
@@ -835,13 +671,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   void _startPolylinePlayback(String? polylineId) {
     try {
-      final notifier = widget.notifier ?? _internalNotifier;
+      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+          _fallbackNotifier;
       String? id = polylineId ??
-          (notifier._polylineMap.isNotEmpty
-              ? notifier._polylineMap.keys.first
+          (notifier.polylineMap.isNotEmpty
+              ? notifier.polylineMap.keys.first
               : null);
       if (id == null) return;
-      final pl = notifier._polylineMap[id];
+      final pl = notifier.polylineMap[id];
       if (pl == null || pl.points.isEmpty) return;
       // If we're starting the same polyline that was previously playing and
       // there are existing playback points, treat this as a resume rather
@@ -852,8 +689,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _isPlaying = true;
           // ensure external listeners are notified when resuming playback
           try {
-            FormFieldsMapController.setPlaybackPlaying(
-                widget.controllerId, true);
+            FormFieldsMapController.setPlaybackPlaying(_controllerId, true);
           } catch (_) {}
           _safeSetState(() {});
           _playbackTimer?.cancel();
@@ -874,7 +710,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _isPlaying = true;
       // publish authoritative playing state
       try {
-        FormFieldsMapController.setPlaybackPlaying(widget.controllerId, true);
+        FormFieldsMapController.setPlaybackPlaying(_controllerId, true);
       } catch (_) {}
       _safeSetState(() {});
       _playbackTimer?.cancel();
@@ -898,7 +734,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _isPlaying = false;
     _playbackTimer?.cancel();
     try {
-      FormFieldsMapController.setPlaybackPlaying(widget.controllerId, false);
+      FormFieldsMapController.setPlaybackPlaying(_controllerId, false);
     } catch (_) {}
     _safeSetState(() {});
   }
@@ -907,11 +743,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // If no playback polyline is currently selected, attempt to pick the
     // first available polyline from the notifier so external callers can
     // reliably restart immediately after generating a polyline.
-    final notifier = widget.notifier ?? _internalNotifier;
+    final notifier =
+        FormFieldsMapController.getNotifier(_controllerId) ?? _fallbackNotifier;
     if (_playbackPolylineId == null) {
-      if (notifier._polylineMap.isEmpty) return;
-      _playbackPolylineId = notifier._polylineMap.keys.first;
-      final pl = notifier._polylineMap[_playbackPolylineId];
+      if (notifier.polylineMap.isEmpty) return;
+      _playbackPolylineId = notifier.polylineMap.keys.first;
+      final pl = notifier.polylineMap[_playbackPolylineId];
       if (pl != null) {
         _playbackPoints =
             _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
@@ -924,7 +761,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _playbackIndex = 0;
     _isPlaying = true;
     try {
-      FormFieldsMapController.setPlaybackPlaying(widget.controllerId, true);
+      FormFieldsMapController.setPlaybackPlaying(_controllerId, true);
     } catch (_) {}
     _safeSetState(() {});
     _playbackTimer?.cancel();
@@ -943,7 +780,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _isPlaying = false;
       _playbackTimer?.cancel();
       try {
-        FormFieldsMapController.setPlaybackPlaying(widget.controllerId, false);
+        FormFieldsMapController.setPlaybackPlaying(_controllerId, false);
       } catch (_) {}
     }
     _updatePlaybackMarker();
@@ -990,8 +827,16 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (widget.canvasMarkerIcon == null) {
         payload['icon'] = 'arrow';
       }
-      final notifier = widget.notifier ?? _internalNotifier;
-      notifier.rawMarkers = [payload];
+      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+          _fallbackNotifier;
+      // Use controller API to mutate notifier so only controller is the
+      // canonical mutator for map state.
+      try {
+        FormFieldsMapController.setRawMarkers(_controllerId, [payload]);
+      } catch (_) {
+        // fallback to direct notifier mutation if registry isn't available
+        notifier.rawMarkers = [payload];
+      }
       // If playback is active, move camera to follow the playback point
       try {
         if (_isPlaying) {
@@ -1035,7 +880,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     final tileProvider = NetworkTileProvider();
 
-    final notifier = widget.notifier ?? _internalNotifier;
+    final notifier =
+        FormFieldsMapController.getNotifier(_controllerId) ?? _fallbackNotifier;
 
     return Stack(
       children: [
@@ -1062,12 +908,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
               Selector<FormFieldsMapNotifier, List<Polygon>>(
                 selector: (_, n) => n.polygons,
                 builder: (context, polygons, _) {
-                  final notifierLocal = widget.notifier ?? _internalNotifier;
-                  if (notifierLocal._polygonMap.isEmpty) {
+                  final notifierLocal =
+                      FormFieldsMapController.getNotifier(_controllerId) ??
+                          _fallbackNotifier;
+                  if (notifierLocal.polygonMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal._polygonMap.entries.map((e) {
+                  final mapped = notifierLocal.polygonMap.entries.map((e) {
                     final id = e.key;
                     final p = e.value;
                     final dynColor =
@@ -1089,12 +937,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
               Selector<FormFieldsMapNotifier, List<Polyline>>(
                 selector: (_, n) => n.polylines,
                 builder: (context, polylines, _) {
-                  final notifierLocal = widget.notifier ?? _internalNotifier;
-                  if (notifierLocal._polylineMap.isEmpty) {
+                  final notifierLocal =
+                      FormFieldsMapController.getNotifier(_controllerId) ??
+                          _fallbackNotifier;
+                  if (notifierLocal.polylineMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal._polylineMap.entries.map((e) {
+                  final mapped = notifierLocal.polylineMap.entries.map((e) {
                     final id = e.key;
                     final l = e.value;
                     final dynColor =
@@ -1113,12 +963,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
               Selector<FormFieldsMapNotifier, List<CircleMarker>>(
                 selector: (_, n) => n.circles,
                 builder: (context, circles, _) {
-                  final notifierLocal = widget.notifier ?? _internalNotifier;
-                  if (notifierLocal._circleMap.isEmpty) {
+                  final notifierLocal =
+                      FormFieldsMapController.getNotifier(_controllerId) ??
+                          _fallbackNotifier;
+                  if (notifierLocal.circleMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal._circleMap.entries.map((e) {
+                  final mapped = notifierLocal.circleMap.entries.map((e) {
                     final id = e.key;
                     final c = e.value;
                     final dynColor =
@@ -1143,7 +995,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 selector: (_, n) => n.markers,
                 builder: (context, markers, _) {
                   if (markers.isEmpty) return const SizedBox.shrink();
-                  final notifierLocal = widget.notifier ?? _internalNotifier;
+                  final notifierLocal =
+                      FormFieldsMapController.getNotifier(_controllerId) ??
+                          _fallbackNotifier;
                   final mapped = markers.map((m) {
                     // try to find a color for this marker from rawMarkers (by point)
                     final dynColor =
@@ -1185,7 +1039,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
               ValueListenableBuilder<bool>(
                 valueListenable:
                     FormFieldsMapController.getBlockingLoadingListenable(
-                        widget.controllerId),
+                        _controllerId),
                 builder: (context, isBlocking, __) {
                   return Selector<FormFieldsMapNotifier, List<dynamic>>(
                     selector: (_, n) => n.rawMarkers,
@@ -1341,7 +1195,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 ValueListenableBuilder<bool>(
                   valueListenable:
                       FormFieldsMapController.getPlaybackPlayingListenable(
-                          widget.controllerId),
+                          _controllerId),
                   builder: (context, playing, _) {
                     return AppButton(
                       type: AppButtonType.fab,
@@ -1369,7 +1223,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         // Full-screen blocking overlay for data loads.
         ValueListenableBuilder<bool>(
           valueListenable: FormFieldsMapController.getBlockingLoadingListenable(
-              widget.controllerId),
+              _controllerId),
           builder: (context, isBlocking, _) {
             if (isBlocking) {
               return Positioned.fill(
@@ -1410,7 +1264,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         // Small non-blocking indicator for brief camera/position updates.
         ValueListenableBuilder<bool>(
           valueListenable:
-              FormFieldsMapController.getLoadingListenable(widget.controllerId),
+              FormFieldsMapController.getLoadingListenable(_controllerId),
           builder: (context, isLoading, _) {
             if (isLoading) {
               return const Positioned(
@@ -1441,7 +1295,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       return;
     }
     try {
-      final notifier = widget.notifier ?? _internalNotifier;
+      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+          _fallbackNotifier;
 
       // Compute local tap offset once for pixel-based hit tests.
       Offset local;
@@ -1471,7 +1326,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       final double extraTapPad = max(_tapPad, devicePixelRatio * 6.0) + 8.0;
       final double baseThreshPx = 24.0 + extraTapPad;
 
-      for (final entry in notifier._polygonMap.entries) {
+      for (final entry in notifier.polygonMap.entries) {
         final pid = entry.key;
         final poly = entry.value;
         if (_pointInPolygon(latlng, poly.points)) {
@@ -1546,7 +1401,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // or angled segments are easier to tap.
       double minPolyDist = double.infinity;
       String? minPolyId;
-      for (final entry in notifier._polylineMap.entries) {
+      for (final entry in notifier.polylineMap.entries) {
         final lid = entry.key;
         final pl = entry.value;
         final pts = pl.points;
@@ -1628,7 +1483,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           (156543.03392 * cos((latlng.latitude) * pi / 180)) / pow(2, tapZoom);
       final touchPadMeters = metersPerPixel * (_tapPad + 8.0);
 
-      for (final entry in notifier._circleMap.entries) {
+      for (final entry in notifier.circleMap.entries) {
         final cid = entry.key;
         final c = entry.value;
         final center = c.point;
@@ -1811,9 +1666,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   void _handleLongPress(TapPosition tapPosition, LatLng latlng) {
     try {
-      final notifier = widget.notifier ?? _internalNotifier;
+      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+          _fallbackNotifier;
 
-      for (final entry in notifier._polygonMap.entries) {
+      for (final entry in notifier.polygonMap.entries) {
         final pid = entry.key;
         final poly = entry.value;
         if (_pointInPolygon(latlng, poly.points)) {
@@ -1831,7 +1687,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
       const threshMeters = 200.0;
       final distance = Distance();
-      for (final entry in notifier._polylineMap.entries) {
+      for (final entry in notifier.polylineMap.entries) {
         final lid = entry.key;
         final pl = entry.value;
         final pts = pl.points;
@@ -1856,7 +1712,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
       }
 
-      for (final entry in notifier._circleMap.entries) {
+      for (final entry in notifier.circleMap.entries) {
         final cid = entry.key;
         final c = entry.value;
         final center = c.point;

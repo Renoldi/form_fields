@@ -9,6 +9,94 @@ import 'package:form_fields/form_fields.dart';
 /// Controllers are keyed by an `id` so they are not recreated on widget rebuilds.
 class FormFieldsMapController {
   static final Map<String, MapController> _controllers = {};
+  // Registered notifiers per controller id. Widgets must register their
+  // `FormFieldsMapNotifier` instance so the controller can perform
+  // mutations on the notifier on behalf of external callers.
+  static final Map<String, FormFieldsMapNotifier> _notifiers = {};
+  // Reverse mapping from notifier instance to id to help callers (examples)
+  // discover the registry id when they hold a notifier reference.
+  static final Map<FormFieldsMapNotifier, String> _notifierToId = {};
+
+  /// Register an external or pre-created [controller] under [id]. This
+  /// allows consumers that provide their own `MapController` to expose it
+  /// through the shared registry so other widgets or callers can access
+  /// the same controller instance via the registry APIs.
+  static void registerController(String id, MapController controller) {
+    // Ensure a controller instance is only stored under a single id.
+    // If the same controller was previously registered under a different
+    // id, remove that old entry to avoid duplicate ids pointing to the
+    // same controller (which can cause lookup mismatches).
+    final toRemove = <String>[];
+    for (final e in _controllers.entries) {
+      if (identical(e.value, controller) && e.key != id) {
+        toRemove.add(e.key);
+      }
+    }
+    for (final k in toRemove) {
+      // Migrate any per-id registrations from the old id to the new id
+      // so callers that registered early (e.g., via getIdForController())
+      // don't become disconnected when the widget later registers a
+      // stable controller id.
+      try {
+        // Move notifier registration
+        final oldNotifier = _notifiers.remove(k);
+        if (oldNotifier != null && !_notifiers.containsKey(id)) {
+          _notifiers[id] = oldNotifier;
+          _notifierToId[oldNotifier] = id;
+          try {
+            oldNotifier.attachController(id);
+          } catch (_) {}
+        }
+      } catch (_) {}
+      try {
+        if (_loadingNotifiers.containsKey(k) &&
+            !_loadingNotifiers.containsKey(id)) {
+          _loadingNotifiers[id] = _loadingNotifiers.remove(k)!;
+        }
+      } catch (_) {}
+      try {
+        if (_blockingLoadingNotifiers.containsKey(k) &&
+            !_blockingLoadingNotifiers.containsKey(id)) {
+          _blockingLoadingNotifiers[id] = _blockingLoadingNotifiers.remove(k)!;
+        }
+      } catch (_) {}
+      try {
+        if (_onMarkerTapHandlers.containsKey(k) &&
+            !_onMarkerTapHandlers.containsKey(id)) {
+          _onMarkerTapHandlers[id] = _onMarkerTapHandlers.remove(k)!;
+        }
+      } catch (_) {}
+      try {
+        if (_playbackHandlers.containsKey(k) &&
+            !_playbackHandlers.containsKey(id)) {
+          _playbackHandlers[id] = _playbackHandlers.remove(k)!;
+        }
+      } catch (_) {}
+      try {
+        if (_playbackPlayingNotifiers.containsKey(k) &&
+            !_playbackPlayingNotifiers.containsKey(id)) {
+          _playbackPlayingNotifiers[id] = _playbackPlayingNotifiers.remove(k)!;
+        }
+      } catch (_) {}
+      _controllers.remove(k);
+    }
+    _controllers[id] = controller;
+  }
+
+  /// Convenience helper that registers a controller under the stable
+  /// `ff_controller_<hash>` id and optionally registers a `FormFieldsMapNotifier`
+  /// for the same id. This simplifies consumer code by ensuring both the
+  /// controller and notifier are registered under the same stable id that
+  /// `FormFieldsMap` widgets use.
+  static String registerControllerAndNotifier(
+      MapController controller, FormFieldsMapNotifier? notifier) {
+    final id = 'ff_controller_${controller.hashCode}';
+    registerController(id, controller);
+    if (notifier != null) {
+      registerNotifier(id, notifier);
+    }
+    return id;
+  }
 
   // Optional ValueNotifiers to represent loading state per controller id.
   static final Map<String, ValueNotifier<bool>> _loadingNotifiers = {};
@@ -26,6 +114,101 @@ class FormFieldsMapController {
   /// Returns an existing controller for [id], or creates one if missing.
   static MapController getOrCreate(String id) {
     return _controllers.putIfAbsent(id, () => MapController());
+  }
+
+  /// Register a `FormFieldsMapNotifier` instance for the controller id.
+  static void registerNotifier(String id, FormFieldsMapNotifier notifier) {
+    final existing = _notifiers[id];
+    if (identical(existing, notifier)) {
+      // Already registered the same notifier under this id; avoid
+      // re-attaching or logging repeatedly.
+      return;
+    }
+    _notifiers[id] = notifier;
+    _notifierToId[notifier] = id;
+    try {
+      notifier.attachController(id);
+    } catch (_) {}
+    try {
+      debugPrint(
+          '[FormFieldsMapController] registerNotifier id=$id notifier=${notifier.hashCode}');
+    } catch (_) {}
+  }
+
+  /// Remove a previously registered notifier for [id]. Called on widget
+  /// dispose to avoid leaks.
+  static void removeNotifier(String id) {
+    final n = _notifiers.remove(id);
+    if (n != null) {
+      _notifierToId.remove(n);
+      try {
+        n.attachController(null);
+      } catch (_) {}
+      try {
+        debugPrint(
+            '[FormFieldsMapController] removeNotifier id=$id notifier=${n.hashCode}');
+      } catch (_) {}
+    }
+  }
+
+  /// Helper to safely get a notifier for [id]. Returns null when not
+  /// registered.
+  static FormFieldsMapNotifier? _getNotifier(String id) {
+    return _notifiers[id];
+  }
+
+  /// Public accessor for the registered `FormFieldsMapNotifier` for [id].
+  /// Returns `null` when no notifier is registered. This is a thin
+  /// wrapper around the internal `_getNotifier` helper to allow callers
+  /// that need direct access to the notifier (e.g. widgets using
+  /// `ChangeNotifierProvider.value`) to obtain it safely.
+  static FormFieldsMapNotifier? getNotifier(String id) {
+    return _getNotifier(id);
+  }
+
+  /// Return a copy of the notifier's `rawMarkers` list for [id], or an
+  /// empty list when no notifier is registered. This is a safe read-only
+  /// accessor for external callers.
+  static List<dynamic> getRawMarkers(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return const [];
+    try {
+      return List<dynamic>.from(n.rawMarkers);
+    } catch (_) {
+      return List<dynamic>.from(n.rawMarkers);
+    }
+  }
+
+  /// Return the registry id associated with a `FormFieldsMapNotifier`. If
+  /// the notifier is not yet registered, a new id is created and the
+  /// notifier is registered under it. This is primarily a helper for
+  /// examples and code that holds a notifier instance and needs the
+  /// corresponding registry id used by the map widget.
+  static String getIdForNotifier(FormFieldsMapNotifier notifier) {
+    final existing = _notifierToId[notifier];
+    if (existing != null) return existing;
+    final id =
+        'ff_notifier_${DateTime.now().microsecondsSinceEpoch}_${_notifiers.length}';
+    registerNotifier(id, notifier);
+    return id;
+  }
+
+  /// Return the registry id associated with [controller], creating a new
+  /// registry entry if the controller is not yet known. This allows callers
+  /// that hold a `MapController` instance to obtain a stable string id for
+  /// use with other registry APIs.
+  static String getIdForController(MapController controller) {
+    for (final e in _controllers.entries) {
+      if (identical(e.value, controller)) return e.key;
+    }
+    final id =
+        'auto_${DateTime.now().microsecondsSinceEpoch}_${_controllers.length}';
+    _controllers[id] = controller;
+    try {
+      debugPrint(
+          '[FormFieldsMapController] getIdForController created id=$id controller=${controller.hashCode}');
+    } catch (_) {}
+    return id;
   }
 
   /// Returns a `ValueListenable<bool>` representing the loading state for
@@ -128,6 +311,199 @@ class FormFieldsMapController {
   /// Remove any registered onMarkerTap handler for [id].
   static void removeOnMarkerTap(String id) {
     _onMarkerTapHandlers.remove(id);
+  }
+
+  // --- Notifier mutation helpers ---
+  /// Replace the notifier's `rawMarkers` list for [id]. No-op when no
+  /// notifier is registered for [id].
+  static void setRawMarkers(String id, List<dynamic> coords) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.rawMarkers = List<dynamic>.from(coords);
+      try {
+        debugPrint(
+            '[FormFieldsMapController] setRawMarkers id=$id notifier=${n.hashCode} count=${n.rawMarkers.length}');
+      } catch (_) {}
+    } catch (_) {}
+  }
+
+  static void appendRawMarkers(String id, List<dynamic> coords) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.appendRawMarkers(List<dynamic>.from(coords));
+      try {
+        debugPrint(
+            '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} count=${n.rawMarkers.length}');
+      } catch (_) {}
+    } catch (_) {}
+  }
+
+  static void clearRawMarkers(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.clearRawMarkers();
+    } catch (_) {}
+  }
+
+  static bool removeRawMarker(String id, String markerId) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      return n.removeRawMarker(markerId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Polygons
+  static String? addPolygon(String id, Polygon p) {
+    final n = _getNotifier(id);
+    if (n == null) return null;
+    try {
+      return n.addPolygon(p);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void addOrUpdatePolygon(String id, String pid, Polygon p) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.addOrUpdatePolygon(pid, p);
+    } catch (_) {}
+  }
+
+  static bool removePolygon(String id, String pid) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      return n.removePolygon(pid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void clearPolygons(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.clearPolygons();
+    } catch (_) {}
+  }
+
+  // Polylines
+  static String? addPolyline(String id, Polyline l) {
+    final n = _getNotifier(id);
+    if (n == null) return null;
+    try {
+      return n.addPolyline(l);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void addOrUpdatePolyline(String id, String lid, Polyline l) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.addOrUpdatePolyline(lid, l);
+    } catch (_) {}
+  }
+
+  static bool removePolyline(String id, String lid) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      return n.removePolyline(lid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void clearPolylines(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.clearPolylines();
+    } catch (_) {}
+  }
+
+  // Circles
+  static String? addCircle(String id, CircleMarker c) {
+    final n = _getNotifier(id);
+    if (n == null) return null;
+    try {
+      return n.addCircle(c);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void addOrUpdateCircle(String id, String cid, CircleMarker c) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.addOrUpdateCircle(cid, c);
+    } catch (_) {}
+  }
+
+  static bool removeCircle(String id, String cid) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      return n.removeCircle(cid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void clearCircles(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.clearCircles();
+    } catch (_) {}
+  }
+
+  // Markers
+  static String? addMarker(String id, Marker m) {
+    final n = _getNotifier(id);
+    if (n == null) return null;
+    try {
+      return n.addMarker(m);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void addOrUpdateMarker(String id, String mid, Marker m) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.addOrUpdateMarker(mid, m);
+    } catch (_) {}
+  }
+
+  static bool removeMarker(String id, String mid) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      return n.removeMarker(mid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void clearMarkers(String id) {
+    final n = _getNotifier(id);
+    if (n == null) return;
+    try {
+      n.clearMarkers();
+    } catch (_) {}
   }
 
   /// Returns the current map center for the controller with [id], or `null`
@@ -277,4 +653,124 @@ class FormFieldsMapPlaybackHandler {
     required this.setInterpolationSteps,
     required this.toggle,
   });
+}
+
+/// Convenience extension on `MapController` to allow calling registry APIs
+/// directly from a `MapController` instance. This lets consumers simply do
+/// `mapController.setBlockingLoading(true)` instead of resolving a string id.
+extension FormFieldsMapControllerMapControllerExt on MapController {
+  String registerWithNotifier(FormFieldsMapNotifier? notifier) {
+    return FormFieldsMapController.registerControllerAndNotifier(
+        this, notifier);
+  }
+
+  void setBlockingLoading(bool value) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setBlockingLoading(id, value);
+  }
+
+  void setLoading(bool value) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setLoading(id, value);
+  }
+
+  void setRawMarkers(List<dynamic> coords) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setRawMarkers(id, coords);
+  }
+
+  void appendRawMarkers(List<dynamic> coords) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.appendRawMarkers(id, coords);
+  }
+
+  void clearRawMarkers() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.clearRawMarkers(id);
+  }
+
+  String? addPolyline(Polyline l) {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.addPolyline(id, l);
+  }
+
+  String? addMarker(Marker m) {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.addMarker(id, m);
+  }
+
+  void clearPolylines() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.clearPolylines(id);
+  }
+
+  void clearPolygons() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.clearPolygons(id);
+  }
+
+  void clearCircles() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.clearCircles(id);
+  }
+
+  void startPolylinePlayback(String? polylineId) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.startPolylinePlayback(id, polylineId);
+  }
+
+  void pausePolylinePlayback() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.pausePolylinePlayback(id);
+  }
+
+  void restartPolylinePlayback() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.restartPolylinePlayback(id);
+  }
+
+  void togglePolylinePlayback(String? polylineId) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.togglePolylinePlayback(id, polylineId);
+  }
+
+  void setPolylinePlaybackInterval(Duration interval) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setPolylinePlaybackInterval(id, interval);
+  }
+
+  void setPolylinePlaybackInterpolationSteps(int steps) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setPolylinePlaybackInterpolationSteps(id, steps);
+  }
+
+  ValueListenable<bool> getPlaybackPlayingListenable() {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.getPlaybackPlayingListenable(id);
+  }
+
+  void setPlaybackPlaying(bool value) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.setPlaybackPlaying(id, value);
+  }
+
+  List<dynamic> getRawMarkers() {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.getRawMarkers(id);
+  }
+
+  String? addPolygon(Polygon p) {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.addPolygon(id, p);
+  }
+
+  String? addCircle(CircleMarker c) {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.addCircle(id, c);
+  }
+
+  void removeNotifier() {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.removeNotifier(id);
+  }
 }

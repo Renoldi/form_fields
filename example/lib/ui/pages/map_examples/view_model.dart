@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 // Use the package's Dio utility for HTTP requests instead of HttpClient.
 
 import 'package:flutter/material.dart';
@@ -9,7 +10,15 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
+  final MapController mapController = MapController();
   final FormFieldsMapNotifier mapNotifier = FormFieldsMapNotifier();
+  MapExamplesViewModel() {
+    try {
+      mapController.registerWithNotifier(mapNotifier);
+    } catch (_) {}
+  }
+  String get controllerId =>
+      FormFieldsMapController.getIdForController(mapController);
 
   // Timer for periodic marker updates
   Timer? _markerUpdateTimer;
@@ -50,7 +59,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     playbackInterval = d;
     // forward to controller so the map uses the new interval
     try {
-      FormFieldsMapController.setPolylinePlaybackInterval('default', d);
+      mapController.setPolylinePlaybackInterval(d);
     } catch (_) {}
     notifyListeners();
   }
@@ -58,8 +67,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   void setPlaybackInterpolationSteps(int s) {
     playbackInterpolationSteps = s;
     try {
-      FormFieldsMapController.setPolylinePlaybackInterpolationSteps(
-          'default', s);
+      mapController.setPolylinePlaybackInterpolationSteps(s);
     } catch (_) {}
     notifyListeners();
   }
@@ -67,7 +75,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 3000000;
+  int createMarkers = 10000;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
@@ -100,11 +108,11 @@ class MapExamplesViewModel extends ChangeNotifier {
     generatedPolygons = totalPolygons = 0;
     generatedPolylines = totalPolylines = 0;
     generatedCircles = totalCircles = 0;
-    mapNotifier.clearRawMarkers();
-    mapNotifier.clearPolygons();
-    mapNotifier.clearPolylines();
+    mapController.clearRawMarkers();
+    mapController.clearPolygons();
+    mapController.clearPolylines();
     playbackPolylineId = null;
-    mapNotifier.clearCircles();
+    mapController.clearCircles();
     notifyListeners();
   }
 
@@ -116,7 +124,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      mapController.setBlockingLoading(true);
     } catch (_) {}
 
     // await generatePolygons(shapeCount: shapeCount);
@@ -126,7 +134,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', false);
+      mapController.setBlockingLoading(false);
     } catch (_) {}
   }
 
@@ -134,7 +142,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      mapController.setBlockingLoading(true);
     } catch (_) {}
     try {
       generatedPolygons = 0;
@@ -157,13 +165,14 @@ class MapExamplesViewModel extends ChangeNotifier {
           borderColor: Colors.green,
           borderStrokeWidth: 2,
         );
-        final id = mapNotifier.addPolygon(poly);
+        final id = FormFieldsMapController.addPolygon(controllerId, poly) ??
+            'p_unknown';
         // add a small raw marker at centroid for interaction & metadata
         final avgLat =
             pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
         final avgLng =
             pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
-        mapNotifier.appendRawMarkers([
+        mapController.appendRawMarkers([
           ShapeMeta(
             lat: avgLat,
             lon: avgLng,
@@ -181,7 +190,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       try {
-        FormFieldsMapController.setBlockingLoading('default', false);
+        mapController.setBlockingLoading(false);
       } catch (_) {}
     }
   }
@@ -193,47 +202,50 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      mapController.setBlockingLoading(true);
     } catch (_) {}
-    final rnd = math.Random(424242);
 
-    // We'll emit raw ShapeMeta markers (consistent with polygons/polylines/circles)
-    // Batch them to avoid large numbers of notifyListeners calls.
-    final batch = <dynamic>[];
-    for (var i = 0; i < markerCount; i++) {
-      final lat = center.latitude + (rnd.nextDouble() - 0.5) * 3;
-      final lng = center.longitude + (rnd.nextDouble() - 0.5) * 3;
+    // Give the UI one frame to render the blocking overlay.
+    await Future.delayed(Duration.zero);
 
-      final meta = ShapeMeta(
-        lat: lat,
-        lon: lng,
-        title: 'Marker #${i + 1}',
-        subtitle:
-            'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
-        id: 'm\$${DateTime.now().microsecondsSinceEpoch}_\$i',
-        shapeType: 'marker',
-      );
-      batch.add(meta);
+    // Use compute to generate marker data off the main thread.
+    final raw = await compute(_generateMarkersIsolate, {
+      'count': markerCount,
+      'seed': 424242,
+      'centerLat': center.latitude,
+      'centerLng': center.longitude,
+    });
 
-      generatedMarkers = i + 1;
-
-      if ((i & 0x1FF) == 0) {
-        // flush batch every 512 items
-        if (batch.isNotEmpty) {
-          mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
-          debugPrint(
-              'generateMarkers appended a batch, generated=$generatedMarkers');
-          batch.clear();
-        }
-        notifyListeners();
-        await Future.delayed(const Duration(milliseconds: 1));
+    // Convert and append in batches on the main isolate.
+    const batchSize = 512;
+    var idx = 0;
+    while (idx < raw.length) {
+      final end = (idx + batchSize).clamp(0, raw.length);
+      final slice = raw.sublist(idx, end);
+      final batch = <dynamic>[];
+      for (var m in slice) {
+        batch.add(ShapeMeta(
+          lat: (m['lat'] as num).toDouble(),
+          lon: (m['lon'] as num).toDouble(),
+          title: m['title'] as String?,
+          subtitle: m['subtitle'] as String?,
+          id: m['id'] as String?,
+          shapeType: m['shapeType'] as String?,
+        ));
       }
-    }
-
-    if (batch.isNotEmpty) {
-      mapNotifier.appendRawMarkers(List<dynamic>.from(batch));
+      mapController.appendRawMarkers(List<dynamic>.from(batch));
+      generatedMarkers = end;
       debugPrint(
-          'generateMarkers appended final batch, generated=$generatedMarkers');
+          'generateMarkers appended a batch, generated=$generatedMarkers');
+      try {
+        final cur = mapController.getRawMarkers();
+        debugPrint(
+            'generateMarkers after append, registry rawMarkers=${cur.length}');
+      } catch (_) {}
+      notifyListeners();
+      // yield back to event loop briefly so UI can update
+      await Future.delayed(const Duration(milliseconds: 1));
+      idx = end;
     }
 
     // Start periodic updates after markers are generated.
@@ -241,9 +253,13 @@ class MapExamplesViewModel extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+    try {
+      final cur = mapController.getRawMarkers();
+      debugPrint('generateMarkers complete, registry rawMarkers=${cur.length}');
+    } catch (_) {}
     debugPrint('generateMarkers finished, total generated=$generatedMarkers');
     try {
-      FormFieldsMapController.setBlockingLoading('default', false);
+      mapController.setBlockingLoading(false);
     } catch (_) {}
   }
 
@@ -251,7 +267,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      mapController.setBlockingLoading(true);
     } catch (_) {}
     try {
       generatedPolylines = 0;
@@ -268,11 +284,11 @@ class MapExamplesViewModel extends ChangeNotifier {
               baseLng + (rnd.nextDouble() - 0.5) * step));
         }
         final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.blue);
-        final id = mapNotifier.addPolyline(pl);
+        final id = mapController.addPolyline(pl) ?? 'l_unknown';
         // place raw marker at polyline midpoint for interaction
         final midIndex = pts.length ~/ 2;
         final mid = pts[midIndex];
-        mapNotifier.appendRawMarkers([
+        mapController.appendRawMarkers([
           ShapeMeta(
             lat: mid.latitude,
             lon: mid.longitude,
@@ -290,7 +306,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       try {
-        FormFieldsMapController.setBlockingLoading('default', false);
+        mapController.setBlockingLoading(false);
       } catch (_) {}
     }
   }
@@ -335,17 +351,16 @@ class MapExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Perform a single in-place update of `mapNotifier.rawMarkers` by nudging
+  /// Perform a single in-place update of the raw markers (via controller)
   /// each `ShapeMeta` (or map-style marker) by a small random delta.
   void _updateMarkersOnce() {
     try {
       try {
-        FormFieldsMapController.setBlockingLoading('default', true);
+        mapController.setBlockingLoading(true);
       } catch (_) {}
 
-      debugPrint(
-          '_updateMarkersOnce called, current=${mapNotifier.rawMarkers.length}');
-      final current = mapNotifier.rawMarkers;
+      final current = mapController.getRawMarkers();
+      debugPrint('_updateMarkersOnce called, current=${current.length}');
       if (current.isEmpty) return;
       final updated = <dynamic>[];
       for (final m in current) {
@@ -405,14 +420,14 @@ class MapExamplesViewModel extends ChangeNotifier {
           updated.add(m);
         }
       }
-      mapNotifier.rawMarkers = List<dynamic>.from(updated);
+      mapController.setRawMarkers(List<dynamic>.from(updated));
       notifyListeners();
       debugPrint('_updateMarkersOnce completed, updated=${updated.length}');
     } catch (_) {
       // ignore
     } finally {
       try {
-        FormFieldsMapController.setBlockingLoading('default', false);
+        mapController.setBlockingLoading(false);
       } catch (_) {}
     }
   }
@@ -434,6 +449,11 @@ class MapExamplesViewModel extends ChangeNotifier {
   void dispose() {
     stopPeriodicMarkerUpdates();
     try {
+      // Ensure notifier is removed from the global registry to avoid leaks
+      // if the view registered it earlier.
+      try {
+        mapController.removeNotifier();
+      } catch (_) {}
       super.dispose();
     } catch (_) {
       // ignore
@@ -452,7 +472,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      mapController.setBlockingLoading(true);
     } catch (_) {}
     try {
       final rnd = math.Random();
@@ -518,7 +538,7 @@ class MapExamplesViewModel extends ChangeNotifier {
 
       final pl = Polyline(
           points: routePoints, strokeWidth: 10.0, color: Colors.purple);
-      final id = mapNotifier.addPolyline(pl);
+      final id = mapController.addPolyline(pl) ?? 'l_unknown';
       // add a marker at midpoint for interactivity and compute rotation
       final midIndex = routePoints.length ~/ 2;
       final mid = routePoints[midIndex];
@@ -542,7 +562,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         rotation = 0.0;
       }
 
-      mapNotifier.appendRawMarkers([
+      mapController.appendRawMarkers([
         ShapeMeta(
           lat: mid.latitude,
           lon: mid.longitude,
@@ -563,7 +583,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       try {
-        FormFieldsMapController.setBlockingLoading('default', false);
+        mapController.setBlockingLoading(false);
       } catch (_) {}
     }
   }
@@ -572,7 +592,7 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      FormFieldsMapController.setBlockingLoading('default', true);
+      FormFieldsMapController.setBlockingLoading(controllerId, true);
     } catch (_) {}
     try {
       generatedCircles = 0;
@@ -590,8 +610,8 @@ class MapExamplesViewModel extends ChangeNotifier {
           useRadiusInMeter: true,
           radius: 800.0,
         );
-        final id = mapNotifier.addCircle(c);
-        mapNotifier.appendRawMarkers([
+        final id = mapController.addCircle(c) ?? 'c_unknown';
+        mapController.appendRawMarkers([
           ShapeMeta(
             lat: lat,
             lon: lng,
@@ -609,8 +629,35 @@ class MapExamplesViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       try {
-        FormFieldsMapController.setBlockingLoading('default', false);
+        mapController.setBlockingLoading(false);
       } catch (_) {}
     }
   }
+}
+
+// Top-level isolate entrypoint for generating simple marker payloads.
+// Returns a List<Map<String, dynamic>> where each map is a serializable
+// descriptor of a marker that can be converted to `ShapeMeta` on the
+// main isolate.
+List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
+  final count = args['count'] as int? ?? 0;
+  final seed = args['seed'] as int? ?? 0;
+  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
+  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
+  final rnd = math.Random(seed);
+  final out = <Map<String, dynamic>>[];
+  for (var i = 0; i < count; i++) {
+    final lat = centerLat + (rnd.nextDouble() - 0.5) * 3;
+    final lng = centerLng + (rnd.nextDouble() - 0.5) * 3;
+    out.add({
+      'lat': lat,
+      'lon': lng,
+      'title': 'Marker #${i + 1}',
+      'subtitle':
+          'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
+      'id': 'm${DateTime.now().microsecondsSinceEpoch}_$i',
+      'shapeType': 'marker',
+    });
+  }
+  return out;
 }

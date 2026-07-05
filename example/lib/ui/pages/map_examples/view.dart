@@ -20,6 +20,18 @@ class View extends PresenterState {
   Widget build(BuildContext context) {
     return Consumer<MapExamplesViewModel>(
       builder: (context, vm, _) {
+        // Ensure the example's notifier is registered under a stable
+        // controller id so the `FormFieldsMap` widget can retrieve it
+        // from `FormFieldsMapController`.
+        try {
+          final id = 'ff_controller_${vm.mapController.hashCode}';
+          final existing = FormFieldsMapController.getNotifier(id);
+          if (!identical(existing, vm.mapNotifier)) {
+            FormFieldsMapController.registerControllerAndNotifier(
+                vm.mapController, vm.mapNotifier);
+          }
+        } catch (_) {}
+
         final content = Stack(
           children: [
             Column(
@@ -95,9 +107,9 @@ class View extends PresenterState {
                 ),
                 Expanded(
                   child: FormFieldsMap(
-                    notifier: vm.mapNotifier,
+                    controller: vm.mapController,
                     onRequestCurrentLocation: () async => vm.center,
-                    showBuiltinPlaybackControls: false,
+                    showBuiltinPlaybackControls: true,
                     enablePolylinePlayback: true,
                     canvasMarkerRadius: 20.0,
                     canvasMarkerIcon: const Icon(
@@ -227,7 +239,8 @@ class View extends PresenterState {
                           children: [
                             ValueListenableBuilder<bool>(
                               valueListenable: FormFieldsMapController
-                                  .getPlaybackPlayingListenable('default'),
+                                  .getPlaybackPlayingListenable(
+                                      vm.controllerId),
                               builder: (context, playing, _) {
                                 return IconButton(
                                   icon: Icon(
@@ -235,11 +248,13 @@ class View extends PresenterState {
                                   onPressed: () {
                                     if (playing) {
                                       FormFieldsMapController
-                                          .pausePolylinePlayback('default');
+                                          .pausePolylinePlayback(
+                                              vm.controllerId);
                                     } else {
                                       FormFieldsMapController
                                           .startPolylinePlayback(
-                                              'default', vm.playbackPolylineId);
+                                              vm.controllerId,
+                                              vm.playbackPolylineId);
                                     }
                                   },
                                   tooltip: playing ? 'Pause' : 'Play',
@@ -249,7 +264,7 @@ class View extends PresenterState {
                             IconButton(
                               icon: const Icon(Icons.replay),
                               onPressed: () => FormFieldsMapController
-                                  .restartPolylinePlayback('default'),
+                                  .restartPolylinePlayback(vm.controllerId),
                             ),
                           ],
                         ),
