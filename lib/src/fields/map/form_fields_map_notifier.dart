@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -43,7 +44,13 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _circlesCache = _circleMap.values.toList(growable: false);
   }
 
-  void _safeNotify() {
+  // Debounced notify to reduce UI churn when many small mutations happen
+  // in rapid succession (e.g., batched marker appends). Timer is per-notifier
+  // and cancels/reschedules on each mutate call.
+  Timer? _notifyTimer;
+  static const Duration _notifyDebounce = Duration(milliseconds: 80);
+
+  void _performNotify() {
     try {
       final phase = SchedulerBinding.instance.schedulerPhase;
       if (phase == SchedulerPhase.idle) {
@@ -69,6 +76,19 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             '[FormFieldsMapNotifier] fallback notifyListeners controller=$_controllerId raw=${_rawMarkersCache.length}');
         notifyListeners();
       } catch (_) {}
+    }
+  }
+
+  void _scheduleNotify() {
+    try {
+      _notifyTimer?.cancel();
+      _notifyTimer = Timer(_notifyDebounce, () {
+        _notifyTimer = null;
+        _performNotify();
+      });
+    } catch (_) {
+      // fallback to immediate notify
+      _performNotify();
     }
   }
 
@@ -110,20 +130,20 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   set rawMarkers(List<dynamic> coords) {
     _ensureControlled();
     _rawMarkersCache = coords;
-    _safeNotify();
+    _scheduleNotify();
   }
 
   void appendRawMarkers(List<dynamic> coords) {
     _ensureControlled();
     final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
     _rawMarkersCache = List<dynamic>.from(combined);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   void clearRawMarkers() {
     _ensureControlled();
     _rawMarkersCache = const [];
-    _safeNotify();
+    _scheduleNotify();
   }
 
   bool removeRawMarker(String id) {
@@ -135,7 +155,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       return true;
     }).toList(growable: false);
     final removed = _rawMarkersCache.length != before;
-    if (removed) _safeNotify();
+    if (removed) _scheduleNotify();
     return removed;
   }
 
@@ -146,7 +166,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _polygonMap['p\$i'] = p[i];
     }
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   set polylines(List<Polyline> p) {
@@ -156,7 +176,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _polylineMap['l\$i'] = p[i];
     }
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   set circles(List<CircleMarker> c) {
@@ -166,7 +186,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _circleMap['c\$i'] = c[i];
     }
     _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   // Polygons
@@ -175,7 +195,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
     _polygonMap[id] = p;
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
     return id;
   }
 
@@ -183,7 +203,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _polygonMap[id] = polygon;
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   Polygon? getPolygon(String id) => _polygonMap[id];
@@ -193,7 +213,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _polygonMap.remove(id) != null;
     if (removed) {
       _polygonsCache = _polygonMap.values.toList(growable: false);
-      _safeNotify();
+      _scheduleNotify();
     }
     return removed;
   }
@@ -202,7 +222,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _polygonMap.clear();
     _polygonsCache = _polygonMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   // Polylines
@@ -211,7 +231,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
     _polylineMap[id] = p;
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
     return id;
   }
 
@@ -219,7 +239,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _polylineMap[id] = polyline;
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   Polyline? getPolyline(String id) => _polylineMap[id];
@@ -229,7 +249,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _polylineMap.remove(id) != null;
     if (removed) {
       _polylinesCache = _polylineMap.values.toList(growable: false);
-      _safeNotify();
+      _scheduleNotify();
     }
     return removed;
   }
@@ -238,7 +258,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _polylineMap.clear();
     _polylinesCache = _polylineMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   String addCircle(CircleMarker c) {
@@ -246,7 +266,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'c\$${DateTime.now().microsecondsSinceEpoch}';
     _circleMap[id] = c;
     _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
     return id;
   }
 
@@ -254,7 +274,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _circleMap[id] = circle;
     _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   CircleMarker? getCircle(String id) => _circleMap[id];
@@ -264,7 +284,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _circleMap.remove(id) != null;
     if (removed) {
       _circlesCache = _circleMap.values.toList(growable: false);
-      _safeNotify();
+      _scheduleNotify();
     }
     return removed;
   }
@@ -273,7 +293,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _circleMap.clear();
     _circlesCache = _circleMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   // Markers
@@ -297,7 +317,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       _markerMap[id] = m[i];
     }
     _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   String addMarker(Marker m) {
@@ -305,7 +325,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final id = 'm\$${DateTime.now().microsecondsSinceEpoch}';
     _markerMap[id] = m;
     _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
     return id;
   }
 
@@ -313,7 +333,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _markerMap[id] = marker;
     _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
   }
 
   Marker? getMarker(String id) => _markerMap[id];
@@ -323,7 +343,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     final removed = _markerMap.remove(id) != null;
     if (removed) {
       _markersCache = _markerMap.values.toList(growable: false);
-      _safeNotify();
+      _scheduleNotify();
     }
     return removed;
   }
@@ -332,6 +352,14 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     _markerMap.clear();
     _markersCache = _markerMap.values.toList(growable: false);
-    _safeNotify();
+    _scheduleNotify();
+  }
+
+  @override
+  void dispose() {
+    try {
+      _notifyTimer?.cancel();
+    } catch (_) {}
+    super.dispose();
   }
 }

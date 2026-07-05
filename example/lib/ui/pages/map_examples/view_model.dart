@@ -70,7 +70,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 10000;
+  int createMarkers = 1000000;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
@@ -167,7 +167,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
         final avgLng =
             pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
-        mapController.appendRawMarkers([
+        await mapController.appendRawMarkers([
           ShapeMeta(
             lat: avgLat,
             lon: avgLng,
@@ -228,7 +228,7 @@ class MapExamplesViewModel extends ChangeNotifier {
           shapeType: m['shapeType'] as String?,
         ));
       }
-      mapController.appendRawMarkers(List<dynamic>.from(batch));
+      await mapController.appendRawMarkers(List<dynamic>.from(batch));
       generatedMarkers = end;
       debugPrint(
           'generateMarkers appended a batch, generated=$generatedMarkers');
@@ -283,7 +283,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         // place raw marker at polyline midpoint for interaction
         final midIndex = pts.length ~/ 2;
         final mid = pts[midIndex];
-        mapController.appendRawMarkers([
+        await mapController.appendRawMarkers([
           ShapeMeta(
             lat: mid.latitude,
             lon: mid.longitude,
@@ -557,7 +557,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         rotation = 0.0;
       }
 
-      mapController.appendRawMarkers([
+      await mapController.appendRawMarkers([
         ShapeMeta(
           lat: mid.latitude,
           lon: mid.longitude,
@@ -606,7 +606,7 @@ class MapExamplesViewModel extends ChangeNotifier {
           radius: 800.0,
         );
         final id = mapController.addCircle(c) ?? 'c_unknown';
-        mapController.appendRawMarkers([
+        await mapController.appendRawMarkers([
           ShapeMeta(
             lat: lat,
             lon: lng,

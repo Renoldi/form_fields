@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -21,6 +22,12 @@ class FormFieldsMapController {
   // Reverse mapping from notifier instance to id to help callers (examples)
   // discover the registry id when they hold a notifier reference.
   static final Map<FormFieldsMapNotifier, String> _notifierToId = {};
+  // Transient retry counts for appendRawMarkers when map camera isn't ready.
+  static final Map<String, int> _appendRetryCounts = {};
+  static const int _maxAppendRetries = 40;
+  // Timers used to debounce clearing the blocking overlay so rapid
+  // sequential batch appends don't cause the overlay to flicker.
+  static final Map<String, Timer?> _blockingClearTimers = {};
 
   /// Register an external or pre-created [controller] under [id]. This
   /// allows consumers that provide their own `MapController` to expose it
@@ -344,13 +351,10 @@ class FormFieldsMapController {
     } catch (_) {}
   }
 
-  static void appendRawMarkers(String id, List<dynamic> coords) {
+  static Future<bool> appendRawMarkers(String id, List<dynamic> coords) async {
     var n = _getNotifier(id);
-    // If no notifier is registered yet, create and register one so callers
-    // that only hold a `MapController` can use controller-only APIs and
-    // still receive notifications in UI widgets that listen to the
-    // notifier. This makes `mapController.appendRawMarkers(...)` usable
-    // without requiring users to register a notifier manually.
+    // Ensure a notifier exists so UI widgets can observe updates even when
+    // callers only hold a `MapController` reference.
     if (n == null) {
       try {
         final created = FormFieldsMapNotifier();
@@ -358,20 +362,75 @@ class FormFieldsMapController {
         n = created;
       } catch (_) {}
     }
-    if (n == null) return;
+    if (n == null) return false;
+
+    // If the map/controller isn't ready yet (camera center unavailable),
+    // schedule a short retry instead of mutating immediately. This fixes
+    // the issue where markers are appended before the map has initialized
+    // and thus are not displayed until the user interacts with the map.
+    final center = getCenter(id);
+    if (center == null) {
+      final attempts = (_appendRetryCounts[id] ?? 0) + 1;
+      if (attempts > _maxAppendRetries) {
+        try {
+          debugPrint(
+              '[FormFieldsMapController] appendRawMarkers id=$id aborted after $attempts attempts (map not ready)');
+        } catch (_) {}
+        _appendRetryCounts.remove(id);
+        return false;
+      }
+      _appendRetryCounts[id] = attempts;
+      await Future.delayed(const Duration(milliseconds: 100));
+      return await appendRawMarkers(id, coords);
+    }
+
+    // Reset retry count on success path.
+    _appendRetryCounts.remove(id);
+
+    // Decide whether this append should present the full-screen blocking
+    // overlay. We only do this for larger batches to avoid blocking UI
+    // for tiny updates.
+    final shouldBlock = coords.length >= _autoBlockingThreshold;
+
     try {
-      try {
-        setBlockingLoading(id, true);
-      } catch (_) {}
+      if (shouldBlock) {
+        // Cancel any pending clear timers (another batch is ongoing)
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          setBlockingLoading(id, true);
+        } catch (_) {}
+        // Give one frame for the overlay to render.
+        try {
+          await Future.delayed(Duration.zero);
+        } catch (_) {}
+      }
+
       n.appendRawMarkers(coords);
       try {
         debugPrint(
             '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
       } catch (_) {}
+      return true;
     } finally {
-      try {
-        setBlockingLoading(id, false);
-      } catch (_) {}
+      if (shouldBlock) {
+        // Debounce clearing the overlay so closely spaced batches don't
+        // cause flicker. If another batch arrives it will cancel this
+        // timer and keep the overlay visible.
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          _blockingClearTimers[id] =
+              Timer(const Duration(milliseconds: 200), () {
+            try {
+              setBlockingLoading(id, false);
+            } catch (_) {}
+            _blockingClearTimers.remove(id);
+          });
+        } catch (_) {}
+      }
     }
   }
 
@@ -722,9 +781,9 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
     FormFieldsMapController.setRawMarkers(id, coords);
   }
 
-  void appendRawMarkers(List<dynamic> coords) {
+  Future<bool> appendRawMarkers(List<dynamic> coords) async {
     final id = FormFieldsMapController.getIdForController(this);
-    FormFieldsMapController.appendRawMarkers(id, coords);
+    return await FormFieldsMapController.appendRawMarkers(id, coords);
   }
 
   void clearRawMarkers() {

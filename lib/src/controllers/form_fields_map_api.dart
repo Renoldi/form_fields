@@ -39,8 +39,8 @@ class FormFieldsMapApi {
   // --- Raw markers ---
   void setRawMarkers(List<dynamic> coords) =>
       FormFieldsMapController.setRawMarkers(_resolveId(), coords);
-  void appendRawMarkers(List<dynamic> coords) =>
-      FormFieldsMapController.appendRawMarkers(_resolveId(), coords);
+  Future<bool> appendRawMarkers(List<dynamic> coords) async =>
+      await FormFieldsMapController.appendRawMarkers(_resolveId(), coords);
   void clearRawMarkers() =>
       FormFieldsMapController.clearRawMarkers(_resolveId());
   bool removeRawMarker(String markerId) =>

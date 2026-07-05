@@ -1060,8 +1060,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               devicePixelRatio:
                                   MediaQuery.of(context).devicePixelRatio,
                               iconImage: _canvasMarkerImage,
-                              // hide titles while blocking loading is active
-                              showTitle: widget.showTitle && !isBlocking,
+                              // hide titles while blocking loading is active or when zoom is low
+                              showTitle: widget.showTitle &&
+                                  !isBlocking &&
+                                  ((_lastZoom ?? widget.initialZoom) >= 10.0),
                               defaultColor:
                                   Theme.of(context).colorScheme.secondary,
                               foregroundColor:
