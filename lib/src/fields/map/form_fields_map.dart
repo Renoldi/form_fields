@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:form_fields/src/fields/map/canvas_raw_marker_painter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
@@ -1046,7 +1047,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       return Positioned.fill(
                         child: IgnorePointer(
                           child: CustomPaint(
-                            painter: _CanvasRawMarkerPainter(
+                            painter: CanvasRawMarkerPainter(
                               rawMarkers: renderedRawMarkers,
                               center: _lastCenter ?? widget.initialCenter,
                               zoom: _lastZoom ?? widget.initialZoom,
@@ -1312,9 +1313,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // still tappable.
       final tapZoom = _lastZoom ?? widget.initialZoom;
       final center = _lastCenter ?? widget.initialCenter;
-      final centerX =
-          _CanvasRawMarkerPainter._worldX(center.longitude, tapZoom);
-      final centerY = _CanvasRawMarkerPainter._worldY(center.latitude, tapZoom);
+      final centerX = CanvasRawMarkerPainter.worldX(center.longitude, tapZoom);
+      final centerY = CanvasRawMarkerPainter.worldY(center.latitude, tapZoom);
       final double worldSize = 256 * pow(2, tapZoom).toDouble();
       // Increase hit padding slightly and scale with device pixel ratio so
       // taps are easier on denser screens and at intermediate zoom levels.
@@ -1349,8 +1349,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           for (var i = 0; i < pts.length; i++) {
             final p0 = pts[i];
             final p1 = pts[(i + 1) % pts.length];
-            final x0 = _CanvasRawMarkerPainter._worldX(p0.longitude, tapZoom);
-            final y0 = _CanvasRawMarkerPainter._worldY(p0.latitude, tapZoom);
+            final x0 = CanvasRawMarkerPainter.worldX(p0.longitude, tapZoom);
+            final y0 = CanvasRawMarkerPainter.worldY(p0.latitude, tapZoom);
             var dx0 = (x0 - centerX) + (context.size?.width ?? 0) / 2;
             var dy0 = (y0 - centerY) + (context.size?.height ?? 0) / 2;
             if (dx0.abs() > worldSize / 2) {
@@ -1360,8 +1360,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 dx0 += worldSize;
               }
             }
-            final x1 = _CanvasRawMarkerPainter._worldX(p1.longitude, tapZoom);
-            final y1 = _CanvasRawMarkerPainter._worldY(p1.latitude, tapZoom);
+            final x1 = CanvasRawMarkerPainter.worldX(p1.longitude, tapZoom);
+            final y1 = CanvasRawMarkerPainter.worldY(p1.latitude, tapZoom);
             var dx1 = (x1 - centerX) + (context.size?.width ?? 0) / 2;
             var dy1 = (y1 - centerY) + (context.size?.height ?? 0) / 2;
             if (dx1.abs() > worldSize / 2) {
@@ -1371,7 +1371,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 dx1 += worldSize;
               }
             }
-            final distPx = _pointToSegmentDistance(
+            final distPx = pointToSegmentDistance(
                 local, Offset(dx0, dy0), Offset(dx1, dy1));
             if (distPx < minEdgeDist) minEdgeDist = distPx;
           }
@@ -1406,8 +1406,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
         for (var i = 0; i < pts.length - 1; i++) {
           final p0 = pts[i];
           final p1 = pts[i + 1];
-          final x0 = _CanvasRawMarkerPainter._worldX(p0.longitude, tapZoom);
-          final y0 = _CanvasRawMarkerPainter._worldY(p0.latitude, tapZoom);
+          final x0 = CanvasRawMarkerPainter.worldX(p0.longitude, tapZoom);
+          final y0 = CanvasRawMarkerPainter.worldY(p0.latitude, tapZoom);
           var dx0 = (x0 - centerX) + (context.size?.width ?? 0) / 2;
           var dy0 = (y0 - centerY) + (context.size?.height ?? 0) / 2;
           if (dx0.abs() > worldSize / 2) {
@@ -1417,8 +1417,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
               dx0 += worldSize;
             }
           }
-          final x1 = _CanvasRawMarkerPainter._worldX(p1.longitude, tapZoom);
-          final y1 = _CanvasRawMarkerPainter._worldY(p1.latitude, tapZoom);
+          final x1 = CanvasRawMarkerPainter.worldX(p1.longitude, tapZoom);
+          final y1 = CanvasRawMarkerPainter.worldY(p1.latitude, tapZoom);
           var dx1 = (x1 - centerX) + (context.size?.width ?? 0) / 2;
           var dy1 = (y1 - centerY) + (context.size?.height ?? 0) / 2;
           if (dx1.abs() > worldSize / 2) {
@@ -1428,8 +1428,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
               dx1 += worldSize;
             }
           }
-          final distPx = _pointToSegmentDistance(
-              local, Offset(dx0, dy0), Offset(dx1, dy1));
+          final distPx =
+              pointToSegmentDistance(local, Offset(dx0, dy0), Offset(dx1, dy1));
           if (distPx < minPolyDist) {
             minPolyDist = distPx;
             minPolyId = lid;
@@ -1560,8 +1560,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             continue;
           }
 
-          final x = _CanvasRawMarkerPainter._worldX(lon, tapZoom);
-          final y = _CanvasRawMarkerPainter._worldY(lat, tapZoom);
+          final x = CanvasRawMarkerPainter.worldX(lon, tapZoom);
+          final y = CanvasRawMarkerPainter.worldY(lat, tapZoom);
 
           var dx = (x - centerX) + size.width / 2;
           var dy = (y - centerY) + size.height / 2;
@@ -1830,306 +1830,5 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (intersect) inside = !inside;
     }
     return inside;
-  }
-}
-
-double _pointToSegmentDistance(Offset p, Offset v, Offset w) {
-  final l2 = pow((v.dx - w.dx), 2) + pow((v.dy - w.dy), 2);
-  if (l2 == 0) return (p - v).distance;
-  var t = ((p.dx - v.dx) * (w.dx - v.dx) + (p.dy - v.dy) * (w.dy - v.dy)) / l2;
-  t = t.clamp(0.0, 1.0);
-  final proj = Offset(v.dx + t * (w.dx - v.dx), v.dy + t * (w.dy - v.dy));
-  return (p - proj).distance;
-}
-
-class _CanvasRawMarkerPainter extends CustomPainter {
-  _CanvasRawMarkerPainter({
-    required this.rawMarkers,
-    required this.center,
-    required this.zoom,
-    required this.radius,
-    required this.devicePixelRatio,
-    this.iconImage,
-    this.showTitle = true,
-    required this.defaultColor,
-    this.foregroundColor,
-  });
-
-  final List<dynamic> rawMarkers;
-  final LatLng center;
-  final double zoom;
-  final double radius;
-  final double devicePixelRatio;
-  final ui.Image? iconImage;
-  final bool showTitle;
-  final Color defaultColor;
-  final Color? foregroundColor;
-
-  static double _worldX(double lon, double zoom) {
-    final double worldSize = 256 * pow(2, zoom).toDouble();
-    return (lon + 180) / 360 * worldSize;
-  }
-
-  static double _worldY(double lat, double zoom) {
-    final double worldSize = 256 * pow(2, zoom).toDouble();
-    final sinLat = sin(lat * pi / 180);
-    final y = 0.5 - (log((1 + sinLat) / (1 - sinLat)) / (4 * pi));
-    return y * worldSize;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-
-    final centerX = _worldX(center.longitude, zoom);
-    final centerY = _worldY(center.latitude, zoom);
-    final double worldSize = 256 * pow(2, zoom).toDouble();
-
-    for (var i = 0; i < rawMarkers.length; i++) {
-      final m = rawMarkers[i];
-      double lat;
-      double lon;
-      String? title;
-      String? subtitle;
-      String? shapeType;
-      double rotationDeg = 0.0;
-      if (m is ShapeMeta) {
-        lat = m.lat;
-        lon = m.lon;
-        title = m.title;
-        subtitle = m.subtitle;
-        shapeType = m.shapeType;
-        rotationDeg = m.rotation ?? 0.0;
-      } else if (m is LatLng) {
-        lat = m.latitude;
-        lon = m.longitude;
-      } else if (m is List && m.length >= 2) {
-        lat = (m[0] as num).toDouble();
-        lon = (m[1] as num).toDouble();
-        if (m.length >= 3) title = m[2]?.toString();
-        if (m.length >= 4) subtitle = m[3]?.toString();
-        if (m.length >= 5) shapeType = m[4]?.toString();
-      } else if (m is Map) {
-        lat = (m['lat'] as num?)?.toDouble() ??
-            (m['latitude'] as num?)?.toDouble() ??
-            0.0;
-        lon = (m['lon'] as num?)?.toDouble() ??
-            (m['longitude'] as num?)?.toDouble() ??
-            0.0;
-        title = m['title']?.toString();
-        subtitle = m['subtitle']?.toString();
-        shapeType = m['shapeType']?.toString();
-        // accept either 'rotation' or 'bearing' keys
-        rotationDeg = (m['rotation'] as num?)?.toDouble() ??
-            (m['bearing'] as num?)?.toDouble() ??
-            rotationDeg;
-      } else {
-        continue;
-      }
-      final x = _worldX(lon, zoom);
-      final y = _worldY(lat, zoom);
-
-      var dx = (x - centerX) + size.width / 2;
-      var dy = (y - centerY) + size.height / 2;
-
-      if (dx.abs() > worldSize / 2) {
-        if (dx > 0) {
-          dx -= worldSize;
-        } else {
-          dx += worldSize;
-        }
-      }
-
-      final radiusToUse = max(radius, 6.0);
-      if (dx < -radiusToUse ||
-          dx > size.width + radiusToUse ||
-          dy < -radiusToUse ||
-          dy > size.height + radiusToUse) {
-        continue;
-      }
-
-      // Draw a simple pin icon: circular head + triangular tail.
-      final pinPaint = paint;
-      // Decide marker color: prefer a ShapeMeta.color, then check Map
-      // payloads for a 'color' entry, otherwise fall back to theme default.
-      Color? metaColor;
-      if (m is ShapeMeta) {
-        metaColor = m.color;
-      } else if (m is Map && m['color'] != null) {
-        try {
-          metaColor = ShapeMeta.parseColor(m['color']);
-        } catch (_) {
-          metaColor = null;
-        }
-      }
-      final Color markerColor =
-          metaColor ?? defaultColor.withValues(alpha: 0.95);
-      pinPaint.color = markerColor;
-      final strokePaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.0, devicePixelRatio * 0.6);
-
-      // head center slightly above the marker point
-      final headCenter = Offset(dx, dy - radiusToUse * 0.6);
-      final headRadius = radiusToUse * 0.9;
-
-      String? iconName;
-      if (m is Map) iconName = m['icon']?.toString();
-      final drawPin = shapeType == null || shapeType == 'marker';
-      // detect playback marker to apply a larger halo only for playback
-      var isPlayback = false;
-      if (m is Map && m['id'] == 'playback_marker') isPlayback = true;
-      if (m is ShapeMeta && m.id == 'playback_marker') isPlayback = true;
-      if (drawPin) {
-        // rotate marker graphic around head center
-        final rotationRad = rotationDeg * pi / 180.0;
-        canvas.save();
-        canvas.translate(headCenter.dx, headCenter.dy);
-        canvas.rotate(rotationRad);
-        if (iconName == 'arrow') {
-          // draw a simple arrowhead pointing up (local -y) and rotated
-          final arrowPath = ui.Path()
-            ..moveTo(0, -headRadius)
-            ..lineTo(headRadius, headRadius)
-            ..lineTo(headRadius * 0.3, headRadius)
-            ..lineTo(headRadius * 0.3, headRadius * 1.6)
-            ..lineTo(-headRadius * 0.3, headRadius * 1.6)
-            ..lineTo(-headRadius * 0.3, headRadius)
-            ..lineTo(-headRadius, headRadius)
-            ..close();
-          if (isPlayback) {
-            final haloPaint = Paint()
-              ..color = markerColor.withValues(alpha: 0.95)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = max(3.0, devicePixelRatio * 3.0)
-              ..strokeJoin = StrokeJoin.round;
-            canvas.drawPath(arrowPath, haloPaint);
-          }
-          canvas.drawPath(arrowPath, pinPaint);
-          canvas.drawPath(arrowPath, strokePaint);
-        } else if (iconImage != null) {
-          // Draw outer halo ring using the marker color, then a white
-          // outline (by drawing a slightly larger white-tinted copy), and
-          // finally draw the marker-colored icon on top. This matches the
-          // visual style where the icon has a thin white border with the
-          // theme color visible outside it.
-          final src = Rect.fromLTWH(
-              0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
-          // Determine destination size. Prefer the rasterized icon's logical
-          // size (image.width / devicePixelRatio) so `Icon(size: ...)` used
-          // by callers affects the rendered marker. Clamp to a reasonable
-          // range relative to `headRadius` to avoid overly large/small icons.
-          final double destSize =
-              iconImage!.width.toDouble() / devicePixelRatio;
-          final dst = Rect.fromCenter(
-              center: Offset.zero, width: destSize, height: destSize);
-
-          paint.isAntiAlias = true;
-          final oldFilter = paint.colorFilter;
-          // white outline (slightly larger than dst). increase scale so
-          // border appears thicker and more halo-like.
-          final outlineRect = Rect.fromCenter(
-              center: Offset.zero,
-              width: destSize * 1.5,
-              height: destSize * 1.5);
-          // Draw an icon-shaped halo behind the raster icon by rendering a
-          // slightly larger, semi-opaque copy of the icon tinted with the
-          // marker color. Playback marker uses a larger/stronger halo.
-          final haloScale = isPlayback ? 2.0 : 1.6;
-          final haloAlpha = isPlayback ? 0.95 : 0.72;
-          final haloRect = Rect.fromCenter(
-              center: Offset.zero,
-              width: destSize * haloScale,
-              height: destSize * haloScale);
-          paint.colorFilter = ColorFilter.mode(
-              markerColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, haloRect, paint);
-
-          // white outline (slightly larger than dst). increase scale so
-          // border appears thicker and more halo-like.
-          paint.colorFilter = ColorFilter.mode(Colors.white, BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, outlineRect, paint);
-          // draw marker-colored icon on top (use theme/payload color)
-          paint.colorFilter = ColorFilter.mode(markerColor, BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, dst, paint);
-          paint.colorFilter = oldFilter;
-        } else {
-          // head at (0,0) in rotated space
-          if (isPlayback) {
-            final haloPaint = Paint()
-              ..color = markerColor.withValues(alpha: 0.95)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = max(3.0, devicePixelRatio * 3.0);
-            canvas.drawCircle(
-                Offset.zero, headRadius + haloPaint.strokeWidth / 2, haloPaint);
-          }
-          canvas.drawCircle(Offset.zero, headRadius, pinPaint);
-          canvas.drawCircle(Offset.zero, headRadius, strokePaint);
-
-          // triangular tail pointing down in local coords
-          final tailTopY = radiusToUse * 0.5;
-          final tailPath = ui.Path()
-            ..moveTo(0, radiusToUse * 2.2)
-            ..lineTo(-radiusToUse, tailTopY)
-            ..lineTo(radiusToUse, tailTopY)
-            ..close();
-          canvas.drawPath(tailPath, pinPaint);
-          canvas.drawPath(tailPath, strokePaint);
-        }
-
-        canvas.restore();
-      }
-
-      // Draw title / subtitle if present and enabled
-      if (showTitle &&
-          ((title != null && title.isNotEmpty) ||
-              (subtitle != null && subtitle.isNotEmpty))) {
-        final lines = <String>[];
-        if (title != null && title.isNotEmpty) lines.add(title);
-        if (subtitle != null && subtitle.isNotEmpty) lines.add(subtitle);
-
-        // Layout text via TextPainter
-        final tp = TextPainter(textDirection: TextDirection.ltr);
-        final textStyle = TextStyle(
-            color: Colors.black,
-            fontSize: max(10.0, devicePixelRatio * 6),
-            fontWeight: FontWeight.w600);
-
-        // Build a paragraph with up to two lines stacked
-        final span = TextSpan(
-            children: lines
-                .map((l) => TextSpan(text: '$l\n', style: textStyle))
-                .toList());
-        tp.text = span;
-        tp.textAlign = TextAlign.center;
-        tp.layout(minWidth: 0, maxWidth: size.width);
-
-        final pad = 4.0;
-        final bgWidth = tp.width + pad * 2;
-        final bgHeight = tp.height + pad * 2;
-        final bgRect = Rect.fromCenter(
-            center: Offset(
-                headCenter.dx, headCenter.dy - headRadius - bgHeight / 2 - 6),
-            width: bgWidth,
-            height: bgHeight);
-
-        final rrect = RRect.fromRectAndRadius(bgRect, Radius.circular(4));
-        final bgPaint = Paint()..color = Colors.white.withValues(alpha: 0.85);
-        canvas.drawRRect(rrect, bgPaint);
-
-        tp.paint(canvas, Offset(bgRect.left + pad, bgRect.top + pad));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CanvasRawMarkerPainter oldDelegate) {
-    return oldDelegate.rawMarkers != rawMarkers ||
-        oldDelegate.center != center ||
-        oldDelegate.zoom != zoom ||
-        oldDelegate.iconImage != iconImage ||
-        oldDelegate.showTitle != showTitle ||
-        oldDelegate.foregroundColor != foregroundColor;
   }
 }
