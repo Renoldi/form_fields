@@ -23,14 +23,7 @@ class View extends PresenterState {
         // Ensure the example's notifier is registered under a stable
         // controller id so the `FormFieldsMap` widget can retrieve it
         // from `FormFieldsMapController`.
-        try {
-          final id = 'ff_controller_${vm.mapController.hashCode}';
-          final existing = FormFieldsMapController.getNotifier(id);
-          if (!identical(existing, vm.mapNotifier)) {
-            FormFieldsMapController.registerControllerAndNotifier(
-                vm.mapController, vm.mapNotifier);
-          }
-        } catch (_) {}
+        // Notifier is registered by the ViewModel; nothing to do here.
 
         final content = Stack(
           children: [
@@ -167,14 +160,17 @@ class View extends PresenterState {
                                   TextButton(
                                     onPressed: () {
                                       if (id.startsWith('m\$')) {
-                                        // always remove raw marker (markers removed from API)
-                                        vm.mapNotifier.removeRawMarker(id);
+                                        FormFieldsMapController.removeRawMarker(
+                                            vm.controllerId, id);
                                       } else if (id.startsWith('p\$')) {
-                                        vm.mapNotifier.removePolygon(id);
+                                        FormFieldsMapController.removePolygon(
+                                            vm.controllerId, id);
                                       } else if (id.startsWith('l\$')) {
-                                        vm.mapNotifier.removePolyline(id);
+                                        FormFieldsMapController.removePolyline(
+                                            vm.controllerId, id);
                                       } else if (id.startsWith('c\$')) {
-                                        vm.mapNotifier.removeCircle(id);
+                                        FormFieldsMapController.removeCircle(
+                                            vm.controllerId, id);
                                       }
                                       Navigator.of(ctx).pop();
                                       ScaffoldMessenger.of(context)

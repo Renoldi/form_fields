@@ -5,6 +5,7 @@ import 'package:form_fields/form_fields.dart';
 
 class FormFieldsMapNotifier extends ChangeNotifier {
   FormFieldsMapNotifier({
+    MapController? controller,
     List<Polygon>? polygons,
     List<Polyline>? polylines,
     List<CircleMarker>? circles,
@@ -14,6 +15,13 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   })  : _polygonMap = polygonsMap ?? {},
         _polylineMap = polylinesMap ?? {},
         _circleMap = circlesMap ?? {} {
+    // If a MapController is provided, register this notifier with it so
+    // consumers can opt-in to automatic registry wiring.
+    if (controller != null) {
+      try {
+        controller.registerWithNotifier(this);
+      } catch (_) {}
+    }
     if (polygons != null) {
       for (var i = 0; i < polygons.length; i++) {
         _polygonMap['p\$i'] = polygons[i];

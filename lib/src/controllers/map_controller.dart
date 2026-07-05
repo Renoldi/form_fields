@@ -8,6 +8,11 @@ import 'package:form_fields/form_fields.dart';
 /// A persistent controller provider for `MapController` instances.
 /// Controllers are keyed by an `id` so they are not recreated on widget rebuilds.
 class FormFieldsMapController {
+  // When performing large batch mutations (set/append raw markers), present
+  // a blocking overlay automatically if the mutation size meets or exceeds
+  // this threshold. Matches the example's batching size.
+  static const int _autoBlockingThreshold = 512;
+
   static final Map<String, MapController> _controllers = {};
   // Registered notifiers per controller id. Widgets must register their
   // `FormFieldsMapNotifier` instance so the controller can perform
@@ -320,24 +325,54 @@ class FormFieldsMapController {
     final n = _getNotifier(id);
     if (n == null) return;
     try {
+      final shouldBlock = coords.length >= _autoBlockingThreshold;
+      if (shouldBlock) {
+        try {
+          setBlockingLoading(id, true);
+        } catch (_) {}
+      }
       n.rawMarkers = List<dynamic>.from(coords);
       try {
         debugPrint(
             '[FormFieldsMapController] setRawMarkers id=$id notifier=${n.hashCode} count=${n.rawMarkers.length}');
       } catch (_) {}
+      if (shouldBlock) {
+        try {
+          setBlockingLoading(id, false);
+        } catch (_) {}
+      }
     } catch (_) {}
   }
 
   static void appendRawMarkers(String id, List<dynamic> coords) {
-    final n = _getNotifier(id);
+    var n = _getNotifier(id);
+    // If no notifier is registered yet, create and register one so callers
+    // that only hold a `MapController` can use controller-only APIs and
+    // still receive notifications in UI widgets that listen to the
+    // notifier. This makes `mapController.appendRawMarkers(...)` usable
+    // without requiring users to register a notifier manually.
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
     if (n == null) return;
     try {
-      n.appendRawMarkers(List<dynamic>.from(coords));
+      try {
+        setBlockingLoading(id, true);
+      } catch (_) {}
+      n.appendRawMarkers(coords);
       try {
         debugPrint(
-            '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} count=${n.rawMarkers.length}');
+            '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
       } catch (_) {}
-    } catch (_) {}
+    } finally {
+      try {
+        setBlockingLoading(id, false);
+      } catch (_) {}
+    }
   }
 
   static void clearRawMarkers(String id) {
@@ -659,9 +694,17 @@ class FormFieldsMapPlaybackHandler {
 /// directly from a `MapController` instance. This lets consumers simply do
 /// `mapController.setBlockingLoading(true)` instead of resolving a string id.
 extension FormFieldsMapControllerMapControllerExt on MapController {
-  String registerWithNotifier(FormFieldsMapNotifier? notifier) {
-    return FormFieldsMapController.registerControllerAndNotifier(
-        this, notifier);
+  String registerWithNotifier([FormFieldsMapNotifier? notifier]) {
+    final id =
+        FormFieldsMapController.registerControllerAndNotifier(this, null);
+    if (notifier == null) {
+      // Create and register a fresh notifier for this controller id.
+      final n = FormFieldsMapNotifier();
+      FormFieldsMapController.registerNotifier(id, n);
+    } else {
+      FormFieldsMapController.registerNotifier(id, notifier);
+    }
+    return id;
   }
 
   void setBlockingLoading(bool value) {

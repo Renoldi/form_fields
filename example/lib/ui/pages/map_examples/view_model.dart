@@ -11,12 +11,7 @@ import 'package:form_fields/form_fields.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
-  final FormFieldsMapNotifier mapNotifier = FormFieldsMapNotifier();
-  MapExamplesViewModel() {
-    try {
-      mapController.registerWithNotifier(mapNotifier);
-    } catch (_) {}
-  }
+  MapExamplesViewModel();
   String get controllerId =>
       FormFieldsMapController.getIdForController(mapController);
 
@@ -141,9 +136,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   Future<void> generatePolygons({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
-    try {
-      mapController.setBlockingLoading(true);
-    } catch (_) {}
+    // try {
+    //   mapController.setBlockingLoading(true);
+    // } catch (_) {}
     try {
       generatedPolygons = 0;
       final rnd = math.Random(54321);
@@ -189,9 +184,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
-      try {
-        mapController.setBlockingLoading(false);
-      } catch (_) {}
+      // try {
+      //   mapController.setBlockingLoading(false);
+      // } catch (_) {}
     }
   }
 
@@ -201,9 +196,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     totalMarkers = markerCount;
     isLoading = true;
     notifyListeners();
-    try {
-      mapController.setBlockingLoading(true);
-    } catch (_) {}
+    // try {
+    //   mapController.setBlockingLoading(true);
+    // } catch (_) {}
 
     // Give the UI one frame to render the blocking overlay.
     await Future.delayed(Duration.zero);
@@ -258,17 +253,17 @@ class MapExamplesViewModel extends ChangeNotifier {
       debugPrint('generateMarkers complete, registry rawMarkers=${cur.length}');
     } catch (_) {}
     debugPrint('generateMarkers finished, total generated=$generatedMarkers');
-    try {
-      mapController.setBlockingLoading(false);
-    } catch (_) {}
+    // try {
+    //   mapController.setBlockingLoading(false);
+    // } catch (_) {}
   }
 
   Future<void> generatePolylines({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
-    try {
-      mapController.setBlockingLoading(true);
-    } catch (_) {}
+    // try {
+    //   mapController.setBlockingLoading(true);
+    // } catch (_) {}
     try {
       generatedPolylines = 0;
       final rnd = math.Random(98765);
@@ -305,9 +300,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
-      try {
-        mapController.setBlockingLoading(false);
-      } catch (_) {}
+      // try {
+      //   mapController.setBlockingLoading(false);
+      // } catch (_) {}
     }
   }
 
