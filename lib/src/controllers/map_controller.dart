@@ -559,6 +559,82 @@ class FormFieldsMapController {
     }
   }
 
+  /// Efficiently apply many raw-marker updates for [id] in a single batch.
+  /// Returns true when the notifier exists and the operation was applied.
+  static Future<bool> batchUpdateRawMarkers(String id, List<dynamic> updates,
+      {bool createMarkerWidgets = true}) async {
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
+    if (n == null) return false;
+
+    // Decide whether to show blocking overlay for large batches.
+    final shouldBlock = updates.length >= _autoBlockingThreshold;
+    try {
+      if (shouldBlock) {
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          setBlockingLoading(id, true);
+        } catch (_) {}
+        try {
+          await Future.delayed(Duration.zero);
+        } catch (_) {}
+      }
+
+      // Delegate to notifier batch implementation which rebuilds caches
+      // once and schedules a debounced notify.
+      try {
+        n.batchUpdateRawMarkers(updates,
+            createMarkerWidgets: createMarkerWidgets);
+      } catch (_) {
+        try {
+          // Fallback: apply per-item updateRawMarker
+          for (final u in updates) {
+            String? idv;
+            if (u is ShapeMeta) idv = u.id;
+            if (u is Map) idv = (u['id'] as String?);
+            if (idv != null) {
+              updateRawMarker(id, idv, u);
+            } else {
+              await appendRawMarkers(id, [u],
+                  createMarkerWidgets: createMarkerWidgets);
+            }
+          }
+        } catch (_) {}
+      }
+
+      try {
+        if (enableBatchLogging) {
+          debugPrint(
+              '[FormFieldsMapController] batchUpdateRawMarkers id=$id updates=${updates.length} total=${n.rawMarkers.length}');
+        }
+      } catch (_) {}
+      return true;
+    } finally {
+      if (shouldBlock) {
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          _blockingClearTimers[id] =
+              Timer(const Duration(milliseconds: 200), () {
+            try {
+              setBlockingLoading(id, false);
+            } catch (_) {}
+            _blockingClearTimers.remove(id);
+          });
+        } catch (_) {}
+      }
+    }
+  }
+
   static bool removeRawMarker(String id, String markerId) {
     final n = _getNotifier(id);
     if (n == null) return false;
@@ -949,6 +1025,11 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   Future<bool> appendRawMarkers(List<dynamic> coords) async {
     final id = FormFieldsMapController.getIdForController(this);
     return await FormFieldsMapController.appendRawMarkers(id, coords);
+  }
+
+  Future<bool> batchUpdateRawMarkers(List<dynamic> updates) async {
+    final id = FormFieldsMapController.getIdForController(this);
+    return await FormFieldsMapController.batchUpdateRawMarkers(id, updates);
   }
 
   void clearRawMarkers() {

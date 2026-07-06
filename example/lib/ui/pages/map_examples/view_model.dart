@@ -279,6 +279,10 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       } catch (_) {}
       notifyListeners();
+      // Yield to the event loop so timers and UI (countdown) can run
+      // while large batches are being appended. Without this, the main
+      // isolate can be busy and the countdown won't update until done.
+      await Future.delayed(Duration.zero);
       idx = end;
     }
     // Start periodic updates after markers are generated.
@@ -453,7 +457,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
   void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(seconds: 120),
+      {Duration interval = const Duration(seconds: 60),
       bool randomize = true}) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
@@ -590,25 +594,56 @@ class MapExamplesViewModel extends ChangeNotifier {
       // ==========================================================
       // rawMarkers list (which would recreate derived polylines/polygons).
       final cid = controllerId;
-      for (final u in updated) {
-        try {
-          if (u is ShapeMeta && u.id != null) {
-            FormFieldsMapController.updateRawMarker(cid, u.id!, u);
-          } else if (u is Map && u['id'] != null) {
-            FormFieldsMapController.updateRawMarker(cid, u['id'] as String, u);
-          } else {
-            // No id -> append as new entry
-            try {
-              FormFieldsMapController.appendRawMarkers(cid, [u]);
-            } catch (_) {
-              try {
-                mapController.appendRawMarkers([u]);
-              } catch (_) {}
-            }
-          }
-        } catch (_) {}
+      // Process updates in chunks to avoid blocking the main thread.
+      // Chunk size scales with total size: larger datasets use larger chunks.
+      final total = updated.length;
+      int chunkSize;
+      if (total >= 20000) {
+        chunkSize = 2000;
+      } else if (total >= 5000) {
+        chunkSize = 1000;
+      } else if (total >= 1000) {
+        chunkSize = 500;
+      } else {
+        chunkSize = 200;
       }
-      notifyListeners();
+
+      for (var start = 0; start < total; start += chunkSize) {
+        final end = (start + chunkSize).clamp(0, total);
+        final slice = updated.sublist(start, end);
+        // Use batch API to apply all updates in this slice at once.
+        try {
+          await FormFieldsMapController.batchUpdateRawMarkers(
+              cid, List<dynamic>.from(slice),
+              createMarkerWidgets: false);
+        } catch (_) {
+          // Fallback to per-item updates if batch fails.
+          for (final u in slice) {
+            try {
+              if (u is ShapeMeta && u.id != null) {
+                FormFieldsMapController.updateRawMarker(cid, u.id!, u);
+              } else if (u is Map && u['id'] != null) {
+                FormFieldsMapController.updateRawMarker(
+                    cid, u['id'] as String, u);
+              } else {
+                try {
+                  FormFieldsMapController.appendRawMarkers(cid, [u],
+                      createMarkerWidgets: false);
+                } catch (_) {
+                  try {
+                    mapController.appendRawMarkers([u]);
+                  } catch (_) {}
+                }
+              }
+            } catch (_) {}
+          }
+        }
+        // Let the event loop run to keep UI responsive and allow timers to tick.
+        try {
+          await Future.delayed(const Duration(milliseconds: 16));
+        } catch (_) {}
+        notifyListeners();
+      }
 
       // After updating raw markers, animate the camera to the first
       // updated item's coordinate so the user sees the change.
