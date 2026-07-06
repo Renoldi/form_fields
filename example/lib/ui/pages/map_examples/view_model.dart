@@ -103,13 +103,13 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 5;
+  int createMarkers = 50000;
   int createPolygons = 5;
   int createPolylines = 5;
   int createCircles = 5;
 
   // Periodic update interval and countdown state
-  Duration markerUpdateInterval = const Duration(seconds: 15);
+  Duration markerUpdateInterval = Duration.zero;
   int markerUpdateRemainingSeconds = 0;
 
   /// If true, periodic updates will assign fully random coordinates
@@ -216,7 +216,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   }
 
   Future<void> generateMarkers({int markerCount = 1000}) async {
-    debugPrint('generateMarkers called with count=$markerCount');
+    if (FormFieldsMapController.enableBatchLogging) {
+      debugPrint('generateMarkers called with count=$markerCount');
+    }
     generatedMarkers = 0;
     totalMarkers = markerCount;
     isLoading = true;
@@ -237,7 +239,8 @@ class MapExamplesViewModel extends ChangeNotifier {
     });
 
     // Convert and append in batches on the main isolate.
-    const batchSize = 512;
+    // Larger batch size reduces number of notifier append calls.
+    const batchSize = 4096;
     var idx = 0;
     while (idx < raw.length) {
       final end = (idx + batchSize).clamp(0, raw.length);
@@ -260,18 +263,22 @@ class MapExamplesViewModel extends ChangeNotifier {
           shapeType: m['shapeType'] as String?,
         ));
       }
-      await mapController.appendRawMarkers(List<dynamic>.from(batch));
+      await FormFieldsMapController.appendRawMarkers(
+          controllerId, List<dynamic>.from(batch),
+          createMarkerWidgets: false);
       generatedMarkers = end;
-      debugPrint(
-          'generateMarkers appended a batch, generated=$generatedMarkers');
-      try {
-        final cur = mapController.getRawMarkers();
+      if (FormFieldsMapController.enableBatchLogging) {
         debugPrint(
-            'generateMarkers after append, registry rawMarkers=${cur.length}');
+            'generateMarkers appended a batch, generated=$generatedMarkers');
+      }
+      try {
+        if (FormFieldsMapController.enableBatchLogging) {
+          final cur = mapController.getRawMarkers();
+          debugPrint(
+              'generateMarkers after append, registry rawMarkers=${cur.length}');
+        }
       } catch (_) {}
       notifyListeners();
-      // yield back to event loop briefly so UI can update
-      await Future.delayed(const Duration(milliseconds: 1));
       idx = end;
     }
     // Start periodic updates after markers are generated.
@@ -283,10 +290,15 @@ class MapExamplesViewModel extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
     try {
-      final cur = mapController.getRawMarkers();
-      debugPrint('generateMarkers complete, registry rawMarkers=${cur.length}');
+      if (FormFieldsMapController.enableBatchLogging) {
+        final cur = mapController.getRawMarkers();
+        debugPrint(
+            'generateMarkers complete, registry rawMarkers=${cur.length}');
+      }
     } catch (_) {}
-    debugPrint('generateMarkers finished, total generated=$generatedMarkers');
+    if (FormFieldsMapController.enableBatchLogging) {
+      debugPrint('generateMarkers finished, total generated=$generatedMarkers');
+    }
     // try {
     //   mapController.setBlockingLoading(false);
     // } catch (_) {}
@@ -441,7 +453,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
   void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(seconds: 15),
+      {Duration interval = const Duration(seconds: 120),
       bool randomize = true}) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
@@ -487,7 +499,9 @@ class MapExamplesViewModel extends ChangeNotifier {
       } catch (_) {}
 
       final current = mapController.getRawMarkers();
-      debugPrint('_updateMarkersOnce called, current=${current.length}');
+      if (FormFieldsMapController.enableBatchLogging) {
+        debugPrint('_updateMarkersOnce called, current=${current.length}');
+      }
       if (current.isEmpty) return;
       final updated = <dynamic>[];
       for (final m in current) {
@@ -881,6 +895,7 @@ List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
   final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
   final rnd = math.Random(seed);
   final out = <Map<String, dynamic>>[];
+  final start = DateTime.now().microsecondsSinceEpoch;
   for (var i = 0; i < count; i++) {
     final lat = centerLat + (rnd.nextDouble() - 0.5) * 3;
     final lng = centerLng + (rnd.nextDouble() - 0.5) * 3;
@@ -890,7 +905,9 @@ List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
       'title': 'Marker #${i + 1}',
       'subtitle':
           'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
-      'id': 'm${DateTime.now().microsecondsSinceEpoch}_$i',
+      // Use a single timestamp prefix plus index to avoid repeated
+      // DateTime.now() calls which are relatively expensive in large loops.
+      'id': 'm${start}_$i',
       'shapeType': ShapeTypes.marker,
     });
   }

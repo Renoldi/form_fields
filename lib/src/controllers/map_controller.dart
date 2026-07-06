@@ -116,6 +116,8 @@ class FormFieldsMapController {
   // data fetch operations where the UI should be modal and interaction
   // must be prevented.
   static final Map<String, ValueNotifier<bool>> _blockingLoadingNotifiers = {};
+  // Toggle to enable verbose batch logging. Default off for performance.
+  static bool enableBatchLogging = false;
   // Optional global handlers for marker taps keyed by controller id. This
   // allows external marker widgets to invoke the map-level `onMarkerTap`
   // callback by calling `invokeOnMarkerTap` with the controller id.
@@ -387,7 +389,8 @@ class FormFieldsMapController {
     } catch (_) {}
   }
 
-  static Future<bool> appendRawMarkers(String id, List<dynamic> coords) async {
+  static Future<bool> appendRawMarkers(String id, List<dynamic> coords,
+      {bool createMarkerWidgets = true}) async {
     var n = _getNotifier(id);
     // Ensure a notifier exists so UI widgets can observe updates even when
     // callers only hold a `MapController` reference.
@@ -409,8 +412,10 @@ class FormFieldsMapController {
       final attempts = (_appendRetryCounts[id] ?? 0) + 1;
       if (attempts > _maxAppendRetries) {
         try {
-          debugPrint(
-              '[FormFieldsMapController] appendRawMarkers id=$id aborted after $attempts attempts (map not ready)');
+          if (enableBatchLogging) {
+            debugPrint(
+                '[FormFieldsMapController] appendRawMarkers id=$id aborted after $attempts attempts (map not ready)');
+          }
         } catch (_) {}
         _appendRetryCounts.remove(id);
         return false;
@@ -448,7 +453,7 @@ class FormFieldsMapController {
         } catch (_) {}
       }
 
-      n.appendRawMarkers(coords);
+      n.appendRawMarkers(coords, createMarkerWidgets: createMarkerWidgets);
       // If this was the first append (no markers previously) and a
       // playback handler is registered for this controller id, reset
       // the playback playing notifier so built-in controls show a
@@ -471,8 +476,10 @@ class FormFieldsMapController {
         }
       } catch (_) {}
       try {
-        debugPrint(
-            '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
+        if (enableBatchLogging) {
+          debugPrint(
+              '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
+        }
       } catch (_) {}
       return true;
     } finally {

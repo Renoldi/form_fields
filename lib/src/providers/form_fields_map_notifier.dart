@@ -46,9 +46,10 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
   // Debounced notify to reduce UI churn when many small mutations happen
   // in rapid succession (e.g., batched marker appends). Timer is per-notifier
-  // and cancels/reschedules on each mutate call.
+  // and cancels/reschedules on each mutate call. Increased default debounce
+  // reduces rebuild frequency for very large batches.
   Timer? _notifyTimer;
-  static const Duration _notifyDebounce = Duration(milliseconds: 80);
+  static const Duration _notifyDebounce = Duration(milliseconds: 120);
 
   void _performNotify() {
     try {
@@ -123,15 +124,22 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _scheduleNotify();
   }
 
-  void appendRawMarkers(List<dynamic> coords) {
+  /// Append raw markers. When [createMarkerWidgets] is false, the notifier
+  /// will skip constructing `Marker` widget entries in `_markerMap` which
+  /// is significantly faster for very large point sets when rendering is
+  /// done via a canvas painter rather than per-marker widgets.
+  void appendRawMarkers(List<dynamic> coords,
+      {bool createMarkerWidgets = true}) {
     _ensureControlled();
+    // Fast path: update the raw cache once, and register all ShapeMeta
+    // entries into the concrete layer maps in batch to avoid repeated
+    // full-map->list conversions on each single addition (which causes
+    // O(n^2) behavior when appending many markers).
     final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
     _rawMarkersCache = List<dynamic>.from(combined);
 
-    // Auto-register ShapeMeta entries into layer maps so rawMarkers alone
-    // can drive rendering and playback. Respect `properties` via typed
-    // option helpers when constructing the concrete layer objects.
     try {
+      // Collect into the internal maps directly and update caches once.
       for (final r in coords) {
         if (r is ShapeMeta && r.shapeType != null) {
           final type = r.shapeType!.toLowerCase();
@@ -147,7 +155,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             );
             final id = r.id ?? 'p\$${DateTime.now().microsecondsSinceEpoch}';
             r.id ??= id;
-            addOrUpdatePolygon(id, poly);
+            _polygonMap[id] = poly;
           } else if (type == ShapeTypes.polyline &&
               pms != null &&
               pms.isNotEmpty) {
@@ -161,7 +169,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             );
             final id = r.id ?? 'l\$${DateTime.now().microsecondsSinceEpoch}';
             r.id ??= id;
-            addOrUpdatePolyline(id, pl);
+            _polylineMap[id] = pl;
           } else if (type == ShapeTypes.circle &&
               pms != null &&
               pms.isNotEmpty) {
@@ -178,7 +186,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             );
             final id = r.id ?? 'c\$${DateTime.now().microsecondsSinceEpoch}';
             r.id ??= id;
-            addOrUpdateCircle(id, c);
+            _circleMap[id] = c;
           } else if (type == ShapeTypes.marker &&
               pms != null &&
               pms.isNotEmpty) {
@@ -192,9 +200,22 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             );
             final id = r.id ?? 'm\$${DateTime.now().microsecondsSinceEpoch}';
             r.id ??= id;
-            addOrUpdateMarker(id, marker);
+            if (createMarkerWidgets) {
+              _markerMap[id] = marker;
+            }
           }
         }
+      }
+
+      // Rebuild caches once after the batch mutation.
+      _polygonsCache = _polygonMap.values.toList(growable: false);
+      _polylinesCache = _polylineMap.values.toList(growable: false);
+      _circlesCache = _circleMap.values.toList(growable: false);
+      if (createMarkerWidgets) {
+        _markersCache = _markerMap.values.toList(growable: false);
+      } else {
+        // Keep previous _markersCache to avoid invalidating marker widgets
+        // when the caller chooses canvas-only rendering.
       }
     } catch (_) {}
 
