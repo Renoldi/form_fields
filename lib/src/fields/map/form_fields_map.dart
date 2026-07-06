@@ -13,10 +13,39 @@ import 'package:form_fields/form_fields.dart';
 
 const double _tapPad = 12.0;
 
+/// Playback configuration bucket for map-based polyline playback features.
+///
+/// Consumers can provide an instance to centralize playback-related options
+/// instead of passing multiple loose parameters to `FormFieldsMap`.
+class FormFieldsMapPlaybackConfig {
+  const FormFieldsMapPlaybackConfig({
+    this.enablePolylinePlayback = false,
+    this.playbackInterval = const Duration(seconds: 1),
+    this.playbackInterpolationSteps = 0,
+    this.showBuiltinPlaybackControls = true,
+    this.playbackPolylineColor,
+    this.playbackMarkerIcon,
+    this.playbackZoom = 18.0,
+    this.playbackFollowCamera = true,
+  });
+
+  final bool enablePolylinePlayback;
+  final Duration playbackInterval;
+  final int playbackInterpolationSteps;
+  final bool showBuiltinPlaybackControls;
+  final Color? playbackPolylineColor;
+  final Object? playbackMarkerIcon; // Icon, Widget or ImageProvider
+  /// Preferred zoom level to use when starting/following playback.
+  /// This value is clamped to the widget's `minZoom`/`maxZoom` when applied.
+  final double playbackZoom;
+  final bool playbackFollowCamera;
+}
+
 class FormFieldsMap extends StatefulWidget {
   const FormFieldsMap({
     super.key,
     this.controller,
+    this.playbackConfig,
     this.tileUrlTemplate = 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
     this.tileAttribution = '© Google',
     this.initialCenter = const LatLng(0, 0),
@@ -52,6 +81,7 @@ class FormFieldsMap extends StatefulWidget {
   // `FormFieldsMapController` registry. Instances generate their own
   // private id and expose controller operations through the registry.
   final MapController? controller;
+  final FormFieldsMapPlaybackConfig? playbackConfig;
   final String tileUrlTemplate;
   final String tileAttribution;
   final LatLng initialCenter;
@@ -160,6 +190,35 @@ class FormFieldsMapState extends State<FormFieldsMap>
   late String _controllerId;
   bool _ownsController = false;
 
+  // Helpers to resolve playback configuration (prefers `playbackConfig` when set)
+  bool get _playbackEnabled =>
+      widget.playbackConfig?.enablePolylinePlayback ??
+      widget.enablePolylinePlayback;
+
+  Duration get _playbackIntervalEffective =>
+      widget.playbackConfig?.playbackInterval ?? widget.playbackInterval;
+
+  int get _playbackInterpolationStepsEffective =>
+      widget.playbackConfig?.playbackInterpolationSteps ??
+      widget.playbackInterpolationSteps;
+
+  bool get _showBuiltinPlaybackControlsEffective =>
+      widget.playbackConfig?.showBuiltinPlaybackControls ??
+      widget.showBuiltinPlaybackControls;
+
+  Color? get _playbackPolylineColor =>
+      widget.playbackConfig?.playbackPolylineColor;
+
+  bool get _playbackFollowCamera =>
+      widget.playbackConfig?.playbackFollowCamera ?? true;
+
+  double get _playbackTargetZoom {
+    final t = widget.playbackConfig?.playbackZoom ?? 17.0;
+    // clamp to allowed widget zoom range
+    final v = t.clamp(widget.minZoom, widget.maxZoom);
+    return (v as num).toDouble();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -200,8 +259,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // Notifier lifecycle is managed externally via FormFieldsMapController.
     // The widget no longer accepts a `notifier` parameter.
     _resolveCanvasMarkerIcon();
-    _playbackInterval = widget.playbackInterval;
-    _playbackInterpolationSteps = widget.playbackInterpolationSteps;
+    _playbackInterval = _playbackIntervalEffective;
+    _playbackInterpolationSteps = _playbackInterpolationStepsEffective;
     _playbackSubstepInterval =
         _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,7 +280,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     // Register playback handler so external callers can control playback via
     // `FormFieldsMapController`.
-    if (widget.enablePolylinePlayback) {
+    if (_playbackEnabled) {
       FormFieldsMapController.registerPlaybackHandler(
         _controllerId,
         FormFieldsMapPlaybackHandler(
@@ -324,7 +383,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _controllerId, widget.onTapShape);
       // Move playback handler registration when controller id changes.
       FormFieldsMapController.unregisterPlaybackHandler(oldId);
-      if (widget.enablePolylinePlayback) {
+      if (_playbackEnabled) {
         FormFieldsMapController.registerPlaybackHandler(
           _controllerId,
           FormFieldsMapPlaybackHandler(
@@ -339,12 +398,18 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
     }
 
-    // Handle changes to playback configuration
-    if (oldWidget.playbackInterval != widget.playbackInterval ||
-        oldWidget.playbackInterpolationSteps !=
-            widget.playbackInterpolationSteps) {
-      _playbackInterval = widget.playbackInterval;
-      _playbackInterpolationSteps = widget.playbackInterpolationSteps;
+    // Handle changes to playback configuration (widget-level or via playbackConfig)
+    final oldInterval = oldWidget.playbackConfig?.playbackInterval ??
+        oldWidget.playbackInterval;
+    final newInterval =
+        widget.playbackConfig?.playbackInterval ?? widget.playbackInterval;
+    final oldSteps = oldWidget.playbackConfig?.playbackInterpolationSteps ??
+        oldWidget.playbackInterpolationSteps;
+    final newSteps = widget.playbackConfig?.playbackInterpolationSteps ??
+        widget.playbackInterpolationSteps;
+    if (oldInterval != newInterval || oldSteps != newSteps) {
+      _playbackInterval = newInterval;
+      _playbackInterpolationSteps = newSteps;
       _playbackSubstepInterval = _computeSubstepInterval(
           _playbackInterval, _playbackInterpolationSteps);
       if (_isPlaying) {
@@ -373,7 +438,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
     }
     _canvasMarkerImageStream = null;
     _canvasMarkerImageStreamListener = null;
-    final provider = widget.canvasMarkerIcon;
+    var provider = widget.canvasMarkerIcon;
+    // If no general canvas marker icon is provided, allow a playback-specific
+    // icon from the playback config to be used for rasterization so the
+    // playback marker can show a custom glyph.
+    provider ??= widget.playbackConfig?.playbackMarkerIcon;
     if (provider == null) return;
 
     if (provider is ImageProvider) {
@@ -716,9 +785,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final initialPoint =
             _playbackPoints.isNotEmpty ? _playbackPoints[_playbackIndex] : null;
         if (initialPoint != null) {
-          final targetZoom = (17.0).clamp(widget.minZoom, widget.maxZoom);
-          // animateTo is async but we don't need to await inside timer callbacks
-          animateTo(initialPoint, targetZoom);
+          if (_playbackFollowCamera) {
+            // animateTo is async but we don't need to await inside timer callbacks
+            animateTo(initialPoint, _playbackTargetZoom);
+          }
         }
       } catch (_) {}
       _updatePlaybackMarker();
@@ -822,6 +892,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (widget.canvasMarkerIcon == null) {
         payload['icon'] = 'arrow';
       }
+      // Allow playback config to override the marker/polyline color for
+      // playback-specific visuals.
+      if (_playbackPolylineColor != null) {
+        payload['color'] = _playbackPolylineColor;
+      }
       final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
       // Use controller API to mutate notifier so only controller is the
@@ -834,9 +909,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
       // If playback is active, move camera to follow the playback point
       try {
-        if (_isPlaying) {
-          final targetZoom = (17.0).clamp(widget.minZoom, widget.maxZoom);
-          animateTo(p, targetZoom);
+        if (_isPlaying && _playbackFollowCamera) {
+          animateTo(p, _playbackTargetZoom);
         }
       } catch (_) {}
     } catch (_) {}
@@ -1187,8 +1261,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 },
               ),
               const SizedBox(height: 8),
-              if (widget.enablePolylinePlayback &&
-                  widget.showBuiltinPlaybackControls) ...[
+              if (_playbackEnabled &&
+                  _showBuiltinPlaybackControlsEffective) ...[
                 ValueListenableBuilder<bool>(
                   valueListenable:
                       FormFieldsMapController.getPlaybackPlayingListenable(

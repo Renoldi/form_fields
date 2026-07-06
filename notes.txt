@@ -298,3 +298,22 @@ Audit <TARGET_FILE_DART>: setiap buildFieldTitle(...) harus punya tepat 1 blok "
 
 signature_1781102697104.png
 live_capture_1781102694710.png
+
+
+FormFieldsMap
+
+playbackConfig: FormFieldsMapPlaybackConfig(
+                      enablePolylinePlayback: true,
+                       playbackInterval: vm.playbackInterval,
+                      playbackInterpolationSteps: vm.playbackInterpolationSteps,
+                      showBuiltinPlaybackControls: true,
+                      playbackPolylineColor: Colors.lightGreen,
+                      playbackMarkerIcon: const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 100,
+                      ),
+
+                      playbackFollowCamera: true,
+                    ),
+                    buat secara profesional

@@ -102,8 +102,19 @@ class View extends PresenterState {
                   child: FormFieldsMap(
                     controller: vm.mapController,
                     onRequestCurrentLocation: () async => vm.center,
-                    showBuiltinPlaybackControls: true,
-                    enablePolylinePlayback: true,
+                    playbackConfig: FormFieldsMapPlaybackConfig(
+                      enablePolylinePlayback: true,
+                      playbackInterval: vm.playbackInterval,
+                      playbackInterpolationSteps: vm.playbackInterpolationSteps,
+                      showBuiltinPlaybackControls: true,
+                      playbackPolylineColor: Colors.lightGreen,
+                      playbackMarkerIcon: const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 100,
+                      ),
+                      playbackFollowCamera: true,
+                    ),
                     canvasMarkerRadius: 20.0,
                     canvasMarkerIcon: const Icon(
                       Icons.location_pin,
