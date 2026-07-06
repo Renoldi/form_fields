@@ -131,8 +131,8 @@ class View extends PresenterState {
                     // showMarkerInCenter: true,
                     onTapShape: (sm) async {
                       // `sm` is a ShapeMeta
-                      final title = sm.title ?? 'Detail';
-                      final subtitle = sm.subtitle ?? '';
+                      final title = sm.hit?.title ?? 'Detail';
+                      final subtitle = sm.hit?.subtitle ?? '';
                       final id = sm.id;
                       final pt =
                           (sm.pointMetas != null && sm.pointMetas!.isNotEmpty)

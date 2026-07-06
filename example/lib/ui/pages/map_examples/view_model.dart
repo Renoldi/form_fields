@@ -178,7 +178,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         await mapController.appendRawMarkers([
           ShapeMeta(
             pointMetas: pmList,
-            title: 'Polygon #${i + 1}',
+            hit: (title: 'Polygon #${i + 1}', subtitle: null),
             id: id,
             shapeType: ShapeTypes.polygon,
           )
@@ -230,8 +230,10 @@ class MapExamplesViewModel extends ChangeNotifier {
             PointMeta(
               lat: (m['lat'] as num).toDouble(),
               lon: (m['lon'] as num).toDouble(),
-              title: m['title'] as String?,
-              subtitle: m['subtitle'] as String?,
+              hit: (
+                title: m['title'] as String?,
+                subtitle: m['subtitle'] as String?
+              ),
               id: m['id'] as String?,
             )
           ],
@@ -349,7 +351,7 @@ class MapExamplesViewModel extends ChangeNotifier {
           await mapController.appendRawMarkers([
             ShapeMeta(
               pointMetas: pmList,
-              title: 'Polyline #${i + 1}',
+              hit: (title: 'Polyline #${i + 1}', subtitle: null),
               id: id,
               shapeType: ShapeTypes.polyline,
               properties: {
@@ -387,7 +389,7 @@ class MapExamplesViewModel extends ChangeNotifier {
           await mapController.appendRawMarkers([
             ShapeMeta(
               pointMetas: pmList,
-              title: 'Polyline #${i + 1}',
+              hit: (title: 'Polyline #${i + 1}', subtitle: null),
               id: id,
               shapeType: ShapeTypes.polyline,
               properties: {
@@ -497,8 +499,7 @@ class MapExamplesViewModel extends ChangeNotifier {
               PointMeta(
                   lat: newLat,
                   lon: newLon,
-                  title: pm.title,
-                  subtitle: pm.subtitle,
+                  hit: (title: pm.hit?.title, subtitle: pm.hit?.subtitle),
                   id: pm.id,
                   rotation: pm.rotation,
                   address: pm.address)
@@ -508,8 +509,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             properties: (m.properties != null)
                 ? ({...m.properties!, 'color': m.color})
                 : {'color': m.color},
-            title: m.title,
-            subtitle: m.subtitle,
+            hit: (title: m.hit?.title, subtitle: m.hit?.subtitle),
           );
           updated.add(cm);
         } else if (m is Map) {
@@ -706,8 +706,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       await mapController.appendRawMarkers([
         ShapeMeta(
           pointMetas: pmList,
-          title: 'Playback Polyline',
-          subtitle: id,
+          hit: (title: 'Playback Polyline', subtitle: id),
           id: id,
           shapeType: ShapeTypes.polyline,
           properties: {
@@ -766,8 +765,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             lon: lng,
             rotation: c.radius,
             id: id,
-            title: 'Circle #${i + 1}',
-            subtitle: id);
+            hit: (title: 'Circle #${i + 1}', subtitle: id));
         await mapController.appendRawMarkers([
           ShapeMeta(
             pointMetas: [centerPm],

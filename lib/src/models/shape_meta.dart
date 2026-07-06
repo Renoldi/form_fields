@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
+typedef HitValue = ({String? title, String? subtitle});
+
 /// Per-point metadata used for shapes that carry additional information per
 /// coordinate (e.g. Polygons, Polylines or CircleMarkers converted to lists).
 class PointMeta {
@@ -10,8 +12,7 @@ class PointMeta {
     this.address,
     this.rotation,
     this.id,
-    this.title,
-    this.subtitle,
+    this.hit,
   });
 
   double lat;
@@ -19,8 +20,7 @@ class PointMeta {
   String? address;
   double? rotation;
   String? id;
-  String? title;
-  String? subtitle;
+  HitValue? hit;
 
   LatLng get point => LatLng(lat, lon);
 
@@ -30,8 +30,8 @@ class PointMeta {
         if (address != null) 'address': address,
         if (rotation != null) 'rotation': rotation,
         if (id != null) 'id': id,
-        if (title != null) 'title': title,
-        if (subtitle != null) 'subtitle': subtitle,
+        if (hit != null && hit!.title != null) 'title': hit!.title,
+        if (hit != null && hit!.subtitle != null) 'subtitle': hit!.subtitle,
       };
 
   factory PointMeta.fromMap(dynamic m) {
@@ -53,8 +53,12 @@ class PointMeta {
         rotation: (map['rotation'] as num?)?.toDouble() ??
             (map['bearing'] as num?)?.toDouble(),
         id: map['id']?.toString(),
-        title: map['title']?.toString(),
-        subtitle: map['subtitle']?.toString(),
+        hit: (map['title'] != null || map['subtitle'] != null)
+            ? (
+                title: map['title']?.toString(),
+                subtitle: map['subtitle']?.toString()
+              )
+            : null,
       );
     }
     throw ArgumentError('Unsupported point meta type: ${m.runtimeType}');
@@ -65,8 +69,7 @@ class PointMeta {
 class ShapeMeta {
   ShapeMeta({
     this.pointMetas,
-    this.title,
-    this.subtitle,
+    this.hit,
     this.id,
     this.shapeType,
     this.properties,
@@ -74,9 +77,7 @@ class ShapeMeta {
 
   /// Optional per-point metadata (lat/lon duplicated for convenience).
   List<PointMeta>? pointMetas;
-
-  String? title;
-  String? subtitle;
+  HitValue? hit;
   String? id;
   String? shapeType;
 
@@ -119,8 +120,8 @@ class ShapeMeta {
     return {
       if (pointMetas != null)
         'pointMetas': pointMetas!.map((pm) => pm.toMap()).toList(),
-      if (title != null) 'title': title,
-      if (subtitle != null) 'subtitle': subtitle,
+      if (hit != null && hit!.title != null) 'title': hit!.title,
+      if (hit != null && hit!.subtitle != null) 'subtitle': hit!.subtitle,
       if (id != null) 'id': id,
       if (shapeType != null) 'shapeType': shapeType,
       // color intentionally omitted from serialization
@@ -142,8 +143,9 @@ class ShapeMeta {
 
     return ShapeMeta(
       pointMetas: parsedPointMetas,
-      title: m['title']?.toString(),
-      subtitle: m['subtitle']?.toString(),
+      hit: (m['title'] != null || m['subtitle'] != null)
+          ? (title: m['title']?.toString(), subtitle: m['subtitle']?.toString())
+          : null,
       id: m['id']?.toString(),
       shapeType: m['shapeType']?.toString(),
       properties: (m['properties'] is Map)

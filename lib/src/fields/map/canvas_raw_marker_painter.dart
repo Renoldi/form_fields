@@ -109,15 +109,15 @@ class CanvasRawMarkerPainter extends CustomPainter {
           lat = sumLat / pms.length;
           lon = sumLon / pms.length;
           // Prefer top-level title/subtitle for shapes like polygons/polylines
-          title = m.title ?? pms.first.title;
-          subtitle = m.subtitle ?? pms.first.subtitle;
+          title = m.hit?.title ?? pms.first.hit?.title;
+          subtitle = m.hit?.subtitle ?? pms.first.hit?.subtitle;
           rotationDeg = pms.first.rotation ?? 0.0;
         } else {
           final pm = pms.first;
           lat = pm.lat;
           lon = pm.lon;
-          title = pm.title ?? m.title;
-          subtitle = pm.subtitle ?? m.subtitle;
+          title = pm.hit?.title ?? m.hit?.title;
+          subtitle = pm.hit?.subtitle ?? m.hit?.subtitle;
           rotationDeg = pm.rotation ?? 0.0;
         }
       } else if (m is LatLng) {

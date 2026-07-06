@@ -1854,8 +1854,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             if (pm == null) continue;
             lat = pm.lat;
             lon = pm.lon;
-            title = pm.title ?? m.title;
-            subtitle = pm.subtitle ?? m.subtitle;
+            title = pm.hit?.title ?? m.hit?.title;
+            subtitle = pm.hit?.subtitle ?? m.hit?.subtitle;
             shapeType = m.shapeType;
             id = m.id;
           } else if (m is LatLng) {
