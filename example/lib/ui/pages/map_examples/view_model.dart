@@ -572,7 +572,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         if (candidates.isNotEmpty) {
           final chosen = candidates[_updateRnd.nextInt(candidates.length)];
           try {
-            await mapController.animateCameraTo(chosen, 8,
+            await mapController.animateCameraTo(chosen, 11,
                 duration: const Duration(milliseconds: 400),
                 curve: const FormFieldsMapPlaybackConfig().playbackCurve);
           } catch (_) {}
