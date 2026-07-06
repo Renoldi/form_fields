@@ -163,4 +163,5 @@ export 'src/controllers/map_controller.dart'
         FormFieldsMapPlaybackHandler,
         FormFieldsMapControllerMapControllerExt;
 export 'src/controllers/form_fields_map_api.dart' show FormFieldsMapApi;
-export 'src/models/shape_meta.dart' show ShapeMeta;
+export 'src/models/shape_meta.dart'
+    show ShapeMeta, PointMeta, ShapeMetaOptions, ShapeTypes;

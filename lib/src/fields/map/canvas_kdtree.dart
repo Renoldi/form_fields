@@ -84,8 +84,12 @@ KDTree buildKDTreeFromMarkers(
       lat = (m[0] as num).toDouble();
       lon = (m[1] as num).toDouble();
     } else if (m is ShapeMeta) {
-      lat = m.lat;
-      lon = m.lon;
+      final pm = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
+          ? m.pointMetas!.first
+          : null;
+      if (pm == null) continue;
+      lat = pm.lat;
+      lon = pm.lon;
     } else if (m is Map) {
       lat = (m['lat'] as num?)?.toDouble() ??
           (m['latitude'] as num?)?.toDouble() ??
@@ -123,8 +127,12 @@ KDTree buildKDTreeFromRawCoords(
       lon = (c[1] as num).toDouble();
       payload = c;
     } else if (c is ShapeMeta) {
-      lat = c.lat;
-      lon = c.lon;
+      final pm = (c.pointMetas != null && c.pointMetas!.isNotEmpty)
+          ? c.pointMetas!.first
+          : null;
+      if (pm == null) continue;
+      lat = pm.lat;
+      lon = pm.lon;
       payload = c;
     } else if (c is Map) {
       // support {'lat': ..., 'lon': ..., 'title': ..., 'subtitle': ...}

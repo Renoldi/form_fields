@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'presenter.dart';
 import 'package:form_fields_example/ui/pages/map_examples/view_model.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 
@@ -63,18 +64,20 @@ class View extends PresenterState {
                             onPressed: () => vm.generateCircles(
                                 shapeCount: vm.createCircles),
                           ),
-                          _ActionButton(
-                            label:
-                                'Generate Polylines (${formatNumber(vm.createPolylines)})',
-                            icon: Icons.timeline,
-                            onPressed: () => vm.generatePolylines(
-                                shapeCount: vm.createPolylines),
-                          ),
-                          _ActionButton(
-                            label: 'Generate 1 Polyline (for playback)',
-                            icon: Icons.add_road,
-                            onPressed: () => vm.generatePlaybackPolyline(),
-                          ),
+                          if (!vm.enablePolylinePlayback)
+                            _ActionButton(
+                              label:
+                                  'Generate Polylines (${formatNumber(vm.createPolylines)})',
+                              icon: Icons.timeline,
+                              onPressed: () => vm.generatePolylines(
+                                  shapeCount: vm.createPolylines),
+                            ),
+                          if (vm.enablePolylinePlayback)
+                            _ActionButton(
+                              label: 'Generate 1 Polyline (for playback)',
+                              icon: Icons.add_road,
+                              onPressed: () => vm.generatePlaybackPolyline(),
+                            ),
                           _ActionButton(
                             label: 'Clear',
                             icon: Icons.clear,
@@ -103,7 +106,7 @@ class View extends PresenterState {
                     controller: vm.mapController,
                     onRequestCurrentLocation: () async => vm.center,
                     playbackConfig: FormFieldsMapPlaybackConfig(
-                      enablePolylinePlayback: true,
+                      enablePolylinePlayback: vm.enablePolylinePlayback,
                       playbackInterval: vm.playbackInterval,
                       playbackInterpolationSteps: vm.playbackInterpolationSteps,
                       showBuiltinPlaybackControls: true,
@@ -131,9 +134,12 @@ class View extends PresenterState {
                       final title = sm.title ?? 'Detail';
                       final subtitle = sm.subtitle ?? '';
                       final id = sm.id;
-                      final pt = sm.point;
+                      final pt =
+                          (sm.pointMetas != null && sm.pointMetas!.isNotEmpty)
+                              ? sm.pointMetas!.first.point
+                              : LatLng(0, 0);
 
-                      if (sm.shapeType == 'marker' ||
+                      if (sm.shapeType == ShapeTypes.marker ||
                           (id != null && id.startsWith('m\$'))) {
                         await showDialog<void>(
                           context: context,
@@ -225,7 +231,7 @@ class View extends PresenterState {
             //     label: const Text('Zoom to generated bounds'),
             //   ),
             // ),
-            if (vm.totalPolylines > 0)
+            if (vm.totalPolylines > 0 && vm.enablePolylinePlayback)
               _DraggablePositioned(
                 // initialRight: 0,
                 initWidth: 260,

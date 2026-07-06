@@ -11,7 +11,16 @@ import 'package:form_fields/form_fields.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
-  MapExamplesViewModel();
+  MapExamplesViewModel() {
+    try {
+      // Ensure the controller and a notifier are registered early so
+      // calls like `setBlockingLoading` from this view model target
+      // the same notifier instance the `FormFieldsMap` widget listens
+      // to. This prevents timing issues when the VM toggles loading
+      // before the widget has registered its fallback notifier.
+      mapController.registerWithNotifier();
+    } catch (_) {}
+  }
   String get controllerId =>
       FormFieldsMapController.getIdForController(mapController);
 
@@ -39,6 +48,11 @@ class MapExamplesViewModel extends ChangeNotifier {
   int totalPolylines = 0;
   String? playbackPolylineId;
   bool isPlaybackPlaying = false;
+
+  /// Whether the example UI (and the FormFieldsMap) should enable
+  /// built-in polyline playback features. Consumers can toggle this to
+  /// hide playback controls and related actions in the example.
+  bool enablePolylinePlayback = false;
 
   /// Local UI state for selected playback interval and interpolation steps
   /// so buttons in the example can reflect current selection.
@@ -136,9 +150,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   Future<void> generatePolygons({int shapeCount = 5}) async {
     isLoading = true;
     notifyListeners();
-    // try {
-    //   mapController.setBlockingLoading(true);
-    // } catch (_) {}
+    try {
+      mapController.setBlockingLoading(true);
+    } catch (_) {}
     try {
       generatedPolygons = 0;
       totalPolygons = shapeCount;
@@ -155,27 +169,18 @@ class MapExamplesViewModel extends ChangeNotifier {
           pts.add(LatLng(baseLat + math.sin(ang) * radiusDeg,
               baseLng + math.cos(ang) * radiusDeg));
         }
-        final poly = Polygon(
-          points: pts,
-          color: Colors.green.withValues(alpha: 0.25),
-          borderColor: Colors.green,
-          borderStrokeWidth: 2,
-        );
-        final id = FormFieldsMapController.addPolygon(controllerId, poly) ??
-            'p_unknown';
-        // add a small raw marker at centroid for interaction & metadata
-        final avgLat =
-            pts.map((p) => p.latitude).reduce((a, b) => a + b) / pts.length;
-        final avgLng =
-            pts.map((p) => p.longitude).reduce((a, b) => a + b) / pts.length;
+        final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
+        // Build ShapeMeta containing the full polygon vertex list so the
+        // widget can render polygons from ShapeMeta directly.
+        final pmList = pts
+            .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
+            .toList(growable: false);
         await mapController.appendRawMarkers([
           ShapeMeta(
-            lat: avgLat,
-            lon: avgLng,
+            pointMetas: pmList,
             title: 'Polygon #${i + 1}',
-            subtitle: id,
             id: id,
-            shapeType: 'polygon',
+            shapeType: ShapeTypes.polygon,
           )
         ]);
         generatedPolygons = i + 1;
@@ -185,9 +190,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
-      // try {
-      //   mapController.setBlockingLoading(false);
-      // } catch (_) {}
+      try {
+        mapController.setBlockingLoading(false);
+      } catch (_) {}
     }
   }
 
@@ -221,10 +226,15 @@ class MapExamplesViewModel extends ChangeNotifier {
       final batch = <dynamic>[];
       for (var m in slice) {
         batch.add(ShapeMeta(
-          lat: (m['lat'] as num).toDouble(),
-          lon: (m['lon'] as num).toDouble(),
-          title: m['title'] as String?,
-          subtitle: m['subtitle'] as String?,
+          pointMetas: [
+            PointMeta(
+              lat: (m['lat'] as num).toDouble(),
+              lon: (m['lon'] as num).toDouble(),
+              title: m['title'] as String?,
+              subtitle: m['subtitle'] as String?,
+              id: m['id'] as String?,
+            )
+          ],
           id: m['id'] as String?,
           shapeType: m['shapeType'] as String?,
         ));
@@ -243,7 +253,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 1));
       idx = end;
     }
-
+    // Start periodic updates after markers are generated.
     // Start periodic updates after markers are generated.
     startPeriodicMarkerUpdates();
 
@@ -259,42 +269,124 @@ class MapExamplesViewModel extends ChangeNotifier {
     // } catch (_) {}
   }
 
-  Future<void> generatePolylines({int shapeCount = 5}) async {
+  Future<void> generatePolylines(
+      {int shapeCount = 5, bool useRoads = true}) async {
     isLoading = true;
     notifyListeners();
-    // try {
-    //   mapController.setBlockingLoading(true);
-    // } catch (_) {}
     try {
       generatedPolylines = 0;
       totalPolylines = shapeCount;
       final rnd = math.Random(98765);
+      try {
+        mapController.setBlockingLoading(true);
+      } catch (_) {}
 
       for (var i = 0; i < shapeCount; i++) {
-        final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
-        final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
-        final pts = <LatLng>[];
-        final segs = 3 + rnd.nextInt(5);
-        final step = 0.02 + rnd.nextDouble() * 0.04;
-        for (var s = 0; s < segs; s++) {
-          pts.add(LatLng(baseLat + (s - segs / 2) * step,
-              baseLng + (rnd.nextDouble() - 0.5) * step));
+        List<LatLng>? routePoints;
+        if (useRoads) {
+          try {
+            final offsetMultiplier = 0.25;
+            final startLat =
+                center.latitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+            final startLng =
+                center.longitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+            final endLat =
+                center.latitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+            final endLng =
+                center.longitude + (rnd.nextDouble() - 0.5) * offsetMultiplier;
+
+            final url =
+                'https://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson';
+            try {
+              final resp = await DioUtil.get(url);
+              if (resp.statusCode == 200 && resp.data != null) {
+                final dynamic parsed = resp.data is String
+                    ? json.decode(resp.data as String)
+                    : resp.data;
+                if (parsed is Map &&
+                    parsed['routes'] is List &&
+                    parsed['routes'].isNotEmpty) {
+                  final geom = parsed['routes'][0]['geometry'];
+                  if (geom is Map && geom['coordinates'] is List) {
+                    final coords = geom['coordinates'] as List;
+                    routePoints = coords
+                        .map<LatLng?>((c) {
+                          if (c is List && c.length >= 2) {
+                            final lon = (c[0] as num).toDouble();
+                            final lat = (c[1] as num).toDouble();
+                            return LatLng(lat, lon);
+                          }
+                          return null;
+                        })
+                        .whereType<LatLng>()
+                        .toList(growable: false);
+                  }
+                }
+              }
+            } catch (_) {
+              routePoints = null;
+            }
+          } catch (_) {
+            routePoints = null;
+          }
         }
-        final pl = Polyline(points: pts, strokeWidth: 10.0, color: Colors.blue);
-        final id = mapController.addPolyline(pl) ?? 'l_unknown';
-        // place raw marker at polyline midpoint for interaction
-        final midIndex = pts.length ~/ 2;
-        final mid = pts[midIndex];
-        await mapController.appendRawMarkers([
-          ShapeMeta(
-            lat: mid.latitude,
-            lon: mid.longitude,
-            title: 'Polyline #${i + 1}',
-            subtitle: id,
-            id: id,
-            shapeType: 'polyline',
-          )
-        ]);
+
+        if (routePoints == null || routePoints.isEmpty) {
+          // Fallback: random polyline near center
+          final baseLat = center.latitude + (rnd.nextDouble() - 0.5) * 0.8;
+          final baseLng = center.longitude + (rnd.nextDouble() - 0.5) * 0.8;
+          final pts = <LatLng>[];
+          final segs = 3 + rnd.nextInt(5);
+          final step = 0.02 + rnd.nextDouble() * 0.04;
+          for (var s = 0; s < segs; s++) {
+            pts.add(LatLng(baseLat + (s - segs / 2) * step,
+                baseLng + (rnd.nextDouble() - 0.5) * step));
+          }
+          final pmList = pts
+              .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
+              .toList(growable: false);
+          final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
+          await mapController.appendRawMarkers([
+            ShapeMeta(
+              pointMetas: pmList,
+              title: 'Polyline #${i + 1}',
+              id: id,
+              shapeType: ShapeTypes.polyline,
+            )
+          ]);
+        } else {
+          // Use routePoints as the polyline
+          // If route is short, enrich by interpolating points
+          if (routePoints.length < 8) {
+            final enriched = <LatLng>[];
+            const int interpPerSegment = 3;
+            for (var j = 0; j < routePoints.length - 1; j++) {
+              final a = routePoints[j];
+              final b = routePoints[j + 1];
+              enriched.add(a);
+              for (var k = 1; k <= interpPerSegment; k++) {
+                final t = k / (interpPerSegment + 1);
+                enriched.add(LatLng(a.latitude + (b.latitude - a.latitude) * t,
+                    a.longitude + (b.longitude - a.longitude) * t));
+              }
+            }
+            enriched.add(routePoints.last);
+            routePoints = enriched;
+          }
+          final pmList = routePoints
+              .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
+              .toList(growable: false);
+          final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
+          await mapController.appendRawMarkers([
+            ShapeMeta(
+              pointMetas: pmList,
+              title: 'Polyline #${i + 1}',
+              id: id,
+              shapeType: ShapeTypes.polyline,
+            )
+          ]);
+        }
+
         generatedPolylines = i + 1;
         notifyListeners();
         await Future.delayed(const Duration(milliseconds: 1));
@@ -302,9 +394,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
-      // try {
-      //   mapController.setBlockingLoading(false);
-      // } catch (_) {}
+      try {
+        mapController.setBlockingLoading(false);
+      } catch (_) {}
     }
   }
 
@@ -362,6 +454,13 @@ class MapExamplesViewModel extends ChangeNotifier {
       final updated = <dynamic>[];
       for (final m in current) {
         if (m is ShapeMeta) {
+          final pm = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
+              ? m.pointMetas!.first
+              : null;
+          if (pm == null) {
+            updated.add(m);
+            continue;
+          }
           double newLat;
           double newLon;
           if (markerUpdateRandomizeCoordinates) {
@@ -376,19 +475,27 @@ class MapExamplesViewModel extends ChangeNotifier {
             // small movement in degrees (~up to ~0.005 deg)
             final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
             final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            newLat = m.lat + dLat;
-            newLon = m.lon + dLon;
+            newLat = pm.lat + dLat;
+            newLon = pm.lon + dLon;
           }
           final cm = ShapeMeta(
-            lat: newLat,
-            lon: newLon,
+            pointMetas: [
+              PointMeta(
+                  lat: newLat,
+                  lon: newLon,
+                  title: pm.title,
+                  subtitle: pm.subtitle,
+                  id: pm.id,
+                  rotation: pm.rotation,
+                  address: pm.address)
+            ],
+            id: m.id,
+            shapeType: m.shapeType,
+            properties: (m.properties != null)
+                ? ({...m.properties!, 'color': m.color})
+                : {'color': m.color},
             title: m.title,
             subtitle: m.subtitle,
-            id: m.id,
-            address: m.address,
-            shapeType: m.shapeType,
-            rotation: m.rotation,
-            color: m.color,
           );
           updated.add(cm);
         } else if (m is Map) {
@@ -573,41 +680,29 @@ class MapExamplesViewModel extends ChangeNotifier {
             curve: const FormFieldsMapPlaybackConfig().playbackCurve);
       } catch (_) {}
 
-      final pl = Polyline(
-          points: routePoints, strokeWidth: 10.0, color: Colors.purple);
-      final id = mapController.addPolyline(pl) ?? 'l_unknown';
-      // add a marker at midpoint for interactivity and compute rotation
-      final midIndex = routePoints.length ~/ 2;
-      final mid = routePoints[midIndex];
-      double rotation = 0.0;
-      try {
-        if (routePoints.length > 1) {
-          final from = midIndex > 0
-              ? routePoints[midIndex - 1]
-              : routePoints[(midIndex + 1).clamp(0, routePoints.length - 1)];
-          final lat1 = from.latitude * math.pi / 180.0;
-          final lat2 = mid.latitude * math.pi / 180.0;
-          final dLon = (mid.longitude - from.longitude) * math.pi / 180.0;
-          final y = math.sin(dLon) * math.cos(lat2);
-          final x = math.cos(lat1) * math.sin(lat2) -
-              math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
-          var brng = math.atan2(y, x) * 180.0 / math.pi;
-          brng = (brng + 360.0) % 360.0;
-          rotation = brng;
-        }
-      } catch (_) {
-        rotation = 0.0;
-      }
+      final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
+      // Playback marker midpoint/rotation no longer needed — polyline is
+      // appended as full ShapeMeta below.
 
+      // Append the full route as ShapeMeta so rendering and playback UI can
+      // derive the polyline from ShapeMeta as the canonical source.
+      final pmList = routePoints
+          .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
+          .toList(growable: false);
       await mapController.appendRawMarkers([
         ShapeMeta(
-          lat: mid.latitude,
-          lon: mid.longitude,
+          pointMetas: pmList,
           title: 'Playback Polyline',
           subtitle: id,
           id: id,
-          shapeType: 'polyline',
-          rotation: rotation,
+          shapeType: ShapeTypes.polyline,
+          properties: {
+            // Make playback polyline thicker and more visible. Use pixel-based
+            // stroke width so it appears consistently regardless of zoom.
+            'strokeWidth': 8.0,
+            'useStrokeWidthInMeter': false,
+            'color': Colors.lightGreen,
+          },
         )
       ]);
       playbackPolylineId = id;
@@ -650,15 +745,20 @@ class MapExamplesViewModel extends ChangeNotifier {
           useRadiusInMeter: true,
           radius: 800.0,
         );
-        final id = mapController.addCircle(c) ?? 'c_unknown';
-        await mapController.appendRawMarkers([
-          ShapeMeta(
+        final id = 'c\$${DateTime.now().microsecondsSinceEpoch}';
+        // Circle ShapeMeta: include center and carry radius in `rotation`.
+        final centerPm = PointMeta(
             lat: lat,
             lon: lng,
-            title: 'Circle #${i + 1}',
-            subtitle: id,
+            rotation: c.radius,
             id: id,
-            shapeType: 'circle',
+            title: 'Circle #${i + 1}',
+            subtitle: id);
+        await mapController.appendRawMarkers([
+          ShapeMeta(
+            pointMetas: [centerPm],
+            id: id,
+            shapeType: ShapeTypes.circle,
           )
         ]);
         generatedCircles = i + 1;
@@ -696,7 +796,7 @@ List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
       'subtitle':
           'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
       'id': 'm${DateTime.now().microsecondsSinceEpoch}_$i',
-      'shapeType': 'marker',
+      'shapeType': ShapeTypes.marker,
     });
   }
   return out;

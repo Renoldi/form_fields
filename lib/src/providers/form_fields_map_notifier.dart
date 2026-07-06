@@ -127,6 +127,77 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _ensureControlled();
     final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
     _rawMarkersCache = List<dynamic>.from(combined);
+
+    // Auto-register ShapeMeta entries into layer maps so rawMarkers alone
+    // can drive rendering and playback. Respect `properties` via typed
+    // option helpers when constructing the concrete layer objects.
+    try {
+      for (final r in coords) {
+        if (r is ShapeMeta && r.shapeType != null) {
+          final type = r.shapeType!.toLowerCase();
+          final pms = r.pointMetas;
+          if (type == ShapeTypes.polygon && pms != null && pms.isNotEmpty) {
+            final pts = pms.map((pm) => pm.point).toList(growable: false);
+            final opts = r.polygonOptions();
+            final poly = Polygon(
+              points: pts,
+              color: opts.fillColor ?? Colors.transparent,
+              borderColor: opts.borderColor ?? Colors.transparent,
+              borderStrokeWidth: opts.borderStrokeWidth ?? 1.0,
+            );
+            final id = r.id ?? 'p\$${DateTime.now().microsecondsSinceEpoch}';
+            r.id ??= id;
+            addOrUpdatePolygon(id, poly);
+          } else if (type == ShapeTypes.polyline &&
+              pms != null &&
+              pms.isNotEmpty) {
+            final pts = pms.map((pm) => pm.point).toList(growable: false);
+            final opts = r.polylineOptions();
+            final pl = Polyline(
+              points: pts,
+              strokeWidth: opts.strokeWidth ?? 2.0,
+              color: opts.color ?? Colors.transparent,
+              useStrokeWidthInMeter: opts.useStrokeWidthInMeter ?? true,
+            );
+            final id = r.id ?? 'l\$${DateTime.now().microsecondsSinceEpoch}';
+            r.id ??= id;
+            addOrUpdatePolyline(id, pl);
+          } else if (type == ShapeTypes.circle &&
+              pms != null &&
+              pms.isNotEmpty) {
+            final center = pms.first.point;
+            final rad = pms.first.rotation ?? 10.0;
+            final opts = r.circleOptions();
+            final c = CircleMarker(
+              point: center,
+              color: opts.borderColor ?? Colors.transparent,
+              borderStrokeWidth: opts.borderStrokeWidth ?? 0.0,
+              borderColor: opts.borderColor ?? Colors.transparent,
+              useRadiusInMeter: opts.useRadiusInMeter ?? true,
+              radius: opts.radiusMeters ?? rad,
+            );
+            final id = r.id ?? 'c\$${DateTime.now().microsecondsSinceEpoch}';
+            r.id ??= id;
+            addOrUpdateCircle(id, c);
+          } else if (type == ShapeTypes.marker &&
+              pms != null &&
+              pms.isNotEmpty) {
+            final center = pms.first.point;
+            final opts = r.markerOptions();
+            final marker = Marker(
+              point: center,
+              width: opts.width?.toDouble() ?? 40,
+              height: opts.height?.toDouble() ?? 40,
+              child: const SizedBox.shrink(),
+            );
+            final id = r.id ?? 'm\$${DateTime.now().microsecondsSinceEpoch}';
+            r.id ??= id;
+            addOrUpdateMarker(id, marker);
+          }
+        }
+      }
+    } catch (_) {}
+
     _scheduleNotify();
   }
 

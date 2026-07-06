@@ -2,8 +2,8 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:form_fields/src/models/shape_meta.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:form_fields/form_fields.dart';
 
 /// Utilities
 double pointToSegmentDistance(Offset p, Offset v, Offset w) {
@@ -91,12 +91,35 @@ class CanvasRawMarkerPainter extends CustomPainter {
       String? shapeType;
       double rotationDeg = 0.0;
       if (m is ShapeMeta) {
-        lat = m.lat;
-        lon = m.lon;
-        title = m.title;
-        subtitle = m.subtitle;
+        final pms = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
+            ? m.pointMetas!
+            : null;
+        if (pms == null) continue;
+        // Place title for non-marker shapes at a simple-average centroid
+        // (average of vertex coordinates). For marker shapes, use the
+        // first PointMeta (its explicit point).
         shapeType = m.shapeType;
-        rotationDeg = m.rotation ?? 0.0;
+        if (shapeType == ShapeTypes.polygon ||
+            shapeType == ShapeTypes.polyline) {
+          double sumLat = 0.0, sumLon = 0.0;
+          for (final pm in pms) {
+            sumLat += pm.lat;
+            sumLon += pm.lon;
+          }
+          lat = sumLat / pms.length;
+          lon = sumLon / pms.length;
+          // Prefer top-level title/subtitle for shapes like polygons/polylines
+          title = m.title ?? pms.first.title;
+          subtitle = m.subtitle ?? pms.first.subtitle;
+          rotationDeg = pms.first.rotation ?? 0.0;
+        } else {
+          final pm = pms.first;
+          lat = pm.lat;
+          lon = pm.lon;
+          title = pm.title ?? m.title;
+          subtitle = pm.subtitle ?? m.subtitle;
+          rotationDeg = pm.rotation ?? 0.0;
+        }
       } else if (m is LatLng) {
         lat = m.latitude;
         lon = m.longitude;
@@ -136,7 +159,35 @@ class CanvasRawMarkerPainter extends CustomPainter {
         }
       }
 
-      final radiusToUse = max(radius, 6.0);
+      var radiusToUse = max(radius, 6.0);
+      // allow per-marker radius override from properties or map payload
+      double? propRadius;
+      if (m is ShapeMeta) {
+        final rpv = m.properties == null
+            ? null
+            : (m.properties!['radius'] ?? m.properties!['size']);
+        if (rpv != null) {
+          if (rpv is num) {
+            propRadius = rpv.toDouble();
+          } else if (rpv is String) {
+            try {
+              propRadius = double.parse(rpv);
+            } catch (_) {}
+          }
+        }
+      } else if (m is Map) {
+        final rpv = m['radius'] ?? m['size'];
+        if (rpv != null) {
+          if (rpv is num) {
+            propRadius = rpv.toDouble();
+          } else if (rpv is String) {
+            try {
+              propRadius = double.parse(rpv);
+            } catch (_) {}
+          }
+        }
+      }
+      if (propRadius != null) radiusToUse = max(radiusToUse, propRadius);
       if (dx < -radiusToUse ||
           dx > size.width + radiusToUse ||
           dy < -radiusToUse ||
@@ -147,14 +198,28 @@ class CanvasRawMarkerPainter extends CustomPainter {
       // Draw a simple pin icon: circular head + triangular tail.
       final pinPaint = paint;
       Color? metaColor;
+      String? propIconName;
       if (m is ShapeMeta) {
-        metaColor = m.color;
+        // properties.color takes precedence over top-level color
+        if (m.properties != null && m.properties!['color'] != null) {
+          try {
+            metaColor = ShapeMeta.parseColor(m.properties!['color']);
+          } catch (_) {
+            metaColor = m.color;
+          }
+        } else {
+          metaColor = m.color;
+        }
+        if (m.properties != null && m.properties!['icon'] != null) {
+          propIconName = m.properties!['icon']?.toString();
+        }
       } else if (m is Map && m['color'] != null) {
         try {
           metaColor = ShapeMeta.parseColor(m['color']);
         } catch (_) {
           metaColor = null;
         }
+        if (m['icon'] != null) propIconName = m['icon']?.toString();
       }
       final Color markerColor =
           metaColor ?? defaultColor.withValues(alpha: 0.95);
@@ -169,7 +234,9 @@ class CanvasRawMarkerPainter extends CustomPainter {
 
       String? iconName;
       if (m is Map) iconName = m['icon']?.toString();
-      final drawPin = shapeType == null || shapeType == 'marker';
+      // allow properties.icon to override map-provided icon
+      if (propIconName != null) iconName = propIconName;
+      final drawPin = shapeType == null || shapeType == ShapeTypes.marker;
       var isPlayback = false;
       if (m is Map && m['id'] == 'playback_marker') isPlayback = true;
       if (m is ShapeMeta && m.id == 'playback_marker') isPlayback = true;
