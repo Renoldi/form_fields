@@ -511,7 +511,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     final playbackProvider = widget.playbackConfig?.playbackMarkerIcon;
 
     // Helper to resolve an ImageProvider into an ImageStream and set target
-    void _attachImageProvider(
+    void attachImageProvider(
         ImageProvider provider, void Function(ui.Image) onImage,
         {required bool isPlayback}) {
       final config = createLocalImageConfiguration(context);
@@ -533,7 +533,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // Rasterize canvas provider if present
     if (canvasProvider != null) {
       if (canvasProvider is ImageProvider) {
-        _attachImageProvider(canvasProvider, (img) {
+        attachImageProvider(canvasProvider, (img) {
           _canvasMarkerImage = img;
           // If playback provider equals canvas provider, mirror image
           if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
@@ -558,7 +558,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // Rasterize playback provider if present and different from canvas provider
     if (playbackProvider != null && playbackProvider != canvasProvider) {
       if (playbackProvider is ImageProvider) {
-        _attachImageProvider(playbackProvider, (img) {
+        attachImageProvider(playbackProvider, (img) {
           _playbackMarkerImage = img;
         }, isPlayback: true);
       } else if (playbackProvider is Icon) {
