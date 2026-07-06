@@ -114,6 +114,7 @@ class View extends PresenterState {
                         size: 100,
                       ),
                       playbackFollowCamera: true,
+                      playbackAutoStart: true,
                     ),
                     canvasMarkerRadius: 20.0,
                     canvasMarkerIcon: const Icon(

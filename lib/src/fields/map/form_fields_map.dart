@@ -27,6 +27,8 @@ class FormFieldsMapPlaybackConfig {
     this.playbackMarkerIcon,
     this.playbackZoom = 18.0,
     this.playbackFollowCamera = true,
+    this.playbackCurve = Curves.easeInOut,
+    this.playbackAutoStart = false,
   });
 
   final bool enablePolylinePlayback;
@@ -39,6 +41,14 @@ class FormFieldsMapPlaybackConfig {
   /// This value is clamped to the widget's `minZoom`/`maxZoom` when applied.
   final double playbackZoom;
   final bool playbackFollowCamera;
+
+  /// Whether playback should automatically start when the first set of
+  /// raw markers for playback is appended. Defaults to `false`.
+  final bool playbackAutoStart;
+
+  /// The easing curve used when animating the camera for playback actions.
+  /// Defaults to [Curves.easeInOut].
+  final Curve playbackCurve;
 }
 
 class FormFieldsMap extends StatefulWidget {
@@ -219,6 +229,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     return (v as num).toDouble();
   }
 
+  Curve get _playbackCurve =>
+      widget.playbackConfig?.playbackCurve ?? Curves.easeInOut;
+
   @override
   void initState() {
     super.initState();
@@ -292,6 +305,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
           toggle: (polylineId) => _togglePolylinePlayback(polylineId),
         ),
       );
+      // Configure whether this widget wants auto-start on first append.
+      try {
+        FormFieldsMapController.setPlaybackAutoStart(
+            _controllerId, widget.playbackConfig?.playbackAutoStart ?? false);
+      } catch (_) {}
     }
   }
 
@@ -395,6 +413,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
             toggle: (polylineId) => _togglePolylinePlayback(polylineId),
           ),
         );
+        try {
+          FormFieldsMapController.setPlaybackAutoStart(
+              _controllerId, widget.playbackConfig?.playbackAutoStart ?? false);
+        } catch (_) {}
       }
     }
 
@@ -787,7 +809,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (initialPoint != null) {
           if (_playbackFollowCamera) {
             // animateTo is async but we don't need to await inside timer callbacks
-            animateTo(initialPoint, _playbackTargetZoom);
+            animateTo(initialPoint, _playbackTargetZoom, curve: _playbackCurve);
           }
         }
       } catch (_) {}
@@ -910,15 +932,24 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // If playback is active, move camera to follow the playback point
       try {
         if (_isPlaying && _playbackFollowCamera) {
-          animateTo(p, _playbackTargetZoom);
+          animateTo(p, _playbackTargetZoom, curve: _playbackCurve);
         }
       } catch (_) {}
     } catch (_) {}
   }
 
   Future<void> animateTo(LatLng dest, double zoom,
-      {Duration duration = const Duration(milliseconds: 400)}) async {
-    _mapController.move(dest, zoom);
+      {Duration duration = const Duration(milliseconds: 400),
+      Curve curve = Curves.easeInOut}) async {
+    try {
+      await _mapController.animateCameraTo(dest, zoom,
+          duration: duration, curve: curve);
+    } catch (_) {
+      // fallback to instant move
+      try {
+        _mapController.move(dest, zoom);
+      } catch (_) {}
+    }
     _lastCenter = dest;
     _lastZoom = zoom;
   }

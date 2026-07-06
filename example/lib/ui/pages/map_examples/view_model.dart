@@ -563,12 +563,14 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       }
 
-      // Move camera to the first point so playback starts in view.
+      // Animate camera to the first point so playback starts in view.
       try {
         final start = routePoints.first;
         final double targetZoom =
             const FormFieldsMapPlaybackConfig().playbackZoom;
-        mapController.move(start, targetZoom);
+        await mapController.animateCameraTo(start, targetZoom,
+            duration: const Duration(milliseconds: 600),
+            curve: const FormFieldsMapPlaybackConfig().playbackCurve);
       } catch (_) {}
 
       final pl = Polyline(
@@ -622,6 +624,8 @@ class MapExamplesViewModel extends ChangeNotifier {
       } catch (_) {}
     }
   }
+
+  // animateCameraTo moved to MapController extension; use that instead.
 
   Future<void> generateCircles({int shapeCount = 5}) async {
     isLoading = true;

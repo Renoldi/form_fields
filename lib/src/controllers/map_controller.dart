@@ -394,6 +394,11 @@ class FormFieldsMapController {
     // Reset retry count on success path.
     _appendRetryCounts.remove(id);
 
+    // Detect whether this is the first append for this controller so we
+    // can initialize playback UI state if a playback handler was
+    // registered. Capture current emptiness now (before mutation).
+    final bool wasRawMarkersEmptyBeforeAppend = (n.rawMarkers.isEmpty);
+
     // Decide whether this append should present the full-screen blocking
     // overlay. We only do this for larger batches to avoid blocking UI
     // for tiny updates.
@@ -415,6 +420,27 @@ class FormFieldsMapController {
       }
 
       n.appendRawMarkers(coords);
+      // If this was the first append (no markers previously) and a
+      // playback handler is registered for this controller id, reset
+      // the playback playing notifier so built-in controls show a
+      // predictable initial state (not playing).
+      try {
+        if (wasRawMarkersEmptyBeforeAppend &&
+            coords.isNotEmpty &&
+            _playbackHandlers.containsKey(id) &&
+            getPlaybackAutoStart(id)) {
+          // Auto-start playback when the first raw markers are appended
+          // and playback support is enabled for this controller. Use the
+          // public helper so any registered handler is invoked to start
+          // the playback flow (which will also set up timers and markers).
+          try {
+            setPlaybackPlaying(id, true);
+          } catch (_) {}
+          try {
+            startPolylinePlayback(id, null);
+          } catch (_) {}
+        }
+      } catch (_) {}
       try {
         debugPrint(
             '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
@@ -657,6 +683,11 @@ class FormFieldsMapController {
   static final Map<String, FormFieldsMapPlaybackHandler?> _playbackHandlers =
       {};
 
+  // Per-controller flag whether appending markers should auto-start
+  // playback. Widgets set this when they register their playback handler
+  // according to their configuration (e.g. FormFieldsMapPlaybackConfig).
+  static final Map<String, bool> _playbackAutoStart = {};
+
   // Whether consumers should receive center updates during internal
   // playback-driven camera moves. Defaults to `false` (suppress updates
   // while playback is active). Callers may set this per-controller id to
@@ -703,6 +734,21 @@ class FormFieldsMapController {
     } else {
       _playbackHandlers[id] = handler;
     }
+  }
+
+  /// Control whether appendRawMarkers should auto-start playback for [id].
+  /// When set to `true`, the first non-empty append will call the
+  /// registered playback handler. Defaults to `false` when not set.
+  static void setPlaybackAutoStart(String id, bool value) {
+    if (value) {
+      _playbackAutoStart[id] = true;
+    } else {
+      _playbackAutoStart.remove(id);
+    }
+  }
+
+  static bool getPlaybackAutoStart(String id) {
+    return _playbackAutoStart.putIfAbsent(id, () => false);
   }
 
   /// Unregister a playback handler for [id].
@@ -889,6 +935,43 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   void setPlaybackPlaying(bool value) {
     final id = FormFieldsMapController.getIdForController(this);
     FormFieldsMapController.setPlaybackPlaying(id, value);
+  }
+
+  /// Smoothly animate the map camera from current center to [target].
+  /// This helper performs a simple per-frame interpolation and calls
+  /// `move` repeatedly. It is intentionally conservative and will
+  /// catch errors thrown by the underlying controller.
+  Future<void> animateCameraTo(LatLng target, double targetZoom,
+      {Duration duration = const Duration(milliseconds: 400),
+      Curve curve = Curves.easeInOut}) async {
+    LatLng start;
+    try {
+      start = camera.center;
+    } catch (_) {
+      // Fallback to a safe origin at equator if camera unavailable.
+      start = LatLng(0, 0);
+    }
+
+    double startZoom;
+    try {
+      startZoom = camera.zoom;
+    } catch (_) {
+      startZoom = 12.0;
+    }
+
+    final int steps = (duration.inMilliseconds / 16).clamp(1, 60).toInt();
+    final int stepMs = (duration.inMilliseconds / steps).round();
+    for (var i = 1; i <= steps; i++) {
+      final t = i / steps;
+      final et = curve.transform(t);
+      final lat = start.latitude + (target.latitude - start.latitude) * et;
+      final lon = start.longitude + (target.longitude - start.longitude) * et;
+      final zoom = startZoom + (targetZoom - startZoom) * et;
+      try {
+        move(LatLng(lat, lon), zoom);
+      } catch (_) {}
+      await Future.delayed(Duration(milliseconds: stepMs));
+    }
   }
 
   List<dynamic> getRawMarkers() {
