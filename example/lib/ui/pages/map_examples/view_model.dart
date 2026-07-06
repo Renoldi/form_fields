@@ -84,13 +84,13 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 20;
-  int createPolygons = 20;
-  int createPolylines = 20;
-  int createCircles = 20;
+  int createMarkers = 5;
+  int createPolygons = 5;
+  int createPolylines = 5;
+  int createCircles = 5;
 
   // Periodic update interval and countdown state
-  Duration markerUpdateInterval = const Duration(minutes: 1);
+  Duration markerUpdateInterval = const Duration(seconds: 30);
   int markerUpdateRemainingSeconds = 0;
 
   /// If true, periodic updates will assign fully random coordinates
@@ -420,7 +420,8 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
   void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(minutes: 1), bool randomize = true}) {
+      {Duration interval = const Duration(seconds: 30),
+      bool randomize = true}) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
     markerUpdateRemainingSeconds = interval.inSeconds;
@@ -458,7 +459,7 @@ class MapExamplesViewModel extends ChangeNotifier {
 
   /// Perform a single in-place update of the raw markers (via controller)
   /// each `ShapeMeta` (or map-style marker) by a small random delta.
-  void _updateMarkersOnce() {
+  Future<void> _updateMarkersOnce() async {
     try {
       try {
         mapController.setBlockingLoading(true);
@@ -470,17 +471,21 @@ class MapExamplesViewModel extends ChangeNotifier {
       final updated = <dynamic>[];
       for (final m in current) {
         if (m is ShapeMeta) {
-          final pm = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
-              ? m.pointMetas!.first
+          final pms = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
+              ? m.pointMetas!
               : null;
-          if (pm == null) {
+          if (pms == null) {
             updated.add(m);
             continue;
           }
+
+          // Compute a new position for the first point, then shift the
+          // whole shape by the same delta so geometry (and sizes) are
+          // preserved (polygons, polylines keep their vertex layout).
+          final base = pms.first;
           double newLat;
           double newLon;
           if (markerUpdateRandomizeCoordinates) {
-            // assign completely random coordinates within range around center
             newLat = center.latitude +
                 (_updateRnd.nextDouble() - 0.5) *
                     markerUpdateRandomRangeDegrees;
@@ -488,28 +493,34 @@ class MapExamplesViewModel extends ChangeNotifier {
                 (_updateRnd.nextDouble() - 0.5) *
                     markerUpdateRandomRangeDegrees;
           } else {
-            // small movement in degrees (~up to ~0.005 deg)
             final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
             final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            newLat = pm.lat + dLat;
-            newLon = pm.lon + dLon;
+            newLat = base.lat + dLat;
+            newLon = base.lon + dLon;
           }
+
+          final deltaLat = newLat - base.lat;
+          final deltaLon = newLon - base.lon;
+
+          final moved = pms
+              .map((orig) => PointMeta(
+                    lat: orig.lat + deltaLat,
+                    lon: orig.lon + deltaLon,
+                    address: orig.address,
+                    rotation: orig.rotation,
+                    id: orig.id,
+                    hit: orig.hit,
+                  ))
+              .toList(growable: false);
+
           final cm = ShapeMeta(
-            pointMetas: [
-              PointMeta(
-                  lat: newLat,
-                  lon: newLon,
-                  hit: (title: pm.hit?.title, subtitle: pm.hit?.subtitle),
-                  id: pm.id,
-                  rotation: pm.rotation,
-                  address: pm.address)
-            ],
+            pointMetas: moved,
             id: m.id,
             shapeType: m.shapeType,
             properties: (m.properties != null)
                 ? ({...m.properties!, 'color': m.color})
                 : {'color': m.color},
-            hit: (title: m.hit?.title, subtitle: m.hit?.subtitle),
+            hit: m.hit,
           );
           updated.add(cm);
         } else if (m is Map) {
@@ -540,6 +551,34 @@ class MapExamplesViewModel extends ChangeNotifier {
       }
       mapController.setRawMarkers(List<dynamic>.from(updated));
       notifyListeners();
+
+      // After updating raw markers, animate the camera to the first
+      // updated item's coordinate so the user sees the change.
+      try {
+        // Collect candidate points from updated entries and pick one at random
+        final candidates = <LatLng>[];
+        for (final u in updated) {
+          if (u is ShapeMeta &&
+              u.pointMetas != null &&
+              u.pointMetas!.isNotEmpty) {
+            final p0 = u.pointMetas!.first;
+            candidates.add(LatLng(p0.lat, p0.lon));
+          } else if (u is Map) {
+            final lat = (u['lat'] as num?)?.toDouble();
+            final lon = (u['lon'] as num?)?.toDouble();
+            if (lat != null && lon != null) candidates.add(LatLng(lat, lon));
+          }
+        }
+        if (candidates.isNotEmpty) {
+          final chosen = candidates[_updateRnd.nextInt(candidates.length)];
+          try {
+            await mapController.animateCameraTo(chosen, 8,
+                duration: const Duration(milliseconds: 400),
+                curve: const FormFieldsMapPlaybackConfig().playbackCurve);
+          } catch (_) {}
+        }
+      } catch (_) {}
+
       debugPrint('_updateMarkersOnce completed, updated=${updated.length}');
     } catch (_) {
       // ignore

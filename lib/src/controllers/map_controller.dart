@@ -347,9 +347,38 @@ class FormFieldsMapController {
           setBlockingLoading(id, true);
         } catch (_) {}
       }
-      n.rawMarkers = List<dynamic>.from(coords);
-      // Intentionally not logging per-update to avoid flooding logs during
-      // high-frequency operations (playback, batches).
+
+      // Rebuild rawMarkers and derived layer maps so `flutter_map` layers
+      // (polygons/polylines/circles/markers) stay in sync with `rawMarkers`.
+      try {
+        // Clear existing rawMarkers and concrete layer maps first.
+        n.clearRawMarkers();
+        try {
+          n.clearPolygons();
+        } catch (_) {}
+        try {
+          n.clearPolylines();
+        } catch (_) {}
+        try {
+          n.clearCircles();
+        } catch (_) {}
+        try {
+          n.clearMarkers();
+        } catch (_) {}
+      } catch (_) {}
+
+      // Use notifier.appendRawMarkers which will append the provided coords
+      // and auto-register ShapeMeta entries into the concrete layer maps.
+      try {
+        n.appendRawMarkers(List<dynamic>.from(coords));
+      } catch (_) {
+        // Fallback: if appendRawMarkers fails, ensure rawMarkers is set so
+        // the painter still sees the updated titles/positions.
+        try {
+          n.rawMarkers = List<dynamic>.from(coords);
+        } catch (_) {}
+      }
+
       if (shouldBlock) {
         try {
           setBlockingLoading(id, false);
