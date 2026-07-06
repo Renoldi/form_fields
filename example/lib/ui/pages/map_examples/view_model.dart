@@ -52,7 +52,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// Whether the example UI (and the FormFieldsMap) should enable
   /// built-in polyline playback features. Consumers can toggle this to
   /// hide playback controls and related actions in the example.
-  bool enablePolylinePlayback = false;
+  bool enablePolylinePlayback = true;
 
   /// Local UI state for selected playback interval and interpolation steps
   /// so buttons in the example can reflect current selection.
@@ -352,6 +352,13 @@ class MapExamplesViewModel extends ChangeNotifier {
               title: 'Polyline #${i + 1}',
               id: id,
               shapeType: ShapeTypes.polyline,
+              properties: {
+                // Make playback polyline thicker and more visible. Use pixel-based
+                // stroke width so it appears consistently regardless of zoom.
+                'strokeWidth': 8.0,
+                'useStrokeWidthInMeter': false,
+                'color': Colors.red,
+              },
             )
           ]);
         } else {
@@ -383,6 +390,13 @@ class MapExamplesViewModel extends ChangeNotifier {
               title: 'Polyline #${i + 1}',
               id: id,
               shapeType: ShapeTypes.polyline,
+              properties: {
+                // Make playback polyline thicker and more visible. Use pixel-based
+                // stroke width so it appears consistently regardless of zoom.
+                'strokeWidth': 8.0,
+                'useStrokeWidthInMeter': false,
+                'color': Colors.red,
+              },
             )
           ]);
         }
