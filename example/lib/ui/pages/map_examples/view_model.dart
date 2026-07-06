@@ -90,7 +90,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int createCircles = 5;
 
   // Periodic update interval and countdown state
-  Duration markerUpdateInterval = const Duration(seconds: 30);
+  Duration markerUpdateInterval = const Duration(seconds: 15);
   int markerUpdateRemainingSeconds = 0;
 
   /// If true, periodic updates will assign fully random coordinates
@@ -420,7 +420,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
   void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(seconds: 30),
+      {Duration interval = const Duration(seconds: 15),
       bool randomize = true}) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
