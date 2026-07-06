@@ -70,7 +70,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 5000;
+  int createMarkers = 20;
   int createPolygons = 20;
   int createPolylines = 20;
   int createCircles = 20;
