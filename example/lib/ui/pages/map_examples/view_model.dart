@@ -563,6 +563,14 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       }
 
+      // Move camera to the first point so playback starts in view.
+      try {
+        final start = routePoints.first;
+        final double targetZoom =
+            const FormFieldsMapPlaybackConfig().playbackZoom;
+        mapController.move(start, targetZoom);
+      } catch (_) {}
+
       final pl = Polyline(
           points: routePoints, strokeWidth: 10.0, color: Colors.purple);
       final id = mapController.addPolyline(pl) ?? 'l_unknown';
