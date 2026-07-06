@@ -96,6 +96,18 @@ class View extends PresenterState {
                               ),
                             ],
                           ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Playback'),
+                              const SizedBox(width: 6),
+                              Switch.adaptive(
+                                value: vm.enablePolylinePlayback,
+                                onChanged: (v) =>
+                                    vm.setEnablePolylinePlayback(v),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ],

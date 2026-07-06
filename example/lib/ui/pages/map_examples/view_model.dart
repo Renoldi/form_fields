@@ -52,7 +52,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// Whether the example UI (and the FormFieldsMap) should enable
   /// built-in polyline playback features. Consumers can toggle this to
   /// hide playback controls and related actions in the example.
-  bool enablePolylinePlayback = true;
+  bool enablePolylinePlayback = false;
 
   /// Local UI state for selected playback interval and interpolation steps
   /// so buttons in the example can reflect current selection.
@@ -257,7 +257,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     }
     // Start periodic updates after markers are generated.
     // Start periodic updates after markers are generated.
-    startPeriodicMarkerUpdates();
+    if (!enablePolylinePlayback) {
+      startPeriodicMarkerUpdates();
+    }
 
     isLoading = false;
     notifyListeners();
@@ -823,6 +825,11 @@ class MapExamplesViewModel extends ChangeNotifier {
         mapController.setBlockingLoading(false);
       } catch (_) {}
     }
+  }
+
+  void setEnablePolylinePlayback(bool v) {
+    enablePolylinePlayback = v;
+    notifyListeners();
   }
 }
 
