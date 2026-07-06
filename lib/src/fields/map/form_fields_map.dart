@@ -1020,12 +1020,34 @@ class FormFieldsMapState extends State<FormFieldsMap>
       final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
       // Use controller API to mutate notifier so only controller is the
-      // canonical mutator for map state.
+      // canonical mutator for map state. Use remove+append so we don't
+      // replace the entire `rawMarkers` list (which would clear
+      // derived polylines/polygons). This keeps playback marker updates
+      // isolated and preserves existing shape layers.
       try {
-        FormFieldsMapController.setRawMarkers(_controllerId, [payload]);
+        try {
+          FormFieldsMapController.removeRawMarker(
+              _controllerId, 'playback_marker');
+        } catch (_) {}
+        try {
+          FormFieldsMapController.appendRawMarkers(_controllerId, [payload]);
+        } catch (_) {
+          // fallback to setRawMarkers if append isn't available for some reason
+          FormFieldsMapController.setRawMarkers(_controllerId, [payload]);
+        }
       } catch (_) {
         // fallback to direct notifier mutation if registry isn't available
-        notifier.rawMarkers = [payload];
+        try {
+          // replace any existing playback_marker in notifier.rawMarkers
+          notifier.rawMarkers.removeWhere((r) =>
+              (r is Map && r['id'] == 'playback_marker') ||
+              (r is ShapeMeta && r.id == 'playback_marker'));
+        } catch (_) {}
+        try {
+          notifier.appendRawMarkers([payload]);
+        } catch (_) {
+          notifier.rawMarkers = [payload];
+        }
       }
       // If playback is active, move camera to follow the playback point
       try {
