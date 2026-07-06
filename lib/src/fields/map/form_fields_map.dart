@@ -29,6 +29,9 @@ class FormFieldsMapPlaybackConfig {
     this.playbackFollowCamera = true,
     this.playbackCurve = Curves.easeInOut,
     this.playbackAutoStart = false,
+    this.playbackHaloColor,
+    this.playbackHaloScale = 1.6,
+    this.playbackHaloOpacity = 0.95,
   });
 
   final bool enablePolylinePlayback;
@@ -49,6 +52,17 @@ class FormFieldsMapPlaybackConfig {
   /// The easing curve used when animating the camera for playback actions.
   /// Defaults to [Curves.easeInOut].
   final Curve playbackCurve;
+
+  /// Optional color used for the playback icon halo/border. If null, the
+  /// `playbackPolylineColor` (if set) will be used.
+  final Color? playbackHaloColor;
+
+  /// Scale multiplier applied to the rasterized icon when drawing the halo.
+  /// Defaults to 1.6 (slightly larger than the icon).
+  final double playbackHaloScale;
+
+  /// Opacity applied to the halo tint (0.0 - 1.0).
+  final double playbackHaloOpacity;
 }
 
 class FormFieldsMap extends StatefulWidget {
@@ -194,6 +208,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
   ImageStream? _canvasMarkerImageStream;
   ImageStreamListener? _canvasMarkerImageStreamListener;
   ui.Image? _canvasMarkerImage;
+  ImageStream? _playbackMarkerImageStream;
+  ImageStreamListener? _playbackMarkerImageStreamListener;
+  ui.Image? _playbackMarkerImage;
 
   bool _suppressNextMapTap = false;
 
@@ -218,6 +235,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   Color? get _playbackPolylineColor =>
       widget.playbackConfig?.playbackPolylineColor;
+
+  Color? get _playbackHaloColor =>
+      widget.playbackConfig?.playbackHaloColor ?? _playbackPolylineColor;
+
+  double get _playbackHaloScale =>
+      widget.playbackConfig?.playbackHaloScale ?? 1.6;
+
+  double get _playbackHaloOpacity =>
+      widget.playbackConfig?.playbackHaloOpacity ?? 0.95;
 
   bool get _playbackFollowCamera =>
       widget.playbackConfig?.playbackFollowCamera ?? true;
@@ -350,6 +376,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
     if (oldWidget.canvasMarkerIcon != widget.canvasMarkerIcon) {
       _resolveCanvasMarkerIcon();
     }
+    // If playback-specific icon changes, ensure we re-rasterize images.
+    if (oldWidget.playbackConfig?.playbackMarkerIcon !=
+        widget.playbackConfig?.playbackMarkerIcon) {
+      _resolveCanvasMarkerIcon();
+    }
 
     // Notifier removed from widget API; notifier lifecycle is no-op here.
 
@@ -453,49 +484,96 @@ class FormFieldsMapState extends State<FormFieldsMap>
   }
 
   void _resolveCanvasMarkerIcon() {
+    // Clean up any existing image streams/listeners for both images.
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
       _canvasMarkerImageStream!
           .removeListener(_canvasMarkerImageStreamListener!);
     }
+    if (_playbackMarkerImageStream != null &&
+        _playbackMarkerImageStreamListener != null) {
+      _playbackMarkerImageStream!
+          .removeListener(_playbackMarkerImageStreamListener!);
+    }
+    if (_playbackMarkerImageStream != null &&
+        _playbackMarkerImageStreamListener != null) {
+      _playbackMarkerImageStream!
+          .removeListener(_playbackMarkerImageStreamListener!);
+    }
     _canvasMarkerImageStream = null;
     _canvasMarkerImageStreamListener = null;
-    var provider = widget.canvasMarkerIcon;
-    // If no general canvas marker icon is provided, allow a playback-specific
-    // icon from the playback config to be used for rasterization so the
-    // playback marker can show a custom glyph.
-    provider ??= widget.playbackConfig?.playbackMarkerIcon;
-    if (provider == null) return;
+    _playbackMarkerImageStream = null;
+    _playbackMarkerImageStreamListener = null;
+    _canvasMarkerImage = null;
+    _playbackMarkerImage = null;
 
-    if (provider is ImageProvider) {
+    final canvasProvider = widget.canvasMarkerIcon;
+    final playbackProvider = widget.playbackConfig?.playbackMarkerIcon;
+
+    // Helper to resolve an ImageProvider into an ImageStream and set target
+    void _attachImageProvider(
+        ImageProvider provider, void Function(ui.Image) onImage,
+        {required bool isPlayback}) {
       final config = createLocalImageConfiguration(context);
       final stream = provider.resolve(config);
-      _canvasMarkerImageStream = stream;
-      _canvasMarkerImageStreamListener =
-          ImageStreamListener((ImageInfo info, bool _) {
-        _canvasMarkerImage = info.image;
+      final listener = ImageStreamListener((ImageInfo info, bool _) {
+        onImage(info.image);
         _safeSetState(() {});
       });
-      stream.addListener(_canvasMarkerImageStreamListener!);
-      return;
+      stream.addListener(listener);
+      if (isPlayback) {
+        _playbackMarkerImageStream = stream;
+        _playbackMarkerImageStreamListener = listener;
+      } else {
+        _canvasMarkerImageStream = stream;
+        _canvasMarkerImageStreamListener = listener;
+      }
     }
 
-    if (provider is Icon) {
-      _renderIconToImage(provider).then((img) {
-        _canvasMarkerImage = img;
-        _safeSetState(() {});
-      });
-      return;
-    }
-
-    if (provider is Widget) {
-      _rasterizeWidgetToImage(provider).then((img) {
-        if (img != null) {
+    // Rasterize canvas provider if present
+    if (canvasProvider != null) {
+      if (canvasProvider is ImageProvider) {
+        _attachImageProvider(canvasProvider, (img) {
           _canvasMarkerImage = img;
+          // If playback provider equals canvas provider, mirror image
+          if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
+        }, isPlayback: false);
+      } else if (canvasProvider is Icon) {
+        _renderIconToImage(canvasProvider).then((img) {
+          _canvasMarkerImage = img;
+          if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
           _safeSetState(() {});
-        }
-      });
-      return;
+        });
+      } else if (canvasProvider is Widget) {
+        _rasterizeWidgetToImage(canvasProvider).then((img) {
+          if (img != null) {
+            _canvasMarkerImage = img;
+            if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
+            _safeSetState(() {});
+          }
+        });
+      }
+    }
+
+    // Rasterize playback provider if present and different from canvas provider
+    if (playbackProvider != null && playbackProvider != canvasProvider) {
+      if (playbackProvider is ImageProvider) {
+        _attachImageProvider(playbackProvider, (img) {
+          _playbackMarkerImage = img;
+        }, isPlayback: true);
+      } else if (playbackProvider is Icon) {
+        _renderIconToImage(playbackProvider).then((img) {
+          _playbackMarkerImage = img;
+          _safeSetState(() {});
+        });
+      } else if (playbackProvider is Widget) {
+        _rasterizeWidgetToImage(playbackProvider).then((img) {
+          if (img != null) {
+            _playbackMarkerImage = img;
+            _safeSetState(() {});
+          }
+        });
+      }
     }
   }
 
@@ -908,10 +986,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
         'rotation': bearing,
         'title': null,
       };
-      // Prefer the configured canvas marker icon when available; otherwise
-      // fall back to the default arrow glyph. Leaving 'icon' unset lets the
-      // painter draw the rasterized `iconImage` when present.
-      if (widget.canvasMarkerIcon == null) {
+      // Determine the effective provider used for canvas marker rasterization
+      // (prefer the explicit `canvasMarkerIcon`, otherwise allow a playback
+      // specific `playbackMarkerIcon` from the playback config). If no
+      // provider is available, fall back to the default arrow glyph. Leaving
+      // 'icon' unset allows the painter to draw the rasterized `iconImage`
+      // when present.
+      final effectiveProviderForPlayback =
+          widget.playbackConfig?.playbackMarkerIcon ?? widget.canvasMarkerIcon;
+      if (effectiveProviderForPlayback == null) {
         payload['icon'] = 'arrow';
       }
       // Allow playback config to override the marker/polyline color for
@@ -1160,6 +1243,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               devicePixelRatio:
                                   MediaQuery.of(context).devicePixelRatio,
                               iconImage: _canvasMarkerImage,
+                              playbackIconImage: _playbackMarkerImage,
+                              playbackHaloColor: _playbackHaloColor,
+                              playbackHaloScale: _playbackHaloScale,
+                              playbackHaloOpacity: _playbackHaloOpacity,
                               // hide titles while blocking loading is active or when zoom is low
                               showTitle: widget.showTitle &&
                                   !isBlocking &&

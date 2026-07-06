@@ -109,7 +109,7 @@ class View extends PresenterState {
                       showBuiltinPlaybackControls: true,
                       playbackPolylineColor: Colors.lightGreen,
                       playbackMarkerIcon: const Icon(
-                        Icons.location_pin,
+                        Icons.arrow_upward,
                         color: Colors.red,
                         size: 100,
                       ),

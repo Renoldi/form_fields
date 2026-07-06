@@ -39,6 +39,10 @@ class CanvasRawMarkerPainter extends CustomPainter {
     required this.radius,
     required this.devicePixelRatio,
     this.iconImage,
+    this.playbackIconImage,
+    this.playbackHaloColor,
+    this.playbackHaloScale = 1.6,
+    this.playbackHaloOpacity = 0.95,
     this.showTitle = true,
     required this.defaultColor,
     this.foregroundColor,
@@ -50,6 +54,10 @@ class CanvasRawMarkerPainter extends CustomPainter {
   final double radius;
   final double devicePixelRatio;
   final ui.Image? iconImage;
+  final ui.Image? playbackIconImage;
+  final Color? playbackHaloColor;
+  final double playbackHaloScale;
+  final double playbackHaloOpacity;
   final bool showTitle;
   final Color defaultColor;
   final Color? foregroundColor;
@@ -190,55 +198,88 @@ class CanvasRawMarkerPainter extends CustomPainter {
           }
           canvas.drawPath(arrowPath, pinPaint);
           canvas.drawPath(arrowPath, strokePaint);
-        } else if (iconImage != null) {
-          final src = Rect.fromLTWH(
-              0, 0, iconImage!.width.toDouble(), iconImage!.height.toDouble());
-          final double destSize =
-              iconImage!.width.toDouble() / devicePixelRatio;
-          final dst = Rect.fromCenter(
-              center: Offset.zero, width: destSize, height: destSize);
-
-          paint.isAntiAlias = true;
-          final oldFilter = paint.colorFilter;
-          final outlineRect = Rect.fromCenter(
-              center: Offset.zero,
-              width: destSize * 1.5,
-              height: destSize * 1.5);
-          final haloScale = isPlayback ? 2.0 : 1.6;
-          final haloAlpha = isPlayback ? 0.95 : 0.72;
-          final haloRect = Rect.fromCenter(
-              center: Offset.zero,
-              width: destSize * haloScale,
-              height: destSize * haloScale);
-          paint.colorFilter = ColorFilter.mode(
-              markerColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, haloRect, paint);
-
-          paint.colorFilter = ColorFilter.mode(Colors.white, BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, outlineRect, paint);
-          paint.colorFilter = ColorFilter.mode(markerColor, BlendMode.srcIn);
-          canvas.drawImageRect(iconImage!, src, dst, paint);
-          paint.colorFilter = oldFilter;
         } else {
-          if (isPlayback) {
-            final haloPaint = Paint()
-              ..color = markerColor.withValues(alpha: 0.95)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = max(3.0, devicePixelRatio * 3.0);
-            canvas.drawCircle(
-                Offset.zero, headRadius + haloPaint.strokeWidth / 2, haloPaint);
-          }
-          canvas.drawCircle(Offset.zero, headRadius, pinPaint);
-          canvas.drawCircle(Offset.zero, headRadius, strokePaint);
+          final useImage =
+              (isPlayback ? playbackIconImage ?? iconImage : iconImage);
+          if (useImage != null) {
+            final src = Rect.fromLTWH(
+                0, 0, useImage.width.toDouble(), useImage.height.toDouble());
+            final double destSize =
+                useImage.width.toDouble() / devicePixelRatio;
+            final dst = Rect.fromCenter(
+                center: Offset.zero, width: destSize, height: destSize);
 
-          final tailTopY = radiusToUse * 0.5;
-          final tailPath = ui.Path()
-            ..moveTo(0, radiusToUse * 2.2)
-            ..lineTo(-radiusToUse, tailTopY)
-            ..lineTo(radiusToUse, tailTopY)
-            ..close();
-          canvas.drawPath(tailPath, pinPaint);
-          canvas.drawPath(tailPath, strokePaint);
+            paint.isAntiAlias = true;
+            final oldFilter = paint.colorFilter;
+            final outlineRect = Rect.fromCenter(
+                center: Offset.zero,
+                width: destSize * 1.5,
+                height: destSize * 1.5);
+            final haloScale = isPlayback ? playbackHaloScale : 1.6;
+            final haloAlpha = isPlayback ? playbackHaloOpacity : 0.72;
+            final haloRect = Rect.fromCenter(
+                center: Offset.zero,
+                width: destSize * haloScale,
+                height: destSize * haloScale);
+            final isPlaybackImage = isPlayback &&
+                playbackIconImage != null &&
+                useImage == playbackIconImage;
+
+            if (isPlaybackImage) {
+              // For playback-specific rasterized icons, preserve their original
+              // colors (do not tint). Draw a shaped halo by drawing a tinted
+              // copy of the rasterized icon behind the original image.
+              if (isPlayback) {
+                // Determine halo color: prefer explicit `playbackHaloColor`,
+                // otherwise fall back to `markerColor`.
+                final haloColor = playbackHaloColor ?? markerColor;
+                paint.colorFilter = ColorFilter.mode(
+                    haloColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
+                canvas.drawImageRect(useImage, src, haloRect, paint);
+
+                paint.colorFilter =
+                    ColorFilter.mode(Colors.white, BlendMode.srcIn);
+                canvas.drawImageRect(useImage, src, outlineRect, paint);
+                paint.colorFilter = oldFilter;
+              }
+              // Draw original artwork on top without tint.
+              canvas.drawImageRect(useImage, src, dst, paint);
+            } else {
+              // Existing behavior: tint the rasterized icon to match markerColor
+              paint.colorFilter = ColorFilter.mode(
+                  markerColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
+              canvas.drawImageRect(useImage, src, haloRect, paint);
+
+              paint.colorFilter =
+                  ColorFilter.mode(Colors.white, BlendMode.srcIn);
+              canvas.drawImageRect(useImage, src, outlineRect, paint);
+              paint.colorFilter =
+                  ColorFilter.mode(markerColor, BlendMode.srcIn);
+              canvas.drawImageRect(useImage, src, dst, paint);
+              paint.colorFilter = oldFilter;
+            }
+          } else {
+            // fallback to vector pin when no image available
+            if (isPlayback) {
+              final haloPaint = Paint()
+                ..color = markerColor.withValues(alpha: 0.95)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = max(3.0, devicePixelRatio * 3.0);
+              canvas.drawCircle(Offset.zero,
+                  headRadius + haloPaint.strokeWidth / 2, haloPaint);
+            }
+            canvas.drawCircle(Offset.zero, headRadius, pinPaint);
+            canvas.drawCircle(Offset.zero, headRadius, strokePaint);
+
+            final tailTopY = radiusToUse * 0.5;
+            final tailPath = ui.Path()
+              ..moveTo(0, radiusToUse * 2.2)
+              ..lineTo(-radiusToUse, tailTopY)
+              ..lineTo(radiusToUse, tailTopY)
+              ..close();
+            canvas.drawPath(tailPath, pinPaint);
+            canvas.drawPath(tailPath, strokePaint);
+          }
         }
 
         canvas.restore();
@@ -289,6 +330,10 @@ class CanvasRawMarkerPainter extends CustomPainter {
         oldDelegate.center != center ||
         oldDelegate.zoom != zoom ||
         oldDelegate.iconImage != iconImage ||
+        oldDelegate.playbackIconImage != playbackIconImage ||
+        oldDelegate.playbackHaloColor != playbackHaloColor ||
+        oldDelegate.playbackHaloScale != playbackHaloScale ||
+        oldDelegate.playbackHaloOpacity != playbackHaloOpacity ||
         oldDelegate.showTitle != showTitle ||
         oldDelegate.foregroundColor != foregroundColor;
   }
