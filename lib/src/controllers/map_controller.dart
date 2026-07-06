@@ -635,6 +635,41 @@ class FormFieldsMapController {
     }
   }
 
+  /// Upsert a single raw marker: update if an entry with [markerId] exists,
+  /// otherwise insert it. Returns true when the notifier exists and the
+  /// operation was applied.
+  static Future<bool> upsertRawMarker(String id, String markerId, dynamic entry,
+      {bool createMarkerWidgets = true}) async {
+    // Ensure the entry carries the id so batch logic treats it as a
+    // replacement when possible.
+    try {
+      if (entry is ShapeMeta) {
+        entry.id = markerId;
+      } else if (entry is Map) {
+        entry['id'] = markerId;
+      }
+    } catch (_) {}
+    return await batchUpdateRawMarkers(id, [entry],
+        createMarkerWidgets: createMarkerWidgets);
+  }
+
+  /// Update only coordinates of an existing raw marker or append if missing.
+  /// This fast-path delegates to the notifier to avoid full derived-map
+  /// rebuilds and returns true when applied.
+  static bool updateRawMarkerCoordinates(
+      String id, String markerId, List<PointMeta> newPointMetas,
+      {bool createMarkerWidgets = true}) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      n.upsertCoordinates(markerId, newPointMetas,
+          createMarkerWidgets: createMarkerWidgets);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static bool removeRawMarker(String id, String markerId) {
     final n = _getNotifier(id);
     if (n == null) return false;
@@ -1030,6 +1065,18 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   Future<bool> batchUpdateRawMarkers(List<dynamic> updates) async {
     final id = FormFieldsMapController.getIdForController(this);
     return await FormFieldsMapController.batchUpdateRawMarkers(id, updates);
+  }
+
+  Future<bool> upsertRawMarker(String markerId, dynamic entry) async {
+    final id = FormFieldsMapController.getIdForController(this);
+    return await FormFieldsMapController.upsertRawMarker(id, markerId, entry);
+  }
+
+  bool updateRawMarkerCoordinates(
+      String markerId, List<PointMeta> newPointMetas) {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.updateRawMarkerCoordinates(
+        id, markerId, newPointMetas);
   }
 
   void clearRawMarkers() {

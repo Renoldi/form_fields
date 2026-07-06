@@ -411,6 +411,132 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     _scheduleNotify();
   }
 
+  /// Fast-path: update coordinates for a single marker (or shape) identified
+  /// by [id]. When the entry exists and is a `ShapeMeta`, this will replace
+  /// its `pointMetas` with [newPointMetas] and refresh only the affected
+  /// concrete map and cache to avoid a full rebuild.
+  ///
+  /// If the entry does not exist, it will be appended as a new `ShapeMeta`.
+  void upsertCoordinates(String id, List<PointMeta> newPointMetas,
+      {bool createMarkerWidgets = true}) {
+    _ensureControlled();
+
+    // Find existing raw marker index
+    int foundIndex = -1;
+    for (var i = 0; i < _rawMarkersCache.length; i++) {
+      final r = _rawMarkersCache[i];
+      String? rid;
+      if (r is ShapeMeta) rid = r.id;
+      if (r is Map) rid = (r['id'] as String?);
+      if (rid == id) {
+        foundIndex = i;
+        break;
+      }
+    }
+
+    ShapeMeta? sm;
+    String? shapeType;
+    if (foundIndex != -1) {
+      final existing = _rawMarkersCache[foundIndex];
+      if (existing is ShapeMeta) {
+        sm = existing;
+        shapeType = sm.shapeType?.toLowerCase();
+        sm.pointMetas = List<PointMeta>.from(newPointMetas);
+        // replace raw cache entry with updated ShapeMeta
+        _rawMarkersCache[foundIndex] = sm;
+      } else if (existing is Map) {
+        // Update map-style entry if possible
+        existing['lat'] = newPointMetas.first.lat;
+        existing['lon'] = newPointMetas.first.lon;
+        _rawMarkersCache[foundIndex] = existing;
+        shapeType = (existing['shapeType'] as String?)?.toLowerCase();
+      }
+    } else {
+      // Not found -> append a new ShapeMeta entry
+      final newSm = ShapeMeta(pointMetas: newPointMetas, id: id);
+      _rawMarkersCache = List<dynamic>.from(_rawMarkersCache)..add(newSm);
+      sm = newSm;
+      shapeType = sm.shapeType?.toLowerCase();
+    }
+
+    try {
+      // Remove existing concrete maps for this id
+      try {
+        _polygonMap.remove(id);
+      } catch (_) {}
+      try {
+        _polylineMap.remove(id);
+      } catch (_) {}
+      try {
+        _circleMap.remove(id);
+      } catch (_) {}
+      try {
+        _markerMap.remove(id);
+      } catch (_) {}
+
+      // Recreate only the concrete entry for this id based on shapeType
+      if (sm != null && sm.pointMetas != null && sm.pointMetas!.isNotEmpty) {
+        final pms = sm.pointMetas!;
+        final t = (sm.shapeType ?? ShapeTypes.marker).toLowerCase();
+        if (t == ShapeTypes.polygon) {
+          final pts = pms.map((pm) => pm.point).toList(growable: false);
+          final opts = sm.polygonOptions();
+          final poly = Polygon(
+            points: pts,
+            color: opts.fillColor ?? Colors.transparent,
+            borderColor: opts.borderColor ?? Colors.transparent,
+            borderStrokeWidth: opts.borderStrokeWidth ?? 1.0,
+          );
+          _polygonMap[id] = poly;
+          _polygonsCache = _polygonMap.values.toList(growable: false);
+        } else if (t == ShapeTypes.polyline) {
+          final pts = pms.map((pm) => pm.point).toList(growable: false);
+          final opts = sm.polylineOptions();
+          final pl = Polyline(
+            points: pts,
+            strokeWidth: opts.strokeWidth ?? 2.0,
+            color: opts.color ?? Colors.transparent,
+            useStrokeWidthInMeter: opts.useStrokeWidthInMeter ?? true,
+          );
+          _polylineMap[id] = pl;
+          _polylinesCache = _polylineMap.values.toList(growable: false);
+        } else if (t == ShapeTypes.circle) {
+          final center = pms.first.point;
+          final rad = pms.first.rotation ?? 10.0;
+          final opts = sm.circleOptions();
+          final c = CircleMarker(
+            point: center,
+            color: opts.borderColor ?? Colors.transparent,
+            borderStrokeWidth: opts.borderStrokeWidth ?? 0.0,
+            borderColor: opts.borderColor ?? Colors.transparent,
+            useRadiusInMeter: opts.useRadiusInMeter ?? true,
+            radius: opts.radiusMeters ?? rad,
+          );
+          _circleMap[id] = c;
+          _circlesCache = _circleMap.values.toList(growable: false);
+        } else {
+          // marker or default
+          final center = pms.first.point;
+          final opts = sm.markerOptions();
+          final marker = Marker(
+            point: center,
+            width: opts.width?.toDouble() ?? 40,
+            height: opts.height?.toDouble() ?? 40,
+            child: const SizedBox.shrink(),
+          );
+          if (createMarkerWidgets) {
+            _markerMap[id] = marker;
+            _markersCache = _markerMap.values.toList(growable: false);
+          }
+        }
+      } else if (shapeType != null && shapeType == ShapeTypes.marker) {
+        // Map-style marker update already handled via map entry mutation
+      }
+    } catch (_) {}
+
+    _scheduleNotify();
+  }
+
   void clearRawMarkers() {
     _ensureControlled();
     _rawMarkersCache = const [];

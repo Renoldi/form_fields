@@ -9,6 +9,84 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 
+// Compute isolate worker: given serializable raw items, return updated
+// serializable items with new coordinates. This avoids doing CPU-bound
+// coordinate math on the main isolate.
+List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
+    Map<String, dynamic> args) {
+  final items = (args['items'] as List).cast<Map<String, dynamic>>();
+  final randomSeed = args['seed'] as int? ?? 424242;
+  final random = math.Random(randomSeed);
+  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
+  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
+  final randomize = args['randomize'] as bool? ?? true;
+  final range = (args['range'] as num?)?.toDouble() ?? 3.0;
+
+  final out = <Map<String, dynamic>>[];
+  for (final m in items) {
+    try {
+      final shapeType = (m['shapeType'] as String?)?.toLowerCase();
+      if (shapeType != null && m['pointMetas'] is List) {
+        final pms = (m['pointMetas'] as List).cast<Map<String, dynamic>>();
+        if (pms.isEmpty) {
+          out.add(m);
+          continue;
+        }
+        final base = pms.first;
+        double newLat;
+        double newLon;
+        if (randomize) {
+          newLat = centerLat + (random.nextDouble() - 0.5) * range;
+          newLon = centerLng + (random.nextDouble() - 0.5) * range;
+        } else {
+          final dLat = (random.nextDouble() - 0.5) * 0.01;
+          final dLon = (random.nextDouble() - 0.5) * 0.01;
+          newLat = (base['lat'] as num).toDouble() + dLat;
+          newLon = (base['lon'] as num).toDouble() + dLon;
+        }
+        final deltaLat = newLat - (base['lat'] as num).toDouble();
+        final deltaLon = newLon - (base['lon'] as num).toDouble();
+
+        final moved = pms
+            .map((orig) => {
+                  'lat': (orig['lat'] as num).toDouble() + deltaLat,
+                  'lon': (orig['lon'] as num).toDouble() + deltaLon,
+                  if (orig.containsKey('id')) 'id': orig['id'],
+                  if (orig.containsKey('rotation'))
+                    'rotation': orig['rotation'],
+                  if (orig.containsKey('address')) 'address': orig['address'],
+                })
+            .toList(growable: false);
+
+        final copy = Map<String, dynamic>.from(m);
+        copy['pointMetas'] = moved;
+        out.add(copy);
+      } else if (m.containsKey('lat') && m.containsKey('lon')) {
+        double newLat;
+        double newLon;
+        if (randomize) {
+          newLat = centerLat + (random.nextDouble() - 0.5) * range;
+          newLon = centerLng + (random.nextDouble() - 0.5) * range;
+        } else {
+          final dLat = (random.nextDouble() - 0.5) * 0.01;
+          final dLon = (random.nextDouble() - 0.5) * 0.01;
+          newLat = (m['lat'] as num).toDouble() + dLat;
+          newLon = (m['lon'] as num).toDouble() + dLon;
+        }
+        final copy = Map<String, dynamic>.from(m);
+        copy['lat'] = newLat;
+        copy['lon'] = newLon;
+        out.add(copy);
+      } else {
+        out.add(m);
+      }
+    } catch (_) {
+      out.add(m);
+    }
+  }
+  return out;
+}
+
 class MapExamplesViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
   MapExamplesViewModel() {
@@ -103,7 +181,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 50000;
+  int createMarkers = 100000;
   int createPolygons = 5;
   int createPolylines = 5;
   int createCircles = 5;
@@ -507,96 +585,47 @@ class MapExamplesViewModel extends ChangeNotifier {
         debugPrint('_updateMarkersOnce called, current=${current.length}');
       }
       if (current.isEmpty) return;
-      final updated = <dynamic>[];
+
+      // Serialize current entries to a plain-map form suitable for isolates.
+      final serializable = <Map<String, dynamic>>[];
       for (final m in current) {
         if (m is ShapeMeta) {
-          final pms = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
-              ? m.pointMetas!
-              : null;
-          if (pms == null) {
-            updated.add(m);
-            continue;
-          }
-
-          // Compute a new position for the first point, then shift the
-          // whole shape by the same delta so geometry (and sizes) are
-          // preserved (polygons, polylines keep their vertex layout).
-          final base = pms.first;
-          double newLat;
-          double newLon;
-          if (markerUpdateRandomizeCoordinates) {
-            newLat = center.latitude +
-                (_updateRnd.nextDouble() - 0.5) *
-                    markerUpdateRandomRangeDegrees;
-            newLon = center.longitude +
-                (_updateRnd.nextDouble() - 0.5) *
-                    markerUpdateRandomRangeDegrees;
-          } else {
-            final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            newLat = base.lat + dLat;
-            newLon = base.lon + dLon;
-          }
-
-          final deltaLat = newLat - base.lat;
-          final deltaLon = newLon - base.lon;
-
-          final moved = pms
-              .map((orig) => PointMeta(
-                    lat: orig.lat + deltaLat,
-                    lon: orig.lon + deltaLon,
-                    address: orig.address,
-                    rotation: orig.rotation,
-                    id: orig.id,
-                    hit: orig.hit,
-                  ))
+          final pms = (m.pointMetas ?? [])
+              .map((pm) => {
+                    'lat': pm.lat,
+                    'lon': pm.lon,
+                    if (pm.id != null) 'id': pm.id,
+                    if (pm.rotation != null) 'rotation': pm.rotation,
+                    if (pm.address != null) 'address': pm.address,
+                  })
               .toList(growable: false);
-
-          final cm = ShapeMeta(
-            pointMetas: moved,
-            id: m.id,
-            shapeType: m.shapeType,
-            properties: (m.properties != null)
-                ? ({...m.properties!, 'color': m.color})
-                : {'color': m.color},
-            hit: m.hit,
-          );
-          updated.add(cm);
+          serializable.add({
+            'id': m.id,
+            'shapeType': m.shapeType,
+            'pointMetas': pms,
+            'properties': m.properties,
+          });
         } else if (m is Map) {
-          double newLat;
-          double newLon;
-          if (markerUpdateRandomizeCoordinates) {
-            newLat = center.latitude +
-                (_updateRnd.nextDouble() - 0.5) *
-                    markerUpdateRandomRangeDegrees;
-            newLon = center.longitude +
-                (_updateRnd.nextDouble() - 0.5) *
-                    markerUpdateRandomRangeDegrees;
-          } else {
-            final lat = (m['lat'] as num?)?.toDouble() ?? 0.0;
-            final lon = (m['lon'] as num?)?.toDouble() ?? 0.0;
-            final dLat = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            final dLon = (_updateRnd.nextDouble() - 0.5) * 0.01;
-            newLat = lat + dLat;
-            newLon = lon + dLon;
-          }
-          final copy = Map<String, dynamic>.from(m);
-          copy['lat'] = newLat;
-          copy['lon'] = newLon;
-          updated.add(copy);
+          serializable.add(Map<String, dynamic>.from(m));
         } else {
-          updated.add(m);
+          serializable.add({'_raw': '$m'});
         }
       }
-      // Update entries individually to avoid replacing the entire
-      // ============= remove create new rawMarkers list ==============
-      // mapController.setRawMarkers(List<dynamic>.from(updated));
-      // ==========================================================
-      // rawMarkers list (which would recreate derived polylines/polygons).
+
+      // Offload coordinate math to an isolate.
+      final seed = _updateRnd.nextInt(1 << 32);
+      final computed = await compute(_computeUpdatedMarkersIsolate, {
+        'items': serializable,
+        'seed': seed,
+        'centerLat': center.latitude,
+        'centerLng': center.longitude,
+        'randomize': markerUpdateRandomizeCoordinates,
+        'range': markerUpdateRandomRangeDegrees,
+      });
+
+      // Apply updates in batches using notifier/controller batch API.
       final cid = controllerId;
-      // Process updates in chunks to avoid blocking the main thread.
-      // Chunk size scales with total size: larger datasets use larger chunks.
-      final total = updated.length;
+      final total = computed.length;
       int chunkSize;
       if (total >= 20000) {
         chunkSize = 2000;
@@ -610,53 +639,37 @@ class MapExamplesViewModel extends ChangeNotifier {
 
       for (var start = 0; start < total; start += chunkSize) {
         final end = (start + chunkSize).clamp(0, total);
-        final slice = updated.sublist(start, end);
-        // Use batch API to apply all updates in this slice at once.
+        final slice = computed.sublist(start, end);
         try {
           await FormFieldsMapController.batchUpdateRawMarkers(
               cid, List<dynamic>.from(slice),
               createMarkerWidgets: false);
         } catch (_) {
-          // Fallback to per-item updates if batch fails.
+          // Fallback to per-append if batch update fails for some reason.
           for (final u in slice) {
             try {
-              if (u is ShapeMeta && u.id != null) {
-                FormFieldsMapController.updateRawMarker(cid, u.id!, u);
-              } else if (u is Map && u['id'] != null) {
-                FormFieldsMapController.updateRawMarker(
-                    cid, u['id'] as String, u);
-              } else {
-                try {
-                  FormFieldsMapController.appendRawMarkers(cid, [u],
-                      createMarkerWidgets: false);
-                } catch (_) {
-                  try {
-                    mapController.appendRawMarkers([u]);
-                  } catch (_) {}
-                }
-              }
+              await FormFieldsMapController.upsertRawMarker(
+                  cid, (u['id'] as String?) ?? '', u,
+                  createMarkerWidgets: false);
             } catch (_) {}
           }
         }
-        // Let the event loop run to keep UI responsive and allow timers to tick.
+
         try {
           await Future.delayed(const Duration(milliseconds: 16));
         } catch (_) {}
         notifyListeners();
       }
 
-      // After updating raw markers, animate the camera to the first
-      // updated item's coordinate so the user sees the change.
       try {
-        // Collect candidate points from updated entries and pick one at random
         final candidates = <LatLng>[];
-        for (final u in updated) {
-          if (u is ShapeMeta &&
-              u.pointMetas != null &&
-              u.pointMetas!.isNotEmpty) {
-            final p0 = u.pointMetas!.first;
-            candidates.add(LatLng(p0.lat, p0.lon));
-          } else if (u is Map) {
+        for (final u in computed) {
+          if (u['pointMetas'] is List && (u['pointMetas'] as List).isNotEmpty) {
+            final p0 = (u['pointMetas'] as List).first as Map<String, dynamic>;
+            final lat = (p0['lat'] as num?)?.toDouble();
+            final lon = (p0['lon'] as num?)?.toDouble();
+            if (lat != null && lon != null) candidates.add(LatLng(lat, lon));
+          } else if (u.containsKey('lat') && u.containsKey('lon')) {
             final lat = (u['lat'] as num?)?.toDouble();
             final lon = (u['lon'] as num?)?.toDouble();
             if (lat != null && lon != null) candidates.add(LatLng(lat, lon));
@@ -672,7 +685,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       } catch (_) {}
 
-      debugPrint('_updateMarkersOnce completed, updated=${updated.length}');
+      debugPrint('_updateMarkersOnce completed, updated=${computed.length}');
     } catch (_) {
       // ignore
     } finally {
