@@ -81,6 +81,25 @@ class MapExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Enable or disable built-in polyline playback for the example.
+  /// When disabling playback we also stop periodic marker updates.
+  void setEnablePolylinePlayback(bool v) {
+    enablePolylinePlayback = v;
+    // When polyline playback is enabled, stop the periodic marker updates
+    // to avoid conflicting movement simulations. When disabled, resume
+    // periodic updates so markers continue to move.
+    if (v) {
+      try {
+        stopPeriodicMarkerUpdates();
+      } catch (_) {}
+    } else {
+      try {
+        startPeriodicMarkerUpdates();
+      } catch (_) {}
+    }
+    notifyListeners();
+  }
+
   int generatedCircles = 0;
   int totalCircles = 0;
 
@@ -825,11 +844,6 @@ class MapExamplesViewModel extends ChangeNotifier {
         mapController.setBlockingLoading(false);
       } catch (_) {}
     }
-  }
-
-  void setEnablePolylinePlayback(bool v) {
-    enablePolylinePlayback = v;
-    notifyListeners();
   }
 }
 
