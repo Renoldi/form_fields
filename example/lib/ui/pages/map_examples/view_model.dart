@@ -570,7 +570,30 @@ class MapExamplesViewModel extends ChangeNotifier {
           updated.add(m);
         }
       }
-      mapController.setRawMarkers(List<dynamic>.from(updated));
+      // Update entries individually to avoid replacing the entire
+      // ============= remove create new rawMarkers list ==============
+      // mapController.setRawMarkers(List<dynamic>.from(updated));
+      // ==========================================================
+      // rawMarkers list (which would recreate derived polylines/polygons).
+      final cid = controllerId;
+      for (final u in updated) {
+        try {
+          if (u is ShapeMeta && u.id != null) {
+            FormFieldsMapController.updateRawMarker(cid, u.id!, u);
+          } else if (u is Map && u['id'] != null) {
+            FormFieldsMapController.updateRawMarker(cid, u['id'] as String, u);
+          } else {
+            // No id -> append as new entry
+            try {
+              FormFieldsMapController.appendRawMarkers(cid, [u]);
+            } catch (_) {
+              try {
+                mapController.appendRawMarkers([u]);
+              } catch (_) {}
+            }
+          }
+        } catch (_) {}
+      }
       notifyListeners();
 
       // After updating raw markers, animate the camera to the first

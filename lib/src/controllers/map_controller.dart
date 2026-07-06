@@ -504,6 +504,54 @@ class FormFieldsMapController {
     } catch (_) {}
   }
 
+  /// Update a single raw marker by `markerId` for the controller `id`.
+  ///
+  /// This performs a targeted update without replacing the entire
+  /// `rawMarkers` list. It removes any existing derived layer entries
+  /// for the marker id (polygon/polyline/circle/marker), replaces the
+  /// raw marker, and then re-appends the new entry so derived maps are
+  /// re-registered. Returns `true` when an update occurred.
+  static bool updateRawMarker(String id, String markerId, dynamic entry) {
+    final n = _getNotifier(id);
+    if (n == null) return false;
+    try {
+      // Remove any concrete layer entries with this id so the new
+      // entry can re-register cleanly.
+      try {
+        n.removePolygon(markerId);
+      } catch (_) {}
+      try {
+        n.removePolyline(markerId);
+      } catch (_) {}
+      try {
+        n.removeCircle(markerId);
+      } catch (_) {}
+      try {
+        n.removeMarker(markerId);
+      } catch (_) {}
+
+      // Remove raw marker (if present)
+      try {
+        n.removeRawMarker(markerId);
+      } catch (_) {}
+
+      // Append the replacement entry (ShapeMeta or Map) so it is
+      // registered into rawMarkers and any derived maps.
+      try {
+        n.appendRawMarkers([entry]);
+      } catch (_) {
+        try {
+          // Fallback: directly set rawMarkers to include the entry.
+          final combined = List<dynamic>.from(n.rawMarkers)..add(entry);
+          n.rawMarkers = combined;
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static bool removeRawMarker(String id, String markerId) {
     final n = _getNotifier(id);
     if (n == null) return false;
