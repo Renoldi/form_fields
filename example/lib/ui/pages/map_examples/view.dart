@@ -58,6 +58,13 @@ class View extends PresenterState {
                           ),
                           _ActionButton(
                             label:
+                                'Generate Circles (${formatNumber(vm.createCircles)})',
+                            icon: Icons.circle,
+                            onPressed: () => vm.generateCircles(
+                                shapeCount: vm.createCircles),
+                          ),
+                          _ActionButton(
+                            label:
                                 'Generate Polylines (${formatNumber(vm.createPolylines)})',
                             icon: Icons.timeline,
                             onPressed: () => vm.generatePolylines(
@@ -67,13 +74,6 @@ class View extends PresenterState {
                             label: 'Generate 1 Polyline (for playback)',
                             icon: Icons.add_road,
                             onPressed: () => vm.generatePlaybackPolyline(),
-                          ),
-                          _ActionButton(
-                            label:
-                                'Generate Circles (${formatNumber(vm.createCircles)})',
-                            icon: Icons.circle,
-                            onPressed: () => vm.generateCircles(
-                                shapeCount: vm.createCircles),
                           ),
                           _ActionButton(
                             label: 'Clear',
