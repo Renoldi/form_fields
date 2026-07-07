@@ -104,6 +104,11 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
+  // Number of markers (or shapes) that were applied during the most
+  // recent periodic update tick. UI shows this so users can see how many
+  // items were updated/inserted on each periodic update.
+  int lastMarkerUpdatesApplied = 0;
+
   int createMarkers = 1000000;
   int createPolygons = 5;
   int createPolylines = 5;
@@ -529,6 +534,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// each `ShapeMeta` (or map-style marker) by a small random delta.
   Future<void> _updateMarkersOnce() async {
     try {
+      // Reset last-tick counter
+      lastMarkerUpdatesApplied = 0;
+      notifyListeners();
       // --- SERIALIZATION: build `serializable`, `baseHitById`, `basePropsById`
       // This snapshot is used by the compute isolate and also to
       // preserve metadata if we need to regenerate markers (clear+append).
@@ -562,6 +570,19 @@ class MapExamplesViewModel extends ChangeNotifier {
                 if (p0.hit != null) baseHitById[m.id!] = p0.hit;
               } catch (_) {}
             }
+            // Preserve properties for later re-attachment during regeneration
+            if (m.id != null && m.properties != null) {
+              try {
+                basePropsById[m.id!] = Map<String, dynamic>.from(m.properties!);
+              } catch (_) {}
+            }
+          }
+          // Serialize ShapeMeta so the compute isolate can update coordinates
+          try {
+            serializable.add(m.toMap());
+          } catch (_) {
+            // Fallback: include minimal id so item isn't lost
+            serializable.add({'id': m.id ?? ''});
           }
         } else if (m is Map) {
           serializable.add(Map<String, dynamic>.from(m));
@@ -731,15 +752,20 @@ class MapExamplesViewModel extends ChangeNotifier {
                       if (t == ShapeTypes.marker) {
                         generatedMarkers =
                             (generatedMarkers + 1).clamp(0, totalMarkers);
+                        lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.polygon) {
                         generatedPolygons =
                             (generatedPolygons + 1).clamp(0, totalPolygons);
+                        // count polygons toward last updates as well
+                        lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.polyline) {
                         generatedPolylines =
                             (generatedPolylines + 1).clamp(0, totalPolylines);
+                        lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.circle) {
                         generatedCircles =
                             (generatedCircles + 1).clamp(0, totalCircles);
+                        lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       }
                     }
                   } catch (_) {}
@@ -861,15 +887,19 @@ class MapExamplesViewModel extends ChangeNotifier {
                 if (t == ShapeTypes.marker) {
                   generatedMarkers =
                       (generatedMarkers + 1).clamp(0, totalMarkers);
+                  lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.polygon) {
                   generatedPolygons =
                       (generatedPolygons + 1).clamp(0, totalPolygons);
+                  lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.polyline) {
                   generatedPolylines =
                       (generatedPolylines + 1).clamp(0, totalPolylines);
+                  lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.circle) {
                   generatedCircles =
                       (generatedCircles + 1).clamp(0, totalCircles);
+                  lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 }
               } catch (_) {}
             }
