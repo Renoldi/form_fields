@@ -121,6 +121,16 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// Default ~3 degrees box (same scale as initial generation).
   double markerUpdateRandomRangeDegrees = 3.0;
 
+  /// When true, `_updateMarkersOnce` will request creation of marker
+  /// widgets during batch updates/append so the visible map reflects
+  /// coordinate changes. Disabled by default for maximum throughput.
+  bool showVisualMarkerUpdates = false;
+
+  void setShowVisualMarkerUpdates(bool v) {
+    showVisualMarkerUpdates = v;
+    notifyListeners();
+  }
+
   void commit() {
     notifyListeners();
   }
@@ -508,9 +518,33 @@ class MapExamplesViewModel extends ChangeNotifier {
       }
       if (current.isEmpty) return;
 
-      // Serialize current entries to a plain-map form suitable for isolates.
+      // Preserve hit/title and properties for regeneration, then
+      // serialize current entries to a plain-map form suitable for isolates.
+      final baseHitById = <String, dynamic>{};
+      final basePropsById = <String, Map<String, dynamic>>{};
       final serializable = <Map<String, dynamic>>[];
       for (final m in current) {
+        if (m is ShapeMeta) {
+          if (m.id != null) {
+            if (m.hit != null) {
+              baseHitById[m.id!] = m.hit;
+            }
+            // Some markers store hit (title/subtitle) on the first PointMeta
+            // instead of ShapeMeta.hit. Capture that so titles aren't lost
+            // when we clear and regenerate markers.
+            if ((m.pointMetas ?? []).isNotEmpty) {
+              final p0 = m.pointMetas!.first;
+              try {
+                if (p0.hit != null) baseHitById[m.id!] = p0.hit;
+              } catch (_) {}
+            }
+            if (m.properties != null) {
+              basePropsById[m.id!] = Map<String, dynamic>.from(m.properties!);
+            }
+          }
+        }
+
+        // continue serializing below
         if (m is ShapeMeta) {
           final pms = (m.pointMetas ?? [])
               .map((pm) => {
@@ -592,10 +626,17 @@ class MapExamplesViewModel extends ChangeNotifier {
                           lat: (pm['lat'] as num).toDouble(),
                           lon: (pm['lon'] as num).toDouble()))
                       .toList(growable: false);
+                  final sid = u['id'] as String?;
                   batch.add(ShapeMeta(
                       pointMetas: pmList,
-                      id: u['id'] as String?,
-                      shapeType: u['shapeType'] as String?));
+                      id: sid,
+                      shapeType: u['shapeType'] as String?,
+                      hit: sid != null && baseHitById.containsKey(sid)
+                          ? baseHitById[sid]
+                          : null,
+                      properties: sid != null && basePropsById.containsKey(sid)
+                          ? basePropsById[sid]
+                          : null));
                   continue;
                 }
 
@@ -624,15 +665,35 @@ class MapExamplesViewModel extends ChangeNotifier {
                     baseLon != null) {
                   final newLat = baseLat + (u['deltaLat'] as num).toDouble();
                   final newLon = baseLon + (u['deltaLon'] as num).toDouble();
-                  batch.add(ShapeMeta(pointMetas: [
-                    PointMeta(lat: newLat, lon: newLon, id: idv)
-                  ], id: idv, shapeType: ShapeTypes.marker));
+                  batch.add(ShapeMeta(
+                      pointMetas: [
+                        PointMeta(lat: newLat, lon: newLon, id: idv)
+                      ],
+                      id: idv,
+                      shapeType: ShapeTypes.marker,
+                      hit: baseHitById.containsKey(idv)
+                          ? baseHitById[idv]
+                          : null,
+                      properties: basePropsById.containsKey(idv)
+                          ? basePropsById[idv]
+                          : null));
                 } else if (u.containsKey('lat') && u.containsKey('lon')) {
                   final newLat = (u['lat'] as num).toDouble();
                   final newLon = (u['lon'] as num).toDouble();
-                  batch.add(ShapeMeta(pointMetas: [
-                    PointMeta(lat: newLat, lon: newLon, id: u['id'] as String?)
-                  ], id: u['id'] as String?, shapeType: ShapeTypes.marker));
+                  final sid2 = u['id'] as String?;
+                  batch.add(ShapeMeta(
+                      pointMetas: [
+                        PointMeta(lat: newLat, lon: newLon, id: sid2)
+                      ],
+                      id: sid2,
+                      shapeType: ShapeTypes.marker,
+                      hit: sid2 != null && baseHitById.containsKey(sid2)
+                          ? baseHitById[sid2]
+                          : null,
+                      properties:
+                          sid2 != null && basePropsById.containsKey(sid2)
+                              ? basePropsById[sid2]
+                              : null));
                 } else {
                   // Unknown payload, skip.
                 }
@@ -643,7 +704,7 @@ class MapExamplesViewModel extends ChangeNotifier {
               try {
                 await FormFieldsMapController.appendRawMarkers(
                     cid, List<dynamic>.from(batch),
-                    createMarkerWidgets: false);
+                    createMarkerWidgets: showVisualMarkerUpdates);
               } catch (_) {
                 // If append fails, ignore and continue; best-effort regeneration.
               }
@@ -698,7 +759,7 @@ class MapExamplesViewModel extends ChangeNotifier {
 
         try {
           await mapController.batchUpdateCoordinates(coordsOnly,
-              createMarkerWidgets: false);
+              createMarkerWidgets: showVisualMarkerUpdates);
         } catch (_) {
           // Fallback to per-item apply.
           for (final u in coordsOnly) {
@@ -713,14 +774,14 @@ class MapExamplesViewModel extends ChangeNotifier {
                     .toList(growable: false);
                 FormFieldsMapController.updateRawMarkerCoordinates(
                     cid, idv, pms,
-                    createMarkerWidgets: false);
+                    createMarkerWidgets: showVisualMarkerUpdates);
               } else if (u.containsKey('lat') && u.containsKey('lon')) {
                 final p = PointMeta(
                     lat: (u['lat'] as num).toDouble(),
                     lon: (u['lon'] as num).toDouble());
                 FormFieldsMapController.updateRawMarkerCoordinates(
                     cid, idv, [p],
-                    createMarkerWidgets: false);
+                    createMarkerWidgets: showVisualMarkerUpdates);
               }
             } catch (_) {}
           }
