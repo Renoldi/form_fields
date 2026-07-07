@@ -639,6 +639,76 @@ class FormFieldsMapController {
     }
   }
 
+  /// High-level helper: accept a list of `ShapeMeta` and perform inserts
+  /// or updates automatically. Consumers can call this with full
+  /// `ShapeMeta` objects and the controller will decide whether to append
+  /// new entries or patch existing ones (using `batchUpdateCoordinates`).
+  /// Returns true when the operation was attempted.
+  static Future<bool> processShapeMetaList(String id, List<ShapeMeta> shapes,
+      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
+    if (shapes.isEmpty) return true;
+
+    // Snapshot existing ids for this controller so we can partition
+    // incoming shapes into updates vs appends.
+    final existing = getRawMarkers(id);
+    final existingIds = <String>{};
+    for (final e in existing) {
+      try {
+        if (e is ShapeMeta && e.id != null) existingIds.add(e.id!);
+        if (e is Map && e['id'] is String) existingIds.add(e['id'] as String);
+      } catch (_) {}
+    }
+
+    final toAppend = <dynamic>[];
+    final updates = <Map<String, dynamic>>[];
+
+    for (final s in shapes) {
+      try {
+        final sid = s.id;
+        if (sid != null && existingIds.contains(sid)) {
+          // Prepare update payload: include full pointMetas when present
+          final map = <String, dynamic>{'id': sid};
+          if (s.pointMetas != null) {
+            map['pointMetas'] =
+                s.pointMetas!.map((pm) => pm.toMap()).toList(growable: false);
+          }
+          updates.add(map);
+        } else {
+          // New entry: append ShapeMeta directly so notifier will register
+          toAppend.add(s);
+        }
+      } catch (_) {}
+    }
+
+    // Apply updates in a single batch if any
+    try {
+      if (updates.isNotEmpty) {
+        // Use static batchUpdateCoordinates which will forward to
+        // the notifier and respect useInPlaceMutation flag.
+        batchUpdateCoordinates(id, updates,
+            createMarkerWidgets: createMarkerWidgets,
+            useInPlaceMutation: useInPlaceMutation);
+      }
+    } catch (_) {}
+
+    // Append new entries if any
+    if (toAppend.isNotEmpty) {
+      try {
+        await appendRawMarkers(id, List<dynamic>.from(toAppend),
+            createMarkerWidgets: createMarkerWidgets);
+      } catch (_) {
+        try {
+          // Fallback: setRawMarkers to include appended entries
+          final merged = List<dynamic>.from(getRawMarkers(id))
+            ..addAll(toAppend);
+          setRawMarkers(id, merged);
+        } catch (_) {}
+      }
+    }
+
+    return true;
+  }
+
   /// Efficiently apply many raw-marker updates for [id] in a single batch.
   /// Returns true when the notifier exists and the operation was applied.
   static Future<bool> batchUpdateRawMarkers(String id, List<dynamic> updates,
@@ -1151,6 +1221,14 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
       {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
     final id = FormFieldsMapController.getIdForController(this);
     return FormFieldsMapController.batchUpdateCoordinates(id, updates,
+        createMarkerWidgets: createMarkerWidgets,
+        useInPlaceMutation: useInPlaceMutation);
+  }
+
+  Future<bool> processShapeMetaList(List<ShapeMeta> shapes,
+      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
+    final id = FormFieldsMapController.getIdForController(this);
+    return await FormFieldsMapController.processShapeMetaList(id, shapes,
         createMarkerWidgets: createMarkerWidgets,
         useInPlaceMutation: useInPlaceMutation);
   }

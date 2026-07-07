@@ -725,6 +725,28 @@ class MapExamplesViewModel extends ChangeNotifier {
                 await FormFieldsMapController.appendRawMarkers(
                     cid, List<dynamic>.from(batch),
                     createMarkerWidgets: showVisualMarkerUpdates);
+                // Update UI counters so progress overlay reflects regeneration
+                for (final b in batch) {
+                  try {
+                    if (b is ShapeMeta) {
+                      final t =
+                          (b.shapeType ?? ShapeTypes.marker).toLowerCase();
+                      if (t == ShapeTypes.marker) {
+                        generatedMarkers =
+                            (generatedMarkers + 1).clamp(0, totalMarkers);
+                      } else if (t == ShapeTypes.polygon) {
+                        generatedPolygons =
+                            (generatedPolygons + 1).clamp(0, totalPolygons);
+                      } else if (t == ShapeTypes.polyline) {
+                        generatedPolylines =
+                            (generatedPolylines + 1).clamp(0, totalPolylines);
+                      } else if (t == ShapeTypes.circle) {
+                        generatedCircles =
+                            (generatedCircles + 1).clamp(0, totalCircles);
+                      }
+                    }
+                  } catch (_) {}
+                }
               } catch (_) {
                 // If append fails, ignore and continue; best-effort regeneration.
               }
@@ -764,16 +786,15 @@ class MapExamplesViewModel extends ChangeNotifier {
         final end = (start + chunkSize).clamp(0, total);
         final slice = computed.sublist(start, end);
 
-        // Transform slice to minimal delta payloads (from compute worker).
-        final coordsOnly = <Map<String, dynamic>>[];
+        // Build ShapeMeta objects and let the controller handle insert vs
+        // update. This centralizes logic in FormFieldsMapController so the
+        // example can simply supply `List<ShapeMeta>`.
+        final shapes = <ShapeMeta>[];
         for (final u in slice) {
           final idv = (u['id'] as String?) ?? '';
           if (idv.isEmpty) continue;
 
           if (u.containsKey('deltaLat') && u.containsKey('deltaLon')) {
-            // Convert delta -> absolute coordinates using the serialized
-            // snapshot if possible so shapes (polylines/polygons/circles)
-            // receive full `pointMetas` updates the notifier can apply.
             final base = baseSnapshotById[idv];
             if (base != null) {
               if (base['pointMetas'] is List &&
@@ -783,116 +804,100 @@ class MapExamplesViewModel extends ChangeNotifier {
                       (base['pointMetas'] as List).cast<Map<String, dynamic>>();
                   final dLat = (u['deltaLat'] as num).toDouble();
                   final dLon = (u['deltaLon'] as num).toDouble();
-                  // Apply the same delta to all pointMetas so polylines/polygons
-                  // and circles are translated as a whole instead of only
-                  // moving the first point.
-                  final newPms = bpms
-                      .map((pm) => Map<String, dynamic>.from(pm)
-                        ..['lat'] = (pm['lat'] as num).toDouble() + dLat
-                        ..['lon'] = (pm['lon'] as num).toDouble() + dLon)
+                  final pms = bpms
+                      .map((pm) => PointMeta(
+                          lat: (pm['lat'] as num).toDouble() + dLat,
+                          lon: (pm['lon'] as num).toDouble() + dLon,
+                          id: pm['id'] as String?))
                       .toList(growable: false);
-                  coordsOnly.add({'id': idv, 'pointMetas': newPms});
+                  shapes.add(ShapeMeta(
+                      pointMetas: pms,
+                      id: idv,
+                      shapeType: (base['shapeType'] as String?)));
                   continue;
                 } catch (_) {}
               }
 
-              // If base had top-level lat/lon, compute absolute values.
               try {
                 if (base.containsKey('lat') && base.containsKey('lon')) {
                   final baseLat = (base['lat'] as num).toDouble();
                   final baseLon = (base['lon'] as num).toDouble();
                   final newLat = baseLat + (u['deltaLat'] as num).toDouble();
                   final newLon = baseLon + (u['deltaLon'] as num).toDouble();
-                  coordsOnly.add({'id': idv, 'lat': newLat, 'lon': newLon});
+                  shapes.add(ShapeMeta(pointMetas: [
+                    PointMeta(lat: newLat, lon: newLon, id: idv)
+                  ], id: idv, shapeType: ShapeTypes.marker));
                   continue;
                 }
               } catch (_) {}
             }
-
-            // Fallback: if we couldn't resolve absolute coords, skip this
-            // update so we don't send unsupported delta payloads to the
-            // notifier.
             continue;
           } else if (u['pointMetas'] is List) {
-            // Compute returned full pointMetas; pass through.
-            coordsOnly.add({'id': idv, 'pointMetas': u['pointMetas']});
+            try {
+              final pms = (u['pointMetas'] as List)
+                  .cast<Map<String, dynamic>>()
+                  .map((pm) => PointMeta(
+                      lat: (pm['lat'] as num).toDouble(),
+                      lon: (pm['lon'] as num).toDouble()))
+                  .toList(growable: false);
+              shapes.add(ShapeMeta(
+                  pointMetas: pms,
+                  id: idv,
+                  shapeType: (u['shapeType'] as String?)));
+            } catch (_) {}
           } else if (u.containsKey('lat') && u.containsKey('lon')) {
-            coordsOnly.add({'id': idv, 'lat': u['lat'], 'lon': u['lon']});
+            try {
+              final p = PointMeta(
+                  lat: (u['lat'] as num).toDouble(),
+                  lon: (u['lon'] as num).toDouble(),
+                  id: idv);
+              shapes.add(ShapeMeta(
+                  pointMetas: [p], id: idv, shapeType: ShapeTypes.marker));
+            } catch (_) {}
           }
         }
 
         try {
-          await mapController.batchUpdateCoordinates(coordsOnly,
-              createMarkerWidgets: showVisualMarkerUpdates);
-        } catch (_) {
-          // --- FALLBACK PER-ITEM UPDATES:
-          // If batch update fails, update markers one-by-one using the
-          // controller convenience `updateRawMarkerCoordinates` (patch).
-          for (final u in coordsOnly) {
-            try {
-              final idv = (u['id'] as String?) ?? '';
-              if (idv.isEmpty) continue;
-              if (u.containsKey('deltaLat') && u.containsKey('deltaLon')) {
-                // Convert delta -> absolute for fallback single-item updates
-                final base = baseSnapshotById[idv];
-                if (base != null) {
-                  try {
-                    if (base['pointMetas'] is List &&
-                        (base['pointMetas'] as List).isNotEmpty) {
-                      final bpms = (base['pointMetas'] as List)
-                          .cast<Map<String, dynamic>>();
-                      final dLat = (u['deltaLat'] as num).toDouble();
-                      final dLon = (u['deltaLon'] as num).toDouble();
-                      final pms = bpms
-                          .map((pm) => PointMeta(
-                              lat: (pm['lat'] as num).toDouble() + dLat,
-                              lon: (pm['lon'] as num).toDouble() + dLon))
-                          .toList(growable: false);
-                      FormFieldsMapController.updateRawMarkerCoordinates(
-                          cid, idv, pms,
-                          createMarkerWidgets: showVisualMarkerUpdates);
-                      continue;
-                    }
-                    if (base.containsKey('lat') && base.containsKey('lon')) {
-                      final baseLat = (base['lat'] as num).toDouble();
-                      final baseLon = (base['lon'] as num).toDouble();
-                      final newLat =
-                          baseLat + (u['deltaLat'] as num).toDouble();
-                      final newLon =
-                          baseLon + (u['deltaLon'] as num).toDouble();
-                      final p = PointMeta(lat: newLat, lon: newLon);
-                      FormFieldsMapController.updateRawMarkerCoordinates(
-                          cid, idv, [p],
-                          createMarkerWidgets: showVisualMarkerUpdates);
-                      continue;
-                    }
-                  } catch (_) {}
+          if (shapes.isNotEmpty) {
+            // Increment UI counters to reflect progress during update-in-place
+            for (final s in shapes) {
+              try {
+                final t = (s.shapeType ?? ShapeTypes.marker).toLowerCase();
+                if (t == ShapeTypes.marker) {
+                  generatedMarkers =
+                      (generatedMarkers + 1).clamp(0, totalMarkers);
+                } else if (t == ShapeTypes.polygon) {
+                  generatedPolygons =
+                      (generatedPolygons + 1).clamp(0, totalPolygons);
+                } else if (t == ShapeTypes.polyline) {
+                  generatedPolylines =
+                      (generatedPolylines + 1).clamp(0, totalPolylines);
+                } else if (t == ShapeTypes.circle) {
+                  generatedCircles =
+                      (generatedCircles + 1).clamp(0, totalCircles);
                 }
-                // if unable to resolve base, skip this id
-                continue;
-              }
-              if (u['pointMetas'] is List) {
-                final pms = (u['pointMetas'] as List)
-                    .map((pm) => PointMeta(
-                        lat: (pm['lat'] as num).toDouble(),
-                        lon: (pm['lon'] as num).toDouble()))
-                    .toList(growable: false);
+              } catch (_) {}
+            }
+            notifyListeners();
+
+            await mapController.processShapeMetaList(shapes,
+                createMarkerWidgets: showVisualMarkerUpdates,
+                useInPlaceMutation: true);
+          }
+        } catch (_) {
+          // Fallback: per-item update using controller convenience.
+          for (final s in shapes) {
+            try {
+              final sid = s.id;
+              if (sid == null) continue;
+              if (s.pointMetas != null && s.pointMetas!.isNotEmpty) {
                 FormFieldsMapController.updateRawMarkerCoordinates(
-                    cid, idv, pms,
-                    createMarkerWidgets: showVisualMarkerUpdates);
-              } else if (u.containsKey('lat') && u.containsKey('lon')) {
-                final p = PointMeta(
-                    lat: (u['lat'] as num).toDouble(),
-                    lon: (u['lon'] as num).toDouble());
-                FormFieldsMapController.updateRawMarkerCoordinates(
-                    cid, idv, [p],
+                    cid, sid, s.pointMetas!,
                     createMarkerWidgets: showVisualMarkerUpdates);
               }
             } catch (_) {}
           }
         }
-
-        // --- FALLBACK END
 
         try {
           await Future.delayed(const Duration(milliseconds: 16));

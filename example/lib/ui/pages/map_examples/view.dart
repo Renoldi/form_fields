@@ -354,7 +354,7 @@ class View extends PresenterState {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            'Markers: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
+                            '${vm.markerUpdatesActive ? 'Processed' : 'Markers'}: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
                         if (vm.totalMarkers > 0)
                           SizedBox(
                             width: 180,
