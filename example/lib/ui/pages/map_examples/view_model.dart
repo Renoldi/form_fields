@@ -508,6 +508,9 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// each `ShapeMeta` (or map-style marker) by a small random delta.
   Future<void> _updateMarkersOnce() async {
     try {
+      // --- SERIALIZATION: build `serializable`, `baseHitById`, `basePropsById`
+      // This snapshot is used by the compute isolate and also to
+      // preserve metadata if we need to regenerate markers (clear+append).
       try {
         mapController.setBlockingLoading(true);
       } catch (_) {}
@@ -567,8 +570,11 @@ class MapExamplesViewModel extends ChangeNotifier {
           serializable.add({'_raw': '$m'});
         }
       }
+      // --- SERIALIZATION END
 
-      // Offload coordinate math to an isolate.
+      // --- OFFLOAD: perform heavy coordinate math in an isolate.
+      // The isolate returns deltas or full pointMetas used by both
+      // regenerate and update-in-place paths.
       final seed = _updateRnd.nextInt(1 << 32);
       final computed = await compute(_computeUpdatedMarkersIsolate, {
         'items': serializable,
@@ -578,6 +584,7 @@ class MapExamplesViewModel extends ChangeNotifier {
         'randomize': markerUpdateRandomizeCoordinates,
         'range': markerUpdateRandomRangeDegrees,
       });
+      // --- OFFLOAD END
 
       // Apply updates in batches using notifier/controller batch API.
       // If there are very many markers then it's often faster to
@@ -586,6 +593,7 @@ class MapExamplesViewModel extends ChangeNotifier {
       final cid = controllerId;
       final total = computed.length;
 
+      // --- REGENERATE PATH (create new markers):
       // If there are a lot of markers, perform a fast regenerate: clear
       // the registry and append new ShapeMeta in large batches. This avoids
       // expensive per-item updates and fallback paths.
@@ -608,6 +616,8 @@ class MapExamplesViewModel extends ChangeNotifier {
           } catch (_) {}
 
           // Append regenerated markers in batches to avoid UI stalls.
+          // (This is the "buat baru" path: calls `mapController.clearRawMarkers()`
+          //  then `FormFieldsMapController.appendRawMarkers(...)` to recreate.)
           const regenBatchSize = 4096;
           var ridx = 0;
           while (ridx < computed.length) {
@@ -715,6 +725,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             await Future.delayed(Duration.zero);
           }
 
+          // --- REGENERATE END
           debugPrint('_updateMarkersOnce: regeneration complete');
           return;
         } catch (e) {
@@ -724,7 +735,10 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       }
 
-      // Normal update-in-place path when total is small enough.
+      // --- UPDATE-IN-PLACE PATH:
+      // Normal update-in-place path when total is small enough. This uses
+      // `mapController.batchUpdateCoordinates(...)` to patch coordinates
+      // without clearing the registry (keeps existing marker entries).
       int chunkSize;
       if (total >= 20000) {
         chunkSize = 2000;
@@ -761,7 +775,9 @@ class MapExamplesViewModel extends ChangeNotifier {
           await mapController.batchUpdateCoordinates(coordsOnly,
               createMarkerWidgets: showVisualMarkerUpdates);
         } catch (_) {
-          // Fallback to per-item apply.
+          // --- FALLBACK PER-ITEM UPDATES:
+          // If batch update fails, update markers one-by-one using the
+          // controller convenience `updateRawMarkerCoordinates` (patch).
           for (final u in coordsOnly) {
             try {
               final idv = (u['id'] as String?) ?? '';
@@ -787,11 +803,15 @@ class MapExamplesViewModel extends ChangeNotifier {
           }
         }
 
+        // --- FALLBACK END
+
         try {
           await Future.delayed(const Duration(milliseconds: 16));
         } catch (_) {}
         notifyListeners();
       }
+
+      // --- UPDATE-IN-PLACE END
 
       try {
         final candidates = <LatLng>[];
