@@ -467,7 +467,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
   void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(seconds: 60),
+      {Duration interval = const Duration(seconds: 30),
       bool randomize = true}) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
@@ -571,6 +571,16 @@ class MapExamplesViewModel extends ChangeNotifier {
         }
       }
       // --- SERIALIZATION END
+
+      // Build a quick lookup of the original serializable entries by id.
+      // This is used by the update-in-place path to convert returned
+      // deltas (`deltaLat`/`deltaLon`) into absolute `pointMetas` or
+      // `lat`/`lon` payloads that the notifier understands.
+      final baseSnapshotById = <String, Map<String, dynamic>>{};
+      for (final b in serializable) {
+        final bid = (b['id'] as String?) ?? '';
+        if (bid.isNotEmpty) baseSnapshotById[bid] = b;
+      }
 
       // --- OFFLOAD: perform heavy coordinate math in an isolate.
       // The isolate returns deltas or full pointMetas used by both
@@ -757,17 +767,57 @@ class MapExamplesViewModel extends ChangeNotifier {
         // Transform slice to minimal delta payloads (from compute worker).
         final coordsOnly = <Map<String, dynamic>>[];
         for (final u in slice) {
+          final idv = (u['id'] as String?) ?? '';
+          if (idv.isEmpty) continue;
+
           if (u.containsKey('deltaLat') && u.containsKey('deltaLon')) {
-            coordsOnly.add({
-              'id': u['id'],
-              'deltaLat': u['deltaLat'],
-              'deltaLon': u['deltaLon']
-            });
+            // Convert delta -> absolute coordinates using the serialized
+            // snapshot if possible so shapes (polylines/polygons/circles)
+            // receive full `pointMetas` updates the notifier can apply.
+            final base = baseSnapshotById[idv];
+            if (base != null) {
+              if (base['pointMetas'] is List &&
+                  (base['pointMetas'] as List).isNotEmpty) {
+                try {
+                  final bpms =
+                      (base['pointMetas'] as List).cast<Map<String, dynamic>>();
+                  final dLat = (u['deltaLat'] as num).toDouble();
+                  final dLon = (u['deltaLon'] as num).toDouble();
+                  // Apply the same delta to all pointMetas so polylines/polygons
+                  // and circles are translated as a whole instead of only
+                  // moving the first point.
+                  final newPms = bpms
+                      .map((pm) => Map<String, dynamic>.from(pm)
+                        ..['lat'] = (pm['lat'] as num).toDouble() + dLat
+                        ..['lon'] = (pm['lon'] as num).toDouble() + dLon)
+                      .toList(growable: false);
+                  coordsOnly.add({'id': idv, 'pointMetas': newPms});
+                  continue;
+                } catch (_) {}
+              }
+
+              // If base had top-level lat/lon, compute absolute values.
+              try {
+                if (base.containsKey('lat') && base.containsKey('lon')) {
+                  final baseLat = (base['lat'] as num).toDouble();
+                  final baseLon = (base['lon'] as num).toDouble();
+                  final newLat = baseLat + (u['deltaLat'] as num).toDouble();
+                  final newLon = baseLon + (u['deltaLon'] as num).toDouble();
+                  coordsOnly.add({'id': idv, 'lat': newLat, 'lon': newLon});
+                  continue;
+                }
+              } catch (_) {}
+            }
+
+            // Fallback: if we couldn't resolve absolute coords, skip this
+            // update so we don't send unsupported delta payloads to the
+            // notifier.
+            continue;
           } else if (u['pointMetas'] is List) {
-            // Fallback: if compute returned full pointMetas, keep them.
-            coordsOnly.add({'id': u['id'], 'pointMetas': u['pointMetas']});
+            // Compute returned full pointMetas; pass through.
+            coordsOnly.add({'id': idv, 'pointMetas': u['pointMetas']});
           } else if (u.containsKey('lat') && u.containsKey('lon')) {
-            coordsOnly.add({'id': u['id'], 'lat': u['lat'], 'lon': u['lon']});
+            coordsOnly.add({'id': idv, 'lat': u['lat'], 'lon': u['lon']});
           }
         }
 
@@ -782,6 +832,45 @@ class MapExamplesViewModel extends ChangeNotifier {
             try {
               final idv = (u['id'] as String?) ?? '';
               if (idv.isEmpty) continue;
+              if (u.containsKey('deltaLat') && u.containsKey('deltaLon')) {
+                // Convert delta -> absolute for fallback single-item updates
+                final base = baseSnapshotById[idv];
+                if (base != null) {
+                  try {
+                    if (base['pointMetas'] is List &&
+                        (base['pointMetas'] as List).isNotEmpty) {
+                      final bpms = (base['pointMetas'] as List)
+                          .cast<Map<String, dynamic>>();
+                      final dLat = (u['deltaLat'] as num).toDouble();
+                      final dLon = (u['deltaLon'] as num).toDouble();
+                      final pms = bpms
+                          .map((pm) => PointMeta(
+                              lat: (pm['lat'] as num).toDouble() + dLat,
+                              lon: (pm['lon'] as num).toDouble() + dLon))
+                          .toList(growable: false);
+                      FormFieldsMapController.updateRawMarkerCoordinates(
+                          cid, idv, pms,
+                          createMarkerWidgets: showVisualMarkerUpdates);
+                      continue;
+                    }
+                    if (base.containsKey('lat') && base.containsKey('lon')) {
+                      final baseLat = (base['lat'] as num).toDouble();
+                      final baseLon = (base['lon'] as num).toDouble();
+                      final newLat =
+                          baseLat + (u['deltaLat'] as num).toDouble();
+                      final newLon =
+                          baseLon + (u['deltaLon'] as num).toDouble();
+                      final p = PointMeta(lat: newLat, lon: newLon);
+                      FormFieldsMapController.updateRawMarkerCoordinates(
+                          cid, idv, [p],
+                          createMarkerWidgets: showVisualMarkerUpdates);
+                      continue;
+                    }
+                  } catch (_) {}
+                }
+                // if unable to resolve base, skip this id
+                continue;
+              }
               if (u['pointMetas'] is List) {
                 final pms = (u['pointMetas'] as List)
                     .map((pm) => PointMeta(

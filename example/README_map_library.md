@@ -68,3 +68,15 @@ Jika Anda mau, saya bisa:
 
 - Menambahkan tautan baris di README ke lokasi kode spesifik, atau
 - Membuat versi ringkasan untuk README utama paket.
+
+Code references (important lines in the example)
+
+- `regenerateThreshold` (decides regenerate vs update-in-place): [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L600)
+- `FormFieldsMapController.appendRawMarkers(...)` used during regeneration (clear+append): [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L715)
+- `mapController.batchUpdateCoordinates(...)` used for update-in-place (batch patch): [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L775)
+- Marker id generation in `compute` generator (`_generateMarkersIsolate`): [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L1091)
+- Example marker id pattern (per-marker id): [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L1110)
+- Playback polyline id creation: [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L994)
+- Circle id creation example: [example/lib/ui/pages/map_examples/view_model.dart](example/lib/ui/pages/map_examples/view_model.dart#L1058)
+
+These links point to the in-repo example implementation so you can quickly inspect the exact code paths mentioned in this guide.
