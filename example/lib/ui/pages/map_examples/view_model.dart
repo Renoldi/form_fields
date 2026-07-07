@@ -9,84 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 
-// Compute isolate worker: given serializable raw items, return updated
-// serializable items with new coordinates. This avoids doing CPU-bound
-// coordinate math on the main isolate.
-List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
-    Map<String, dynamic> args) {
-  final items = (args['items'] as List).cast<Map<String, dynamic>>();
-  final randomSeed = args['seed'] as int? ?? 424242;
-  final random = math.Random(randomSeed);
-  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
-  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
-  final randomize = args['randomize'] as bool? ?? true;
-  final range = (args['range'] as num?)?.toDouble() ?? 3.0;
-
-  final out = <Map<String, dynamic>>[];
-  for (final m in items) {
-    try {
-      final shapeType = (m['shapeType'] as String?)?.toLowerCase();
-      if (shapeType != null && m['pointMetas'] is List) {
-        final pms = (m['pointMetas'] as List).cast<Map<String, dynamic>>();
-        if (pms.isEmpty) {
-          out.add(m);
-          continue;
-        }
-        final base = pms.first;
-        double newLat;
-        double newLon;
-        if (randomize) {
-          newLat = centerLat + (random.nextDouble() - 0.5) * range;
-          newLon = centerLng + (random.nextDouble() - 0.5) * range;
-        } else {
-          final dLat = (random.nextDouble() - 0.5) * 0.01;
-          final dLon = (random.nextDouble() - 0.5) * 0.01;
-          newLat = (base['lat'] as num).toDouble() + dLat;
-          newLon = (base['lon'] as num).toDouble() + dLon;
-        }
-        final deltaLat = newLat - (base['lat'] as num).toDouble();
-        final deltaLon = newLon - (base['lon'] as num).toDouble();
-
-        final moved = pms
-            .map((orig) => {
-                  'lat': (orig['lat'] as num).toDouble() + deltaLat,
-                  'lon': (orig['lon'] as num).toDouble() + deltaLon,
-                  if (orig.containsKey('id')) 'id': orig['id'],
-                  if (orig.containsKey('rotation'))
-                    'rotation': orig['rotation'],
-                  if (orig.containsKey('address')) 'address': orig['address'],
-                })
-            .toList(growable: false);
-
-        final copy = Map<String, dynamic>.from(m);
-        copy['pointMetas'] = moved;
-        out.add(copy);
-      } else if (m.containsKey('lat') && m.containsKey('lon')) {
-        double newLat;
-        double newLon;
-        if (randomize) {
-          newLat = centerLat + (random.nextDouble() - 0.5) * range;
-          newLon = centerLng + (random.nextDouble() - 0.5) * range;
-        } else {
-          final dLat = (random.nextDouble() - 0.5) * 0.01;
-          final dLon = (random.nextDouble() - 0.5) * 0.01;
-          newLat = (m['lat'] as num).toDouble() + dLat;
-          newLon = (m['lon'] as num).toDouble() + dLon;
-        }
-        final copy = Map<String, dynamic>.from(m);
-        copy['lat'] = newLat;
-        copy['lon'] = newLon;
-        out.add(copy);
-      } else {
-        out.add(m);
-      }
-    } catch (_) {
-      out.add(m);
-    }
-  }
-  return out;
-}
-
 class MapExamplesViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
   MapExamplesViewModel() {
@@ -181,7 +103,7 @@ class MapExamplesViewModel extends ChangeNotifier {
   int generatedCircles = 0;
   int totalCircles = 0;
 
-  int createMarkers = 100000;
+  int createMarkers = 1000000;
   int createPolygons = 5;
   int createPolylines = 5;
   int createCircles = 5;
@@ -624,8 +546,124 @@ class MapExamplesViewModel extends ChangeNotifier {
       });
 
       // Apply updates in batches using notifier/controller batch API.
+      // If there are very many markers then it's often faster to
+      // regenerate in large append batches instead of doing per-item
+      // coordinate patches. Decide automatically based on total.
       final cid = controllerId;
       final total = computed.length;
+
+      // If there are a lot of markers, perform a fast regenerate: clear
+      // the registry and append new ShapeMeta in large batches. This avoids
+      // expensive per-item updates and fallback paths.
+      const int regenerateThreshold = 5000;
+      if (total >= regenerateThreshold) {
+        try {
+          debugPrint(
+              '_updateMarkersOnce: large update, regenerating markers (total=$total)');
+          // Build a map of base entries keyed by id so we can reconstruct
+          // absolute coordinates using returned deltas.
+          final baseById = <String, Map<String, dynamic>>{};
+          for (final b in serializable) {
+            final bid = (b['id'] as String?) ?? '';
+            if (bid.isNotEmpty) baseById[bid] = b;
+          }
+
+          // Clear existing markers quickly.
+          try {
+            mapController.clearRawMarkers();
+          } catch (_) {}
+
+          // Append regenerated markers in batches to avoid UI stalls.
+          const regenBatchSize = 4096;
+          var ridx = 0;
+          while (ridx < computed.length) {
+            final rend = (ridx + regenBatchSize).clamp(0, computed.length);
+            final rslice = computed.sublist(ridx, rend);
+            final batch = <dynamic>[];
+            for (final u in rslice) {
+              try {
+                // If compute returned full pointMetas, use them directly.
+                if (u['pointMetas'] is List &&
+                    (u['pointMetas'] as List).isNotEmpty) {
+                  final pms =
+                      (u['pointMetas'] as List).cast<Map<String, dynamic>>();
+                  final pmList = pms
+                      .map((pm) => PointMeta(
+                          lat: (pm['lat'] as num).toDouble(),
+                          lon: (pm['lon'] as num).toDouble()))
+                      .toList(growable: false);
+                  batch.add(ShapeMeta(
+                      pointMetas: pmList,
+                      id: u['id'] as String?,
+                      shapeType: u['shapeType'] as String?));
+                  continue;
+                }
+
+                // If only deltas were returned, reconstruct absolute coords
+                // from the original serializable snapshot.
+                final idv = (u['id'] as String?) ?? '';
+                double? baseLat;
+                double? baseLon;
+                if (baseById.containsKey(idv)) {
+                  final b = baseById[idv]!;
+                  if (b.containsKey('lat') && b.containsKey('lon')) {
+                    baseLat = (b['lat'] as num).toDouble();
+                    baseLon = (b['lon'] as num).toDouble();
+                  } else if (b['pointMetas'] is List &&
+                      (b['pointMetas'] as List).isNotEmpty) {
+                    final bp0 =
+                        (b['pointMetas'] as List).first as Map<String, dynamic>;
+                    baseLat = (bp0['lat'] as num).toDouble();
+                    baseLon = (bp0['lon'] as num).toDouble();
+                  }
+                }
+
+                if (u.containsKey('deltaLat') &&
+                    u.containsKey('deltaLon') &&
+                    baseLat != null &&
+                    baseLon != null) {
+                  final newLat = baseLat + (u['deltaLat'] as num).toDouble();
+                  final newLon = baseLon + (u['deltaLon'] as num).toDouble();
+                  batch.add(ShapeMeta(pointMetas: [
+                    PointMeta(lat: newLat, lon: newLon, id: idv)
+                  ], id: idv, shapeType: ShapeTypes.marker));
+                } else if (u.containsKey('lat') && u.containsKey('lon')) {
+                  final newLat = (u['lat'] as num).toDouble();
+                  final newLon = (u['lon'] as num).toDouble();
+                  batch.add(ShapeMeta(pointMetas: [
+                    PointMeta(lat: newLat, lon: newLon, id: u['id'] as String?)
+                  ], id: u['id'] as String?, shapeType: ShapeTypes.marker));
+                } else {
+                  // Unknown payload, skip.
+                }
+              } catch (_) {}
+            }
+
+            if (batch.isNotEmpty) {
+              try {
+                await FormFieldsMapController.appendRawMarkers(
+                    cid, List<dynamic>.from(batch),
+                    createMarkerWidgets: false);
+              } catch (_) {
+                // If append fails, ignore and continue; best-effort regeneration.
+              }
+            }
+
+            ridx = rend;
+            notifyListeners();
+            await Future.delayed(Duration.zero);
+          }
+
+          debugPrint('_updateMarkersOnce: regeneration complete');
+          return;
+        } catch (e) {
+          // If regeneration failed unexpectedly, fall through to normal path.
+          debugPrint(
+              '_updateMarkersOnce: regeneration failed, falling back to patching — $e');
+        }
+      }
+
+      // Normal update-in-place path when total is small enough.
       int chunkSize;
       if (total >= 20000) {
         chunkSize = 2000;
@@ -640,17 +678,50 @@ class MapExamplesViewModel extends ChangeNotifier {
       for (var start = 0; start < total; start += chunkSize) {
         final end = (start + chunkSize).clamp(0, total);
         final slice = computed.sublist(start, end);
+
+        // Transform slice to minimal delta payloads (from compute worker).
+        final coordsOnly = <Map<String, dynamic>>[];
+        for (final u in slice) {
+          if (u.containsKey('deltaLat') && u.containsKey('deltaLon')) {
+            coordsOnly.add({
+              'id': u['id'],
+              'deltaLat': u['deltaLat'],
+              'deltaLon': u['deltaLon']
+            });
+          } else if (u['pointMetas'] is List) {
+            // Fallback: if compute returned full pointMetas, keep them.
+            coordsOnly.add({'id': u['id'], 'pointMetas': u['pointMetas']});
+          } else if (u.containsKey('lat') && u.containsKey('lon')) {
+            coordsOnly.add({'id': u['id'], 'lat': u['lat'], 'lon': u['lon']});
+          }
+        }
+
         try {
-          await FormFieldsMapController.batchUpdateRawMarkers(
-              cid, List<dynamic>.from(slice),
+          await mapController.batchUpdateCoordinates(coordsOnly,
               createMarkerWidgets: false);
         } catch (_) {
-          // Fallback to per-append if batch update fails for some reason.
-          for (final u in slice) {
+          // Fallback to per-item apply.
+          for (final u in coordsOnly) {
             try {
-              await FormFieldsMapController.upsertRawMarker(
-                  cid, (u['id'] as String?) ?? '', u,
-                  createMarkerWidgets: false);
+              final idv = (u['id'] as String?) ?? '';
+              if (idv.isEmpty) continue;
+              if (u['pointMetas'] is List) {
+                final pms = (u['pointMetas'] as List)
+                    .map((pm) => PointMeta(
+                        lat: (pm['lat'] as num).toDouble(),
+                        lon: (pm['lon'] as num).toDouble()))
+                    .toList(growable: false);
+                FormFieldsMapController.updateRawMarkerCoordinates(
+                    cid, idv, pms,
+                    createMarkerWidgets: false);
+              } else if (u.containsKey('lat') && u.containsKey('lon')) {
+                final p = PointMeta(
+                    lat: (u['lat'] as num).toDouble(),
+                    lon: (u['lon'] as num).toDouble());
+                FormFieldsMapController.updateRawMarkerCoordinates(
+                    cid, idv, [p],
+                    createMarkerWidgets: false);
+              }
             } catch (_) {}
           }
         }
@@ -958,6 +1029,71 @@ List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
       'id': 'm${start}_$i',
       'shapeType': ShapeTypes.marker,
     });
+  }
+  return out;
+}
+
+// Compute isolate worker: given serializable raw items, return updated
+// serializable items with new coordinates. This avoids doing CPU-bound
+// coordinate math on the main isolate.
+List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
+    Map<String, dynamic> args) {
+  final items = (args['items'] as List).cast<Map<String, dynamic>>();
+  final randomSeed = args['seed'] as int? ?? 424242;
+  final random = math.Random(randomSeed);
+  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
+  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
+  final randomize = args['randomize'] as bool? ?? true;
+  final range = (args['range'] as num?)?.toDouble() ?? 3.0;
+
+  final out = <Map<String, dynamic>>[];
+  for (final m in items) {
+    try {
+      final shapeType = (m['shapeType'] as String?)?.toLowerCase();
+      if (shapeType != null && m['pointMetas'] is List) {
+        final pms = (m['pointMetas'] as List).cast<Map<String, dynamic>>();
+        if (pms.isEmpty) {
+          out.add({'id': m['id']});
+          continue;
+        }
+        final base = pms.first;
+        double newLat;
+        double newLon;
+        if (randomize) {
+          newLat = centerLat + (random.nextDouble() - 0.5) * range;
+          newLon = centerLng + (random.nextDouble() - 0.5) * range;
+        } else {
+          final dLat = (random.nextDouble() - 0.5) * 0.01;
+          final dLon = (random.nextDouble() - 0.5) * 0.01;
+          newLat = (base['lat'] as num).toDouble() + dLat;
+          newLon = (base['lon'] as num).toDouble() + dLon;
+        }
+        final deltaLat = newLat - (base['lat'] as num).toDouble();
+        final deltaLon = newLon - (base['lon'] as num).toDouble();
+
+        // Return only the id + delta to minimize isolate IPC payload.
+        out.add({'id': m['id'], 'deltaLat': deltaLat, 'deltaLon': deltaLon});
+      } else if (m.containsKey('lat') && m.containsKey('lon')) {
+        double newLat;
+        double newLon;
+        if (randomize) {
+          newLat = centerLat + (random.nextDouble() - 0.5) * range;
+          newLon = centerLng + (random.nextDouble() - 0.5) * range;
+        } else {
+          final dLat = (random.nextDouble() - 0.5) * 0.01;
+          final dLon = (random.nextDouble() - 0.5) * 0.01;
+          newLat = (m['lat'] as num).toDouble() + dLat;
+          newLon = (m['lon'] as num).toDouble() + dLon;
+        }
+        final deltaLat = newLat - (m['lat'] as num).toDouble();
+        final deltaLon = newLon - (m['lon'] as num).toDouble();
+        out.add({'id': m['id'], 'deltaLat': deltaLat, 'deltaLon': deltaLon});
+      } else {
+        out.add(m);
+      }
+    } catch (_) {
+      out.add(m);
+    }
   }
   return out;
 }

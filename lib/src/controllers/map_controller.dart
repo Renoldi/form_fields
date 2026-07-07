@@ -559,6 +559,85 @@ class FormFieldsMapController {
     }
   }
 
+  /// Efficiently apply many coordinate-only updates for [id]. Each update
+  /// should be a Map with `id` and `pointMetas` (serializable List of maps)
+  /// or `lat`/`lon` for single-point markers. Returns true when applied.
+  static bool batchUpdateCoordinates(
+      String id, List<Map<String, dynamic>> updates,
+      {bool createMarkerWidgets = true}) {
+    var n = _getNotifier(id);
+    if (n == null) {
+      try {
+        final created = FormFieldsMapNotifier();
+        registerNotifier(id, created);
+        n = created;
+      } catch (_) {}
+    }
+    if (n == null) return false;
+
+    final shouldBlock = updates.length >= _autoBlockingThreshold;
+    try {
+      if (shouldBlock) {
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          setBlockingLoading(id, true);
+        } catch (_) {}
+        try {
+          // give frame for overlay
+          Future.delayed(Duration.zero);
+        } catch (_) {}
+      }
+
+      try {
+        n.batchUpdateCoordinates(updates,
+            createMarkerWidgets: createMarkerWidgets);
+      } catch (_) {
+        // Fallback: apply per-item via updateRawMarkerCoordinates or upsert
+        for (final u in updates) {
+          try {
+            final idv = (u['id'] as String?) ?? '';
+            if (idv.isEmpty) continue;
+            if (u['pointMetas'] is List) {
+              final pms = (u['pointMetas'] as List)
+                  .map((pm) => PointMeta(
+                      lat: (pm['lat'] as num).toDouble(),
+                      lon: (pm['lon'] as num).toDouble()))
+                  .toList(growable: false);
+              n.upsertCoordinates(idv, pms,
+                  createMarkerWidgets: createMarkerWidgets);
+            } else if (u.containsKey('lat') && u.containsKey('lon')) {
+              // convert to single-point ShapeMeta and upsert
+              final p = PointMeta(
+                  lat: (u['lat'] as num).toDouble(),
+                  lon: (u['lon'] as num).toDouble());
+              n.upsertCoordinates(idv, [p],
+                  createMarkerWidgets: createMarkerWidgets);
+            }
+          } catch (_) {}
+        }
+      }
+
+      return true;
+    } finally {
+      if (shouldBlock) {
+        try {
+          _blockingClearTimers[id]?.cancel();
+        } catch (_) {}
+        try {
+          _blockingClearTimers[id] =
+              Timer(const Duration(milliseconds: 200), () {
+            try {
+              setBlockingLoading(id, false);
+            } catch (_) {}
+            _blockingClearTimers.remove(id);
+          });
+        } catch (_) {}
+      }
+    }
+  }
+
   /// Efficiently apply many raw-marker updates for [id] in a single batch.
   /// Returns true when the notifier exists and the operation was applied.
   static Future<bool> batchUpdateRawMarkers(String id, List<dynamic> updates,
@@ -1065,6 +1144,13 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   Future<bool> batchUpdateRawMarkers(List<dynamic> updates) async {
     final id = FormFieldsMapController.getIdForController(this);
     return await FormFieldsMapController.batchUpdateRawMarkers(id, updates);
+  }
+
+  Future<bool> batchUpdateCoordinates(List<Map<String, dynamic>> updates,
+      {bool createMarkerWidgets = true}) async {
+    final id = FormFieldsMapController.getIdForController(this);
+    return FormFieldsMapController.batchUpdateCoordinates(id, updates,
+        createMarkerWidgets: createMarkerWidgets);
   }
 
   Future<bool> upsertRawMarker(String markerId, dynamic entry) async {
