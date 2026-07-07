@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields_example/data/models/usgs_feed.dart';
 
 class MapExamplesViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
@@ -140,6 +141,9 @@ class MapExamplesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Try to find latitude/longitude inside a possibly nested map/list structure.
+  // Returns a map with keys 'lat' and 'lon' if found, otherwise null.
+
   void clearDemoData() {
     isLoading = false;
     generatedMarkers = totalMarkers = 0;
@@ -201,9 +205,8 @@ class MapExamplesViewModel extends ChangeNotifier {
         final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
         // Build ShapeMeta containing the full polygon vertex list so the
         // widget can render polygons from ShapeMeta directly.
-        final pmList = pts
-            .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
-            .toList(growable: false);
+        final pmList =
+            pts.map((p) => PointMeta.fromMap(p)).toList(growable: false);
         await mapController.appendRawMarkers([
           ShapeMeta(
             pointMetas: pmList,
@@ -225,28 +228,41 @@ class MapExamplesViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> generateMarkers({int markerCount = 1000}) async {
+  Future<void> generateMarkers({int markerCount = 1000, String? apiUrl}) async {
     if (FormFieldsMapController.enableBatchLogging) {
-      debugPrint('generateMarkers called with count=$markerCount');
+      debugPrint(
+          'generateMarkers called with count=$markerCount apiUrl=$apiUrl');
     }
     generatedMarkers = 0;
     totalMarkers = markerCount;
     isLoading = true;
     notifyListeners();
-    // try {
-    //   mapController.setBlockingLoading(true);
-    // } catch (_) {}
 
     // Give the UI one frame to render the blocking overlay.
     await Future.delayed(Duration.zero);
 
-    // Use compute to generate marker data off the main thread.
-    final raw = await compute(_generateMarkersIsolate, {
-      'count': markerCount,
-      'seed': 424242,
-      'centerLat': center.latitude,
-      'centerLng': center.longitude,
-    });
+    // Prepare raw data either from an external API or by generating locally
+    List<dynamic> raw;
+    if (apiUrl != null) {
+      // Attempt to fetch JSON from provided API. Expecting a list of
+      // objects containing at least `lat` and `lon` (or common variants).
+      raw = <dynamic>[];
+      try {
+        raw = await EarthquakeFeed.fetchRawMarkers(apiUrl);
+      } catch (e) {
+        debugPrint(
+            'generateMarkers: failed to fetch/parse apiUrl=$apiUrl — $e');
+        raw = <dynamic>[];
+      }
+    } else {
+      // Use compute to generate marker data off the main thread.
+      raw = await compute(_generateMarkersIsolate, {
+        'count': markerCount,
+        'seed': 424242,
+        'centerLat': center.latitude,
+        'centerLng': center.longitude,
+      });
+    }
 
     // Convert and append in batches on the main isolate.
     // Larger batch size reduces number of notifier append calls.
@@ -257,17 +273,16 @@ class MapExamplesViewModel extends ChangeNotifier {
       final slice = raw.sublist(idx, end);
       final batch = <dynamic>[];
       for (var m in slice) {
+        final lat = (m['lat'] as num).toDouble();
+        final lon = (m['lon'] as num).toDouble();
         batch.add(ShapeMeta(
           pointMetas: [
-            PointMeta(
-              lat: (m['lat'] as num).toDouble(),
-              lon: (m['lon'] as num).toDouble(),
-              hit: (
+            PointMeta.fromMap(LatLng(lat, lon))
+              ..hit = (
                 title: m['title'] as String?,
                 subtitle: m['subtitle'] as String?
-              ),
-              id: m['id'] as String?,
-            )
+              )
+              ..id = m['id'] as String?
           ],
           id: m['id'] as String?,
           shapeType: m['shapeType'] as String?,
@@ -430,7 +445,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             routePoints = enriched;
           }
           final pmList = routePoints
-              .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
+              .map((p) => PointMeta.fromMap(p))
               .toList(growable: false);
           final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
           await mapController.appendRawMarkers([
@@ -541,29 +556,7 @@ class MapExamplesViewModel extends ChangeNotifier {
                 if (p0.hit != null) baseHitById[m.id!] = p0.hit;
               } catch (_) {}
             }
-            if (m.properties != null) {
-              basePropsById[m.id!] = Map<String, dynamic>.from(m.properties!);
-            }
           }
-        }
-
-        // continue serializing below
-        if (m is ShapeMeta) {
-          final pms = (m.pointMetas ?? [])
-              .map((pm) => {
-                    'lat': pm.lat,
-                    'lon': pm.lon,
-                    if (pm.id != null) 'id': pm.id,
-                    if (pm.rotation != null) 'rotation': pm.rotation,
-                    if (pm.address != null) 'address': pm.address,
-                  })
-              .toList(growable: false);
-          serializable.add({
-            'id': m.id,
-            'shapeType': m.shapeType,
-            'pointMetas': pms,
-            'properties': m.properties,
-          });
         } else if (m is Map) {
           serializable.add(Map<String, dynamic>.from(m));
         } else {
@@ -642,9 +635,7 @@ class MapExamplesViewModel extends ChangeNotifier {
                   final pms =
                       (u['pointMetas'] as List).cast<Map<String, dynamic>>();
                   final pmList = pms
-                      .map((pm) => PointMeta(
-                          lat: (pm['lat'] as num).toDouble(),
-                          lon: (pm['lon'] as num).toDouble()))
+                      .map((pm) => PointMeta.fromMap(pm))
                       .toList(growable: false);
                   final sid = u['id'] as String?;
                   batch.add(ShapeMeta(
@@ -687,7 +678,7 @@ class MapExamplesViewModel extends ChangeNotifier {
                   final newLon = baseLon + (u['deltaLon'] as num).toDouble();
                   batch.add(ShapeMeta(
                       pointMetas: [
-                        PointMeta(lat: newLat, lon: newLon, id: idv)
+                        PointMeta.fromMap(LatLng(newLat, newLon))..id = idv
                       ],
                       id: idv,
                       shapeType: ShapeTypes.marker,
@@ -703,7 +694,7 @@ class MapExamplesViewModel extends ChangeNotifier {
                   final sid2 = u['id'] as String?;
                   batch.add(ShapeMeta(
                       pointMetas: [
-                        PointMeta(lat: newLat, lon: newLon, id: sid2)
+                        PointMeta.fromMap(LatLng(newLat, newLon))..id = sid2
                       ],
                       id: sid2,
                       shapeType: ShapeTypes.marker,
@@ -804,12 +795,12 @@ class MapExamplesViewModel extends ChangeNotifier {
                       (base['pointMetas'] as List).cast<Map<String, dynamic>>();
                   final dLat = (u['deltaLat'] as num).toDouble();
                   final dLon = (u['deltaLon'] as num).toDouble();
-                  final pms = bpms
-                      .map((pm) => PointMeta(
-                          lat: (pm['lat'] as num).toDouble() + dLat,
-                          lon: (pm['lon'] as num).toDouble() + dLon,
-                          id: pm['id'] as String?))
-                      .toList(growable: false);
+                  final pms = bpms.map((pm) {
+                    final pt = PointMeta.fromMap(pm);
+                    pt.lat = pt.lat + dLat;
+                    pt.lon = pt.lon + dLon;
+                    return pt;
+                  }).toList(growable: false);
                   shapes.add(ShapeMeta(
                       pointMetas: pms,
                       id: idv,
@@ -836,9 +827,7 @@ class MapExamplesViewModel extends ChangeNotifier {
             try {
               final pms = (u['pointMetas'] as List)
                   .cast<Map<String, dynamic>>()
-                  .map((pm) => PointMeta(
-                      lat: (pm['lat'] as num).toDouble(),
-                      lon: (pm['lon'] as num).toDouble()))
+                  .map((pm) => PointMeta.fromMap(pm))
                   .toList(growable: false);
               shapes.add(ShapeMeta(
                   pointMetas: pms,
@@ -1091,9 +1080,8 @@ class MapExamplesViewModel extends ChangeNotifier {
 
       // Append the full route as ShapeMeta so rendering and playback UI can
       // derive the polyline from ShapeMeta as the canonical source.
-      final pmList = routePoints
-          .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
-          .toList(growable: false);
+      final pmList =
+          routePoints.map((p) => PointMeta.fromMap(p)).toList(growable: false);
       await mapController.appendRawMarkers([
         ShapeMeta(
           pointMetas: pmList,

@@ -51,6 +51,44 @@ class View extends PresenterState {
                                 markerCount: vm.createMarkers),
                           ),
                           _ActionButton(
+                            label: 'Generate from API',
+                            icon: Icons.cloud_download,
+                            onPressed: () async {
+                              final controller = TextEditingController(
+                                  text:
+                                      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+                              final ok = await showDialog<bool?>(
+                                context: context,
+                                builder: (ctx) {
+                                  return AlertDialog(
+                                    title: const Text('API URL'),
+                                    content: TextField(
+                                      controller: controller,
+                                      decoration: const InputDecoration(
+                                          hintText:
+                                              'https://example.com/data.json'),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(false),
+                                          child: const Text('Cancel')),
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(true),
+                                          child: const Text('OK')),
+                                    ],
+                                  );
+                                },
+                              );
+                              if (ok == true &&
+                                  controller.text.trim().isNotEmpty) {
+                                vm.generateMarkers(
+                                    apiUrl: controller.text.trim());
+                              }
+                            },
+                          ),
+                          _ActionButton(
                             label:
                                 'Generate Polygons (${formatNumber(vm.createPolygons)})',
                             icon: Icons.change_history,
