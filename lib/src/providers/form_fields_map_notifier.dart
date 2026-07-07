@@ -543,7 +543,7 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   /// update rawMarkers in-place and refresh only the affected concrete
   /// entries once, then schedule a single debounced notify.
   void batchUpdateCoordinates(List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true}) {
+      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) {
     _ensureControlled();
     if (updates.isEmpty) return;
 
@@ -559,7 +559,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
 
     final updatedIds = <String>{};
 
-    // Apply raw cache updates.
+    // Apply raw cache updates. Support both absolute replacements and
+    // delta translations. When `deltaLat`/`deltaLon` is provided, prefer
+    // mutating existing `PointMeta` in-place to avoid allocations.
     for (final u in updates) {
       try {
         final id = (u['id'] as String?) ?? '';
@@ -585,6 +587,40 @@ class FormFieldsMapNotifier extends ChangeNotifier {
         final idx = idToIndex[id];
         if (idx != null && idx >= 0 && idx < _rawMarkersCache.length) {
           final existing = _rawMarkersCache[idx];
+
+          // Handle delta translation in-place when possible (fast path).
+          if (useInPlaceMutation &&
+              u.containsKey('deltaLat') &&
+              u.containsKey('deltaLon')) {
+            final dLat = (u['deltaLat'] as num).toDouble();
+            final dLon = (u['deltaLon'] as num).toDouble();
+            try {
+              if (existing is ShapeMeta &&
+                  existing.pointMetas != null &&
+                  existing.pointMetas!.isNotEmpty) {
+                for (var pm in existing.pointMetas!) {
+                  pm.lat = pm.lat + dLat;
+                  pm.lon = pm.lon + dLon;
+                }
+                _rawMarkersCache[idx] = existing;
+                updatedIds.add(id);
+                continue;
+              } else if (existing is Map) {
+                final lat = (existing['lat'] as num?)?.toDouble();
+                final lon = (existing['lon'] as num?)?.toDouble();
+                if (lat != null && lon != null) {
+                  existing['lat'] = lat + dLat;
+                  existing['lon'] = lon + dLon;
+                  _rawMarkersCache[idx] = existing;
+                  updatedIds.add(id);
+                  continue;
+                }
+              }
+            } catch (_) {}
+            // If we couldn't apply delta in-place, fall through to other
+            // handling below (replacement or append).
+          }
+
           if (existing is ShapeMeta) {
             if (u['pointMetas'] is List) {
               final pms = (u['pointMetas'] as List)

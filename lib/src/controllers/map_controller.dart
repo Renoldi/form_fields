@@ -564,7 +564,7 @@ class FormFieldsMapController {
   /// or `lat`/`lon` for single-point markers. Returns true when applied.
   static bool batchUpdateCoordinates(
       String id, List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true}) {
+      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) {
     var n = _getNotifier(id);
     if (n == null) {
       try {
@@ -592,7 +592,8 @@ class FormFieldsMapController {
 
       try {
         n.batchUpdateCoordinates(updates,
-            createMarkerWidgets: createMarkerWidgets);
+            createMarkerWidgets: createMarkerWidgets,
+            useInPlaceMutation: useInPlaceMutation);
       } catch (_) {
         // Fallback: apply per-item via updateRawMarkerCoordinates or upsert
         for (final u in updates) {
@@ -1147,10 +1148,11 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   }
 
   Future<bool> batchUpdateCoordinates(List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true}) async {
+      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
     final id = FormFieldsMapController.getIdForController(this);
     return FormFieldsMapController.batchUpdateCoordinates(id, updates,
-        createMarkerWidgets: createMarkerWidgets);
+        createMarkerWidgets: createMarkerWidgets,
+        useInPlaceMutation: useInPlaceMutation);
   }
 
   Future<bool> upsertRawMarker(String markerId, dynamic entry) async {
