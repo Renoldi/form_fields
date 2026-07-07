@@ -96,10 +96,14 @@ class EarthquakeFeed {
 
                   final titlePlace = f.properties?.place;
                   final magLabel = formatMag(f.properties?.mag);
-                  final title = titlePlace ??
-                      (magLabel.isNotEmpty
-                          ? (f.id != null ? '$magLabel (${f.id})' : magLabel)
-                          : f.id);
+                  final title = (titlePlace != null && magLabel.isNotEmpty)
+                      ? '$magLabel - $titlePlace'
+                      : (titlePlace ??
+                          (magLabel.isNotEmpty
+                              ? (f.id != null
+                                  ? '$magLabel (${f.id})'
+                                  : magLabel)
+                              : f.id));
 
                   final timeStr = formatTime(f.properties?.time);
                   final parts = <String>[];
@@ -188,20 +192,22 @@ class EarthquakeFeed {
 
           if (lat != null && lon != null) {
             if (itm is Map) {
-              derivedTitle = itm['title']?.toString() ??
-                  itm['place']?.toString() ??
+              final placeCandidate = itm['place']?.toString() ??
+                  itm['title']?.toString() ??
                   itm['name']?.toString() ??
                   itm['locationName']?.toString();
-              // Fallback to mag or id if no readable place/title
-              derivedTitle ??= () {
-                final magLabel = formatMag(itm['mag'] ?? itm['magnitude']);
-                if (magLabel.isNotEmpty) {
-                  return itm['id'] != null
-                      ? '$magLabel (${itm['id']})'
-                      : magLabel;
-                }
-                return itm['id']?.toString();
-              }();
+              final magLabel = formatMag(itm['mag'] ?? itm['magnitude']);
+              // Prefer 'M <mag> - <place>' when both available
+              if (placeCandidate != null && magLabel.isNotEmpty) {
+                derivedTitle = '$magLabel - $placeCandidate';
+              } else if (placeCandidate != null) {
+                derivedTitle = placeCandidate;
+              } else if (magLabel.isNotEmpty) {
+                derivedTitle =
+                    itm['id'] != null ? '$magLabel (${itm['id']})' : magLabel;
+              } else {
+                derivedTitle = itm['id']?.toString();
+              }
 
               final magVal = itm['mag'] ?? itm['magnitude'];
               final timeVal = itm['time'] ?? itm['timestamp'] ?? itm['time_ms'];

@@ -254,6 +254,12 @@ class MapExamplesViewModel extends ChangeNotifier {
             'generateMarkers: failed to fetch/parse apiUrl=$apiUrl — $e');
         raw = <dynamic>[];
       }
+      // If an API was used, update the total to the actual number of
+      // items returned so the progress display shows a correct denominator
+      // (previously `totalMarkers` remained set to the requested
+      // `markerCount`, which could be different from the API response).
+      totalMarkers = raw.length;
+      notifyListeners();
     } else {
       // Use compute to generate marker data off the main thread.
       raw = await compute(_generateMarkersIsolate, {
