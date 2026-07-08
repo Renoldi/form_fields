@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'presenter.dart';
-import 'view_model.dart';
+import 'main.dart';
+
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 

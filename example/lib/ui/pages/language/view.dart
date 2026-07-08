@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'presenter.dart';
-import 'view_model.dart';
+import 'main.dart';
 
 class View extends PresenterState {
   @override

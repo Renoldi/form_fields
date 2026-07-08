@@ -4,8 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart' as loc;
 import 'package:form_fields_example/ui/widgets/language_indicator.dart';
-import 'presenter.dart';
-import 'view_model.dart';
+import 'main.dart';
 
 final logger = Logger();
 

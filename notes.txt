@@ -99,9 +99,8 @@ Requirements:
 - No logic in Presenter, only structure.
 
 Example: presenter.dart
-import 'package:flutter/material.dart' hide View;
-import 'view_model.dart';
-import 'view.dart';
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 
 class Presenter extends StatefulWidget {
     const Presenter({super.key});

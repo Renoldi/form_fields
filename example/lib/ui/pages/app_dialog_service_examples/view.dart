@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:convert';
 
-import 'presenter.dart';
-import 'view_model.dart';
+import 'main.dart';
 
 class View extends PresenterState {
   // Helper to pretty print JSON

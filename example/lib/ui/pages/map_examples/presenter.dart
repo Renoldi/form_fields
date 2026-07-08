@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart' hide View;
-import 'package:provider/provider.dart';
-import 'view.dart';
-import 'view_model.dart';
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 
 class Presenter extends StatefulWidget {
   const Presenter({super.key});
 
   @override
-  State<Presenter> createState() => View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {

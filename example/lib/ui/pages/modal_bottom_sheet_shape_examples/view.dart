@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
-import 'view_model.dart';
+import 'main.dart';
 
 class ModalBottomSheetShapeExamplesView extends StatelessWidget {
   const ModalBottomSheetShapeExamplesView({super.key});

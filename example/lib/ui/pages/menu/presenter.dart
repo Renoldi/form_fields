@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart' hide View;
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 import 'package:form_fields/form_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:form_fields_example/localization/localizations.dart';
-import 'view_model.dart';
-import 'view.dart';
+
 import '../modal_bottom_sheet_shape_examples/presenter.dart';
 
 class Presenter extends StatefulWidget {
@@ -22,16 +22,16 @@ class Presenter extends StatefulWidget {
   });
 
   @override
-  State<Presenter> createState() => View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {
-  late final ViewModel viewModel;
+  late final main.ViewModel viewModel;
 
   @override
   void initState() {
     super.initState();
-    viewModel = ViewModel(context.read<AppStateNotifier>());
+    viewModel = main.ViewModel(context.read<AppStateNotifier>());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       viewModel.loadUser();
     });

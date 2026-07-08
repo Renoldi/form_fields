@@ -2,11 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'presenter.dart';
-import 'package:form_fields_example/localization/localizations.dart';
-import 'view_model.dart';
-import 'package:form_fields_example/state/app_state_notifier.dart';
+import 'main.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/src/service/flush_service.dart';
 // PluginUtilities no longer needed here

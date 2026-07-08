@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
-import 'view_model.dart';
-import 'view.dart' as worker_view;
+
+import 'main.dart' as main;
 
 class Presenter extends StatefulWidget {
   final VoidCallback onBack;
@@ -9,17 +9,17 @@ class Presenter extends StatefulWidget {
   const Presenter({super.key, required this.onBack});
 
   @override
-  State<Presenter> createState() => worker_view.View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {
-  late final ViewModel viewModel;
+  late final main.ViewModel viewModel;
   VoidCallback? _workmanagerLogListener;
 
   @override
   void initState() {
     super.initState();
-    viewModel = ViewModel();
+    viewModel = main.ViewModel();
     // Load pending items once on init
     viewModel.loadPending();
     // Listen for explicit pending-change notifications and refresh the list.

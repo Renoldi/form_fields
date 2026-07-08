@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart' hide View;
-import 'view_model.dart';
-import 'view.dart';
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 
 class Presenter extends StatefulWidget {
   final VoidCallback onBack;
@@ -21,11 +20,11 @@ class Presenter extends StatefulWidget {
   });
 
   @override
-  State<Presenter> createState() => View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {
-  void handleLogout(ViewModel viewModel) {
+  void handleLogout(main.ViewModel viewModel) {
     viewModel.logout(widget.onLogout);
   }
 }

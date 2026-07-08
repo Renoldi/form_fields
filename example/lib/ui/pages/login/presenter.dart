@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' hide View;
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 import 'package:form_fields/form_fields.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +8,6 @@ import 'package:form_fields_example/config/error_position.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 // Use ErrorType and HttpException from package export
 import 'package:form_fields_example/data/models/user.dart';
-import 'view_model.dart';
-import 'view.dart';
 
 final Logger _logger = Logger();
 
@@ -18,11 +17,11 @@ class Presenter extends StatefulWidget {
   const Presenter({super.key, required this.onLoginSuccess});
 
   @override
-  State<Presenter> createState() => View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {
-  Future<void> handleLogin(ViewModel viewModel) async {
+  Future<void> handleLogin(main.ViewModel viewModel) async {
     if (!_canStartLogin(viewModel)) return;
 
     viewModel.clearError();
@@ -45,12 +44,12 @@ abstract class PresenterState extends State<Presenter> {
     }
   }
 
-  bool _canStartLogin(ViewModel viewModel) {
+  bool _canStartLogin(main.ViewModel viewModel) {
     return mounted && !viewModel.isLoading;
   }
 
   Future<User?> _executeLogin({
-    required ViewModel viewModel,
+    required main.ViewModel viewModel,
     required AppDialogPosition position,
   }) {
     return AppGlobalDialogService.instance.guard(
@@ -74,7 +73,7 @@ abstract class PresenterState extends State<Presenter> {
 
   ({String message, AppDialogType type}) _handleLoginError(
     Object error,
-    ViewModel viewModel,
+    main.ViewModel viewModel,
   ) {
     final mappedError = _mapLoginError(error);
     viewModel.setError(mappedError.message, type: mappedError.type);
@@ -84,11 +83,11 @@ abstract class PresenterState extends State<Presenter> {
     );
   }
 
-  void handleUsernameChanged(String value, ViewModel viewModel) {
+  void handleUsernameChanged(String value, main.ViewModel viewModel) {
     viewModel.updateUsername(value);
   }
 
-  void handlePasswordChanged(String value, ViewModel viewModel) {
+  void handlePasswordChanged(String value, main.ViewModel viewModel) {
     viewModel.updatePassword(value);
   }
 

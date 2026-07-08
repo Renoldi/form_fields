@@ -1,16 +1,14 @@
-import 'package:flutter/material.dart' hide View;
+import 'package:flutter/material.dart';
+import 'main.dart' as main;
 import 'package:provider/provider.dart';
-
-import 'view.dart';
-import 'view_model.dart';
 
 class Presenter extends StatefulWidget {
   const Presenter({super.key});
 
   @override
-  State<Presenter> createState() => View();
+  State<Presenter> createState() => main.View();
 }
 
 abstract class PresenterState extends State<Presenter> {
-  late final ViewModel viewModel = context.read<ViewModel>();
+  late final main.ViewModel viewModel = context.read<main.ViewModel>();
 }

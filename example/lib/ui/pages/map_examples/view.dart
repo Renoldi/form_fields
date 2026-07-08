@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'presenter.dart';
-import 'package:form_fields_example/ui/pages/map_examples/view_model.dart';
+import 'main.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/localization/localizations.dart';
