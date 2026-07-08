@@ -62,6 +62,26 @@ class ViewModel extends ChangeNotifier {
   String? playbackPolylineId;
   bool isPlaybackPlaying = false;
 
+  /// Prevent showing multiple playback bottom sheets simultaneously.
+  bool isPlaybackSheetOpen = false;
+
+  /// Latest playback point info shown in the bottom sheet. Updated when
+  /// playback advances so an already-open sheet can reflect new details.
+  String? playbackLastPolylineId;
+  int? playbackLastIndex;
+  LatLng? playbackLastPoint;
+  dynamic playbackLastShape;
+
+  /// Update the last playback info and notify listeners so UI can refresh.
+  void setLastPlaybackInfo(
+      {String? polylineId, int? index, LatLng? point, dynamic shape}) {
+    playbackLastPolylineId = polylineId;
+    playbackLastIndex = index;
+    playbackLastPoint = point;
+    playbackLastShape = shape;
+    notifyListeners();
+  }
+
   /// Currently selected feature for the example UI and `FormFieldsMap`.
   /// Use `FormFieldsMapFeature.playback` to enable playback-related UI.
   FormFieldsMapFeature? selectedFeature = FormFieldsMapFeature.map;

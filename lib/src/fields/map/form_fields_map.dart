@@ -31,6 +31,7 @@ class FormFieldsMapPlaybackConfig {
     this.playbackHaloColor,
     this.playbackHaloScale = 1.6,
     this.playbackHaloOpacity = 0.95,
+    this.onPointReached,
   });
 
   final Duration playbackInterval;
@@ -61,6 +62,14 @@ class FormFieldsMapPlaybackConfig {
 
   /// Opacity applied to the halo tint (0.0 - 1.0).
   final double playbackHaloOpacity;
+
+  /// Optional callback invoked when playback reaches a point during
+  /// polyline playback. Provides the `polylineId` (may be null), the
+  /// zero-based `index` into the interpolated playback points, and the
+  /// `LatLng` of the reached point. Consumers can use this to show
+  /// details (e.g. a bottom sheet) for the current playback location.
+  final void Function(String? polylineId, int index, LatLng point)?
+      onPointReached;
 }
 
 /// Configuration bucket for general map options.
@@ -1114,6 +1123,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (_isPlaying && _playbackFollowCamera) {
           animateTo(p, _playbackTargetZoom, curve: _playbackCurve);
         }
+      } catch (_) {}
+      // Notify consumers when a playback point is reached so they can
+      // react (e.g. show a bottom sheet with history details).
+      try {
+        widget.playbackConfig?.onPointReached
+            ?.call(_playbackPolylineId, _playbackIndex, p);
       } catch (_) {}
     } catch (_) {}
   }

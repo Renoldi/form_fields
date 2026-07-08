@@ -229,6 +229,213 @@ class View extends PresenterState {
                         ),
                         playbackFollowCamera: true,
                         playbackAutoStart: true,
+                        onPointReached: (polylineId, index, point) async {
+                          // Update VM with latest playback info so sheet content
+                          // (if open) can react immediately.
+                          final raw = FormFieldsMapController.getRawMarkers(
+                              vm.controllerId);
+                          dynamic shape;
+                          if (polylineId != null) {
+                            try {
+                              shape = raw.firstWhere((r) {
+                                try {
+                                  if (r is ShapeMeta) return r.id == polylineId;
+                                  if (r is Map) return r['id'] == polylineId;
+                                } catch (_) {}
+                                return false;
+                              });
+                            } catch (_) {
+                              shape = null;
+                            }
+                          }
+
+                          vm.setLastPlaybackInfo(
+                              polylineId: polylineId,
+                              index: index,
+                              point: point,
+                              shape: shape);
+
+                          if (vm.isPlaybackSheetOpen) return;
+                          vm.isPlaybackSheetOpen = true;
+                          try {
+                            await showAppModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              showDragHandle: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20)),
+                              ),
+                              builder: (ctx) {
+                                return ChangeNotifierProvider.value(
+                                  value: vm,
+                                  child: Consumer<ViewModel>(
+                                    builder: (ctx2, vm2, _) {
+                                      final title = () {
+                                        try {
+                                          final s = vm2.playbackLastShape;
+                                          if (s is ShapeMeta) {
+                                            return s.hit?.title;
+                                          }
+                                          if (s is Map) {
+                                            return (s['hit'] as Map?)?['title'];
+                                          }
+                                        } catch (_) {}
+                                        return vm2.playbackLastPolylineId !=
+                                                null
+                                            ? 'Polyline ${vm2.playbackLastPolylineId}'
+                                            : 'Playback point';
+                                      }();
+
+                                      final Map<String, dynamic> properties =
+                                          () {
+                                        try {
+                                          final s = vm2.playbackLastShape;
+                                          if (s is ShapeMeta) {
+                                            return s.properties ?? {};
+                                          }
+                                          if (s is Map) {
+                                            return s['properties'] ?? {};
+                                          }
+                                        } catch (_) {}
+                                        return <String, dynamic>{};
+                                      }();
+
+                                      final int? pointCount = () {
+                                        try {
+                                          final s = vm2.playbackLastShape;
+                                          if (s is ShapeMeta &&
+                                              s.pointMetas != null) {
+                                            return s.pointMetas!.length;
+                                          }
+                                          if (s is Map &&
+                                              s['pointMetas'] is List) {
+                                            return (s['pointMetas'] as List)
+                                                .length;
+                                          }
+                                        } catch (_) {}
+                                        return null;
+                                      }();
+
+                                      final displayIndex =
+                                          vm2.playbackLastIndex;
+                                      final displayPoint =
+                                          vm2.playbackLastPoint;
+
+                                      return Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 12, 16, 20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Center(
+                                              child: Container(
+                                                width: 40,
+                                                height: 4,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[300],
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              title ?? 'Playback point reached',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Card(
+                                              elevation: 2,
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          12)),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    if (displayIndex != null)
+                                                      Text(
+                                                          'Index: $displayIndex'),
+                                                    if (displayPoint != null)
+                                                      Text(
+                                                          'Coords: ${displayPoint.latitude.toStringAsFixed(6)}, ${displayPoint.longitude.toStringAsFixed(6)}'),
+                                                    if (pointCount != null)
+                                                      Text(
+                                                          'Points: $pointCount'),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            if (properties.isNotEmpty) ...[
+                                              const Text('Properties',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600)),
+                                              const SizedBox(height: 6),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 6,
+                                                children: properties.entries
+                                                    .map((e) => Chip(
+                                                        label: Text(
+                                                            '${e.key}: ${e.value}')))
+                                                    .toList(),
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.end,
+                                              children: [
+                                                TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(ctx2)
+                                                            .pop(),
+                                                    child: const Text('Close')),
+                                                const SizedBox(width: 8),
+                                                ElevatedButton(
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.lightGreen,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8)),
+                                                  ),
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx2).pop(),
+                                                  child: const Text('Done'),
+                                                ),
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            );
+                          } finally {
+                            vm.isPlaybackSheetOpen = false;
+                          }
+                        },
                       ),
                       // moved canvas marker settings into `mapConfig`
                       onCenterChanged: (value) {
