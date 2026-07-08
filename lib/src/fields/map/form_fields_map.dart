@@ -1571,18 +1571,18 @@ class FormFieldsMapState extends State<FormFieldsMap>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!_playbackEnabled) ...[
-                Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0, vertical: 6.0),
-                    child: Text(
-                      'Zoom: ${(_lastZoom ?? widget.initialZoom).toStringAsFixed(1)}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
+                // Card(
+                //   elevation: 2,
+                //   child: Padding(
+                //     padding: const EdgeInsets.symmetric(
+                //         horizontal: 8.0, vertical: 6.0),
+                //     child: Text(
+                //       'Zoom: ${(_lastZoom ?? widget.initialZoom).toStringAsFixed(1)}',
+                //       style: const TextStyle(fontSize: 12),
+                //     ),
+                //   ),
+                // ),
+                // const SizedBox(height: 8),
                 AppButton(
                   type: AppButtonType.fab,
                   size: AppSize.small,
