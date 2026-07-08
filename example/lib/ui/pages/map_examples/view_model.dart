@@ -5,12 +5,15 @@ import 'package:flutter/foundation.dart';
 // Use the package's Dio utility for HTTP requests instead of HttpClient.
 
 import 'package:flutter/material.dart';
+import 'package:form_fields_example/state/app_state_notifier.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/data/models/usgs_feed.dart';
 
 class ViewModel extends ChangeNotifier {
+  AppStateNotifier appState = AppStateNotifier();
+
   final MapController mapController = MapController();
   ViewModel() {
     try {
@@ -20,6 +23,7 @@ class ViewModel extends ChangeNotifier {
       // to. This prevents timing issues when the VM toggles loading
       // before the widget has registered its fallback notifier.
       mapController.registerWithNotifier();
+      appState.addListener(notifyListeners);
     } catch (_) {}
   }
   String get controllerId =>
@@ -36,9 +40,17 @@ class ViewModel extends ChangeNotifier {
 
   bool useCanvasMarkers = false;
   bool showTitle = true;
+  // Whether a location-finding operation is in progress.
+  bool _findingLocation = false;
 
   // Progress counters
   bool isLoading = false;
+  // Per-action loading flags so UI buttons can show per-button spinners.
+  bool generatingMarkers = false;
+  bool fetchingFromApi = false;
+  bool generatingPolygons = false;
+  bool generatingPolylines = false;
+  bool generatingCircles = false;
   int generatedMarkers = 0;
   int totalMarkers = 0;
 
@@ -50,10 +62,9 @@ class ViewModel extends ChangeNotifier {
   String? playbackPolylineId;
   bool isPlaybackPlaying = false;
 
-  /// Whether the example UI (and the FormFieldsMap) should enable
-  /// built-in polyline playback features. Consumers can toggle this to
-  /// hide playback controls and related actions in the example.
-  bool enablePolylinePlayback = false;
+  /// Currently selected feature for the example UI and `FormFieldsMap`.
+  /// Use `FormFieldsMapFeature.playback` to enable playback-related UI.
+  FormFieldsMapFeature? selectedFeature = FormFieldsMapFeature.map;
 
   /// Local UI state for selected playback interval and interpolation steps
   /// so buttons in the example can reflect current selection.
@@ -82,14 +93,11 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Enable or disable built-in polyline playback for the example.
-  /// When disabling playback we also stop periodic marker updates.
-  void setEnablePolylinePlayback(bool v) {
-    enablePolylinePlayback = v;
-    // When polyline playback is enabled, stop the periodic marker updates
-    // to avoid conflicting movement simulations. When disabled, resume
-    // periodic updates so markers continue to move.
-    if (v) {
+  /// Set the active feature. When switching to `playback`, stop periodic
+  /// marker updates; otherwise ensure periodic updates are running.
+  void setSelectedFeature(FormFieldsMapFeature? f) {
+    selectedFeature = f;
+    if (f == FormFieldsMapFeature.playback) {
       try {
         stopPeriodicMarkerUpdates();
       } catch (_) {}
@@ -187,6 +195,7 @@ class ViewModel extends ChangeNotifier {
 
   Future<void> generatePolygons({int shapeCount = 5}) async {
     isLoading = true;
+    generatingPolygons = true;
     notifyListeners();
     try {
       mapController.setBlockingLoading(true);
@@ -226,6 +235,7 @@ class ViewModel extends ChangeNotifier {
       }
     } finally {
       isLoading = false;
+      generatingPolygons = false;
       notifyListeners();
       try {
         mapController.setBlockingLoading(false);
@@ -241,6 +251,7 @@ class ViewModel extends ChangeNotifier {
     generatedMarkers = 0;
     totalMarkers = markerCount;
     isLoading = true;
+    generatingMarkers = true;
     notifyListeners();
 
     // Give the UI one frame to render the blocking overlay.
@@ -253,6 +264,8 @@ class ViewModel extends ChangeNotifier {
       // objects containing at least `lat` and `lon` (or common variants).
       raw = <dynamic>[];
       try {
+        fetchingFromApi = true;
+        notifyListeners();
         raw = await EarthquakeFeed.fetchRawMarkers(apiUrl);
       } catch (e) {
         debugPrint(
@@ -264,6 +277,8 @@ class ViewModel extends ChangeNotifier {
       // (previously `totalMarkers` remained set to the requested
       // `markerCount`, which could be different from the API response).
       totalMarkers = raw.length;
+      notifyListeners();
+      fetchingFromApi = false;
       notifyListeners();
     } else {
       // Use compute to generate marker data off the main thread.
@@ -322,12 +337,12 @@ class ViewModel extends ChangeNotifier {
       idx = end;
     }
     // Start periodic updates after markers are generated.
-    // Start periodic updates after markers are generated.
-    if (!enablePolylinePlayback) {
+    if (selectedFeature != FormFieldsMapFeature.playback) {
       startPeriodicMarkerUpdates();
     }
 
     isLoading = false;
+    generatingMarkers = false;
     notifyListeners();
     try {
       if (FormFieldsMapController.enableBatchLogging) {
@@ -347,6 +362,7 @@ class ViewModel extends ChangeNotifier {
   Future<void> generatePolylines(
       {int shapeCount = 5, bool useRoads = true}) async {
     isLoading = true;
+    generatingPolylines = true;
     notifyListeners();
     try {
       generatedPolylines = 0;
@@ -482,6 +498,7 @@ class ViewModel extends ChangeNotifier {
       }
     } finally {
       isLoading = false;
+      generatingPolylines = false;
       notifyListeners();
       try {
         mapController.setBlockingLoading(false);
@@ -979,6 +996,8 @@ class ViewModel extends ChangeNotifier {
     return '$mm:$ss';
   }
 
+  bool get findingLocation => _findingLocation;
+
   @override
   void dispose() {
     stopPeriodicMarkerUpdates();
@@ -1004,6 +1023,7 @@ class ViewModel extends ChangeNotifier {
   /// polyline near the center.
   Future<void> generatePlaybackPolyline({bool useRoads = true}) async {
     isLoading = true;
+    generatingPolylines = true;
     notifyListeners();
     try {
       mapController.setBlockingLoading(true);
@@ -1141,6 +1161,7 @@ class ViewModel extends ChangeNotifier {
       notifyListeners();
     } finally {
       isLoading = false;
+      generatingPolylines = false;
       notifyListeners();
       try {
         mapController.setBlockingLoading(false);
@@ -1152,6 +1173,7 @@ class ViewModel extends ChangeNotifier {
 
   Future<void> generateCircles({int shapeCount = 5}) async {
     isLoading = true;
+    generatingCircles = true;
     notifyListeners();
     try {
       FormFieldsMapController.setBlockingLoading(controllerId, true);
@@ -1194,11 +1216,23 @@ class ViewModel extends ChangeNotifier {
       }
     } finally {
       isLoading = false;
+      generatingCircles = false;
       notifyListeners();
       try {
         mapController.setBlockingLoading(false);
       } catch (_) {}
     }
+  }
+
+  Future<void> findLocation() async {
+    _findingLocation = true;
+    notifyListeners();
+    try {
+      await mapController.animateCameraTo(center, 13,
+          duration: const Duration(milliseconds: 600));
+    } catch (_) {}
+    _findingLocation = false;
+    notifyListeners();
   }
 }
 

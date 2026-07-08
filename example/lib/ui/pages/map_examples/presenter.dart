@@ -9,18 +9,10 @@ class Presenter extends StatefulWidget {
 }
 
 abstract class PresenterState extends State<Presenter> {
+  main.ViewModel model = main.ViewModel();
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (!mounted) return;
-    //   try {
-    //     final vm = Provider.of<MapExamplesViewModel>(context, listen: false);
-    //     vm.generateMarkers(markerCount: vm.createMarkers);
-    //   } catch (e, st) {
-    //     debugPrint('generateMarkers post-frame callback error: $e');
-    //     debugPrint(st.toString());
-    //   }
-    // });
+    model.generateMarkers(markerCount: model.createMarkers);
   }
 }

@@ -19,7 +19,6 @@ const double _tapPad = 12.0;
 /// instead of passing multiple loose parameters to `FormFieldsMap`.
 class FormFieldsMapPlaybackConfig {
   const FormFieldsMapPlaybackConfig({
-    this.enablePolylinePlayback = false,
     this.playbackInterval = const Duration(seconds: 1),
     this.playbackInterpolationSteps = 0,
     this.showBuiltinPlaybackControls = true,
@@ -34,7 +33,6 @@ class FormFieldsMapPlaybackConfig {
     this.playbackHaloOpacity = 0.95,
   });
 
-  final bool enablePolylinePlayback;
   final Duration playbackInterval;
   final int playbackInterpolationSteps;
   final bool showBuiltinPlaybackControls;
@@ -65,11 +63,63 @@ class FormFieldsMapPlaybackConfig {
   final double playbackHaloOpacity;
 }
 
+/// Configuration bucket for general map options.
+///
+/// This mirrors the pattern used by `FormFieldsMapPlaybackConfig` so
+/// consumers can centralize map-related preferences instead of passing
+/// many loose parameters to `FormFieldsMap`.
+class FormFieldsMapMapConfig {
+  const FormFieldsMapMapConfig({
+    this.enableClustering = false,
+    this.canvasMarkerRadius = 20.0,
+    this.canvasMarkerIcon,
+    this.showTitle = true,
+  });
+
+  /// Whether marker clustering should be enabled when rendering many markers.
+  final bool enableClustering;
+
+  /// Radius used for canvas-rendered markers (in logical pixels).
+  final double canvasMarkerRadius;
+
+  /// Optional provider/widget/icon used when rasterizing canvas markers.
+  final Object? canvasMarkerIcon;
+
+  /// Whether marker titles should be displayed by the painter.
+  final bool showTitle;
+}
+
+/// Configuration bucket for "find" (search) related options.
+class FormFieldsMapFindConfig {
+  const FormFieldsMapFindConfig({
+    this.allowGeolocation = true,
+    this.findTimeout = const Duration(seconds: 10),
+    this.showSearchBar = true,
+  });
+
+  /// Whether the example/app may request platform geolocation when performing
+  /// a find operation.
+  final bool allowGeolocation;
+
+  /// Timeout used when attempting to resolve the current location.
+  final Duration findTimeout;
+
+  /// Whether a small search bar or input should be shown for find operations.
+  final bool showSearchBar;
+}
+
+/// Feature set enum for `FormFieldsMap` to describe enabled/available
+/// capabilities in a clear, extensible way.
+enum FormFieldsMapFeature { playback, map, find }
+
 class FormFieldsMap extends StatefulWidget {
   const FormFieldsMap({
     super.key,
     this.controller,
     this.playbackConfig,
+    this.mapConfig,
+    this.findConfig,
+    this.features = FormFieldsMapFeature.map,
     this.tileUrlTemplate = 'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
     this.tileAttribution = '© Google',
     this.initialCenter = const LatLng(0, 0),
@@ -78,9 +128,6 @@ class FormFieldsMap extends StatefulWidget {
     this.minZoom = 4,
     this.panBuffer = 2,
     this.keepAlive = true,
-    this.canvasMarkerRadius = 20.0,
-    this.canvasMarkerIcon,
-    this.showTitle = true,
     this.showMarkerInCenter = false,
     this.centerMarker,
     this.useViewportCulling = false,
@@ -94,10 +141,6 @@ class FormFieldsMap extends StatefulWidget {
     this.onCameraIdle,
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
     this.onRequestCurrentLocation,
-    this.enablePolylinePlayback = false,
-    this.playbackInterval = const Duration(seconds: 1),
-    this.playbackInterpolationSteps = 0,
-    this.showBuiltinPlaybackControls = true,
     this.maxRenderedRawMarkers = 10000,
     this.polygonBuilder,
     this.polylineBuilder,
@@ -110,8 +153,21 @@ class FormFieldsMap extends StatefulWidget {
   // private id and expose controller operations through the registry.
   final MapController? controller;
   final FormFieldsMapPlaybackConfig? playbackConfig;
+
+  /// Optional centralized map configuration.
+  final FormFieldsMapMapConfig? mapConfig;
+
+  /// Optional centralized find/search configuration.
+  final FormFieldsMapFindConfig? findConfig;
+
+  /// Optional single feature enabling/disabling a high-level capability.
+  /// When `null`, legacy behavior is preserved (playback enabled when
+  /// `playbackConfig` is provided). When non-null, the selected feature
+  /// explicitly controls availability (e.g. `playback`).
+  final FormFieldsMapFeature? features;
   final String tileUrlTemplate;
   final String tileAttribution;
+  // `showLabels` removed: tile label control is handled by tile provider/template.
   final LatLng initialCenter;
   final double initialZoom;
   final double maxZoom;
@@ -119,11 +175,8 @@ class FormFieldsMap extends StatefulWidget {
   final int panBuffer;
   final bool keepAlive;
 
-  final double canvasMarkerRadius;
-
-  final Object? canvasMarkerIcon;
-
-  final bool showTitle;
+  // `canvasMarkerRadius`, `canvasMarkerIcon`, and `showTitle` are now
+  // provided via `mapConfig` (FormFieldsMapMapConfig).
 
   final bool showMarkerInCenter;
 
@@ -166,24 +219,8 @@ class FormFieldsMap extends StatefulWidget {
 
   final Future<LatLng>? Function()? onRequestCurrentLocation;
 
-  /// Enable an on-map polyline playback control. When enabled a small set
-  /// of playback buttons are shown and the internal playback API is wired
-  /// so external callers can also control playback via
-  /// `FormFieldsMapController`.
-  final bool enablePolylinePlayback;
-
   /// Interval between playback steps. Defaults to 1 second.
-  final Duration playbackInterval;
-
-  /// Number of interpolated points to insert between each pair of original
-  /// polyline points. Higher values make movement smoother but increase the
-  /// number of rendered steps.
-  final int playbackInterpolationSteps;
-
-  /// Whether to show the package's built-in on-map playback FAB controls.
-  /// Set to `false` to hide them (for example when providing a custom
-  /// external UI), defaults to `true` to preserve previous behavior.
-  final bool showBuiltinPlaybackControls;
+  // Playback configuration is centralized in `FormFieldsMapPlaybackConfig`.
 
   @override
   FormFieldsMapState createState() => FormFieldsMapState();
@@ -232,21 +269,44 @@ class FormFieldsMapState extends State<FormFieldsMap>
   late String _controllerId;
   bool _ownsController = false;
 
-  // Helpers to resolve playback configuration (prefers `playbackConfig` when set)
-  bool get _playbackEnabled =>
-      widget.playbackConfig?.enablePolylinePlayback ??
-      widget.enablePolylinePlayback;
+  // Helpers to resolve playback configuration. Prefer explicit `features`
+  // when provided; otherwise fallback to presence of `playbackConfig` for
+  // backward compatibility.
+  bool get _playbackEnabled {
+    final f = widget.features;
+    if (f != null) return f == FormFieldsMapFeature.playback;
+    return widget.playbackConfig != null;
+  }
+
+  // Effective map configuration is accessed via `widget.mapConfig` directly.
+
+  // Effective find/search configuration
+  FormFieldsMapFindConfig get _findConfigEffective =>
+      widget.findConfig ?? const FormFieldsMapFindConfig();
+
+  String get _tileUrlTemplateEffective => widget.tileUrlTemplate;
+
+  // Tile attribution and clustering flags are read directly from the
+  // widget properties (`widget.tileAttribution`, `widget.mapConfig`).
+
+  // Canvas marker / title effective values moved to mapConfig.
+  double get _canvasMarkerRadiusEffective =>
+      widget.mapConfig?.canvasMarkerRadius ?? 20.0;
+
+  Object? get _canvasMarkerIconEffective => widget.mapConfig?.canvasMarkerIcon;
+
+  bool get _showTitleEffective => widget.mapConfig?.showTitle ?? true;
+
+  // `showLabels` removed — tile label visibility controlled by tile source.
 
   Duration get _playbackIntervalEffective =>
-      widget.playbackConfig?.playbackInterval ?? widget.playbackInterval;
+      widget.playbackConfig?.playbackInterval ?? const Duration(seconds: 1);
 
   int get _playbackInterpolationStepsEffective =>
-      widget.playbackConfig?.playbackInterpolationSteps ??
-      widget.playbackInterpolationSteps;
+      widget.playbackConfig?.playbackInterpolationSteps ?? 0;
 
   bool get _showBuiltinPlaybackControlsEffective =>
-      widget.playbackConfig?.showBuiltinPlaybackControls ??
-      widget.showBuiltinPlaybackControls;
+      widget.playbackConfig?.showBuiltinPlaybackControls ?? true;
 
   Color? get _playbackPolylineColor =>
       widget.playbackConfig?.playbackPolylineColor;
@@ -388,7 +448,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
   @override
   void didUpdateWidget(covariant FormFieldsMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.canvasMarkerIcon != widget.canvasMarkerIcon) {
+    if (oldWidget.mapConfig?.canvasMarkerIcon !=
+        widget.mapConfig?.canvasMarkerIcon) {
       _resolveCanvasMarkerIcon();
     }
     // If playback-specific icon changes, ensure we re-rasterize images.
@@ -468,13 +529,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     // Handle changes to playback configuration (widget-level or via playbackConfig)
     final oldInterval = oldWidget.playbackConfig?.playbackInterval ??
-        oldWidget.playbackInterval;
+        const Duration(seconds: 1);
     final newInterval =
-        widget.playbackConfig?.playbackInterval ?? widget.playbackInterval;
-    final oldSteps = oldWidget.playbackConfig?.playbackInterpolationSteps ??
-        oldWidget.playbackInterpolationSteps;
-    final newSteps = widget.playbackConfig?.playbackInterpolationSteps ??
-        widget.playbackInterpolationSteps;
+        widget.playbackConfig?.playbackInterval ?? const Duration(seconds: 1);
+    final oldSteps = oldWidget.playbackConfig?.playbackInterpolationSteps ?? 0;
+    final newSteps = widget.playbackConfig?.playbackInterpolationSteps ?? 0;
     if (oldInterval != newInterval || oldSteps != newSteps) {
       _playbackInterval = newInterval;
       _playbackInterpolationSteps = newSteps;
@@ -522,7 +581,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _canvasMarkerImage = null;
     _playbackMarkerImage = null;
 
-    final canvasProvider = widget.canvasMarkerIcon;
+    final canvasProvider = _canvasMarkerIconEffective;
     final playbackProvider = widget.playbackConfig?.playbackMarkerIcon;
 
     // Helper to resolve an ImageProvider into an ImageStream and set target
@@ -1008,7 +1067,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // 'icon' unset allows the painter to draw the rasterized `iconImage`
       // when present.
       final effectiveProviderForPlayback =
-          widget.playbackConfig?.playbackMarkerIcon ?? widget.canvasMarkerIcon;
+          widget.playbackConfig?.playbackMarkerIcon ??
+              _canvasMarkerIconEffective;
       if (effectiveProviderForPlayback == null) {
         payload['icon'] = 'arrow';
       }
@@ -1119,7 +1179,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             ),
             children: [
               TileLayer(
-                urlTemplate: widget.tileUrlTemplate,
+                urlTemplate: _tileUrlTemplateEffective,
                 subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
                 tileProvider: tileProvider,
                 maxZoom: widget.maxZoom,
@@ -1383,7 +1443,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               rawMarkers: renderedRawMarkers,
                               center: _lastCenter ?? widget.initialCenter,
                               zoom: _lastZoom ?? widget.initialZoom,
-                              radius: widget.canvasMarkerRadius,
+                              radius: _canvasMarkerRadiusEffective,
                               devicePixelRatio:
                                   MediaQuery.of(context).devicePixelRatio,
                               iconImage: _canvasMarkerImage,
@@ -1392,7 +1452,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               playbackHaloScale: _playbackHaloScale,
                               playbackHaloOpacity: _playbackHaloOpacity,
                               // hide titles while blocking loading is active or when zoom is low
-                              showTitle: widget.showTitle &&
+                              showTitle: _showTitleEffective &&
                                   !isBlocking &&
                                   ((_lastZoom ?? widget.initialZoom) >= 10.0),
                               defaultColor:
@@ -1421,19 +1481,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   if (_canvasMarkerImage != null) {
                     return RawImage(
                       image: _canvasMarkerImage,
-                      width: widget.canvasMarkerRadius * 2,
-                      height: widget.canvasMarkerRadius * 2,
+                      width: _canvasMarkerRadiusEffective * 2,
+                      height: _canvasMarkerRadiusEffective * 2,
                       fit: BoxFit.contain,
                     );
                   }
-                  final provider = widget.canvasMarkerIcon;
+                  final provider = _canvasMarkerIconEffective;
                   if (provider is Widget) return provider;
                   if (provider is Icon) return provider;
                   if (provider is ImageProvider) {
                     return Image(
                       image: provider,
-                      width: widget.canvasMarkerRadius * 2,
-                      height: widget.canvasMarkerRadius * 2,
+                      width: _canvasMarkerRadiusEffective * 2,
+                      height: _canvasMarkerRadiusEffective * 2,
                       fit: BoxFit.contain,
                     );
                   }
@@ -1492,7 +1552,29 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   LatLng? target;
                   if (widget.onRequestCurrentLocation != null) {
                     try {
-                      target = await widget.onRequestCurrentLocation!();
+                      if (!_findConfigEffective.allowGeolocation) {
+                        messenger?.showSnackBar(const SnackBar(
+                            content: Text('Location access disabled')));
+                      } else {
+                        try {
+                          final Future<LatLng>? fut =
+                              widget.onRequestCurrentLocation!.call();
+                          if (fut != null) {
+                            try {
+                              target = await fut
+                                  .timeout(_findConfigEffective.findTimeout);
+                            } on TimeoutException {
+                              target = null;
+                            } catch (_) {
+                              target = null;
+                            }
+                          } else {
+                            target = null;
+                          }
+                        } catch (_) {
+                          target = null;
+                        }
+                      }
                     } catch (_) {
                       target = null;
                     }
@@ -1858,7 +1940,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
       // Markers: check rawMarkers canvas items for proximity to tap
       try {
-        final radiusToUse = max(widget.canvasMarkerRadius, 6.0);
+        final radiusToUse = max(_canvasMarkerRadiusEffective, 6.0);
         final headOffsetMul = 0.6;
         final headRadiusMul = 0.9;
         final size = context.size ?? Size.zero;
