@@ -330,26 +330,76 @@ class View extends PresenterState {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Center(
-                                              child: Container(
-                                                width: 40,
-                                                height: 4,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey[300],
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
+                                            // Center(
+                                            //   child: Container(
+                                            //     width: 40,
+                                            //     height: 4,
+                                            //     decoration: BoxDecoration(
+                                            //       color: Colors.grey[300],
+                                            //       borderRadius:
+                                            //           BorderRadius.circular(4),
+                                            //     ),
+                                            //   ),
+                                            // ),
+                                            // const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  title ??
+                                                      'Playback point reached',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleLarge
+                                                      ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.bold),
                                                 ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Text(
-                                              title ?? 'Playback point reached',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                                Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    ValueListenableBuilder<
+                                                        bool>(
+                                                      valueListenable:
+                                                          FormFieldsMapController
+                                                              .getPlaybackPlayingListenable(
+                                                                  vm.controllerId),
+                                                      builder: (context,
+                                                          playing, _) {
+                                                        return IconButton(
+                                                          icon: Icon(playing
+                                                              ? Icons.pause
+                                                              : Icons
+                                                                  .play_arrow),
+                                                          onPressed: () {
+                                                            if (playing) {
+                                                              FormFieldsMapController
+                                                                  .pausePolylinePlayback(
+                                                                      vm.controllerId);
+                                                            } else {
+                                                              FormFieldsMapController
+                                                                  .startPolylinePlayback(
+                                                                      vm.controllerId,
+                                                                      vm.playbackPolylineId);
+                                                            }
+                                                          },
+                                                          tooltip: playing
+                                                              ? 'Pause'
+                                                              : 'Play',
+                                                        );
+                                                      },
+                                                    ),
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                          Icons.replay),
+                                                      onPressed: () =>
+                                                          FormFieldsMapController
+                                                              .restartPolylinePlayback(
+                                                                  vm.controllerId),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 8),
                                             Card(
@@ -378,52 +428,52 @@ class View extends PresenterState {
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            if (properties.isNotEmpty) ...[
-                                              const Text('Properties',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600)),
-                                              const SizedBox(height: 6),
-                                              Wrap(
-                                                spacing: 8,
-                                                runSpacing: 6,
-                                                children: properties.entries
-                                                    .map((e) => Chip(
-                                                        label: Text(
-                                                            '${e.key}: ${e.value}')))
-                                                    .toList(),
-                                              ),
-                                              const SizedBox(height: 12),
-                                            ],
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: [
-                                                TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(ctx2)
-                                                            .pop(),
-                                                    child: const Text('Close')),
-                                                const SizedBox(width: 8),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Colors.lightGreen,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8)),
-                                                  ),
-                                                  onPressed: () =>
-                                                      Navigator.of(ctx2).pop(),
-                                                  child: const Text('Done'),
-                                                ),
-                                              ],
-                                            )
+                                            // const SizedBox(height: 8),
+                                            // if (properties.isNotEmpty) ...[
+                                            //   const Text('Properties',
+                                            //       style: TextStyle(
+                                            //           fontWeight:
+                                            //               FontWeight.w600)),
+                                            //   const SizedBox(height: 6),
+                                            //   Wrap(
+                                            //     spacing: 8,
+                                            //     runSpacing: 6,
+                                            //     children: properties.entries
+                                            //         .map((e) => Chip(
+                                            //             label: Text(
+                                            //                 '${e.key}: ${e.value}')))
+                                            //         .toList(),
+                                            //   ),
+                                            //   const SizedBox(height: 12),
+                                            // ],
+                                            // Row(
+                                            //   mainAxisAlignment:
+                                            //       MainAxisAlignment.end,
+                                            //   children: [
+                                            //     TextButton(
+                                            //         onPressed: () =>
+                                            //             Navigator.of(ctx2)
+                                            //                 .pop(),
+                                            //         child: const Text('Close')),
+                                            //     const SizedBox(width: 8),
+                                            //     ElevatedButton(
+                                            //       style:
+                                            //           ElevatedButton.styleFrom(
+                                            //         backgroundColor:
+                                            //             Colors.lightGreen,
+                                            //         shape:
+                                            //             RoundedRectangleBorder(
+                                            //                 borderRadius:
+                                            //                     BorderRadius
+                                            //                         .circular(
+                                            //                             8)),
+                                            //       ),
+                                            //       onPressed: () =>
+                                            //           Navigator.of(ctx2).pop(),
+                                            //       child: const Text('Done'),
+                                            //     ),
+                                            //   ],
+                                            // )
                                           ],
                                         ),
                                       );
