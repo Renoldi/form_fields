@@ -1639,7 +1639,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     if (!mounted) return;
                     if (target != null) {
                       final currentZoom = _lastZoom ?? widget.initialZoom;
-                      await animateTo(target, currentZoom);
+                      // Prefer a playback-style zoom when a playback config is
+                      // present and the widget is configured to follow camera.
+                      final zoom = (widget.playbackConfig != null)
+                          ? _playbackTargetZoom
+                          : currentZoom;
+                      await animateTo(target, zoom);
                       return;
                     }
                     messenger?.showSnackBar(const SnackBar(

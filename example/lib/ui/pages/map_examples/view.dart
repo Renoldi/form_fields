@@ -287,8 +287,7 @@ class View extends PresenterState {
                                             : 'Playback point';
                                       }();
 
-                                      final Map<String, dynamic> properties =
-                                          () {
+                                      () {
                                         try {
                                           final s = vm2.playbackLastShape;
                                           if (s is ShapeMeta) {
