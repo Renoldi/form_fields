@@ -343,6 +343,9 @@ class View extends PresenterState {
                                             // ),
                                             // const SizedBox(height: 12),
                                             Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Text(
                                                   title ??
@@ -358,6 +361,15 @@ class View extends PresenterState {
                                                   mainAxisSize:
                                                       MainAxisSize.min,
                                                   children: [
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                          Icons.skip_previous),
+                                                      onPressed: () =>
+                                                          FormFieldsMapController
+                                                              .stepPolylineBackward(
+                                                                  vm.controllerId,
+                                                                  vm.playbackPolylineId),
+                                                    ),
                                                     ValueListenableBuilder<
                                                         bool>(
                                                       valueListenable:
@@ -388,6 +400,15 @@ class View extends PresenterState {
                                                               : 'Play',
                                                         );
                                                       },
+                                                    ),
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                          Icons.skip_next),
+                                                      onPressed: () =>
+                                                          FormFieldsMapController
+                                                              .stepPolylineForward(
+                                                                  vm.controllerId,
+                                                                  vm.playbackPolylineId),
                                                     ),
                                                     IconButton(
                                                       icon: const Icon(
@@ -645,9 +666,23 @@ class View extends PresenterState {
                                 },
                               ),
                               IconButton(
+                                icon: const Icon(Icons.skip_previous),
+                                onPressed: () => FormFieldsMapController
+                                    .stepPolylineBackward(
+                                        vm.controllerId, vm.playbackPolylineId),
+                                tooltip: 'Previous',
+                              ),
+                              IconButton(
                                 icon: const Icon(Icons.replay),
                                 onPressed: () => FormFieldsMapController
                                     .restartPolylinePlayback(vm.controllerId),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.skip_next),
+                                onPressed: () =>
+                                    FormFieldsMapController.stepPolylineForward(
+                                        vm.controllerId, vm.playbackPolylineId),
+                                tooltip: 'Next',
                               ),
                             ],
                           ),

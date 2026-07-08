@@ -413,6 +413,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           setInterval: (d) => _setPolylinePlaybackInterval(d),
           setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
           toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+          stepForward: (polylineId) => _stepPlaybackForward(polylineId),
+          stepBackward: (polylineId) => _stepPlaybackBackward(polylineId),
         ),
       );
       // Configure whether this widget wants auto-start on first append.
@@ -527,6 +529,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
             setInterval: (d) => _setPolylinePlaybackInterval(d),
             setInterpolationSteps: (s) => _setPlaybackInterpolationSteps(s),
             toggle: (polylineId) => _togglePolylinePlayback(polylineId),
+            stepForward: (polylineId) => _stepPlaybackForward(polylineId),
+            stepBackward: (polylineId) => _stepPlaybackBackward(polylineId),
           ),
         );
         try {
@@ -1034,6 +1038,45 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _updatePlaybackMarker();
   }
 
+  void _stepPlaybackForward(String? polylineId) {
+    if (_playbackPoints.isEmpty) return;
+    if (_playbackIndex < _playbackPoints.length - 1) {
+      _playbackIndex++;
+    }
+    // stop any running playback when user steps manually
+    _isPlaying = false;
+    _playbackTimer?.cancel();
+    try {
+      FormFieldsMapController.setPlaybackPlaying(_controllerId, false);
+    } catch (_) {}
+    _updatePlaybackMarker();
+    try {
+      if (_playbackFollowCamera) {
+        final p = _playbackPoints[_playbackIndex];
+        animateTo(p, _playbackTargetZoom, curve: _playbackCurve);
+      }
+    } catch (_) {}
+  }
+
+  void _stepPlaybackBackward(String? polylineId) {
+    if (_playbackPoints.isEmpty) return;
+    if (_playbackIndex > 0) {
+      _playbackIndex--;
+    }
+    _isPlaying = false;
+    _playbackTimer?.cancel();
+    try {
+      FormFieldsMapController.setPlaybackPlaying(_controllerId, false);
+    } catch (_) {}
+    _updatePlaybackMarker();
+    try {
+      if (_playbackFollowCamera) {
+        final p = _playbackPoints[_playbackIndex];
+        animateTo(p, _playbackTargetZoom, curve: _playbackCurve);
+      }
+    } catch (_) {}
+  }
+
   void _updatePlaybackMarker() {
     try {
       if (!mounted) return;
@@ -1522,106 +1565,115 @@ class FormFieldsMapState extends State<FormFieldsMap>
             ),
           ),
         Positioned(
-          right: 12,
-          top: 10,
+          right: 10,
+          top: 60,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Current zoom display
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 6.0),
-                  child: Text(
-                    'Zoom: ${(_lastZoom ?? widget.initialZoom).toStringAsFixed(1)}',
-                    style: const TextStyle(fontSize: 12),
+              if (!_playbackEnabled) ...[
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0, vertical: 6.0),
+                    child: Text(
+                      'Zoom: ${(_lastZoom ?? widget.initialZoom).toStringAsFixed(1)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              AppButton(
-                type: AppButtonType.fab,
-                size: AppSize.small,
-                icon: const Icon(Icons.add),
-                useSafeArea: false,
-                heroTag: null,
-                onPressed: () {
-                  final center = _lastCenter ?? widget.initialCenter;
-                  final currentZoom = _lastZoom ?? widget.initialZoom;
-                  final newZoom =
-                      (currentZoom + 1).clamp(widget.minZoom, widget.maxZoom);
-                  animateTo(center, newZoom);
-                },
-              ),
-              const SizedBox(height: 8),
-
-              AppButton(
-                type: AppButtonType.fab,
-                size: AppSize.small,
-                icon: const Icon(Icons.my_location),
-                useSafeArea: false,
-                heroTag: null,
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.maybeOf(context);
-                  LatLng? target;
-                  if (widget.onRequestCurrentLocation != null) {
-                    try {
-                      if (!_findConfigEffective.allowGeolocation) {
-                        messenger?.showSnackBar(const SnackBar(
-                            content: Text('Location access disabled')));
-                      } else {
-                        try {
-                          final Future<LatLng>? fut =
-                              widget.onRequestCurrentLocation!.call();
-                          if (fut != null) {
-                            try {
-                              target = await fut
-                                  .timeout(_findConfigEffective.findTimeout);
-                            } on TimeoutException {
-                              target = null;
-                            } catch (_) {
+                const SizedBox(height: 8),
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.add),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () {
+                    final center = _lastCenter ?? widget.initialCenter;
+                    final currentZoom = _lastZoom ?? widget.initialZoom;
+                    final newZoom =
+                        (currentZoom + 1).clamp(widget.minZoom, widget.maxZoom);
+                    animateTo(center, newZoom);
+                  },
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.my_location),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.maybeOf(context);
+                    LatLng? target;
+                    if (widget.onRequestCurrentLocation != null) {
+                      try {
+                        if (!_findConfigEffective.allowGeolocation) {
+                          messenger?.showSnackBar(const SnackBar(
+                              content: Text('Location access disabled')));
+                        } else {
+                          try {
+                            final Future<LatLng>? fut =
+                                widget.onRequestCurrentLocation!.call();
+                            if (fut != null) {
+                              try {
+                                target = await fut
+                                    .timeout(_findConfigEffective.findTimeout);
+                              } on TimeoutException {
+                                target = null;
+                              } catch (_) {
+                                target = null;
+                              }
+                            } else {
                               target = null;
                             }
-                          } else {
+                          } catch (_) {
                             target = null;
                           }
-                        } catch (_) {
-                          target = null;
                         }
+                      } catch (_) {
+                        target = null;
                       }
-                    } catch (_) {
-                      target = null;
                     }
-                  }
-                  if (!mounted) return;
-                  if (target != null) {
+                    if (!mounted) return;
+                    if (target != null) {
+                      final currentZoom = _lastZoom ?? widget.initialZoom;
+                      await animateTo(target, currentZoom);
+                      return;
+                    }
+                    messenger?.showSnackBar(const SnackBar(
+                        content: Text('Current location not available')));
+                  },
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.remove),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () {
+                    final center = _lastCenter ?? widget.initialCenter;
                     final currentZoom = _lastZoom ?? widget.initialZoom;
-                    await animateTo(target, currentZoom);
-                    return;
-                  }
-                  messenger?.showSnackBar(const SnackBar(
-                      content: Text('Current location not available')));
-                },
-              ),
-              const SizedBox(height: 8),
-              AppButton(
-                type: AppButtonType.fab,
-                size: AppSize.small,
-                icon: const Icon(Icons.remove),
-                useSafeArea: false,
-                heroTag: null,
-                onPressed: () {
-                  final center = _lastCenter ?? widget.initialCenter;
-                  final currentZoom = _lastZoom ?? widget.initialZoom;
-                  final newZoom =
-                      (currentZoom - 1).clamp(widget.minZoom, widget.maxZoom);
-                  animateTo(center, newZoom);
-                },
-              ),
-              const SizedBox(height: 8),
+                    final newZoom =
+                        (currentZoom - 1).clamp(widget.minZoom, widget.maxZoom);
+                    animateTo(center, newZoom);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
               if (_playbackEnabled &&
                   _showBuiltinPlaybackControlsEffective) ...[
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.skip_previous),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () => _stepPlaybackBackward(null),
+                ),
+                const SizedBox(height: 8),
                 ValueListenableBuilder<bool>(
                   valueListenable:
                       FormFieldsMapController.getPlaybackPlayingListenable(
@@ -1636,6 +1688,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       onPressed: () => _togglePolylinePlayback(null),
                     );
                   },
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  type: AppButtonType.fab,
+                  size: AppSize.small,
+                  icon: const Icon(Icons.skip_next),
+                  useSafeArea: false,
+                  heroTag: null,
+                  onPressed: () => _stepPlaybackForward(null),
                 ),
                 const SizedBox(height: 8),
                 AppButton(

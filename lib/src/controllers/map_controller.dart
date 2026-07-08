@@ -1152,6 +1152,24 @@ class FormFieldsMapController {
       h.toggle(polylineId);
     } catch (_) {}
   }
+
+  /// Advance playback by one step (forward). Forwards to registered handler.
+  static void stepPolylineForward(String id, String? polylineId) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.stepForward(polylineId);
+    } catch (_) {}
+  }
+
+  /// Move playback one step backward. Forwards to registered handler.
+  static void stepPolylineBackward(String id, String? polylineId) {
+    final h = _playbackHandlers[id];
+    if (h == null) return;
+    try {
+      h.stepBackward(polylineId);
+    } catch (_) {}
+  }
 }
 
 /// A small value-object used to bridge playback control commands from
@@ -1164,6 +1182,8 @@ class FormFieldsMapPlaybackHandler {
   final void Function(Duration) setInterval;
   final void Function(int) setInterpolationSteps;
   final void Function(String? polylineId) toggle;
+  final void Function(String? polylineId) stepForward;
+  final void Function(String? polylineId) stepBackward;
 
   FormFieldsMapPlaybackHandler({
     required this.start,
@@ -1172,6 +1192,8 @@ class FormFieldsMapPlaybackHandler {
     required this.setInterval,
     required this.setInterpolationSteps,
     required this.toggle,
+    required this.stepForward,
+    required this.stepBackward,
   });
 }
 
@@ -1313,6 +1335,16 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   void setPlaybackPlaying(bool value) {
     final id = FormFieldsMapController.getIdForController(this);
     FormFieldsMapController.setPlaybackPlaying(id, value);
+  }
+
+  void stepPolylineForward(String? polylineId) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.stepPolylineForward(id, polylineId);
+  }
+
+  void stepPolylineBackward(String? polylineId) {
+    final id = FormFieldsMapController.getIdForController(this);
+    FormFieldsMapController.stepPolylineBackward(id, polylineId);
   }
 
   /// Smoothly animate the map camera from current center to [target].
