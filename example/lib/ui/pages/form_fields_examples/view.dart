@@ -16,8 +16,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => FormFieldsExamplesViewModel(),
-      child: Consumer<FormFieldsExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           return Form(
             key: viewModel.formKey,

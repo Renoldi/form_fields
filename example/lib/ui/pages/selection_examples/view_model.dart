@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class SelectionExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   bool? checkboxValue = false;

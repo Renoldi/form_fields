@@ -51,8 +51,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ListDataExamplesViewModel(),
-      child: Consumer<ListDataExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, vm, _) {
           // Keep the view model informed when data arrives via param
 

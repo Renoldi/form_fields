@@ -19,7 +19,7 @@ String formatNumber(int value) {
 class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
-    return Consumer<MapExamplesViewModel>(
+    return Consumer<ViewModel>(
       builder: (context, vm, _) {
         // Ensure the example's notifier is registered under a stable
         // controller id so the `FormFieldsMap` widget can retrieve it
@@ -468,7 +468,7 @@ class View extends PresenterState {
   }
 }
 
-Widget _intervalButton(MapExamplesViewModel vm, String label, Duration d) {
+Widget _intervalButton(ViewModel vm, String label, Duration d) {
   final selected = vm.playbackInterval.inMilliseconds == d.inMilliseconds;
   return TextButton(
     onPressed: () => vm.setPlaybackInterval(d),
@@ -481,7 +481,7 @@ Widget _intervalButton(MapExamplesViewModel vm, String label, Duration d) {
   );
 }
 
-Widget _interpButton(MapExamplesViewModel vm, String label, int steps) {
+Widget _interpButton(ViewModel vm, String label, int steps) {
   final selected = vm.playbackInterpolationSteps == steps;
   return TextButton(
     onPressed: () => vm.setPlaybackInterpolationSteps(steps),

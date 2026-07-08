@@ -7,7 +7,7 @@ import 'view_model.dart';
 class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<SelectionExamplesViewModel>();
+    final vm = context.watch<ViewModel>();
     return Form(
       key: vm.formKey,
       child: SingleChildScrollView(

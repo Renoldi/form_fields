@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class NullNonNullValidationExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   String stringNonNullRequired = '';

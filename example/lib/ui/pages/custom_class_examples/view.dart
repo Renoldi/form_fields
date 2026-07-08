@@ -10,8 +10,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CustomClassExamplesViewModel(),
-      child: Consumer<CustomClassExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           loc.Localizations.of(context);
           return SingleChildScrollView(
@@ -588,7 +588,7 @@ class View extends PresenterState {
 
   void _showFormData(
     BuildContext context,
-    CustomClassExamplesViewModel viewModel,
+    ViewModel viewModel,
   ) {
     loc.Localizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(

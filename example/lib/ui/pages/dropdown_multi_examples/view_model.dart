@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class DropdownMultiExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   List<String> multiDropdown1 = [];

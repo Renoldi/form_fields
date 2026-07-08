@@ -11,8 +11,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => DropdownMultiExamplesViewModel(),
-      child: Consumer<DropdownMultiExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           loc.Localizations.of(context);
           return SingleChildScrollView(

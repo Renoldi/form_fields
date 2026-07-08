@@ -9,8 +9,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => RadioButtonExamplesViewModel(),
-      child: Consumer<RadioButtonExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           return Form(
             key: viewModel.formKey,

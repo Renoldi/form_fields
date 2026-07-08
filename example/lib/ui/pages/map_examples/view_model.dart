@@ -10,9 +10,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/data/models/usgs_feed.dart';
 
-class MapExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final MapController mapController = MapController();
-  MapExamplesViewModel() {
+  ViewModel() {
     try {
       // Ensure the controller and a notifier are registered early so
       // calls like `setBlockingLoading` from this view model target

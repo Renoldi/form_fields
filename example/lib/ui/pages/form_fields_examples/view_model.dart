@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields_example/data/models/product.dart';
 
-class FormFieldsExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   String autocompleteCustomQueryParamResult = '';
   String autocompleteTokenResult = '';
   String autocompleteCustomResultProcessorResult = '';

@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:form_fields_example/data/models/product.dart';
 import 'package:form_fields/form_fields.dart';
 
-class FormFieldsExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   String autocompleteCustomQueryParamResult = '';
   String autocompleteTokenResult = '';
   String autocompleteCustomResultProcessorResult = '';

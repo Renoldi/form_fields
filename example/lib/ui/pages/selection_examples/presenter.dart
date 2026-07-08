@@ -10,7 +10,7 @@ class Presenter extends StatefulWidget {
 }
 
 abstract class PresenterState extends State<Presenter> {
-  void handleValidateForm(SelectionExamplesViewModel viewModel) {
+  void handleValidateForm(ViewModel viewModel) {
     if (!viewModel.formKey.currentState!.validate()) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Form validated')),

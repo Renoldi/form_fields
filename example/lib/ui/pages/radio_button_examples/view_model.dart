@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class RadioButtonExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   String radio1 = '';

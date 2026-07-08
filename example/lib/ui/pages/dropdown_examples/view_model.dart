@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class DropdownExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   String? dropdown1;

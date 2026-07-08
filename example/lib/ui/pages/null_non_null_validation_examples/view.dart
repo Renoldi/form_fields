@@ -13,8 +13,8 @@ class View extends PresenterState {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => NullNonNullValidationExamplesViewModel(),
-      child: Consumer<NullNonNullValidationExamplesViewModel>(
+      create: (_) => ViewModel(),
+      child: Consumer<ViewModel>(
         builder: (context, viewModel, _) {
           loc.Localizations.of(context);
           return Form(

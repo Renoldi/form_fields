@@ -85,7 +85,7 @@ class Interest {
   String toString() => name;
 }
 
-class CustomClassExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   final List<Country> countries = [

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ListDataExamplesViewModel extends ChangeNotifier {
+class ViewModel extends ChangeNotifier {
   String? search;
   String? selectedItem;
 

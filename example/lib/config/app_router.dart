@@ -223,7 +223,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.formFields,
           child: ChangeNotifierProvider(
-            create: (_) => form_fields_examples.FormFieldsExamplesViewModel(),
+            create: (_) => form_fields_examples.ViewModel(),
             child: const form_fields_examples.Presenter(),
           ),
         ),
@@ -247,7 +247,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.dropdown,
           child: ChangeNotifierProvider(
-            create: (_) => dropdown_examples.DropdownExamplesViewModel(),
+            create: (_) => dropdown_examples.ViewModel(),
             child: const dropdown_examples.Presenter(),
           ),
         ),
@@ -259,8 +259,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.dropdownMulti,
           child: ChangeNotifierProvider(
-            create: (_) =>
-                dropdown_multi_examples.DropdownMultiExamplesViewModel(),
+            create: (_) => dropdown_multi_examples.ViewModel(),
             child: const dropdown_multi_examples.Presenter(),
           ),
         ),
@@ -272,7 +271,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.radioButton,
           child: ChangeNotifierProvider(
-            create: (_) => radio_button_examples.RadioButtonExamplesViewModel(),
+            create: (_) => radio_button_examples.ViewModel(),
             child: const radio_button_examples.Presenter(),
           ),
         ),
@@ -284,7 +283,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.selectionExamples,
           child: ChangeNotifierProvider(
-            create: (_) => selection_examples.SelectionExamplesViewModel(),
+            create: (_) => selection_examples.ViewModel(),
             child: const selection_examples.Presenter(),
           ),
         ),
@@ -308,7 +307,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.customClass,
           child: ChangeNotifierProvider(
-            create: (_) => custom_class_examples.CustomClassExamplesViewModel(),
+            create: (_) => custom_class_examples.ViewModel(),
             child: const custom_class_examples.Presenter(),
           ),
         ),
@@ -320,8 +319,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.validation,
           child: ChangeNotifierProvider(
-            create: (_) => null_non_null_validation_examples
-                .NullNonNullValidationExamplesViewModel(),
+            create: (_) => null_non_null_validation_examples.ViewModel(),
             child: const null_non_null_validation_examples.Presenter(),
           ),
         ),
@@ -395,7 +393,7 @@ GoRouter createAppRouter(
           context: context,
           route: AppRoute.mapExample,
           child: ChangeNotifierProvider(
-            create: (_) => map_examples.MapExamplesViewModel(),
+            create: (_) => map_examples.ViewModel(),
             child: const map_examples.Presenter(),
           ),
         ),
