@@ -13,6 +13,6 @@ abstract class PresenterState extends State<Presenter> {
   @override
   void initState() {
     super.initState();
-    model.generateMarkers(markerCount: model.createMarkers);
+    // model.generateMarkers(markerCount: model.createMarkers);
   }
 }

@@ -193,6 +193,7 @@ class View extends PresenterState {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: FormFieldsMap(
                       controller: vm.mapController,
@@ -211,10 +212,75 @@ class View extends PresenterState {
                         ),
                         showTitle: vm.showTitle,
                       ),
-                      findConfig: const FormFieldsMapFindConfig(
+                      findConfig: FormFieldsMapFindConfig(
                         allowGeolocation: true,
                         findTimeout: Duration(seconds: 5),
                         showSearchBar: true,
+                        showMarkerInCenter: true,
+                        // Use a free public geocoding API to avoid 403 issues
+                        // (geocode.maps.co is an OpenStreetMap-based free service).
+                        externalSearchResults: vm.externalSearchResults,
+                        // apiUrl: 'https://geocode.maps.co/search',
+                        // apiParseResults: (data) {
+                        //   final out = <FormFieldsLocationPrediction>[];
+                        //   try {
+                        //     if (data is List) {
+                        //       for (final e in data) {
+                        //         try {
+                        //           final lat = (e['lat'] is String)
+                        //               ? double.parse(e['lat'] as String)
+                        //               : (e['lat'] as num).toDouble();
+                        //           final lon = (e['lon'] is String)
+                        //               ? double.parse(e['lon'] as String)
+                        //               : (e['lon'] as num).toDouble();
+                        //           final display =
+                        //               e['display_name']?.toString() ?? '';
+                        //           out.add(FormFieldsLocationPrediction(
+                        //               latLng: LatLng(lat, lon),
+                        //               address: display));
+                        //         } catch (_) {}
+                        //       }
+                        //     }
+                        //   } catch (_) {}
+                        //   return out;
+                        // },
+                        centerMarker: const Icon(
+                          Icons.location_pin,
+                          size: 50,
+                          color: Colors.blueAccent,
+                        ),
+                        onCenterMarker: (pred) async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            debugPrint(
+                                '[Example] onCenterMarker: moving to ${pred.latLng}');
+                            try {
+                              vm.mapController.move(pred.latLng, 13);
+                              debugPrint(
+                                  '[Example] onCenterMarker: move() completed');
+                            } catch (e) {
+                              debugPrint(
+                                  '[Example] onCenterMarker: move() failed: $e');
+                            }
+                            await vm.mapController.animateCameraTo(
+                                pred.latLng, 13,
+                                duration: const Duration(milliseconds: 400));
+                            debugPrint(
+                                '[Example] onCenterMarker: animateCameraTo completed');
+                          } catch (e) {
+                            debugPrint(
+                                '[Example] onCenterMarker: animate failed: $e');
+                          }
+                          // Only show the SnackBar if still mounted to avoid
+                          // using BuildContext after disposal.
+                          if (mounted) {
+                            messenger.showSnackBar(SnackBar(
+                                content: Text('Selected: ${pred.address}')));
+                          }
+                        },
+                        reverseGeocode: (lat) async {
+                          return 'Coords: ${lat.latitude.toStringAsFixed(6)}, ${lat.longitude.toStringAsFixed(6)}';
+                        },
                       ),
                       playbackConfig: FormFieldsMapPlaybackConfig(
                         playbackInterval: vm.playbackInterval,

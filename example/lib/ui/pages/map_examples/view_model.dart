@@ -23,7 +23,7 @@ class ViewModel extends ChangeNotifier {
       // to. This prevents timing issues when the VM toggles loading
       // before the widget has registered its fallback notifier.
       mapController.registerWithNotifier();
-      appState.addListener(notifyListeners);
+      // appState.addListener(notifyListeners);
     } catch (_) {}
   }
   String get controllerId =>
@@ -37,6 +37,74 @@ class ViewModel extends ChangeNotifier {
 
   // Default center (Jakarta)
   LatLng center = const LatLng(-6.2, 106.8166);
+
+  /// Example-provided external search results used by the demo view.
+  /// Consumers can override this in their own view models if desired.
+  final List<FormFieldsLocationPrediction> externalSearchResults = (() {
+    final base = <FormFieldsLocationPrediction>[
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-6.208763, 106.845599), address: 'Jakarta, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-6.914744, 107.609810), address: 'Bandung, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-7.257472, 112.752088),
+          address: 'Surabaya, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-6.966667, 110.416664),
+          address: 'Semarang, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-7.795580, 110.369490),
+          address: 'Yogyakarta, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(3.595197, 98.672223), address: 'Medan, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-5.147665, 119.432732),
+          address: 'Makassar, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-2.990934, 104.756554),
+          address: 'Palembang, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-8.652000, 115.216700),
+          address: 'Denpasar, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-1.267800, 116.827000),
+          address: 'Balikpapan, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(1.492700, 124.839900), address: 'Manado, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-3.328600, 114.588700),
+          address: 'Banjarmasin, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-0.789275, 113.921327),
+          address: 'Kalimantan (Central)'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-0.914, 100.460), address: 'Pekanbaru, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-7.250445, 112.768845), address: 'Malang, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-5.4341, 105.2671), address: 'Bengkulu, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-4.0538, 119.4232), address: 'Mamuju, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-0.595, 100.354), address: 'Padang, Indonesia'),
+      FormFieldsLocationPrediction(
+          latLng: LatLng(-6.1745, 106.8227), address: 'Jakarta City Center'),
+    ];
+
+    final generated =
+        List<FormFieldsLocationPrediction>.generate(120 - base.length, (i) {
+      final idx = i + 1;
+      final row = (i ~/ 10) - 6;
+      final col = (i % 10) - 5;
+      final lat = -6.208763 + row * 0.05 + (i % 3) * 0.002;
+      final lon = 106.845599 + col * 0.05 + ((i + 2) % 3) * 0.002;
+      return FormFieldsLocationPrediction(
+          latLng: LatLng(lat, lon),
+          address: 'Demo Location ${idx + base.length}, Indonesia');
+    });
+
+    return [...base, ...generated];
+  })();
 
   bool useCanvasMarkers = false;
   bool showTitle = true;
@@ -302,21 +370,28 @@ class ViewModel extends ChangeNotifier {
       notifyListeners();
     } else {
       // Use compute to generate marker data off the main thread.
+      final swCompute = Stopwatch()..start();
       raw = await compute(_generateMarkersIsolate, {
         'count': markerCount,
         'seed': 424242,
         'centerLat': center.latitude,
         'centerLng': center.longitude,
       });
+      swCompute.stop();
+      debugPrint(
+          'generateMarkers: compute produced ${raw.length} items in ${swCompute.elapsedMilliseconds} ms');
     }
 
     // Convert and append in batches on the main isolate.
     // Larger batch size reduces number of notifier append calls.
     const batchSize = 4096;
     var idx = 0;
+    final swTotal = Stopwatch()..start();
+    int batchIndex = 0;
     while (idx < raw.length) {
       final end = (idx + batchSize).clamp(0, raw.length);
       final slice = raw.sublist(idx, end);
+      final swBatch = Stopwatch()..start();
       final batch = <dynamic>[];
       for (var m in slice) {
         final lat = (m['lat'] as num).toDouble();
@@ -337,6 +412,9 @@ class ViewModel extends ChangeNotifier {
       await FormFieldsMapController.appendRawMarkers(
           controllerId, List<dynamic>.from(batch),
           createMarkerWidgets: false);
+      swBatch.stop();
+      debugPrint(
+          'generateMarkers: appended batch ${++batchIndex} size=${batch.length} in ${swBatch.elapsedMilliseconds} ms (total elapsed=${swTotal.elapsedMilliseconds} ms)');
       generatedMarkers = end;
       if (FormFieldsMapController.enableBatchLogging) {
         debugPrint(

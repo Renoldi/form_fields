@@ -25,6 +25,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
   final BorderType borderStyle;
   final Widget? trailingIcon;
   final bool hideTrailingIcon;
+  final List<T>? externalResults;
 
   /// Returns a string label for the option (for text field display)
   final String Function(T)? itemSelectedBuilder;
@@ -48,6 +49,7 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
     this.hideTrailingIcon = false,
     this.itemSelectedBuilder,
     this.itemBuilder,
+    this.externalResults,
   });
 
   /// Fetches options from the URL using Dio, with custom query param, token header, and result processing.
@@ -91,12 +93,25 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget field = Autocomplete<T>(
       optionsBuilder: (TextEditingValue textEditingValue) async {
+        if (externalResults != null) {
+          final q = textEditingValue.text.trim().toLowerCase();
+          if (q.isEmpty) return externalResults!;
+          return externalResults!.where((e) {
+            final label = (itemSelectedBuilder != null)
+                ? itemSelectedBuilder!(e)
+                : e.toString();
+            return label.toLowerCase().contains(q);
+          }).toList();
+        }
         return await _fetchOptions(textEditingValue.text);
       },
       onSelected: (item) {
         onItemSelected(item);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Form.of(context).validate();
+          try {
+            final formState = context.findAncestorStateOfType<FormState>();
+            formState?.validate();
+          } catch (_) {}
         });
       },
       displayStringForOption:

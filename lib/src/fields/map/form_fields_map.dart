@@ -104,6 +104,13 @@ class FormFieldsMapFindConfig {
     this.allowGeolocation = true,
     this.findTimeout = const Duration(seconds: 10),
     this.showSearchBar = true,
+    this.showMarkerInCenter = false,
+    this.onCenterMarker,
+    this.centerMarker,
+    this.reverseGeocode,
+    this.externalSearchResults,
+    this.apiUrl,
+    this.apiParseResults,
   });
 
   /// Whether the example/app may request platform geolocation when performing
@@ -115,13 +122,91 @@ class FormFieldsMapFindConfig {
 
   /// Whether a small search bar or input should be shown for find operations.
   final bool showSearchBar;
+
+  /// Whether a marker should be shown at the viewport center when performing
+  /// find operations. Consumers can use this to indicate the target point
+  /// that will be returned by `onRequestCurrentLocation` or a search result.
+  final bool showMarkerInCenter;
+
+  /// Optional widget drawn at the viewport center specifically for find
+  /// operations. When provided this takes precedence over the widget-level
+  /// `centerMarker` property of `FormFieldsMap`.
+  final Widget? centerMarker;
+
+  /// Callback invoked when the user confirms the center marker selection.
+  /// Receives a `FormFieldsLocationPrediction` with `latLng` and `address`.
+  final ValueChanged<FormFieldsLocationPrediction>? onCenterMarker;
+
+  /// Optional reverse-geocode callback used to resolve a `LatLng` into a
+  /// human-readable address when confirming the center marker.
+  final Future<String?> Function(LatLng)? reverseGeocode;
+
+  /// Optional externally-provided list of predictions/search results that
+  /// can be displayed by the internal autocomplete UI. Each item should be
+  /// a `FormFieldsLocationPrediction`.
+  final List<FormFieldsLocationPrediction>? externalSearchResults;
+
+  /// Optional API URL used by the internal autocomplete when performing
+  /// remote searches. Defaults to Nominatim search if not provided.
+  final String? apiUrl;
+
+  /// Optional parse function to convert raw API response into a
+  /// `List<FormFieldsLocationPrediction>` for the internal autocomplete.
+  final List<FormFieldsLocationPrediction> Function(dynamic data)?
+      apiParseResults;
 }
+
+/// Prediction structure returned by find/autocomplete interactions.
+class FormFieldsLocationPrediction {
+  const FormFieldsLocationPrediction(
+      {required this.latLng, required this.address});
+
+  final LatLng latLng;
+  final String address;
+
+  /// Provide map-like accessors for legacy code that expects prediction
+  /// entries to be indexable (e.g. `e['lat']`). This returns the
+  /// corresponding value for common keys or `null` if the key is
+  /// unrecognized.
+  dynamic operator [](Object? key) {
+    try {
+      final k = key?.toString();
+      if (k == 'lat' || k == 'latitude') return latLng.latitude;
+      if (k == 'lon' || k == 'lng' || k == 'longitude') return latLng.longitude;
+      if (k == 'display_name' || k == 'address' || k == 'name') return address;
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  String toString() => address;
+}
+
+/// Reusable demo dataset of external search results used by the example.
+/// Contains both real-city seeds and generated synthetic entries (total ~120)
+// Note: demo data is provided by the example `ViewModel` to avoid
+// duplicating example-only datasets inside the package library.
 
 /// Feature set enum for `FormFieldsMap` to describe enabled/available
 /// capabilities in a clear, extensible way.
 enum FormFieldsMapFeature { playback, map, find }
 
 class FormFieldsMap extends StatefulWidget {
+  // Public configuration fields (backing for the constructor parameters).
+  final MapController? controller;
+  final FormFieldsMapPlaybackConfig? playbackConfig;
+  final FormFieldsMapMapConfig? mapConfig;
+  final FormFieldsMapFindConfig? findConfig;
+  final FormFieldsMapFeature? features;
+  final String tileUrlTemplate;
+  final String tileAttribution;
+  final LatLng initialCenter;
+  final double initialZoom;
+  final double maxZoom;
+  final double minZoom;
+  final double panBuffer;
+  final bool keepAlive;
+  final bool showMarkerInCenter;
   const FormFieldsMap({
     super.key,
     this.controller,
@@ -157,44 +242,6 @@ class FormFieldsMap extends StatefulWidget {
     this.markerBuilder,
   });
 
-  // Controller id has been removed in favor of the centralized
-  // `FormFieldsMapController` registry. Instances generate their own
-  // private id and expose controller operations through the registry.
-  final MapController? controller;
-  final FormFieldsMapPlaybackConfig? playbackConfig;
-
-  /// Optional centralized map configuration.
-  final FormFieldsMapMapConfig? mapConfig;
-
-  /// Optional centralized find/search configuration.
-  final FormFieldsMapFindConfig? findConfig;
-
-  /// Optional single feature enabling/disabling a high-level capability.
-  /// When `null`, legacy behavior is preserved (playback enabled when
-  /// `playbackConfig` is provided). When non-null, the selected feature
-  /// explicitly controls availability (e.g. `playback`).
-  final FormFieldsMapFeature? features;
-  final String tileUrlTemplate;
-  final String tileAttribution;
-  // `showLabels` removed: tile label control is handled by tile provider/template.
-  final LatLng initialCenter;
-  final double initialZoom;
-  final double maxZoom;
-  final double minZoom;
-  final int panBuffer;
-  final bool keepAlive;
-
-  // `canvasMarkerRadius`, `canvasMarkerIcon`, and `showTitle` are now
-  // provided via `mapConfig` (FormFieldsMapMapConfig).
-
-  final bool showMarkerInCenter;
-
-  /// Maximum number of `rawMarkers` items to render/process. When the
-  /// notifier contains more items than this threshold, only the first
-  /// `maxRenderedRawMarkers` entries are considered for painting and hit
-  /// testing. This prevents out-of-memory and extreme CPU work when
-  /// consumers accidentally provide very large lists (e.g. 1,000,000
-  /// markers).
   final int maxRenderedRawMarkers;
 
   // Optional builder callbacks allowing consumers to customize how a
@@ -292,6 +339,30 @@ class FormFieldsMapState extends State<FormFieldsMap>
   // Effective find/search configuration
   FormFieldsMapFindConfig get _findConfigEffective =>
       widget.findConfig ?? const FormFieldsMapFindConfig();
+
+  /// Whether a marker should be shown at the viewport center. Preference
+  /// order: explicit `findConfig.showMarkerInCenter` -> legacy
+  /// `widget.showMarkerInCenter` for backward compatibility.
+  bool get _showMarkerInCenterEffective {
+    final enabledByFind = widget.findConfig?.showMarkerInCenter;
+    // If a feature flag is provided, only show center marker when feature
+    // is explicitly `find`. Otherwise preserve legacy behavior.
+    if (widget.features != null) {
+      return (widget.features == FormFieldsMapFeature.find) &&
+          (enabledByFind ?? widget.showMarkerInCenter);
+    }
+    return enabledByFind ?? widget.showMarkerInCenter;
+  }
+
+  /// Effective on-center-marker callback (from find config).
+  ValueChanged<FormFieldsLocationPrediction>? get _onCenterMarkerEffective =>
+      widget.findConfig?.onCenterMarker;
+
+  // Note: onCenterChanged preference removed from findConfig; use widget value.
+
+  /// Effective reverse geocode function (from find config).
+  Future<String?> Function(LatLng)? get _reverseGeocodeEffective =>
+      widget.findConfig?.reverseGeocode;
 
   String get _tileUrlTemplateEffective => widget.tileUrlTemplate;
 
@@ -815,13 +886,22 @@ class FormFieldsMapState extends State<FormFieldsMap>
     widget.onPositionChanged?.call(position);
 
     try {
-      final dynamic pos = position;
+      final dynamic pos = position; // Ensure position is dynamic
       if (pos != null) {
         if (pos.center != null) {
           _lastCenter = pos.center as LatLng;
         }
         if (pos.zoom != null) {
           _lastZoom = (pos.zoom as num).toDouble();
+        }
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            try {
+              FormFieldsMapController.setLoading(_controllerId, true);
+            } catch (_) {}
+            _safeSetState(() {});
+          });
         }
 
         if (mounted) {
@@ -840,7 +920,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
       FormFieldsMapController.setLoading(_controllerId, false);
       // During playback, do not notify center changes to consumers.
-      if (_isPlaying) return;
+      widget.onCenterChanged?.call(_lastCenter!);
       // Only notify center after camera becomes idle so consumers get the
       // final/last center rather than a rapid stream of intermediate values.
       try {
@@ -855,6 +935,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
             widget.onCameraIdle?.call();
           } catch (_) {}
         });
+        // The center-marker confirmation should only be triggered explicitly
+        // via the confirmation button (see the check `AppButton` below).
+        // Do not automatically invoke `onCenterMarker` when the camera
+        // becomes idle after panning/zooming.
       } catch (_) {}
     });
   }
@@ -1528,14 +1612,97 @@ class FormFieldsMapState extends State<FormFieldsMap>
             ],
           ),
         ),
-        if (widget.showMarkerInCenter)
+        // Optional search bar overlay for find operations. Uses externally
+        // provided search results when available (`findConfig.externalSearchResults`).
+        if ((widget.features == null ||
+                widget.features == FormFieldsMapFeature.find) &&
+            _findConfigEffective.showSearchBar)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            left: 50,
+            right: 50,
+            child: SafeArea(
+              child: Material(
+                color: Colors.transparent,
+                child: FormFieldsAutocomplete<FormFieldsLocationPrediction>(
+                  fieldLabel: 'Search',
+                  apiUrl: _findConfigEffective.apiUrl ??
+                      'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1',
+                  parseResults: _findConfigEffective.apiParseResults ??
+                      (data) {
+                        final out = <FormFieldsLocationPrediction>[];
+                        try {
+                          if (data is List) {
+                            for (final e in data) {
+                              try {
+                                final lat = (e['lat'] is String)
+                                    ? double.parse(e['lat'] as String)
+                                    : (e['lat'] as num).toDouble();
+                                final lon = (e['lon'] is String)
+                                    ? double.parse(e['lon'] as String)
+                                    : (e['lon'] as num).toDouble();
+                                final display =
+                                    e['display_name']?.toString() ?? '';
+                                out.add(FormFieldsLocationPrediction(
+                                    latLng: LatLng(lat, lon),
+                                    address: display));
+                              } catch (_) {}
+                            }
+                          } else if (data is Map && data['results'] is List) {
+                            for (final e in data['results']) {
+                              try {
+                                final lat = (e['lat'] is String)
+                                    ? double.parse(e['lat'] as String)
+                                    : (e['lat'] as num).toDouble();
+                                final lon = (e['lon'] is String)
+                                    ? double.parse(e['lon'] as String)
+                                    : (e['lon'] as num).toDouble();
+                                final display =
+                                    e['display_name']?.toString() ?? '';
+                                out.add(FormFieldsLocationPrediction(
+                                    latLng: LatLng(lat, lon),
+                                    address: display));
+                              } catch (_) {}
+                            }
+                          }
+                        } catch (_) {}
+                        return out;
+                      },
+                  externalResults: _findConfigEffective.externalSearchResults,
+                  onItemSelected: (pred) async {
+                    if (pred == null) return;
+                    final zoom = (widget.playbackConfig != null)
+                        ? _playbackTargetZoom
+                        : (_lastZoom ?? widget.initialZoom);
+                    await animateTo(pred.latLng, zoom);
+                    // Optionally call configured callback for confirmation
+                    try {
+                      _onCenterMarkerEffective?.call(pred);
+                    } catch (_) {}
+                  },
+                  itemSelectedBuilder: (p) => p.address,
+                  itemBuilder: (p, selected) {
+                    return ListTile(
+                      title: Text(p.address),
+                      subtitle: Text(
+                          '${p.latLng.latitude.toStringAsFixed(6)}, ${p.latLng.longitude.toStringAsFixed(6)}'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        if (_showMarkerInCenterEffective)
           Positioned.fill(
             child: IgnorePointer(
               child: Center(
                 child: Builder(builder: (ctx) {
-                  // Priority: explicit `centerMarker` widget -> rasterized
-                  // `_canvasMarkerImage` -> provided `canvasMarkerIcon`
-                  if (widget.centerMarker != null) return widget.centerMarker!;
+                  // Priority: `findConfig.centerMarker` -> explicit
+                  // `widget.centerMarker` -> rasterized `_canvasMarkerImage`
+                  // -> provided `canvasMarkerIcon` -> default icon.
+                  final centerWidget =
+                      _findConfigEffective.centerMarker ?? widget.centerMarker;
+                  if (centerWidget != null) return centerWidget;
                   if (_canvasMarkerImage != null) {
                     return RawImage(
                       image: _canvasMarkerImage,
@@ -1566,7 +1733,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           ),
         Positioned(
           right: 10,
-          top: 60,
+          top: 80,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1607,35 +1774,36 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.maybeOf(context);
                     LatLng? target;
-                    if (widget.onRequestCurrentLocation != null) {
-                      try {
-                        if (!_findConfigEffective.allowGeolocation) {
-                          messenger?.showSnackBar(const SnackBar(
-                              content: Text('Location access disabled')));
-                        } else {
-                          try {
-                            final Future<LatLng>? fut =
-                                widget.onRequestCurrentLocation!.call();
-                            if (fut != null) {
-                              try {
-                                target = await fut
-                                    .timeout(_findConfigEffective.findTimeout);
-                              } on TimeoutException {
-                                target = null;
-                              } catch (_) {
-                                target = null;
-                              }
-                            } else {
+                    try {
+                      if (!_findConfigEffective.allowGeolocation) {
+                        messenger?.showSnackBar(const SnackBar(
+                            content: Text('Location access disabled')));
+                      } else if (widget.onRequestCurrentLocation != null) {
+                        try {
+                          final Future<LatLng>? fut =
+                              widget.onRequestCurrentLocation!.call();
+                          if (fut != null) {
+                            try {
+                              target = await fut
+                                  .timeout(_findConfigEffective.findTimeout);
+                            } on TimeoutException {
+                              target = null;
+                            } catch (_) {
                               target = null;
                             }
-                          } catch (_) {
-                            target = null;
                           }
+                        } catch (_) {
+                          target = null;
                         }
-                      } catch (_) {
-                        target = null;
+                      } else {
+                        // No callback provided yet — fall back to current map
+                        // center (if available) or the widget's initial center.
+                        target = _lastCenter ?? widget.initialCenter;
                       }
+                    } catch (_) {
+                      target = null;
                     }
+
                     if (!mounted) return;
                     if (target != null) {
                       final currentZoom = _lastZoom ?? widget.initialZoom;
@@ -1651,6 +1819,32 @@ class FormFieldsMapState extends State<FormFieldsMap>
                         content: Text('Current location not available')));
                   },
                 ),
+                const SizedBox(height: 8),
+                if (_showMarkerInCenterEffective)
+                  AppButton(
+                    type: AppButtonType.fab,
+                    size: AppSize.small,
+                    icon: const Icon(Icons.check),
+                    useSafeArea: false,
+                    heroTag: null,
+                    onPressed: () async {
+                      final center = _lastCenter ?? widget.initialCenter;
+                      String address = '';
+                      try {
+                        if (_reverseGeocodeEffective != null) {
+                          address =
+                              await _reverseGeocodeEffective!(center) ?? '';
+                        }
+                      } catch (_) {
+                        address = '';
+                      }
+                      try {
+                        _onCenterMarkerEffective?.call(
+                            FormFieldsLocationPrediction(
+                                latLng: center, address: address));
+                      } catch (_) {}
+                    },
+                  ),
                 const SizedBox(height: 8),
                 AppButton(
                   type: AppButtonType.fab,

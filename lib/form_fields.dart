@@ -160,6 +160,7 @@ export 'src/fields/map/form_fields_map.dart'
         FormFieldsMapPlaybackConfig,
         FormFieldsMapMapConfig,
         FormFieldsMapFindConfig,
+        FormFieldsLocationPrediction,
         FormFieldsMapFeature;
 export 'src/providers/form_fields_map_notifier.dart' show FormFieldsMapNotifier;
 export 'src/controllers/map_controller.dart'
