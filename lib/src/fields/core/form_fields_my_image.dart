@@ -1163,7 +1163,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       final ok = await ensurePermissionForSource('camera');
       if (!ok) return;
       final scanned = await CunningDocumentScanner.getPictures(
-        isGalleryImportAllowed: true,
+        scannerSource: ScannerSource.gallery,
         noOfPages: 1,
       );
       if (!mounted) return;
