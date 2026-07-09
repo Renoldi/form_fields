@@ -44,6 +44,9 @@ import 'package:form_fields_example/ui/pages/language/main.dart' as language;
 import 'package:form_fields_example/ui/pages/app_info/main.dart' as app_info;
 import 'package:form_fields_example/ui/pages/form_fields_signature_pad/main.dart'
     as form_fields_signature_pad;
+import 'package:form_fields_example/ui/pages/fcm_test/main.dart' as fcm_test;
+import 'package:form_fields_example/ui/pages/notification/main.dart'
+    as notification;
 import 'package:form_fields_example/ui/pages/responsive_menu_grid_examples/main.dart'
     as responsive_menu_grid_examples;
 import 'package:form_fields_example/ui/pages/map_examples/main.dart'
@@ -154,6 +157,7 @@ GoRouter createAppRouter(
         name: AppRoute.modalBottomSheetShapeExamples.name,
         builder: (context, state) => const ModalBottomSheetShapeExamplesPage(),
       ),
+      // Notification page
       GoRoute(
         path: AppRoute.settings.path,
         name: AppRoute.settings.name,
@@ -227,6 +231,26 @@ GoRouter createAppRouter(
             child: const form_fields_examples.Presenter(),
           ),
         ),
+      ),
+      GoRoute(
+        path: AppRoute.fcmTest.path,
+        name: AppRoute.fcmTest.name,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => fcm_test.ViewModel(),
+          child: const fcm_test.Presenter(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoute.notification.path,
+        name: AppRoute.notification.name,
+        builder: (context, state) {
+          final payload = state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : (state.uri.queryParameters.isNotEmpty
+                  ? Map<String, dynamic>.from(state.uri.queryParameters)
+                  : null);
+          return notification.Presenter(payload: payload);
+        },
       ),
       GoRoute(
         path: AppRoute.sqlViewer.path,
@@ -518,6 +542,10 @@ String _routeTitleKey(AppRoute route) {
       return 'workerDemo';
     case AppRoute.barcodeScan:
       return 'barcodeScan';
+    case AppRoute.fcmTest:
+      return 'fcmTest';
+    case AppRoute.notification:
+      return 'notification';
     case AppRoute.selectionExamples:
       return 'selectionExamples';
     case AppRoute.safeScaffoldDemo:

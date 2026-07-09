@@ -19,14 +19,20 @@ import 'package:form_fields/form_fields.dart';
 // register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // example-local service helpers (flush, handlers)
 
 // Local configuration & state management
 import 'config/app_router.dart';
 import 'config/environment.dart';
+import 'config/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
+import 'ui/pages/fcm_test/main.dart' as fcm_test;
+import 'ui/pages/notification/main.dart' as notification;
 
 final logger = Logger();
 
@@ -113,7 +119,7 @@ Future<void> main() async {
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
       enableWorkmanager: false,
-      registerPeriodic: true,
+      registerPeriodic: false,
       // Example: register one or more background workers.
       workerRegistrations: [
         WorkerRegistration(
@@ -191,6 +197,130 @@ Future<void> main() async {
     // inside FormFieldsInitializer.initAll to avoid duplicate/late registration.
   } catch (e, st) {
     logger.w('Startup initialization failed: $e\n$st');
+  }
+
+  // Initialize FCM for the example app (non-fatal)
+  try {
+    await Firebase.initializeApp();
+    FCMService.registerBackgroundHandler(fcmBackgroundHandler);
+    await FCMService.instance.initialize(
+      options: const FCMOptions(showLocalNotification: true),
+      onMessage: (msg) async {
+        logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');
+      },
+      onMessageOpenedApp: (msg) async {
+        logger.i('FCM opened app: ${msg.data}');
+        try {
+          // Use the configured global dialog service; avoid using a
+          // `BuildContext` across async gaps by not awaiting navigation
+          // calls that require it. If the service isn't configured we
+          // can't navigate here.
+          final agds = AppGlobalDialogService.instance;
+          if (!agds.isConfigured) {
+            logger.w(
+                'AppGlobalDialogService not configured; cannot navigate on notification click.');
+          } else {
+            final ctx = agds.context;
+
+            // If the notification payload contains a `route` field, try to
+            // navigate using the named AppRoute. Fall back to pushing the
+            // FCM test page if the route is not recognized.
+            final data = msg.data;
+            if (data.containsKey('route')) {
+              final routeValue = (data['route'] ?? '').toString();
+              try {
+                // Support absolute path deep-links: '/some/path'. Pass other
+                // payload keys as query parameters.
+                if (routeValue.startsWith('/')) {
+                  final params = <String, String>{};
+                  data.forEach((k, v) {
+                    if (k == 'route' || k == 'push') return;
+                    params[k] = v?.toString() ?? '';
+                  });
+                  final uri = Uri(
+                      path: routeValue,
+                      queryParameters: params.isEmpty ? null : params);
+                  ctx.go(uri.toString());
+                  return;
+                }
+
+                // Otherwise match against named AppRoute values.
+                final normalized = routeValue.replaceAll('-', '_');
+                final match = AppRoute.values.firstWhere(
+                    (r) => r.name == routeValue || r.name == normalized,
+                    orElse: () => AppRoute.fcmTest);
+
+                // Use named navigation by default; use push if payload asks for it
+                final usePush =
+                    (data['push'] ?? 'false').toString().toLowerCase() ==
+                        'true';
+                if (usePush) {
+                  // Do not await here to avoid keeping a `BuildContext` across an async gap.
+                  ctx.pushRoute(match);
+                } else {
+                  // If there are additional payload keys, pass them via `extra`.
+                  if (data.keys.length > 1) {
+                    ctx.goNamed(match.name, extra: data);
+                  } else {
+                    ctx.goToRoute(match);
+                  }
+                }
+                return;
+              } catch (_) {
+                // fall through to default push below
+              }
+            }
+
+            // Default: navigate to the notification page and pass payload
+            try {
+              ctx.pushNamed(AppRoute.notification.name, extra: msg.data);
+            } catch (_) {
+              Navigator.of(ctx).push(MaterialPageRoute(
+                builder: (_) => notification.Presenter(payload: msg.data),
+                settings: RouteSettings(arguments: msg.data),
+              ));
+            }
+          }
+        } catch (e, st) {
+          logger.w('Failed to navigate on notification click: $e\n$st');
+          try {
+            // Log payload for easier debugging
+            logger.w('Notification payload (for debug): ${msg.data}');
+
+            // Attempt a safe fallback navigation to the FCM test page
+            final fallbackCtx = AppGlobalDialogService.instance.context;
+            Navigator.of(fallbackCtx).push(MaterialPageRoute(
+              builder: (_) => const fcm_test.Presenter(),
+              settings: RouteSettings(arguments: msg.data),
+            ));
+            try {
+              ScaffoldMessenger.of(fallbackCtx).showSnackBar(
+                const SnackBar(content: Text('Opened FCM Test (fallback)')),
+              );
+            } catch (_) {}
+          } catch (e2, st2) {
+            logger.w('Fallback navigation also failed: $e2\n$st2');
+          }
+        }
+      },
+      onToken: (token) async {
+        logger.i('FCM token: $token');
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (token.isNotEmpty) await prefs.setString('fcm_token', token);
+        } catch (_) {}
+      },
+      onTokenRefresh: (newToken) async {
+        logger.i('FCM token refreshed: $newToken');
+        try {
+          final p = await SharedPreferences.getInstance();
+          await p.setString('fcm_token', newToken);
+        } catch (_) {}
+      },
+    );
+    // FCM token retrieval and refresh handling moved into FCMService.initialize().
+  } catch (e, st) {
+    logger.w('FCM initialization failed (example): $e\n$st');
   }
 
   // Start the app
@@ -381,6 +511,67 @@ abstract class PresenterState extends State<MyApp> {
 /// View for MyApp - renders the app UI with theming and routing
 class View extends PresenterState {
   @override
+  void initState() {
+    super.initState();
+
+    // Consume any initial FCM message that opened the app (terminated -> launched)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Immediately-invoked async closure: wait for the global dialog
+      // service to be configured (retry briefly) and then handle the
+      // initial FCM message.
+      () async {
+        int tries = 0;
+        const int maxTries = 12; // ~12 frames ~= ~200ms on 60Hz
+
+        while (true) {
+          final agds = AppGlobalDialogService.instance;
+          if (agds.isConfigured) break;
+          tries++;
+          if (tries > maxTries) {
+            logger.w(
+                'AppGlobalDialogService not configured after retries; cannot navigate on initial notification.');
+            return;
+          }
+          // wait approx one frame
+          await Future<void>.delayed(const Duration(milliseconds: 16));
+        }
+
+        try {
+          final initial = await FCMService.instance.consumeInitialMessage();
+          try {
+            if (initial == null) return;
+
+            logger.i(
+                'Handling initial FCM message (app launch): ${initial.data}');
+            final data = initial.data;
+
+            // Prefer using go_router so navigation integrates with router state.
+            try {
+              viewModel.routerConfig
+                  .goNamed(AppRoute.notification.name, extra: data);
+              return;
+            } catch (_) {
+              // Fallback to direct navigator push if router fails.
+              final navigator = viewModel.rootNavigatorKey.currentState;
+              if (navigator == null) {
+                logger.w(
+                    'Root navigator not available; cannot navigate on initial notification.');
+                return;
+              }
+              navigator.push(MaterialPageRoute(
+                builder: (_) => notification.Presenter(payload: data),
+                settings: RouteSettings(arguments: data),
+              ));
+            }
+          } catch (e, st) {
+            logger.w('Failed to handle initial FCM message: $e\n$st');
+          }
+        } catch (_) {}
+      }();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: viewModel.appState,
@@ -419,6 +610,29 @@ class View extends PresenterState {
             // ROUTING CONFIGURATION
             // ================================================================
             routerConfig: viewModel.routerConfig,
+            builder: (context, child) {
+              // Wrap the router child so we can show an always-available
+              // FAB to open the FCM test page from anywhere in the app.
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: Builder(
+                      builder: (fabContext) => FloatingActionButton.extended(
+                        icon: const Icon(Icons.bug_report),
+                        label: const Text('FCM Test'),
+                        onPressed: () {
+                          viewModel.rootNavigatorKey.currentContext
+                              ?.pushRoute(AppRoute.fcmTest);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

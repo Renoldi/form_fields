@@ -64,22 +64,24 @@ jenkins/secrets/
 ### 1. Development Environment (Local Machine)
 
 #### Create local configuration file
+
 ```dart
 // lib/config/api_keys.dart (GITIGNORED)
 class ApiKeys {
   static const String mapsApiKeyDebug = 'AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxx';
   static const String mapsApiKeyBeta = 'AIzaSyDyyyyyyyyyyyyyyyyyyyyyyyyy';
   static const String mapsApiKeyProduction = 'AIzaSyDzzzzzzzzzzzzzzzzzzzzzzzzzz';
-  
+
   static const String firebaseProjectId = 'my-project-debug';
   static const String firebaseApiKey = 'AIzaSyD...';
-  
+
   static const String paymentApiKey = 'pk_test_xxxxx';
   static const String weatherApiKey = 'openweather_test_key';
 }
 ```
 
 #### Use in BuildConfig
+
 ```dart
 // lib/config/build_config.dart
 static String get mapsApiKey {
@@ -97,6 +99,7 @@ static String get mapsApiKey {
 ### 2. Testing Environment (CI/CD)
 
 #### GitHub Actions Setup
+
 ```yaml
 # .github/workflows/build.yml
 name: Build & Test
@@ -114,12 +117,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.0'
-      
+          flutter-version: "3.13.0"
+
       - name: Create API keys file
         run: |
           cat > lib/config/api_keys.dart << EOF
@@ -129,18 +132,19 @@ jobs:
             static const String mapsApiKeyProduction = '${{ secrets.MAPS_API_KEY_PRODUCTION }}';
           }
           EOF
-      
+
       - name: Get dependencies
         run: flutter pub get
-      
+
       - name: Run tests
         run: flutter test
-      
+
       - name: Build APK
         run: flutter build apk --release
 ```
 
 #### GitLab CI Setup
+
 ```yaml
 # .gitlab-ci.yml
 stages:
@@ -188,12 +192,14 @@ secrets {
 ```
 
 #### Configure local.properties
+
 ```properties
 # android/local.properties (GITIGNORED)
 MAPS_API_KEY=AIzaSyDxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 #### Reference in AndroidManifest.xml
+
 ```xml
 <meta-data
     android:name="com.google.android.geo.API_KEY"
@@ -210,7 +216,7 @@ android {
             buildConfigField("String", "MAPS_API_KEY", "\"DEBUG_KEY\"")
             buildConfigField("String", "FIREBASE_PROJECT_ID", "\"debug-project\"")
         }
-        
+
         release {
             buildConfigField("String", "MAPS_API_KEY", "\"PROD_KEY\"")
             buildConfigField("String", "FIREBASE_PROJECT_ID", "\"prod-project\"")
@@ -220,6 +226,7 @@ android {
 ```
 
 #### Access in Dart
+
 ```dart
 import 'package:flutter/services.dart';
 
@@ -243,6 +250,7 @@ class ConfigLoader {
 #### 1. Google Maps API Key
 
 **Get SHA-1 Fingerprint:**
+
 ```bash
 # Debug keystore
 keytool -list -v -keystore ~/.android/debug.keystore \
@@ -260,6 +268,7 @@ keytool -list -v -keystore ~/my-release-key.jks \
 ```
 
 **Create API Key:**
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create project or select existing
 3. Enable "Maps SDK for Android"
@@ -272,7 +281,9 @@ keytool -list -v -keystore ~/my-release-key.jks \
 
 #### 2. Firebase Configuration
 
+https://console.firebase.google.com/u/0/project/example-formfield/notification/compose
 **Download google-services.json:**
+
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Select your project
 3. Project settings → Your apps → Android
@@ -285,6 +296,7 @@ keytool -list -v -keystore ~/my-release-key.jks \
 #### 1. Google Maps API Key
 
 **Create API Key:**
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Go to Credentials → Create API Key
 3. Restrict key:
@@ -294,6 +306,7 @@ keytool -list -v -keystore ~/my-release-key.jks \
 4. Copy key
 
 **Add to Podfile:**
+
 ```ruby
 # ios/Podfile
 post_install do |installer|
@@ -312,6 +325,7 @@ end
 #### 2. Firebase Configuration
 
 **Download GoogleService-Info.plist:**
+
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Project settings → Your apps → iOS
 3. Download `GoogleService-Info.plist`
@@ -388,6 +402,7 @@ gcloud services api-keys delete OLD_KEY_ID
 ## Best Practices
 
 ### 1. Principle of Least Privilege
+
 ```dart
 // ✅ Good: Restrict each key to what it needs
 // Maps API key - only Google Maps API
@@ -398,6 +413,7 @@ gcloud services api-keys delete OLD_KEY_ID
 ```
 
 ### 2. Key Isolation by Environment
+
 ```dart
 // ✅ Good: Separate keys for dev/beta/prod
 static String get mapsApiKey {
@@ -416,6 +432,7 @@ static const String mapsApiKey = 'SHARED_KEY';
 ```
 
 ### 3. Monitoring and Alerts
+
 ```yaml
 # Set up alerts in Google Cloud Console
 # Alert when:
@@ -434,11 +451,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SecureConfig {
   static const platform = MethodChannel('com.example.app/secure');
   static final _storage = const FlutterSecureStorage();
-  
+
   static Future<String> getApiKey(String name) async {
     return await _storage.read(key: name) ?? '';
   }
-  
+
   static Future<void> setApiKey(String name, String value) async {
     await _storage.write(key: name, value: value);
   }
@@ -472,11 +489,13 @@ android {
 ### Issue: "Maps API key not found"
 
 **Diagnosis:**
+
 1. Check if API key is in AndroidManifest.xml
 2. Verify SHA-1 fingerprint matches
 3. Confirm API key is enabled in Google Cloud
 
 **Solution:**
+
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml -->
 <application>
@@ -489,11 +508,13 @@ android {
 ### Issue: "Quota exceeded"
 
 **Diagnosis:**
+
 1. Check API usage in Google Cloud Console
 2. Verify key restrictions are correct
 3. Look for accidental infinite loops
 
 **Solution:**
+
 1. Upgrade quota in Google Cloud Console
 2. Implement caching to reduce requests
 3. Add request batching/throttling
@@ -501,6 +522,7 @@ android {
 ### Issue: "API key leaked in commit"
 
 **Immediate Actions:**
+
 ```bash
 # 1. Revoke the key immediately in Google Cloud Console
 # 2. Rotate to new key

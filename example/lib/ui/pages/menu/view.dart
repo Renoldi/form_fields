@@ -112,6 +112,7 @@ class View extends PresenterState {
                       ),
                     Expanded(
                       child: ResponsiveMenuGrid(
+                        allowScroll: true,
                         widgets: viewModel.menuItems
                             .map((item) => Column(
                                   mainAxisSize: MainAxisSize.max,

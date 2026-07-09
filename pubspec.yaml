@@ -24,7 +24,6 @@ dependencies:
   path_provider: any
   crypto: any
   workmanager: any
-  # file_picker removed; using assets and app directories for import/export
   provider: any
   cunning_document_scanner: ^1.4.0
   image_picker: any
@@ -38,6 +37,9 @@ dependencies:
   file_picker: ^11.0.2
   flutter_map: ^8.3.1
   latlong2: any
+  firebase_core: any
+  firebase_messaging: any
+  flutter_local_notifications: any
 
 dev_dependencies:
   build_runner: any
@@ -45,6 +47,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   json_serializable: any
+  mockito: any
 
 flutter:
   uses-material-design: true

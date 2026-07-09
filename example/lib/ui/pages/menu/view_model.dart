@@ -176,6 +176,13 @@ class ViewModel extends ChangeNotifier {
           routeName: AppRoute.workerDemo.name,
         ),
         AppMenuItemData(
+          title: 'FCM Test',
+          subtitle: 'Firebase Cloud Messaging demo',
+          icon: Icons.notifications,
+          color: Colors.blueGrey,
+          routeName: AppRoute.fcmTest.name,
+        ),
+        AppMenuItemData(
           title: 'SafeScaffold Demo',
           subtitle: 'Custom scaffold + appbar example',
           icon: Icons.smartphone,
@@ -196,6 +203,12 @@ class ViewModel extends ChangeNotifier {
 
     try {
       final user = await User.getMe(accessToken: accessToken);
+      // If the returned user has no usable display name or username,
+      // treat this as an invalid session and force re-login.
+      if (user.displayName == null) {
+        _appState.logout();
+        return 'errorSessionExpiredLoginAgain';
+      }
       _appState.updateUserData(user);
       return null;
     } catch (error, stackTrace) {
