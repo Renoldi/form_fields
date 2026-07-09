@@ -26,7 +26,7 @@ dependencies:
   workmanager: any
   # file_picker removed; using assets and app directories for import/export
   provider: any
-  cunning_document_scanner: any
+  cunning_document_scanner: ^1.4.0
   image_picker: any
   permission_handler: any
   signature: any
