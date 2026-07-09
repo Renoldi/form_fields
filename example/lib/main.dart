@@ -516,44 +516,58 @@ class View extends PresenterState {
 
     // Consume any initial FCM message that opened the app (terminated -> launched)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Capture the global dialog service and its context BEFORE the async
-      // callback to avoid using a BuildContext across async gaps.
-      final agds = AppGlobalDialogService.instance;
-      if (!agds.isConfigured) {
-        logger.w(
-            'AppGlobalDialogService not configured; cannot navigate on initial notification.');
-        return;
-      }
-      FCMService.instance.consumeInitialMessage().then((initial) {
-        try {
-          if (initial == null) return;
+      // Immediately-invoked async closure: wait for the global dialog
+      // service to be configured (retry briefly) and then handle the
+      // initial FCM message.
+      () async {
+        int tries = 0;
+        const int maxTries = 12; // ~12 frames ~= ~200ms on 60Hz
 
-          logger
-              .i('Handling initial FCM message (app launch): ${initial.data}');
-          final data = initial.data;
-
-          // Prefer using go_router so navigation integrates with router state.
-          try {
-            viewModel.routerConfig
-                .goNamed(AppRoute.notification.name, extra: data);
+        while (true) {
+          final agds = AppGlobalDialogService.instance;
+          if (agds.isConfigured) break;
+          tries++;
+          if (tries > maxTries) {
+            logger.w(
+                'AppGlobalDialogService not configured after retries; cannot navigate on initial notification.');
             return;
-          } catch (_) {
-            // Fallback to direct navigator push if router fails.
-            final navigator = viewModel.rootNavigatorKey.currentState;
-            if (navigator == null) {
-              logger.w(
-                  'Root navigator not available; cannot navigate on initial notification.');
-              return;
-            }
-            navigator.push(MaterialPageRoute(
-              builder: (_) => notification.Presenter(payload: data),
-              settings: RouteSettings(arguments: data),
-            ));
           }
-        } catch (e, st) {
-          logger.w('Failed to handle initial FCM message: $e\n$st');
+          // wait approx one frame
+          await Future<void>.delayed(const Duration(milliseconds: 16));
         }
-      });
+
+        try {
+          final initial = await FCMService.instance.consumeInitialMessage();
+          try {
+            if (initial == null) return;
+
+            logger.i(
+                'Handling initial FCM message (app launch): ${initial.data}');
+            final data = initial.data;
+
+            // Prefer using go_router so navigation integrates with router state.
+            try {
+              viewModel.routerConfig
+                  .goNamed(AppRoute.notification.name, extra: data);
+              return;
+            } catch (_) {
+              // Fallback to direct navigator push if router fails.
+              final navigator = viewModel.rootNavigatorKey.currentState;
+              if (navigator == null) {
+                logger.w(
+                    'Root navigator not available; cannot navigate on initial notification.');
+                return;
+              }
+              navigator.push(MaterialPageRoute(
+                builder: (_) => notification.Presenter(payload: data),
+                settings: RouteSettings(arguments: data),
+              ));
+            }
+          } catch (e, st) {
+            logger.w('Failed to handle initial FCM message: $e\n$st');
+          }
+        } catch (_) {}
+      }();
     });
   }
 
