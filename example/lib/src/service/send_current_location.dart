@@ -30,7 +30,8 @@ Future<bool> sendCurrentLocationBackgroundHandler(
     _sendLocationLogger.i('Background handler invoked for $task');
     try {
       final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best);
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.best));
       location = {'lat': pos.latitude, 'lng': pos.longitude};
       _sendLocationLogger.i('Current location fetched: $location');
     } catch (e, st) {
@@ -91,7 +92,8 @@ Future<void> sendCurrentLocationForeground() async {
     _sendLocationLogger.i('Foreground handler invoked');
     try {
       final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best);
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.best));
       location = {'lat': pos.latitude, 'lng': pos.longitude};
       _sendLocationLogger.i('Foreground current location fetched: $location');
     } catch (e, st) {
