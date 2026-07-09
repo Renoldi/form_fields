@@ -24,7 +24,6 @@ dependencies:
   path_provider: any
   crypto: any
   workmanager: any
-  # file_picker removed; using assets and app directories for import/export
   provider: any
   cunning_document_scanner: any
   image_picker: any
