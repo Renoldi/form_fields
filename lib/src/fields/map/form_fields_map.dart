@@ -135,7 +135,10 @@ class FormFieldsMapFindConfig {
 
   /// Callback invoked when the user confirms the center marker selection.
   /// Receives a `FormFieldsLocationPrediction` with `latLng` and `address`.
-  final ValueChanged<FormFieldsLocationPrediction>? onCenterMarker;
+  ///
+  /// NOTE: this callback may be async; when provided the widget will await
+  /// the returned `Future` and will not perform its own camera animation.
+  final Future<void> Function(FormFieldsLocationPrediction)? onCenterMarker;
 
   /// Optional reverse-geocode callback used to resolve a `LatLng` into a
   /// human-readable address when confirming the center marker.
@@ -354,9 +357,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     return enabledByFind ?? widget.showMarkerInCenter;
   }
 
-  /// Effective on-center-marker callback (from find config).
-  ValueChanged<FormFieldsLocationPrediction>? get _onCenterMarkerEffective =>
-      widget.findConfig?.onCenterMarker;
+  /// Effective on-center-marker callback (from find config). May be async.
+  Future<void> Function(FormFieldsLocationPrediction)?
+      get _onCenterMarkerEffective => widget.findConfig?.onCenterMarker;
 
   // Note: onCenterChanged preference removed from findConfig; use widget value.
 
@@ -1626,6 +1629,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 color: Colors.transparent,
                 child: FormFieldsAutocomplete<FormFieldsLocationPrediction>(
                   fieldLabel: 'Search',
+                  hideTrailingIcon: true,
                   apiUrl: _findConfigEffective.apiUrl ??
                       'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1',
                   parseResults: _findConfigEffective.apiParseResults ??
@@ -1674,11 +1678,42 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     final zoom = (widget.playbackConfig != null)
                         ? _playbackTargetZoom
                         : (_lastZoom ?? widget.initialZoom);
-                    await animateTo(pred.latLng, zoom);
-                    // Optionally call configured callback for confirmation
+                    // Show the short non-blocking loading indicator while we
+                    // animate and run any consumer-provided handler.
                     try {
-                      _onCenterMarkerEffective?.call(pred);
-                    } catch (_) {}
+                      FormFieldsMapController.setLoading(_controllerId, true);
+                      if (_onCenterMarkerEffective != null) {
+                        try {
+                          await animateTo(pred.latLng, zoom);
+                          await _onCenterMarkerEffective!(pred);
+                        } catch (_) {}
+                      } else {
+                        try {
+                          await animateTo(pred.latLng, zoom);
+                        } catch (_) {}
+                      }
+                    } finally {
+                      // Cancel any pending camera-idle debounce so it doesn't
+                      // later re-enable loading unexpectedly, and ensure we
+                      // clear loading on the next frame after any pending
+                      // post-frame callbacks from the map settle.
+                      try {
+                        _debounceTimer?.cancel();
+                      } catch (_) {}
+                      try {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          try {
+                            FormFieldsMapController.setLoading(
+                                _controllerId, false);
+                          } catch (_) {}
+                        });
+                      } catch (_) {
+                        try {
+                          FormFieldsMapController.setLoading(
+                              _controllerId, false);
+                        } catch (_) {}
+                      }
+                    }
                   },
                   itemSelectedBuilder: (p) => p.address,
                   itemBuilder: (p, selected) {
@@ -1839,9 +1874,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
                         address = '';
                       }
                       try {
-                        _onCenterMarkerEffective?.call(
-                            FormFieldsLocationPrediction(
-                                latLng: center, address: address));
+                        if (_onCenterMarkerEffective != null) {
+                          await _onCenterMarkerEffective!(
+                              FormFieldsLocationPrediction(
+                                  latLng: center, address: address));
+                        }
                       } catch (_) {}
                     },
                   ),

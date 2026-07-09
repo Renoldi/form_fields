@@ -251,26 +251,10 @@ class View extends PresenterState {
                         ),
                         onCenterMarker: (pred) async {
                           final messenger = ScaffoldMessenger.of(context);
-                          try {
-                            debugPrint(
-                                '[Example] onCenterMarker: moving to ${pred.latLng}');
-                            try {
-                              vm.mapController.move(pred.latLng, 13);
-                              debugPrint(
-                                  '[Example] onCenterMarker: move() completed');
-                            } catch (e) {
-                              debugPrint(
-                                  '[Example] onCenterMarker: move() failed: $e');
-                            }
-                            await vm.mapController.animateCameraTo(
-                                pred.latLng, 13,
-                                duration: const Duration(milliseconds: 400));
-                            debugPrint(
-                                '[Example] onCenterMarker: animateCameraTo completed');
-                          } catch (e) {
-                            debugPrint(
-                                '[Example] onCenterMarker: animate failed: $e');
-                          }
+                          // try {
+                          //   // Let the ViewModel handle animation and loading.
+                          //   await vm.selectSearchResult(pred);
+                          // } catch (_) {}
                           // Only show the SnackBar if still mounted to avoid
                           // using BuildContext after disposal.
                           if (mounted) {
