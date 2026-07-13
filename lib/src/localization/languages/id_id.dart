@@ -13,7 +13,9 @@ const Map<String, String> idIDStrings = {
   'clear': 'Hapus',
   'selectPrefix': 'Pilih ',
   'enterPrefix': 'Masukkan ',
-  'searchHint': 'Cari...',
+  'searchHint': 'Ketik untuk mencari',
+  'clearSearch': 'Bersihkan pencarian',
+  'clearSearchTooltip': 'Bersihkan teks pencarian',
 
   // Search validation
   'searchMinChars': 'Silakan masukkan minimal {n} karakter',

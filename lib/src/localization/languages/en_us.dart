@@ -13,7 +13,9 @@ const Map<String, String> enUSStrings = {
   'clear': 'Clear',
   'selectPrefix': 'Select ',
   'enterPrefix': 'Enter ',
-  'searchHint': 'Search...',
+  'searchHint': 'Type to search',
+  'clearSearch': 'Clear search',
+  'clearSearchTooltip': 'Clear search input',
   // Search validation
   'searchMinChars': 'Please enter at least {n} characters',
 

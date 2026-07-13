@@ -193,9 +193,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                 height: 8,
               ),
               [
-                ListDataComponentMode.listView,
-                ListDataComponentMode.tile,
-              ].contains(widget.listViewMode)
+                    ListDataComponentMode.listView,
+                    ListDataComponentMode.tile,
+                  ].contains(widget.listViewMode)
                   ? Expanded(child: childBuilder())
                   : childBuilder(),
             ],
@@ -215,11 +215,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        color: widget.searchBackgroundColor ??
-            Theme.of(context)
-                .colorScheme
-                .surface
-                .withAlpha((0.08 * 255).round()),
+        color:
+            widget.searchBackgroundColor ??
+            Theme.of(
+              context,
+            ).colorScheme.surface.withAlpha((0.08 * 255).round()),
         borderRadius: const BorderRadius.all(Radius.circular(6)),
       ),
       child: IntrinsicHeight(
@@ -243,7 +243,16 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                     }
                   } catch (_) {}
                 },
-                label: '',
+                // Set hintText via inputDecoration to avoid automatic
+                // `enterPrefix` being prepended by `FormFields`.
+                inputDecoration: InputDecoration(
+                  hintText:
+                      widget.searchHint ??
+                      FormFieldsLocalizations.of(context).searchHint,
+                ),
+                label:
+                    widget.searchHint ??
+                    FormFieldsLocalizations.of(context).searchHint,
                 labelPosition: LabelPosition.none,
                 fieldSize: AppSize.medium,
                 currentValue: widget.controller != null
@@ -268,11 +277,14 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                   if (v != null &&
                       v.trim().isNotEmpty &&
                       v.trim().length < widget.minSearchChars) {
-                    final raw = FormFieldsLocalizations.of(context)
-                        .get('searchMinChars');
+                    final raw = FormFieldsLocalizations.of(
+                      context,
+                    ).get('searchMinChars');
                     final msg = (raw.contains('{n}'))
                         ? raw.replaceAll(
-                            '{n}', widget.minSearchChars.toString())
+                            '{n}',
+                            widget.minSearchChars.toString(),
+                          )
                         : raw;
                     if (msg.trim().isEmpty || msg == 'searchMinChars') {
                       return 'Please enter at least ${widget.minSearchChars} characters';
@@ -308,14 +320,19 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                       widget.searchStyle?.color ??
                           Theme.of(context).colorScheme.surface,
                     ),
-                    side: WidgetStatePropertyAll(BorderSide(
-                      color: widget.searchStyle?.color ??
-                          Theme.of(context).colorScheme.surface,
-                      width: 1,
-                    )),
-                    shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    )),
+                    side: WidgetStatePropertyAll(
+                      BorderSide(
+                        color:
+                            widget.searchStyle?.color ??
+                            Theme.of(context).colorScheme.surface,
+                        width: 1,
+                      ),
+                    ),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -337,7 +354,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         return RefreshIndicator(
           onRefresh: onRefreshHandler,
           color: widget.refreshColor ?? Theme.of(context).colorScheme.primary,
-          backgroundColor: widget.refreshBackgroundColor ??
+          backgroundColor:
+              widget.refreshBackgroundColor ??
               Theme.of(context).scaffoldBackgroundColor,
           displacement: widget.refreshDisplacement ?? 40.0,
           edgeOffset: widget.refreshEdgeOffset ?? 0.0,
@@ -361,7 +379,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         return RefreshIndicator(
           onRefresh: onRefreshHandler,
           color: widget.refreshColor ?? Theme.of(context).colorScheme.primary,
-          backgroundColor: widget.refreshBackgroundColor ??
+          backgroundColor:
+              widget.refreshBackgroundColor ??
               Theme.of(context).scaffoldBackgroundColor,
           displacement: widget.refreshDisplacement ?? 40.0,
           edgeOffset: widget.refreshEdgeOffset ?? 0.0,
@@ -374,7 +393,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           ),
         );
       default:
-        final hasData = (widget.controller?.value.data.length ?? 0) > 0 ||
+        final hasData =
+            (widget.controller?.value.data.length ?? 0) > 0 ||
             (widget.controller?.value.state == ListDataComponentState.loading);
         Widget content;
         if (hasData) {
@@ -391,7 +411,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         return RefreshIndicator(
           onRefresh: onRefreshHandler,
           color: widget.refreshColor ?? Theme.of(context).colorScheme.primary,
-          backgroundColor: widget.refreshBackgroundColor ??
+          backgroundColor:
+              widget.refreshBackgroundColor ??
               Theme.of(context).scaffoldBackgroundColor,
           displacement: widget.refreshDisplacement ?? 40.0,
           edgeOffset: widget.refreshEdgeOffset ?? 0.0,
@@ -461,11 +482,15 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(widget.showMoreText ??
-                              FormFieldsLocalizations.of(context).showMore),
-                          Icon(Icons.arrow_downward,
-                              size: 15,
-                              color: Theme.of(context).iconTheme.color),
+                          Text(
+                            widget.showMoreText ??
+                                FormFieldsLocalizations.of(context).showMore,
+                          ),
+                          Icon(
+                            Icons.arrow_downward,
+                            size: 15,
+                            color: Theme.of(context).iconTheme.color,
+                          ),
                         ],
                       ),
                     ),
@@ -487,10 +512,22 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             var current =
                 widget.controller?.value.scrollController.position.pixels;
             var min = widget
-                .controller?.value.scrollController.position.minScrollExtent;
+                .controller
+                ?.value
+                .scrollController
+                .position
+                .minScrollExtent;
             var max = widget
-                .controller?.value.scrollController.position.maxScrollExtent;
-            if (widget.controller?.value.scrollController.position
+                .controller
+                ?.value
+                .scrollController
+                .position
+                .maxScrollExtent;
+            if (widget
+                        .controller
+                        ?.value
+                        .scrollController
+                        .position
                         .userScrollDirection ==
                     ScrollDirection.forward &&
                 ((current ?? 0) <=
@@ -498,7 +535,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               if (widget.enableAutoRefreshOnTop == true) {
                 widget.controller?.refresh();
               }
-            } else if (widget.controller?.value.scrollController.position
+            } else if (widget
+                        .controller
+                        ?.value
+                        .scrollController
+                        .position
                         .userScrollDirection ==
                     ScrollDirection.reverse &&
                 ((current ?? 0) >= (max ?? 0))) {
@@ -554,17 +595,33 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           var current =
               widget.controller?.value.scrollController.position.pixels;
           var min = widget
-              .controller?.value.scrollController.position.minScrollExtent;
+              .controller
+              ?.value
+              .scrollController
+              .position
+              .minScrollExtent;
           var max = widget
-              .controller?.value.scrollController.position.maxScrollExtent;
-          if (widget.controller?.value.scrollController.position
+              .controller
+              ?.value
+              .scrollController
+              .position
+              .maxScrollExtent;
+          if (widget
+                      .controller
+                      ?.value
+                      .scrollController
+                      .position
                       .userScrollDirection ==
                   ScrollDirection.forward &&
               ((current ?? 0) <= (min ?? 0 + widget.autoRefreshTopThreshold))) {
             if (widget.enableAutoRefreshOnTop == true) {
               widget.controller?.refresh();
             }
-          } else if (widget.controller?.value.scrollController.position
+          } else if (widget
+                      .controller
+                      ?.value
+                      .scrollController
+                      .position
                       .userScrollDirection ==
                   ScrollDirection.reverse &&
               ((current ?? 0) >= (max ?? 0))) {
@@ -629,7 +686,10 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           : const SizedBox(),
     ];
 
-    return Container(color: Colors.transparent, child: Column(children: item));
+    return Container(
+      color: Colors.transparent,
+      child: Column(children: item),
+    );
   }
 
   Widget draggable(T? data, int index) {
@@ -639,13 +699,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           height: widget.controller?.value.droppedItem != null ? null : 1,
           width: double.infinity,
           color: Colors.transparent,
-          child: (widget.controller?.value.droppedItem != null &&
+          child:
+              (widget.controller?.value.droppedItem != null &&
                   widget.controller?.value.droppedIndexTarget == index &&
                   widget.controller?.value.droppedItem != data)
-              ? widget.itemBuilder!(
-                  widget.controller?.value.droppedItem,
-                  -1,
-                )
+              ? widget.itemBuilder!(widget.controller?.value.droppedItem, -1)
               : const SizedBox(),
         );
       },
@@ -692,7 +750,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
               border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(31)),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(31),
+              ),
             ),
             child: Center(child: FittedBox(child: Text("$index"))),
           );
@@ -725,8 +784,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline,
-              color: Theme.of(context).colorScheme.error, size: 50),
+          Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.error,
+            size: 50,
+          ),
           const SizedBox(height: 10),
           !(widget.controller?.value.errorMessage ?? "").contains("<div")
               ? Text(
@@ -772,9 +834,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
+                            color: Theme.of(context).colorScheme.primary
                                 .withAlpha((0.08 * 255).round()),
                             shape: BoxShape.circle,
                           ),
@@ -795,7 +855,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                             Icons.refresh,
                             color: Theme.of(context).colorScheme.primary,
                           ),
-                          tooltip: widget.refreshIntructionText ??
+                          tooltip:
+                              widget.refreshIntructionText ??
                               FormFieldsLocalizations.of(context).refresh,
                         ),
                       ],
@@ -841,7 +902,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
 class ListDataComponentController<T>
     extends ValueNotifier<ListDataComponentValue<T>> {
   ListDataComponentController({ListDataComponentValue<T>? value})
-      : super(value ?? ListDataComponentValue<T>());
+    : super(value ?? ListDataComponentValue<T>());
 
   void addAll(List<T> datas) {
     value.data.addAll(datas);
