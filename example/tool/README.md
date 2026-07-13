@@ -5,6 +5,7 @@ Professional build configuration management for Flutter/Dart applications.
 ## Purpose
 
 This tool provides a single command to configure your entire application across all platforms:
+
 - Android
 - iOS (when present)
 - macOS (when present)
@@ -43,6 +44,7 @@ When you run this tool, it:
 ## Configuration Storage
 
 All configuration values are stored in:
+
 ```
 lib/config/build_settings.dart
 ```
@@ -99,36 +101,39 @@ dart run tool/configure_build.dart \
 
 ## Available Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--env` | Environment (debug/beta/production) | `debug` |
-| `--namespace` | Android package name | `com.example.form_fields_example` |
-| `--base-url` | API base URL | Environment-specific |
-| `--compile-sdk` | Android compile SDK | `36` |
-| `--ndk-version` | Android NDK version | `27.0.12077973` |
-| `--min-sdk` | Minimum Android SDK | `21` |
-| `--target-sdk` | Target Android SDK | `36` |
-| `--version-code` | App version code | `1` |
-| `--version-name` | App version name | `1.0.0` |
-| `--maps-key` | Google Maps API key | Environment placeholder |
-| `--main-activity-path` | Path to MainActivity.kt (relative to project root) | `android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt` |
-| `--camera` | Enable camera permission (Android + iOS/macOS) | `true` |
-| `--gallery` | Enable gallery/photos permission (Android + iOS/macOS) | `true` |
-| `--notification` | Enable notification permission (Android + iOS/macOS) | `true` |
-| `--platform` | Build platforms (android/ios/macos/windows/linux/web/all) | `android` |
-| `--skip-build` | Skip automatic build | `false` |
+| Option                 | Description                                               | Default                                                                       |
+| ---------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `--env`                | Environment (debug/beta/production)                       | `debug`                                                                       |
+| `--namespace`          | Android package name                                      | `com.example.form_fields_example`                                             |
+| `--base-url`           | API base URL                                              | Environment-specific                                                          |
+| `--compile-sdk`        | Android compile SDK                                       | `36`                                                                          |
+| `--ndk-version`        | Android NDK version                                       | `28.2.13676358`                                                               |
+| `--min-sdk`            | Minimum Android SDK                                       | `21`                                                                          |
+| `--target-sdk`         | Target Android SDK                                        | `36`                                                                          |
+| `--version-code`       | App version code                                          | `1`                                                                           |
+| `--version-name`       | App version name                                          | `1.0.0`                                                                       |
+| `--maps-key`           | Google Maps API key                                       | Environment placeholder                                                       |
+| `--main-activity-path` | Path to MainActivity.kt (relative to project root)        | `android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt` |
+| `--camera`             | Enable camera permission (Android + iOS/macOS)            | `true`                                                                        |
+| `--gallery`            | Enable gallery/photos permission (Android + iOS/macOS)    | `true`                                                                        |
+| `--notification`       | Enable notification permission (Android + iOS/macOS)      | `true`                                                                        |
+| `--platform`           | Build platforms (android/ios/macos/windows/linux/web/all) | `android`                                                                     |
+| `--skip-build`         | Skip automatic build                                      | `false`                                                                       |
 
 ## Android MainActivity.kt Configuration
 
 The tool automatically updates your `MainActivity.kt` package name to match your configured namespace:
 
 ### Default Behavior
+
 By default, the tool updates the MainActivity at:
+
 ```
 android/app/src/main/kotlin/com/example/form_fields_example/MainActivity.kt
 ```
 
 ### Custom MainActivity.kt Path
+
 If your MainActivity is in a different location, use `--main-activity-path`:
 
 ```bash
@@ -138,6 +143,7 @@ dart run tool/configure_build.dart \
 ```
 
 ### Example: Environment-Specific Package Names
+
 When you run the tool with different environments, the package name is automatically updated:
 
 ```bash
@@ -158,6 +164,7 @@ This keeps your build.gradle.kts, AndroidManifest.xml, and MainActivity.kt all s
 **🆕 NEW**: The tool now builds for multiple platforms with intelligent error fixing!
 
 ### Supported Platforms:
+
 - 🤖 **Android** - APK (default)
 - 🍎 **iOS** - Debug build (no codesign)
 - 🖥️ **macOS** - Desktop app
@@ -166,6 +173,7 @@ This keeps your build.gradle.kts, AndroidManifest.xml, and MainActivity.kt all s
 - 🌐 **Web** - Web build
 
 ### Usage:
+
 ```bash
 # Build Android only (default)
 dart run tool/configure_build.dart --env=debug
@@ -181,39 +189,42 @@ dart run tool/configure_build.dart --env=debug --skip-build'??/
 ```
 
 ### What happens:
+
 1. Configuration is applied
 2. Builds are executed for selected platforms
 3. If errors occur, the tool automatically:
-   
+
    **Android:**
    - Updates Gradle wrapper
    - Cleans Gradle cache
    - Updates gradle.properties
    - Runs flutter clean & pub get
-   
+
    **iOS/macOS:**
    - Cleans CocoaPods cache
    - Deletes Podfile.lock
    - Updates pod repos
    - Reinstalls pods
    - Runs flutter clean & pub get
-   
+
    **Linux:**
    - Cleans CMake build directory
    - Runs flutter clean & pub get
    - Provides dependency hints
-   
+
    **All Platforms:**
    - Detects and fixes dependency errors
    - Detects and fixes cache errors
    - Retries build (up to 3 attempts)
 
 ### Skip the build:
+
 ```bash
 dart run tool/configure_build.dart --env=debug --skip-build
 ```
 
 ### Auto-Fix Features:
+
 - ✅ Detects Gradle errors (Android)
 - ✅ Detects CocoaPods errors (iOS/macOS)
 - ✅ Detects CMake errors (Linux)
@@ -241,16 +252,20 @@ The configuration is added to the `post_install` hook automatically.
 Permission usage descriptions are conditionally added to `Info.plist`:
 
 **When `--camera=true`:**
+
 - `NSCameraUsageDescription`: "Camera is required to capture images."
 
 **When `--gallery=true`:**
+
 - `NSPhotoLibraryUsageDescription`: "Gallery access is required to select images."
 - `NSPhotoLibraryAddUsageDescription`: "Photo library access is required to save images."
 
 **When `--notification=true`:**
+
 - `NSUserNotificationUsageDescription`: "Notifications are used to keep you updated."
 
 **Always added (location):**
+
 - `NSLocationWhenInUseUsageDescription`
 - `NSLocationAlwaysUsageDescription`
 - `NSLocationAlwaysAndWhenInUseUsageDescription`
@@ -267,6 +282,7 @@ dart run tool/configure_build.dart \
 ```
 
 This will:
+
 - ✅ Add camera and photos permissions to Podfile
 - ✅ Add camera and photos descriptions to Info.plist
 - ✅ Skip notification permission
@@ -281,6 +297,7 @@ dart run tool/configure_build.dart --help
 ## Documentation
 
 For complete documentation, see:
+
 - **[HOW_TO_USE.md](../HOW_TO_USE.md)** - Complete usage guide
 - **[CONFIGURATION_FLOW.md](../CONFIGURATION_FLOW.md)** - Where values are set and read
 
@@ -308,6 +325,7 @@ BuildConfig.current (used throughout app)
 ## Example Output
 
 ### Configuration + Single Platform Build
+
 ```
 ✅ Configuration applied successfully
   - Updated active environment in lib/main.dart -> debug
@@ -338,6 +356,7 @@ BUILD SUMMARY
 ```
 
 ### Multi-Platform Build
+
 ```
 🔨 Building for platforms: android, ios, macos
 

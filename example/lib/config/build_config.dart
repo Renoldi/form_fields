@@ -31,7 +31,7 @@ class BuildConfig {
   static const int defaultAndroidCompileSdk = 36;
 
   /// Default NDK Version (for native libraries)
-  static const String defaultNdkVersion = '27.0.12077973';
+  static const String defaultNdkVersion = '28.2.13676358';
 
   /// Default minimum SDK for Android
   static const int defaultAndroidMinSdk = 21;

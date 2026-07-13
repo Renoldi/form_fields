@@ -4,21 +4,22 @@ Complete setup guide for managing namespace, SDKs, versions, and permissions acr
 
 ## Platform Compatibility Matrix
 
-| Feature | Android | iOS | macOS | Windows | Linux | Web |
-|---------|---------|-----|-------|---------|-------|-----|
-| Namespace | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| compileSdk | ✅ | N/A | N/A | N/A | N/A | N/A |
-| ndkVersion | ✅ | N/A | N/A | N/A | N/A | N/A |
-| minSdk | ✅ | ✅ | ✅ | N/A | N/A | N/A |
-| targetSdk | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| versionCode | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| versionName | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Permissions | ✅ | ✅ | ✅ | ✅ | ✅ | N/A |
-| Maps API Key | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
+| Feature      | Android | iOS | macOS | Windows | Linux | Web |
+| ------------ | ------- | --- | ----- | ------- | ----- | --- |
+| Namespace    | ✅      | ✅  | ✅    | ✅      | ✅    | ✅  |
+| compileSdk   | ✅      | N/A | N/A   | N/A     | N/A   | N/A |
+| ndkVersion   | ✅      | N/A | N/A   | N/A     | N/A   | N/A |
+| minSdk       | ✅      | ✅  | ✅    | N/A     | N/A   | N/A |
+| targetSdk    | ✅      | ✅  | ✅    | ✅      | ✅    | ✅  |
+| versionCode  | ✅      | ✅  | ✅    | ✅      | ✅    | ✅  |
+| versionName  | ✅      | ✅  | ✅    | ✅      | ✅    | ✅  |
+| Permissions  | ✅      | ✅  | ✅    | ✅      | ✅    | N/A |
+| Maps API Key | ✅      | ✅  | ✅    | ⚠️      | ⚠️    | ✅  |
 
 ## Android Configuration
 
 ### Project Structure
+
 ```
 android/
 ├── app/
@@ -66,20 +67,20 @@ android {
     // ========================================================================
     namespace = "com.example.form_fields_example.debug"  // Package ID
     compileSdk = 34                                      // Compile target
-    ndkVersion = "27.0.12077973"                         // NDK for native code
-    
+    ndkVersion = "28.2.13676358"                         // NDK for native code
+
     defaultConfig {
         applicationId = namespace
         minSdk = 21                        // Support Android 5.0+
         targetSdk = 34                     // Target Android 14+
         versionCode = 1
         versionName = "1.0.0"
-        
+
         // Maps API Key (from BuildConfig)
         manifestPlaceholders = [
             "MAPS_API_KEY": "DEBUG_GOOGLE_MAPS_API_KEY"
         ]
-        
+
         // Optional: Additional configuration
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -92,32 +93,32 @@ android {
 <!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.form_fields_example">
-    
+
     <!-- ====================================================================
          PERMISSIONS (from BuildConfig.androidPermissions)
          ==================================================================== -->
-    
+
     <!-- INTERNET: Required for API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
-    
+
     <!-- LOCATION: For maps and location-based services -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    
+
     <!-- NETWORK: Monitor and control network state -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    
+
     <!-- STORAGE: File access (if needed) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    
+
     <!-- CAMERA: For photo/video capture (if needed) -->
     <uses-permission android:name="android.permission.CAMERA" />
-    
+
     <!-- CONTACTS: For contact list access (if needed) -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    
+
     <!-- ====================================================================
          APPLICATION CONFIGURATION
          ==================================================================== -->
@@ -125,17 +126,17 @@ android {
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="false">
-        
+
         <!-- Maps API Key (from BuildConfig) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
-        
+
         <!-- Firebase Cloud Messaging (optional) -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />
-        
+
         <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
@@ -145,13 +146,13 @@ android {
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
     </application>
 </manifest>
 ```
@@ -159,6 +160,7 @@ android {
 ## iOS Configuration
 
 ### Project Structure
+
 ```
 ios/
 ├── Podfile                          # iOS dependencies
@@ -193,11 +195,11 @@ platform :ios, '12.0'  # From BuildConfig.iosMinimumDeploymentTarget
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    
+
     # Set deployment target
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
-      
+
       # Add Maps API Key
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
@@ -213,7 +215,7 @@ end
 ```xml
 <!-- ios/Runner/Info.plist -->
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" 
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -222,43 +224,43 @@ end
          ================================================================ -->
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>  <!-- versionName -->
-    
+
     <key>CFBundleVersion</key>
     <string>1</string>  <!-- versionCode -->
-    
+
     <!-- ================================================================
          MINIMUM DEPLOYMENT TARGET (from BuildConfig)
          ================================================================ -->
     <key>MinimumOSVersion</key>
     <string>12.0</string>
-    
+
     <!-- ================================================================
          PERMISSIONS (from BuildConfig.permissions)
          ================================================================ -->
-    
+
     <!-- LOCATION -->
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We need your location to show nearby services on the map</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>We need your location to show nearby services on the map</string>
-    
+
     <!-- PHOTOS -->
     <key>NSPhotoLibraryUsageDescription</key>
     <string>We need access to your photos to upload profiles</string>
     <key>NSCameraUsageDescription</key>
     <string>We need camera access to take profile photos</string>
-    
+
     <!-- CONTACTS -->
     <key>NSContactsUsageDescription</key>
     <string>We need access to your contacts</string>
-    
+
     <!-- NETWORKING -->
     <key>NSBonjourServices</key>
     <array>
         <string>_http._tcp</string>
         <string>_https._tcp</string>
     </array>
-    
+
     <!-- APP TRANSPORT SECURITY -->
     <key>NSAppTransportSecurity</key>
     <dict>
@@ -275,7 +277,7 @@ end
             </dict>
         </dict>
     </dict>
-    
+
 </dict>
 </plist>
 ```
@@ -283,6 +285,7 @@ end
 ## macOS Configuration
 
 ### Project Structure
+
 ```
 macos/
 ├── Podfile                          # macOS dependencies
@@ -308,7 +311,7 @@ platform :osx, '10.15'  # From BuildConfig.macosMinimumDeploymentTarget
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_osx_build_settings(target)
-    
+
     target.build_configurations.each do |config|
       config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
@@ -331,16 +334,16 @@ end
 <dict>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
-    
+
     <key>CFBundleVersion</key>
     <string>1</string>
-    
+
     <key>MinimumOSVersion</key>
     <string>10.15</string>
-    
+
     <key>NSLocationUsageDescription</key>
     <string>This app needs your location</string>
-    
+
 </dict>
 </plist>
 ```
@@ -348,6 +351,7 @@ end
 ## Windows Configuration
 
 ### Project Structure
+
 ```
 windows/
 ├── runner/
@@ -401,6 +405,7 @@ endif()
 ## Linux Configuration
 
 ### Project Structure
+
 ```
 linux/
 ├── CMakeLists.txt                   # Build configuration
@@ -464,6 +469,7 @@ Categories=Utility;
 ## Web Configuration
 
 ### Project Structure
+
 ```
 web/
 ├── index.html                       # Main entry point
@@ -482,38 +488,38 @@ web/
 <!DOCTYPE html>
 <html>
   <head>
-    <base href="$FLUTTER_BASE_HREF">
-    
+    <base href="$FLUTTER_BASE_HREF" />
+
     <!-- ================================================================
          META INFORMATION (from BuildConfig)
          ================================================================ -->
-    <meta charset="UTF-8">
-    <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-    <meta name="description" content="Flutter cross-platform application">
-    <meta name="version" content="1.0.0">
-    
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta name="description" content="Flutter cross-platform application" />
+    <meta name="version" content="1.0.0" />
+
     <!-- Progressive Web App -->
-    <meta name="theme-color" content="#1967d2">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Form Fields Example">
-    <link rel="apple-touch-icon" href="icons/Icon-192.png">
-    
+    <meta name="theme-color" content="#1967d2" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Form Fields Example" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+
     <!-- ================================================================
          API KEYS (from BuildConfig)
          ================================================================ -->
     <script>
       window.flutterConfiguration = {
-        mapsApiKey: 'DEBUG_GOOGLE_MAPS_API_KEY',
-        baseUrl: 'https://localhost:8080',
-        environment: 'debug'
+        mapsApiKey: "DEBUG_GOOGLE_MAPS_API_KEY",
+        baseUrl: "https://localhost:8080",
+        environment: "debug",
       };
     </script>
-    
+
     <!-- Google Maps -->
     <script src="https://maps.googleapis.com/maps/api/js?key=DEBUG_GOOGLE_MAPS_API_KEY&libraries=places"></script>
-    
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-analytics.js"></script>
@@ -525,25 +531,33 @@ web/
       };
       firebase.initializeApp(firebaseConfig);
     </script>
-    
-    <link rel="manifest" href="manifest.json">
+
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
     <!-- ================================================================
          FLUTTER WEB APPLICATION
          ================================================================ -->
     <script>
-      {{flutter_js}}
+      {
+        {
+          flutter_js;
+        }
+      }
     </script>
-    
+
     <script>
-      _flutter.loader.loadEntrypoint({
-        serviceWorkerSettings: "flutter_service_worker.js?v={{service_worker_version}}"
-      }).then(function(engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function(appRunner) {
-        return appRunner.runApp();
-      });
+      _flutter.loader
+        .loadEntrypoint({
+          serviceWorkerSettings:
+            "flutter_service_worker.js?v={{service_worker_version}}",
+        })
+        .then(function (engineInitializer) {
+          return engineInitializer.initializeEngine();
+        })
+        .then(function (appRunner) {
+          return appRunner.runApp();
+        });
     </script>
   </body>
 </html>
@@ -636,6 +650,7 @@ web/
 ## Release Checklist
 
 ### Pre-Release
+
 - ✅ Update versionCode (increment by 1)
 - ✅ Update versionName (semantic version)
 - ✅ Update CHANGELOG.md
@@ -648,6 +663,7 @@ web/
 - ✅ Sign release builds
 
 ### Post-Release
+
 - ✅ Tag commit with version (e.g., v1.0.0)
 - ✅ Create GitHub release
 - ✅ Monitor crash reports
@@ -659,6 +675,7 @@ web/
 ## Quick Reference
 
 ### BuildConfig Access
+
 ```dart
 // Current configuration
 BuildConfig.current
@@ -676,6 +693,7 @@ BuildConfig.current.androidMapsApiKey
 ```
 
 ### Build for Each Platform
+
 ```bash
 # Android
 flutter build apk

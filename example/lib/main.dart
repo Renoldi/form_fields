@@ -218,7 +218,8 @@ Future<void> main() async {
           final agds = AppGlobalDialogService.instance;
           if (!agds.isConfigured) {
             logger.w(
-                'AppGlobalDialogService not configured; cannot navigate on notification click.');
+              'AppGlobalDialogService not configured; cannot navigate on notification click.',
+            );
           } else {
             final ctx = agds.context;
 
@@ -238,8 +239,9 @@ Future<void> main() async {
                     params[k] = v?.toString() ?? '';
                   });
                   final uri = Uri(
-                      path: routeValue,
-                      queryParameters: params.isEmpty ? null : params);
+                    path: routeValue,
+                    queryParameters: params.isEmpty ? null : params,
+                  );
                   ctx.go(uri.toString());
                   return;
                 }
@@ -247,13 +249,14 @@ Future<void> main() async {
                 // Otherwise match against named AppRoute values.
                 final normalized = routeValue.replaceAll('-', '_');
                 final match = AppRoute.values.firstWhere(
-                    (r) => r.name == routeValue || r.name == normalized,
-                    orElse: () => AppRoute.fcmTest);
+                  (r) => r.name == routeValue || r.name == normalized,
+                  orElse: () => AppRoute.fcmTest,
+                );
 
                 // Use named navigation by default; use push if payload asks for it
                 final usePush =
                     (data['push'] ?? 'false').toString().toLowerCase() ==
-                        'true';
+                    'true';
                 if (usePush) {
                   // Do not await here to avoid keeping a `BuildContext` across an async gap.
                   ctx.pushRoute(match);
@@ -275,10 +278,12 @@ Future<void> main() async {
             try {
               ctx.pushNamed(AppRoute.notification.name, extra: msg.data);
             } catch (_) {
-              Navigator.of(ctx).push(MaterialPageRoute(
-                builder: (_) => notification.Presenter(payload: msg.data),
-                settings: RouteSettings(arguments: msg.data),
-              ));
+              Navigator.of(ctx).push(
+                MaterialPageRoute(
+                  builder: (_) => notification.Presenter(payload: msg.data),
+                  settings: RouteSettings(arguments: msg.data),
+                ),
+              );
             }
           }
         } catch (e, st) {
@@ -289,10 +294,12 @@ Future<void> main() async {
 
             // Attempt a safe fallback navigation to the FCM test page
             final fallbackCtx = AppGlobalDialogService.instance.context;
-            Navigator.of(fallbackCtx).push(MaterialPageRoute(
-              builder: (_) => const fcm_test.Presenter(),
-              settings: RouteSettings(arguments: msg.data),
-            ));
+            Navigator.of(fallbackCtx).push(
+              MaterialPageRoute(
+                builder: (_) => const fcm_test.Presenter(),
+                settings: RouteSettings(arguments: msg.data),
+              ),
+            );
             try {
               ScaffoldMessenger.of(fallbackCtx).showSnackBar(
                 const SnackBar(content: Text('Opened FCM Test (fallback)')),
@@ -347,7 +354,8 @@ void _printStartupInfo() {
   logger.i('   Compile SDK: ${config.androidCompileSdk}');
 
   // API Keys Status
-  final mapsKeyStatus = config.androidMapsApiKey.contains('DEBUG') ||
+  final mapsKeyStatus =
+      config.androidMapsApiKey.contains('DEBUG') ||
           config.androidMapsApiKey.contains('BETA') ||
           config.androidMapsApiKey.contains('PROD')
       ? '⚠️  Placeholder'
@@ -357,15 +365,18 @@ void _printStartupInfo() {
   // Permissions
   logger.i('\n🔐 CONFIGURED PERMISSIONS:');
   final hasCamera = config.hasAndroidPermission('android.permission.CAMERA');
-  final hasGallery =
-      config.hasAndroidPermission('android.permission.READ_MEDIA_IMAGES');
-  final hasNotification =
-      config.hasAndroidPermission('android.permission.POST_NOTIFICATIONS');
+  final hasGallery = config.hasAndroidPermission(
+    'android.permission.READ_MEDIA_IMAGES',
+  );
+  final hasNotification = config.hasAndroidPermission(
+    'android.permission.POST_NOTIFICATIONS',
+  );
 
   logger.i('   📷 Camera: ${hasCamera ? "✅ Enabled" : "❌ Disabled"}');
   logger.i('   🖼️  Gallery: ${hasGallery ? "✅ Enabled" : "❌ Disabled"}');
   logger.i(
-      '   🔔 Notifications: ${hasNotification ? "✅ Enabled" : "❌ Disabled"}');
+    '   🔔 Notifications: ${hasNotification ? "✅ Enabled" : "❌ Disabled"}',
+  );
   logger.i('   📋 Total: ${config.androidPermissions.length} permissions');
 
   // Platform Info
@@ -428,8 +439,9 @@ abstract class PresenterState extends State<MyApp> {
       permissions.add(Permission.camera);
     }
     if (config.hasAndroidPermission('android.permission.READ_MEDIA_IMAGES') ||
-        config
-            .hasAndroidPermission('android.permission.READ_EXTERNAL_STORAGE')) {
+        config.hasAndroidPermission(
+          'android.permission.READ_EXTERNAL_STORAGE',
+        )) {
       permissions.add(Permission.photos);
     }
     if (config.hasAndroidPermission('android.permission.POST_NOTIFICATIONS')) {
@@ -451,21 +463,24 @@ abstract class PresenterState extends State<MyApp> {
   }
 
   Future<void> _showPermissionSettingsDialog(
-      List<Permission> deniedPermissions) async {
+    List<Permission> deniedPermissions,
+  ) async {
     // Convert permission names to localization keys
-    final permissionNames = deniedPermissions.map((p) {
-      final name = p.toString().split('.').last;
-      switch (name) {
-        case 'camera':
-          return 'Camera';
-        case 'photos':
-          return 'Photos';
-        case 'notification':
-          return 'Notification';
-        default:
-          return name[0].toUpperCase() + name.substring(1);
-      }
-    }).join(', ');
+    final permissionNames = deniedPermissions
+        .map((p) {
+          final name = p.toString().split('.').last;
+          switch (name) {
+            case 'camera':
+              return 'Camera';
+            case 'photos':
+              return 'Photos';
+            case 'notification':
+              return 'Notification';
+            default:
+              return name[0].toUpperCase() + name.substring(1);
+          }
+        })
+        .join(', ');
 
     await showDialog<void>(
       context: context,
@@ -529,7 +544,8 @@ class View extends PresenterState {
           tries++;
           if (tries > maxTries) {
             logger.w(
-                'AppGlobalDialogService not configured after retries; cannot navigate on initial notification.');
+              'AppGlobalDialogService not configured after retries; cannot navigate on initial notification.',
+            );
             return;
           }
           // wait approx one frame
@@ -542,26 +558,32 @@ class View extends PresenterState {
             if (initial == null) return;
 
             logger.i(
-                'Handling initial FCM message (app launch): ${initial.data}');
+              'Handling initial FCM message (app launch): ${initial.data}',
+            );
             final data = initial.data;
 
             // Prefer using go_router so navigation integrates with router state.
             try {
-              viewModel.routerConfig
-                  .goNamed(AppRoute.notification.name, extra: data);
+              viewModel.routerConfig.goNamed(
+                AppRoute.notification.name,
+                extra: data,
+              );
               return;
             } catch (_) {
               // Fallback to direct navigator push if router fails.
               final navigator = viewModel.rootNavigatorKey.currentState;
               if (navigator == null) {
                 logger.w(
-                    'Root navigator not available; cannot navigate on initial notification.');
+                  'Root navigator not available; cannot navigate on initial notification.',
+                );
                 return;
               }
-              navigator.push(MaterialPageRoute(
-                builder: (_) => notification.Presenter(payload: data),
-                settings: RouteSettings(arguments: data),
-              ));
+              navigator.push(
+                MaterialPageRoute(
+                  builder: (_) => notification.Presenter(payload: data),
+                  settings: RouteSettings(arguments: data),
+                ),
+              );
             }
           } catch (e, st) {
             logger.w('Failed to handle initial FCM message: $e\n$st');
@@ -615,7 +637,7 @@ class View extends PresenterState {
               // FAB to open the FCM test page from anywhere in the app.
               return Stack(
                 children: [
-                  if (child != null) child,
+                  ?child,
                   Positioned(
                     right: 16,
                     bottom: 16,
@@ -624,8 +646,9 @@ class View extends PresenterState {
                         icon: const Icon(Icons.bug_report),
                         label: const Text('FCM Test'),
                         onPressed: () {
-                          viewModel.rootNavigatorKey.currentContext
-                              ?.pushRoute(AppRoute.fcmTest);
+                          viewModel.rootNavigatorKey.currentContext?.pushRoute(
+                            AppRoute.fcmTest,
+                          );
                         },
                       ),
                     ),
@@ -722,11 +745,11 @@ class View extends PresenterState {
       // ),
       canvasColor: Colors.white,
       colorScheme: ThemeData.light(useMaterial3: true).colorScheme.copyWith(
-            primary: seedColor,
-            secondary: seedColor,
-            surface: Colors.white,
-            surfaceContainerHighest: Colors.white,
-          ),
+        primary: seedColor,
+        secondary: seedColor,
+        surface: Colors.white,
+        surfaceContainerHighest: Colors.white,
+      ),
       textTheme: GoogleFonts.robotoTextTheme(
         ThemeData.light(useMaterial3: true).textTheme,
       ),
@@ -785,12 +808,15 @@ class View extends PresenterState {
           foregroundColor: WidgetStatePropertyAll(Colors.white),
           backgroundColor: WidgetStatePropertyAll(seedColor),
           padding: WidgetStatePropertyAll(
-              const EdgeInsets.symmetric(horizontal: 5, vertical: 10)),
+            const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+          ),
           alignment: Alignment.center,
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-            side: BorderSide(color: seedColor, width: 1),
-          )),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              side: BorderSide(color: seedColor, width: 1),
+            ),
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -798,11 +824,14 @@ class View extends PresenterState {
           backgroundColor: WidgetStatePropertyAll(seedColor),
           foregroundColor: WidgetStatePropertyAll(Colors.white),
           padding: WidgetStatePropertyAll(
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0))),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+          ),
           textStyle: WidgetStatePropertyAll(
-              const TextStyle(fontWeight: FontWeight.bold)),
+            const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -810,19 +839,23 @@ class View extends PresenterState {
           backgroundColor: WidgetStatePropertyAll(seedColor),
           foregroundColor: WidgetStatePropertyAll(Colors.white),
           padding: WidgetStatePropertyAll(
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0))),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+          ),
           textStyle: WidgetStatePropertyAll(
-              const TextStyle(fontWeight: FontWeight.bold)),
+            const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStatePropertyAll(seedColor),
           side: WidgetStatePropertyAll(BorderSide(color: seedColor)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.0))),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -862,9 +895,7 @@ class View extends PresenterState {
         ),
         AppButtonThemeData(
           elevatedStyle: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(
-              seedColor,
-            ),
+            backgroundColor: WidgetStatePropertyAll(seedColor),
             foregroundColor: WidgetStatePropertyAll(Colors.white),
             textStyle: WidgetStatePropertyAll(
               TextStyle(fontWeight: FontWeight.bold),
@@ -874,9 +905,7 @@ class View extends PresenterState {
             ),
           ),
           filledStyle: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(
-              seedColor,
-            ),
+            backgroundColor: WidgetStatePropertyAll(seedColor),
             foregroundColor: WidgetStatePropertyAll(Colors.white),
             textStyle: WidgetStatePropertyAll(
               TextStyle(fontWeight: FontWeight.bold),
@@ -886,20 +915,14 @@ class View extends PresenterState {
             ),
           ),
           outlinedStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(
-              seedColor,
-            ),
-            side: WidgetStatePropertyAll(
-              BorderSide(color: seedColor),
-            ),
+            foregroundColor: WidgetStatePropertyAll(seedColor),
+            side: WidgetStatePropertyAll(BorderSide(color: seedColor)),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
           textStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(
-              seedColor,
-            ),
+            foregroundColor: WidgetStatePropertyAll(seedColor),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -907,9 +930,7 @@ class View extends PresenterState {
           iconBackgroundColor: Colors.white,
           fabBackgroundColor: Colors.white,
           iconStyle: ButtonStyle(
-            foregroundColor: WidgetStatePropertyAll(
-              seedColor,
-            ),
+            foregroundColor: WidgetStatePropertyAll(seedColor),
             backgroundColor: WidgetStatePropertyAll(Colors.white),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -942,9 +963,7 @@ class _LoadingScreen extends StatelessWidget {
       ],
       supportedLocales: loc.Localizations.supportedLocales,
       home: const SafeScaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       ),
     );
   }
@@ -969,8 +988,10 @@ class ViewModel {
       GlobalKey<NavigatorState>();
 
   /// Router configuration for app navigation
-  late final routerConfig =
-      createAppRouter(appState, navigatorKey: rootNavigatorKey);
+  late final routerConfig = createAppRouter(
+    appState,
+    navigatorKey: rootNavigatorKey,
+  );
 
   ViewModel() {
     AppGlobalDialogService.instance.configure(rootNavigatorKey);

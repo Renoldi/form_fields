@@ -33,10 +33,10 @@ import 'config/build_config.dart';
 void main() {
   // Set environment FIRST (BuildConfig depends on it)
   EnvironmentConfig.current = AppEnvironment.debug;
-  
+
   // Now BuildConfig uses the correct environment
   print(BuildConfig.current);  // Shows entire configuration
-  
+
   runApp(const MyApp());
 }
 ```
@@ -49,15 +49,15 @@ void main() {
 android {
     namespace = "com.example.form_fields_example.debug"
     compileSdk = 34
-    ndkVersion = "27.0.12077973"
-    
+    ndkVersion = "28.2.13676358"
+
     defaultConfig {
         applicationId = "com.example.form_fields_example.debug"
         minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
-        
+
         // Maps API Key
         manifestPlaceholders = ["MAPS_API_KEY": "YOUR_GOOGLE_MAPS_API_KEY"]
     }
@@ -69,18 +69,18 @@ android {
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml -->
 <manifest ...>
-    
+
     <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
-    
+
     <!-- Location (if using maps) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    
+
     <!-- Network -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    
+
     <application>
         <!-- Maps API Key -->
         <meta-data
@@ -93,6 +93,7 @@ android {
 ## Environment-Specific Configurations
 
 ### Debug Environment
+
 - **Namespace**: `com.example.form_fields_example.debug`
 - **Compile SDK**: 34
 - **Min SDK**: 21
@@ -105,6 +106,7 @@ BuildConfig.debug()  // Create debug config
 ```
 
 ### Beta Environment
+
 - **Namespace**: `com.example.form_fields_example.beta`
 - **Maps API Key**: BETA_GOOGLE_MAPS_API_KEY
 - **Web Domain**: beta.example.com
@@ -114,6 +116,7 @@ BuildConfig.beta()  // Create beta config
 ```
 
 ### Production Environment
+
 - **Namespace**: `com.example.form_fields_example` (no suffix)
 - **Maps API Key**: PROD_GOOGLE_MAPS_API_KEY
 - **Web Domain**: example.com
@@ -129,6 +132,7 @@ BuildConfig.production()  // Create production config
 **NEVER commit API keys to the repository!**
 
 1. **Create .gitignore entry**:
+
    ```
    # .gitignore
    lib/config/api_keys.dart
@@ -139,6 +143,7 @@ BuildConfig.production()  // Create production config
 2. **Setup for Local Development**:
 
    **Option 1**: Direct replacement (local only, never commit)
+
    ```dart
    // In build_config.dart
    static String _getEnvironmentSpecificMapsKey() {
@@ -154,6 +159,7 @@ BuildConfig.production()  // Create production config
    ```
 
    **Option 2**: Separate secure file (recommended)
+
    ```dart
    // Create lib/config/api_keys.dart (GITIGNORED)
    class ApiKeys {
@@ -162,6 +168,7 @@ BuildConfig.production()  // Create production config
    ```
 
    Then in BuildConfig:
+
    ```dart
    static String _getEnvironmentSpecificMapsKey() {
      // Import ApiKeys from gitignored file
@@ -192,6 +199,7 @@ BuildConfig.production()  // Create production config
 **File**: `android/app/build.gradle.kts`
 
 Update with BuildConfig values:
+
 ```gradle
 android {
     namespace = BuildConfig.androidNamespace
@@ -204,7 +212,7 @@ android {
         targetSdk = BuildConfig.androidTargetSdk
         versionCode = BuildConfig.versionCode
         versionName = BuildConfig.versionName
-        
+
         manifestPlaceholders = [
             "MAPS_API_KEY": BuildConfig.androidMapsApiKey
         ]
@@ -217,6 +225,7 @@ android {
 **File**: `ios/Podfile`
 
 Add Maps API key:
+
 ```ruby
 target 'Runner' do
   flutter_root = File.expand_path(File.join(packages_dir, '.symlinks', 'flutter'), __FILE__)
@@ -253,6 +262,7 @@ Add version information and API keys as CMake variables.
 **File**: `web/index.html`
 
 Add Google Maps script:
+
 ```html
 <head>
   <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
@@ -262,16 +272,19 @@ Add Google Maps script:
 ## Version Management
 
 ### Version Code
+
 - Integer representing app version for store rankings
 - **Must increment** with each release on any platform
 - Typically: `1, 2, 3, 4, ...`
 
 ### Version Name
+
 - Human-readable version using semantic versioning
 - Format: `major.minor.patch`
 - Examples: `1.0.0`, `1.1.0`, `2.0.0`
 
 **Increment rules**:
+
 - **Patch** (1.0.x): Bug fixes and minor updates
 - **Minor** (1.x.0): New features, backward compatible
 - **Major** (x.0.0): Breaking changes
@@ -284,12 +297,14 @@ BuildConfig.current.versionName   // "1.0.0"
 ## Android Permissions
 
 ### Default Permissions
+
 ```dart
 BuildConfig.current.androidPermissions
   // ["INTERNET", "ACCESS_FINE_LOCATION", ...]
 ```
 
 ### Add Custom Permission
+
 ```dart
 final config = BuildConfig.current;
 config.addAndroidPermission('android.permission.CAMERA');
@@ -297,6 +312,7 @@ config.addAndroidPermission('android.permission.RECORD_AUDIO');
 ```
 
 ### Check Permission
+
 ```dart
 if (config.hasAndroidPermission('android.permission.CAMERA')) {
   // Permission is configured
@@ -304,6 +320,7 @@ if (config.hasAndroidPermission('android.permission.CAMERA')) {
 ```
 
 ### Common Permissions
+
 ```
 android.permission.INTERNET                    // Required for API calls
 android.permission.ACCESS_FINE_LOCATION        // GPS location
@@ -338,6 +355,7 @@ print(BuildConfig.current.androidNamespace);  // com.example.form_fields_example
 ## Validation & Debugging
 
 ### Check Production Readiness
+
 ```dart
 if (BuildConfig.current.isProductionReady) {
   print("✅ Ready for production deployment");
@@ -347,6 +365,7 @@ if (BuildConfig.current.isProductionReady) {
 ```
 
 ### Print Full Configuration
+
 ```dart
 print(BuildConfig.current);
 // Outputs:
@@ -354,7 +373,7 @@ print(BuildConfig.current);
 //   Android:
 //     - Namespace: com.example.form_fields_example.debug
 //     - compileSdk: 34
-//     - ndkVersion: 27.0.12077973
+//     - ndkVersion: 28.2.13676358
 //     - minSdk: 21
 //     - targetSdk: 34
 //     - Maps API Key: DEBA****KEY
@@ -363,6 +382,7 @@ print(BuildConfig.current);
 ```
 
 ### Generate Build Configurations
+
 ```dart
 // Get Android build.gradle configuration
 print(BuildConfig.current.androidBuildGradleConfig);
@@ -390,12 +410,13 @@ lib/config/
 ## Migration from Hardcoded Values
 
 ### Before (Hardcoded)
+
 ```dart
 // android/app/build.gradle
 android {
     namespace = "com.example.app"
     compileSdk = 34
-    
+
     defaultConfig {
         minSdk = 21
         targetSdk = 34
@@ -406,6 +427,7 @@ android {
 ```
 
 ### After (BuildConfig)
+
 ```dart
 // Use BuildConfig anywhere in your app
 final config = BuildConfig.current;
@@ -415,27 +437,32 @@ final config = BuildConfig.current;
 ## Troubleshooting
 
 ### Maps API Key Not Working
+
 - **Problem**: "MapsInitializationException: Maps API key not found"
-- **Solution**: 
+- **Solution**:
   1. Verify API key is correct in BuildConfig
   2. Check AndroidManifest.xml has meta-data tag
   3. Verify API key restrictions match your package name + SHA-1
 
 ### Version Code Conflicts
+
 - **Problem**: "android.versionCode smaller than version on device"
 - **Solution**: Increment BuildConfig.versionCode before release
 
 ### Wrong Environment Building
+
 - **Problem**: Debug build using production API key
 - **Solution**: Ensure EnvironmentConfig is set before BuildConfig is used
 
 ### Namespace Conflicts
+
 - **Problem**: App already installed with different namespace
 - **Solution**: Uninstall previous app or use different device
 
 ## Best Practices
 
 1. **Set Environment First**
+
    ```dart
    void main() {
      EnvironmentConfig.current = AppEnvironment.production;
@@ -463,7 +490,7 @@ final config = BuildConfig.current;
 
 6. **Validate Before Release**
    ```dart
-   assert(BuildConfig.current.isProductionReady, 
+   assert(BuildConfig.current.isProductionReady,
       'API keys must be configured before release!');
    ```
 
@@ -478,6 +505,7 @@ final config = BuildConfig.current;
 ## Support
 
 For questions or issues:
+
 1. Check this BUILD_CONFIG.md guide
 2. Review code comments in build_config.dart
 3. Check integration tests in test/

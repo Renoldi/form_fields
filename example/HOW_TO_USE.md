@@ -61,15 +61,17 @@ tool/
 
 ### File Responsibilities
 
-| File | Purpose | Edit? |
-|------|---------|-------|
-| `build_settings.dart` | Stores all configuration values | ❌ Never (auto-generated) |
-| `build_config.dart` | Reads and provides configuration | ❌ Never (system file) |
-| `environment.dart` | API environment URLs | ✅ Manual or via tool |
-| `configure_build.dart` | CLI tool to change configs | ✅ Yes (if needed) |
+| File                   | Purpose                          | Edit?                     |
+| ---------------------- | -------------------------------- | ------------------------- |
+| `build_settings.dart`  | Stores all configuration values  | ❌ Never (auto-generated) |
+| `build_config.dart`    | Reads and provides configuration | ❌ Never (system file)    |
+| `environment.dart`     | API environment URLs             | ✅ Manual or via tool     |
+| `configure_build.dart` | CLI tool to change configs       | ✅ Yes (if needed)        |
 
 ---
+
 flutter build apk --debug --no-tree-shake-icons
+
 ## ⚙️ Configuration Tool
 
 ### Basic Usage
@@ -92,7 +94,7 @@ dart run tool/configure_build.dart \
   --namespace=com.example.app \
   --base-url=https://api.example.com \
   --compile-sdk=34 \
-  --ndk-version=27.0.12077973 \
+  --ndk-version=28.2.13676358 \
   --min-sdk=21 \
   --target-sdk=34 \
   --version-code=1 \
@@ -106,23 +108,23 @@ dart run tool/configure_build.dart \
 
 ### Option Details
 
-| Option | Description | Default | Example |
-|--------|-------------|---------|---------|
-| `--env` | Environment (debug/beta/production) | `debug` | `--env=production` |
-| `--namespace` | Android package name | `com.example.form_fields_example` | `--namespace=com.myapp` |
-| `--base-url` | API base URL | Env-specific | `--base-url=https://api.myapp.com` |
-| `--compile-sdk` | Android compile SDK version | `34` | `--compile-sdk=34` |
-| `--ndk-version` | Android NDK version | `27.0.12077973` | `--ndk-version=27.0.12077973` |
-| `--min-sdk` | Minimum Android version | `21` | `--min-sdk=21` |
-| `--target-sdk` | Target Android version | `34` | `--target-sdk=34` |
-| `--version-code` | App version code (integer) | `1` | `--version-code=15` |
-| `--version-name` | App version string | `1.0.0` | `--version-name=2.1.5` |
-| `--maps-key` | Google Maps API key | Env-specific placeholder | `--maps-key=AIza...` |
-| `--camera` | Enable camera permission (Android + iOS/macOS) | `true` | `--camera=false` |
-| `--gallery` | Enable gallery/photos permission (Android + iOS/macOS) | `true` | `--gallery=false` |
-| `--notification` | Enable notification permission (Android + iOS/macOS) | `true` | `--notification=false` |
-| `--platform` | Build platforms (android/ios/macos/windows/linux/web/all) | `android` | `--platform=android,ios` or `--platform=all` |
-| `--skip-build` | Skip automatic build | `false` | `--skip-build` |
+| Option           | Description                                               | Default                           | Example                                      |
+| ---------------- | --------------------------------------------------------- | --------------------------------- | -------------------------------------------- |
+| `--env`          | Environment (debug/beta/production)                       | `debug`                           | `--env=production`                           |
+| `--namespace`    | Android package name                                      | `com.example.form_fields_example` | `--namespace=com.myapp`                      |
+| `--base-url`     | API base URL                                              | Env-specific                      | `--base-url=https://api.myapp.com`           |
+| `--compile-sdk`  | Android compile SDK version                               | `34`                              | `--compile-sdk=34`                           |
+| `--ndk-version`  | Android NDK version                                       | `28.2.13676358`                   | `--ndk-version=28.2.13676358`                |
+| `--min-sdk`      | Minimum Android version                                   | `21`                              | `--min-sdk=21`                               |
+| `--target-sdk`   | Target Android version                                    | `34`                              | `--target-sdk=34`                            |
+| `--version-code` | App version code (integer)                                | `1`                               | `--version-code=15`                          |
+| `--version-name` | App version string                                        | `1.0.0`                           | `--version-name=2.1.5`                       |
+| `--maps-key`     | Google Maps API key                                       | Env-specific placeholder          | `--maps-key=AIza...`                         |
+| `--camera`       | Enable camera permission (Android + iOS/macOS)            | `true`                            | `--camera=false`                             |
+| `--gallery`      | Enable gallery/photos permission (Android + iOS/macOS)    | `true`                            | `--gallery=false`                            |
+| `--notification` | Enable notification permission (Android + iOS/macOS)      | `true`                            | `--notification=false`                       |
+| `--platform`     | Build platforms (android/ios/macos/windows/linux/web/all) | `android`                         | `--platform=android,ios` or `--platform=all` |
+| `--skip-build`   | Skip automatic build                                      | `false`                           | `--skip-build`                               |
 
 ### Automatic APK Building
 
@@ -131,12 +133,14 @@ dart run tool/configure_build.dart \
 **Multi-Platform Support**: Build for Android, iOS, macOS, Windows, Linux, and Web!
 
 The tool will:
+
 - ✅ Build for selected platforms
 - ✅ Auto-fix platform-specific errors
 - ✅ Retry up to 3 times with automatic fixes
 - ✅ Show build summary for all platforms
 
 #### Build for specific platforms:
+
 ```bash
 # Android only (default)
 dart run tool/configure_build.dart --env=debug
@@ -152,6 +156,7 @@ dart run tool/configure_build.dart --env=debug --platform=macos
 ```
 
 To skip the automatic build:
+
 ```bash
 dart run tool/configure_build.dart --env=debug --skip-build
 ```
@@ -161,6 +166,7 @@ dart run tool/configure_build.dart --env=debug --skip-build
 If build errors occur, the tool automatically fixes issues for each platform:
 
 #### Android
+
 - 🔧 Updates Gradle wrapper to latest version
 - 🔧 Cleans Gradle cache (.gradle directory)
 - 🔧 Cleans build directories
@@ -168,6 +174,7 @@ If build errors occur, the tool automatically fixes issues for each platform:
 - 🔧 Runs `flutter clean` and `flutter pub get`
 
 #### iOS/macOS
+
 - 🔧 Cleans CocoaPods cache (Pods directory)
 - 🔧 Deletes Podfile.lock
 - 🔧 Updates pod repos
@@ -175,11 +182,13 @@ If build errors occur, the tool automatically fixes issues for each platform:
 - 🔧 Runs `flutter clean` and `flutter pub get`
 
 #### Linux
+
 - 🔧 Cleans CMake build directory
 - 🔧 Runs `flutter clean` and `flutter pub get`
 - 🔧 Provides dependency installation hints
 
 #### All Platforms
+
 - 🔧 Detects dependency errors → runs pub get
 - 🔧 Detects cache errors → cleans cache
 - 🔧 Retries build automatically
@@ -216,16 +225,19 @@ end
 Automatically adds permission usage descriptions to `Info.plist`:
 
 **Conditional (based on flags):**
+
 - `--camera=true` → `NSCameraUsageDescription`
 - `--gallery=true` → `NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription`
 - `--notification=true` → `NSUserNotificationUsageDescription`
 
 **Always added:**
+
 - `NSLocationWhenInUseUsageDescription`
 - `NSLocationAlwaysUsageDescription`
 - `NSLocationAlwaysAndWhenInUseUsageDescription`
 
 **Example:**
+
 ```bash
 dart run tool/configure_build.dart --env=debug --camera=true --gallery=true --notification=false
 ```
@@ -309,6 +321,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets environment to `debug`
 - Updates namespace to `com.mycompany.myapp.debug`
 - Sets Maps API key for debug environment
@@ -327,6 +340,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets environment to `beta`
 - Updates namespace to `com.mycompany.myapp.beta`
 - Sets version code to 10
@@ -346,6 +360,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets environment to `production`
 - Updates namespace to `com.mycompany.myapp` (no suffix)
 - Sets version code to 15
@@ -363,6 +378,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Removes camera permission
 - Removes notification permission
 - Keeps gallery permission (default)
@@ -379,6 +395,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets minimum SDK to 24 (Android 7.0)
 - Sets target SDK to 34 (Android 14)
 - Sets compile SDK to 34
@@ -394,6 +411,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets environment to debug
 - Builds for Android (APK), iOS, and macOS
 - Auto-fixes any build errors for each platform
@@ -413,6 +431,7 @@ dart run tool/configure_build.dart \
 ```
 
 **What this does:**
+
 - Sets production environment
 - Builds for ALL platforms (Android, iOS, macOS, Windows, Linux, Web)
 - Sets version 3.0.0 (build 20)
@@ -451,16 +470,16 @@ Each environment gets its own namespace to allow side-by-side installation:
 
 When you run the configuration tool, it updates:
 
-✅ `lib/main.dart` - Active environment setting  
-✅ `lib/config/environment.dart` - API base URLs  
-✅ `lib/config/build_settings.dart` - All configuration values  
-✅ `android/app/build.gradle.kts` - Android build configuration  
-✅ `android/app/src/main/AndroidManifest.xml` - Android permissions  
-✅ `ios/Runner/Info.plist` - iOS permissions (if present)  
-✅ `macos/Runner/Info.plist` - macOS permissions (if present)  
-✅ `web/index.html` - Web map key (if present)  
-✅ `windows/runner/Runner.rc` - Windows version (if present)  
-✅ `linux/CMakeLists.txt` - Linux version (if present)  
+✅ `lib/main.dart` - Active environment setting
+✅ `lib/config/environment.dart` - API base URLs
+✅ `lib/config/build_settings.dart` - All configuration values
+✅ `android/app/build.gradle.kts` - Android build configuration
+✅ `android/app/src/main/AndroidManifest.xml` - Android permissions
+✅ `ios/Runner/Info.plist` - iOS permissions (if present)
+✅ `macos/Runner/Info.plist` - macOS permissions (if present)
+✅ `web/index.html` - Web map key (if present)
+✅ `windows/runner/Runner.rc` - Windows version (if present)
+✅ `linux/CMakeLists.txt` - Linux version (if present)
 
 ---
 
@@ -512,13 +531,15 @@ dart run tool/configure_build.dart --env=debug
 ### Issue: "File not found"
 
 **Solution**: The tool is looking for project files. Ensure you have:
+
 - `lib/config/environment.dart`
 - `lib/main.dart`
 - `android/app/build.gradle.kts` (for Android)
 
 ### Issue: Configuration not taking effect
 
-**Solution**: 
+**Solution**:
+
 1. Verify the environment is set in `lib/main.dart`:
    ```dart
    EnvironmentConfig.current = AppEnvironment.debug;
@@ -533,6 +554,7 @@ dart run tool/configure_build.dart --env=debug
 ### Issue: API key not working
 
 **Solution**:
+
 1. Verify the key is set in `build_settings.dart`
 2. Check that `AndroidManifest.xml` has the meta-data:
    ```xml
@@ -617,6 +639,7 @@ dart run tool/configure_build.dart --env=production --version-code=3
 ### 4. Never Commit API Keys
 
 Add to `.gitignore`:
+
 ```
 # Do not commit generated settings with real API keys
 lib/config/build_settings.dart
@@ -641,7 +664,7 @@ Production:
 
 ## 🔐 Security Notes
 
-⚠️ **IMPORTANT**: 
+⚠️ **IMPORTANT**:
 
 1. **Never commit real API keys** to version control
 2. Use environment-specific keys
@@ -703,5 +726,5 @@ dart run tool/configure_build.dart --help
 
 ---
 
-**Last Updated**: March 2026  
+**Last Updated**: March 2026
 **Version**: 1.0.0

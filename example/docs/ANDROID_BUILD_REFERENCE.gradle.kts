@@ -1,7 +1,7 @@
 // ============================================================================
 // REFERENCE: Android build.gradle.kts Integration
 // ============================================================================
-// 
+//
 // This file shows how to integrate BuildConfig values into your Android
 // build.gradle. Use these as templates in your actual build.gradle.kts
 //
@@ -19,13 +19,13 @@ android {
     // APPLICATION NAMESPACE (Package Identifier)
     // ========================================================================
     // Unique identifier for your app across all Android devices.
-    // 
+    //
     // From BuildConfig: androidNamespace
     // - DEBUG:      com.example.form_fields_example.debug
     // - BETA:       com.example.form_fields_example.beta
     // - PRODUCTION: com.example.form_fields_example
     //
-    // ⚠️ IMPORTANT: 
+    // ⚠️ IMPORTANT:
     //   - Never change after initial app release
     //   - Must match packageName in AndroidManifest.xml
     //   - Must match signing configuration
@@ -53,14 +53,14 @@ android {
     // Version of the NDK for compiling native (C/C++) code.
     // Leave blank to use Gradle's default, or specify explicitly.
     //
-    // From BuildConfig: ndkVersion = "27.0.12077973"
+    // From BuildConfig: ndkVersion = "28.2.13676358"
     //
     // Common versions:
-    // - 27.0.12077973 (Latest)
+    // - 28.2.13676358 (Latest)
     // - 26.1.10909125
     // - 25.2.9519653
     // ========================================================================
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     // ========================================================================
     // DEFAULT BUILD CONFIGURATION
@@ -221,24 +221,24 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            
+
             buildFeatures {
                 buildConfig = true
             }
-            
+
             buildConfigField("String", "BASE_URL", "\"https://dummyjson.com/\"")
             buildConfigField("String", "API_KEY", "\"DEBUG_KEY\"")
         }
-        
+
         create("beta") {
             dimension = "environment"
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-beta"
-            
+
             buildConfigField("String", "BASE_URL", "\"https://beta-api.dummyjson.com/\"")
             buildConfigField("String", "API_KEY", "\"BETA_KEY\"")
         }
-        
+
         create("prod") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"https://api.dummyjson.com/\"")
@@ -253,13 +253,13 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    
+
     // Material Design
     implementation("com.google.android.material:material:1.11.0")
-    
+
     // Flutter
     implementation(project(":flutter"))
-    
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -280,7 +280,7 @@ android {
             keyPassword = System.getenv("KEY_PASSWORD") ?: "password"
         }
     }
-    
+
     buildTypes {
         release {
             signingConfig = signingConfigs.release
@@ -292,7 +292,7 @@ android {
 // ============================================================================
 // NOTES
 // ============================================================================
-// 
+//
 // 1. VERSION MANAGEMENT STRATEGY
 //    - Increment versionCode for EVERY release
 //    - Update versionName following semantic versioning
