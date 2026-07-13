@@ -69,7 +69,7 @@ class FormFieldsMapPlaybackConfig {
   /// `LatLng` of the reached point. Consumers can use this to show
   /// details (e.g. a bottom sheet) for the current playback location.
   final void Function(String? polylineId, int index, LatLng point)?
-      onPointReached;
+  onPointReached;
 }
 
 /// Configuration bucket for general map options.
@@ -156,13 +156,15 @@ class FormFieldsMapFindConfig {
   /// Optional parse function to convert raw API response into a
   /// `List<FormFieldsLocationPrediction>` for the internal autocomplete.
   final List<FormFieldsLocationPrediction> Function(dynamic data)?
-      apiParseResults;
+  apiParseResults;
 }
 
 /// Prediction structure returned by find/autocomplete interactions.
 class FormFieldsLocationPrediction {
-  const FormFieldsLocationPrediction(
-      {required this.latLng, required this.address});
+  const FormFieldsLocationPrediction({
+    required this.latLng,
+    required this.address,
+  });
 
   final LatLng latLng;
   final String address;
@@ -253,9 +255,9 @@ class FormFieldsMap extends StatefulWidget {
   // return a modified or replaced instance.
   final Polygon Function(ShapeMeta meta, Polygon defaultLayer)? polygonBuilder;
   final Polyline Function(ShapeMeta meta, Polyline defaultLayer)?
-      polylineBuilder;
+  polylineBuilder;
   final CircleMarker Function(ShapeMeta meta, CircleMarker defaultLayer)?
-      circleBuilder;
+  circleBuilder;
   final Marker Function(ShapeMeta meta, Marker defaultLayer)? markerBuilder;
 
   /// Optional widget drawn at the viewport center when `showMarkerInCenter`
@@ -359,7 +361,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   /// Effective on-center-marker callback (from find config). May be async.
   Future<void> Function(FormFieldsLocationPrediction)?
-      get _onCenterMarkerEffective => widget.findConfig?.onCenterMarker;
+  get _onCenterMarkerEffective => widget.findConfig?.onCenterMarker;
 
   // Note: onCenterChanged preference removed from findConfig; use widget value.
 
@@ -445,11 +447,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
       final existing = FormFieldsMapController.getNotifier(_controllerId);
       try {
         debugPrint(
-            '[FormFieldsMap] initState controllerId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}');
+          '[FormFieldsMap] initState controllerId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}',
+        );
       } catch (_) {}
       if (existing == null) {
         FormFieldsMapController.registerNotifier(
-            _controllerId, _fallbackNotifier);
+          _controllerId,
+          _fallbackNotifier,
+        );
       }
     } catch (_) {}
 
@@ -458,8 +463,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _resolveCanvasMarkerIcon();
     _playbackInterval = _playbackIntervalEffective;
     _playbackInterpolationSteps = _playbackInterpolationStepsEffective;
-    _playbackSubstepInterval =
-        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
+    _playbackSubstepInterval = _computeSubstepInterval(
+      _playbackInterval,
+      _playbackInterpolationSteps,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
         _mapController.move(widget.initialCenter, widget.initialZoom);
@@ -473,7 +480,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     });
 
     FormFieldsMapController.registerOnMarkerTap(
-        _controllerId, widget.onTapShape);
+      _controllerId,
+      widget.onTapShape,
+    );
 
     // Register playback handler so external callers can control playback via
     // `FormFieldsMapController`.
@@ -494,7 +503,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // Configure whether this widget wants auto-start on first append.
       try {
         FormFieldsMapController.setPlaybackAutoStart(
-            _controllerId, widget.playbackConfig?.playbackAutoStart ?? false);
+          _controllerId,
+          widget.playbackConfig?.playbackAutoStart ?? false,
+        );
       } catch (_) {}
     }
   }
@@ -557,7 +568,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
         _mapController = widget.controller!;
         _controllerId = 'ff_controller_${widget.controller.hashCode}';
         FormFieldsMapController.registerController(
-            _controllerId, _mapController);
+          _controllerId,
+          _mapController,
+        );
         _ownsController = false;
       } else {
         _controllerId =
@@ -578,11 +591,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final existing = FormFieldsMapController.getNotifier(_controllerId);
         try {
           debugPrint(
-              '[FormFieldsMap] didUpdateWidget moved controller oldId=$oldId newId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}');
+            '[FormFieldsMap] didUpdateWidget moved controller oldId=$oldId newId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}',
+          );
         } catch (_) {}
         if (existing == null) {
           FormFieldsMapController.registerNotifier(
-              _controllerId, _fallbackNotifier);
+            _controllerId,
+            _fallbackNotifier,
+          );
         }
       } catch (_) {}
     }
@@ -590,7 +606,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     if (oldWidget.onTapShape != widget.onTapShape || oldId != _controllerId) {
       FormFieldsMapController.removeOnMarkerTap(oldId);
       FormFieldsMapController.registerOnMarkerTap(
-          _controllerId, widget.onTapShape);
+        _controllerId,
+        widget.onTapShape,
+      );
       // Move playback handler registration when controller id changes.
       FormFieldsMapController.unregisterPlaybackHandler(oldId);
       if (_playbackEnabled) {
@@ -609,13 +627,16 @@ class FormFieldsMapState extends State<FormFieldsMap>
         );
         try {
           FormFieldsMapController.setPlaybackAutoStart(
-              _controllerId, widget.playbackConfig?.playbackAutoStart ?? false);
+            _controllerId,
+            widget.playbackConfig?.playbackAutoStart ?? false,
+          );
         } catch (_) {}
       }
     }
 
     // Handle changes to playback configuration (widget-level or via playbackConfig)
-    final oldInterval = oldWidget.playbackConfig?.playbackInterval ??
+    final oldInterval =
+        oldWidget.playbackConfig?.playbackInterval ??
         const Duration(seconds: 1);
     final newInterval =
         widget.playbackConfig?.playbackInterval ?? const Duration(seconds: 1);
@@ -625,20 +646,27 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _playbackInterval = newInterval;
       _playbackInterpolationSteps = newSteps;
       _playbackSubstepInterval = _computeSubstepInterval(
-          _playbackInterval, _playbackInterpolationSteps);
+        _playbackInterval,
+        _playbackInterpolationSteps,
+      );
       if (_isPlaying) {
         _playbackTimer?.cancel();
         _playbackTimer = Timer.periodic(
-            _playbackSubstepInterval, (_) => _advancePlaybackStep());
+          _playbackSubstepInterval,
+          (_) => _advancePlaybackStep(),
+        );
       }
       // rebuild points if playing
       if (_playbackPolylineId != null) {
-        final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+        final notifier =
+            FormFieldsMapController.getNotifier(_controllerId) ??
             _fallbackNotifier;
         final pl = notifier.polylineMap[_playbackPolylineId];
         if (pl != null) {
-          _playbackPoints =
-              _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+          _playbackPoints = _buildInterpolatedPoints(
+            pl.points,
+            _playbackInterpolationSteps,
+          );
         }
       }
     }
@@ -648,18 +676,21 @@ class FormFieldsMapState extends State<FormFieldsMap>
     // Clean up any existing image streams/listeners for both images.
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
-      _canvasMarkerImageStream!
-          .removeListener(_canvasMarkerImageStreamListener!);
+      _canvasMarkerImageStream!.removeListener(
+        _canvasMarkerImageStreamListener!,
+      );
     }
     if (_playbackMarkerImageStream != null &&
         _playbackMarkerImageStreamListener != null) {
-      _playbackMarkerImageStream!
-          .removeListener(_playbackMarkerImageStreamListener!);
+      _playbackMarkerImageStream!.removeListener(
+        _playbackMarkerImageStreamListener!,
+      );
     }
     if (_playbackMarkerImageStream != null &&
         _playbackMarkerImageStreamListener != null) {
-      _playbackMarkerImageStream!
-          .removeListener(_playbackMarkerImageStreamListener!);
+      _playbackMarkerImageStream!.removeListener(
+        _playbackMarkerImageStreamListener!,
+      );
     }
     _canvasMarkerImageStream = null;
     _canvasMarkerImageStreamListener = null;
@@ -673,8 +704,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     // Helper to resolve an ImageProvider into an ImageStream and set target
     void attachImageProvider(
-        ImageProvider provider, void Function(ui.Image) onImage,
-        {required bool isPlayback}) {
+      ImageProvider provider,
+      void Function(ui.Image) onImage, {
+      required bool isPlayback,
+    }) {
       final config = createLocalImageConfiguration(context);
       final stream = provider.resolve(config);
       final listener = ImageStreamListener((ImageInfo info, bool _) {
@@ -762,7 +795,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     final tp = TextPainter(
       text: TextSpan(
-          text: String.fromCharCode(iconData.codePoint), style: textStyle),
+        text: String.fromCharCode(iconData.codePoint),
+        style: textStyle,
+      ),
       textDirection: TextDirection.ltr,
     );
     tp.layout();
@@ -770,16 +805,20 @@ class FormFieldsMapState extends State<FormFieldsMap>
     final w = tp.width.ceil();
     final h = tp.height.ceil();
     final recorder = ui.PictureRecorder();
-    final canvas =
-        Canvas(recorder, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()));
+    final canvas = Canvas(
+      recorder,
+      Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
+    );
     tp.paint(canvas, Offset.zero);
     final picture = recorder.endRecording();
     final image = await picture.toImage(w == 0 ? 1 : w, h == 0 ? 1 : h);
     return image;
   }
 
-  Future<ui.Image?> _rasterizeWidgetToImage(Widget widget,
-      {double logicalSize = 36.0}) async {
+  Future<ui.Image?> _rasterizeWidgetToImage(
+    Widget widget, {
+    double logicalSize = 36.0,
+  }) async {
     try {
       if (!mounted) return null;
 
@@ -848,8 +887,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _playbackTimer?.cancel();
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
-      _canvasMarkerImageStream!
-          .removeListener(_canvasMarkerImageStreamListener!);
+      _canvasMarkerImageStream!.removeListener(
+        _canvasMarkerImageStreamListener!,
+      );
     }
     // Unregister and dispose fallback notifier if created.
     try {
@@ -948,39 +988,49 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   void _setPolylinePlaybackInterval(Duration interval) {
     _playbackInterval = interval;
-    _playbackSubstepInterval =
-        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
+    _playbackSubstepInterval = _computeSubstepInterval(
+      _playbackInterval,
+      _playbackInterpolationSteps,
+    );
     if (_isPlaying) {
       _playbackTimer?.cancel();
       _playbackTimer = Timer.periodic(
-          _playbackSubstepInterval, (_) => _advancePlaybackStep());
+        _playbackSubstepInterval,
+        (_) => _advancePlaybackStep(),
+      );
     }
   }
 
   // Allow runtime update of interpolation steps
   void _setPlaybackInterpolationSteps(int steps) {
     _playbackInterpolationSteps = steps.clamp(0, 1000);
-    _playbackSubstepInterval =
-        _computeSubstepInterval(_playbackInterval, _playbackInterpolationSteps);
+    _playbackSubstepInterval = _computeSubstepInterval(
+      _playbackInterval,
+      _playbackInterpolationSteps,
+    );
     // rebuild playback list if currently playing
     if (_playbackPolylineId != null) {
-      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+      final notifier =
+          FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
       final pl = notifier.polylineMap[_playbackPolylineId];
       if (pl != null) {
-        final currentPoint = _playbackPoints.isNotEmpty &&
+        final currentPoint =
+            _playbackPoints.isNotEmpty &&
                 _playbackIndex < _playbackPoints.length
             ? _playbackPoints[_playbackIndex]
             : null;
-        _playbackPoints =
-            _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+        _playbackPoints = _buildInterpolatedPoints(
+          pl.points,
+          _playbackInterpolationSteps,
+        );
         // re-find closest index to currentPoint
         if (currentPoint != null) {
           var best = 0;
           var bestDist = double.infinity;
           for (var i = 0; i < _playbackPoints.length; i++) {
-            final d = pow(
-                    (_playbackPoints[i].latitude - currentPoint.latitude), 2) +
+            final d =
+                pow((_playbackPoints[i].latitude - currentPoint.latitude), 2) +
                 pow((_playbackPoints[i].longitude - currentPoint.longitude), 2);
             if (d < bestDist) {
               bestDist = d as double;
@@ -1009,9 +1059,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   void _startPolylinePlayback(String? polylineId) {
     try {
-      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+      final notifier =
+          FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
-      String? id = polylineId ??
+      String? id =
+          polylineId ??
           (notifier.polylineMap.isNotEmpty
               ? notifier.polylineMap.keys.first
               : null);
@@ -1032,7 +1084,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _safeSetState(() {});
           _playbackTimer?.cancel();
           _playbackTimer = Timer.periodic(
-              _playbackSubstepInterval, (_) => _advancePlaybackStep());
+            _playbackSubstepInterval,
+            (_) => _advancePlaybackStep(),
+          );
           return;
         } else {
           // at end -> restart from beginning
@@ -1042,8 +1096,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
       // New polyline (or restarting finished one): build points and start
       _playbackPolylineId = id;
-      _playbackPoints =
-          _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+      _playbackPoints = _buildInterpolatedPoints(
+        pl.points,
+        _playbackInterpolationSteps,
+      );
       _playbackIndex = 0;
       _isPlaying = true;
       // publish authoritative playing state
@@ -1053,11 +1109,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _safeSetState(() {});
       _playbackTimer?.cancel();
       _playbackTimer = Timer.periodic(
-          _playbackSubstepInterval, (_) => _advancePlaybackStep());
+        _playbackSubstepInterval,
+        (_) => _advancePlaybackStep(),
+      );
       // Zoom to level 17 (clamped to allowed min/max) when starting playback
       try {
-        final initialPoint =
-            _playbackPoints.isNotEmpty ? _playbackPoints[_playbackIndex] : null;
+        final initialPoint = _playbackPoints.isNotEmpty
+            ? _playbackPoints[_playbackIndex]
+            : null;
         if (initialPoint != null) {
           if (_playbackFollowCamera) {
             // animateTo is async but we don't need to await inside timer callbacks
@@ -1089,8 +1148,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _playbackPolylineId = notifier.polylineMap.keys.first;
       final pl = notifier.polylineMap[_playbackPolylineId];
       if (pl != null) {
-        _playbackPoints =
-            _buildInterpolatedPoints(pl.points, _playbackInterpolationSteps);
+        _playbackPoints = _buildInterpolatedPoints(
+          pl.points,
+          _playbackInterpolationSteps,
+        );
       }
     }
 
@@ -1104,8 +1165,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     } catch (_) {}
     _safeSetState(() {});
     _playbackTimer?.cancel();
-    _playbackTimer =
-        Timer.periodic(_playbackSubstepInterval, (_) => _advancePlaybackStep());
+    _playbackTimer = Timer.periodic(
+      _playbackSubstepInterval,
+      (_) => _advancePlaybackStep(),
+    );
     _updatePlaybackMarker();
   }
 
@@ -1177,8 +1240,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
           if (_playbackIndex > 0) {
             from = _playbackPoints[_playbackIndex - 1];
           } else {
-            from = _playbackPoints[
-                (_playbackIndex + 1).clamp(0, _playbackPoints.length - 1)];
+            from =
+                _playbackPoints[(_playbackIndex + 1).clamp(
+                  0,
+                  _playbackPoints.length - 1,
+                )];
           }
           final lat1 = from.latitude * pi / 180.0;
           final lat2 = p.latitude * pi / 180.0;
@@ -1207,7 +1273,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // when present.
       final effectiveProviderForPlayback =
           widget.playbackConfig?.playbackMarkerIcon ??
-              _canvasMarkerIconEffective;
+          _canvasMarkerIconEffective;
       if (effectiveProviderForPlayback == null) {
         payload['icon'] = 'arrow';
       }
@@ -1216,7 +1282,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       if (_playbackPolylineColor != null) {
         payload['color'] = _playbackPolylineColor;
       }
-      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+      final notifier =
+          FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
       // Use controller API to mutate notifier so only controller is the
       // canonical mutator for map state. Use remove+append so we don't
@@ -1226,7 +1293,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
       try {
         try {
           FormFieldsMapController.removeRawMarker(
-              _controllerId, 'playback_marker');
+            _controllerId,
+            'playback_marker',
+          );
         } catch (_) {}
         try {
           FormFieldsMapController.appendRawMarkers(_controllerId, [payload]);
@@ -1238,9 +1307,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
         // fallback to direct notifier mutation if registry isn't available
         try {
           // replace any existing playback_marker in notifier.rawMarkers
-          notifier.rawMarkers.removeWhere((r) =>
-              (r is Map && r['id'] == 'playback_marker') ||
-              (r is ShapeMeta && r.id == 'playback_marker'));
+          notifier.rawMarkers.removeWhere(
+            (r) =>
+                (r is Map && r['id'] == 'playback_marker') ||
+                (r is ShapeMeta && r.id == 'playback_marker'),
+          );
         } catch (_) {}
         try {
           notifier.appendRawMarkers([payload]);
@@ -1257,18 +1328,28 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // Notify consumers when a playback point is reached so they can
       // react (e.g. show a bottom sheet with history details).
       try {
-        widget.playbackConfig?.onPointReached
-            ?.call(_playbackPolylineId, _playbackIndex, p);
+        widget.playbackConfig?.onPointReached?.call(
+          _playbackPolylineId,
+          _playbackIndex,
+          p,
+        );
       } catch (_) {}
     } catch (_) {}
   }
 
-  Future<void> animateTo(LatLng dest, double zoom,
-      {Duration duration = const Duration(milliseconds: 400),
-      Curve curve = Curves.easeInOut}) async {
+  Future<void> animateTo(
+    LatLng dest,
+    double zoom, {
+    Duration duration = const Duration(milliseconds: 400),
+    Curve curve = Curves.easeInOut,
+  }) async {
     try {
-      await _mapController.animateCameraTo(dest, zoom,
-          duration: duration, curve: curve);
+      await _mapController.animateCameraTo(
+        dest,
+        zoom,
+        duration: duration,
+        curve: curve,
+      );
     } catch (_) {
       // fallback to instant move
       try {
@@ -1290,9 +1371,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
     }
   }
 
-  Future<void> fitBounds(LatLngBounds bounds,
-      {EdgeInsets padding = EdgeInsets.zero,
-      Duration duration = const Duration(milliseconds: 400)}) async {
+  Future<void> fitBounds(
+    LatLngBounds bounds, {
+    EdgeInsets padding = EdgeInsets.zero,
+    Duration duration = const Duration(milliseconds: 400),
+  }) async {
     final center = bounds.center;
 
     final targetZoom = widget.initialZoom;
@@ -1335,37 +1418,43 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 builder: (context, polygons, _) {
                   final notifierLocal =
                       FormFieldsMapController.getNotifier(_controllerId) ??
-                          _fallbackNotifier;
+                      _fallbackNotifier;
                   if (notifierLocal.polygonMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal.polygonMap.entries.map((e) {
-                    final id = e.key;
-                    final p = e.value;
-                    final dynColor =
-                        _extractColorPayloadForId(notifierLocal, id);
-                    final parsed = ShapeMeta.parseColor(dynColor);
-                    return Polygon(
-                      points: p.points,
-                      color: parsed != null
-                          ? parsed.withValues(alpha: 0.25)
-                          : themeColor.withValues(alpha: 0.25),
-                      borderColor: parsed ?? themeColor,
-                      borderStrokeWidth: p.borderStrokeWidth,
-                    );
-                  }).toList(growable: false);
+                  final mapped = notifierLocal.polygonMap.entries
+                      .map((e) {
+                        final id = e.key;
+                        final p = e.value;
+                        final dynColor = _extractColorPayloadForId(
+                          notifierLocal,
+                          id,
+                        );
+                        final parsed = ShapeMeta.parseColor(dynColor);
+                        return Polygon(
+                          points: p.points,
+                          color: parsed != null
+                              ? parsed.withValues(alpha: 0.25)
+                              : themeColor.withValues(alpha: 0.25),
+                          borderColor: parsed ?? themeColor,
+                          borderStrokeWidth: p.borderStrokeWidth,
+                        );
+                      })
+                      .toList(growable: false);
                   // Also accept polygons provided as ShapeMeta in rawMarkers
                   final extraPolys = <Polygon>[];
                   for (final r in notifierLocal.rawMarkers) {
                     if (r is ShapeMeta && r.shapeType == ShapeTypes.polygon) {
                       final pms = r.pointMetas;
                       if (pms == null || pms.isEmpty) continue;
-                      final pts =
-                          pms.map((pm) => pm.point).toList(growable: false);
+                      final pts = pms
+                          .map((pm) => pm.point)
+                          .toList(growable: false);
                       final parsed = r.color;
                       final opts = r.polygonOptions();
-                      final fill = opts.fillColor ??
+                      final fill =
+                          opts.fillColor ??
                           (parsed != null
                               ? parsed.withValues(alpha: 0.25)
                               : themeColor.withValues(alpha: 0.25));
@@ -1397,39 +1486,45 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 builder: (context, polylines, _) {
                   final notifierLocal =
                       FormFieldsMapController.getNotifier(_controllerId) ??
-                          _fallbackNotifier;
+                      _fallbackNotifier;
                   if (notifierLocal.polylineMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal.polylineMap.entries.map((e) {
-                    final id = e.key;
-                    final l = e.value;
-                    final dynColor =
-                        _extractColorPayloadForId(notifierLocal, id);
-                    final parsed = ShapeMeta.parseColor(dynColor);
-                    return Polyline(
-                      points: l.points,
-                      strokeWidth: l.strokeWidth,
-                      color: parsed ?? themeColor,
-                    );
-                  }).toList(growable: false);
+                  final mapped = notifierLocal.polylineMap.entries
+                      .map((e) {
+                        final id = e.key;
+                        final l = e.value;
+                        final dynColor = _extractColorPayloadForId(
+                          notifierLocal,
+                          id,
+                        );
+                        final parsed = ShapeMeta.parseColor(dynColor);
+                        return Polyline(
+                          points: l.points,
+                          strokeWidth: l.strokeWidth,
+                          color: parsed ?? themeColor,
+                        );
+                      })
+                      .toList(growable: false);
                   // Also accept polylines provided as ShapeMeta in rawMarkers
                   final extraPls = <Polyline>[];
                   for (final r in notifierLocal.rawMarkers) {
                     if (r is ShapeMeta && r.shapeType == ShapeTypes.polyline) {
                       final pms = r.pointMetas;
                       if (pms == null || pms.isEmpty) continue;
-                      final pts =
-                          pms.map((pm) => pm.point).toList(growable: false);
+                      final pts = pms
+                          .map((pm) => pm.point)
+                          .toList(growable: false);
                       final parsed = r.color;
                       final opts = r.polylineOptions();
                       final defaultPl = Polyline(
-                          points: pts,
-                          strokeWidth: opts.strokeWidth ?? 2.0,
-                          color: opts.color ?? parsed ?? themeColor,
-                          useStrokeWidthInMeter:
-                              opts.useStrokeWidthInMeter ?? true);
+                        points: pts,
+                        strokeWidth: opts.strokeWidth ?? 2.0,
+                        color: opts.color ?? parsed ?? themeColor,
+                        useStrokeWidthInMeter:
+                            opts.useStrokeWidthInMeter ?? true,
+                      );
                       final finalPl = widget.polylineBuilder != null
                           ? widget.polylineBuilder!(r, defaultPl)
                           : defaultPl;
@@ -1446,28 +1541,32 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 builder: (context, circles, _) {
                   final notifierLocal =
                       FormFieldsMapController.getNotifier(_controllerId) ??
-                          _fallbackNotifier;
+                      _fallbackNotifier;
                   if (notifierLocal.circleMap.isEmpty) {
                     return const SizedBox.shrink();
                   }
                   final themeColor = Theme.of(context).colorScheme.primary;
-                  final mapped = notifierLocal.circleMap.entries.map((e) {
-                    final id = e.key;
-                    final c = e.value;
-                    final dynColor =
-                        _extractColorPayloadForId(notifierLocal, id);
-                    final parsed = ShapeMeta.parseColor(dynColor);
-                    return CircleMarker(
-                      point: c.point,
-                      color: parsed != null
-                          ? parsed.withValues(alpha: 0.35)
-                          : themeColor.withValues(alpha: 0.35),
-                      borderStrokeWidth: c.borderStrokeWidth,
-                      borderColor: parsed ?? themeColor,
-                      useRadiusInMeter: c.useRadiusInMeter,
-                      radius: c.radius,
-                    );
-                  }).toList(growable: false);
+                  final mapped = notifierLocal.circleMap.entries
+                      .map((e) {
+                        final id = e.key;
+                        final c = e.value;
+                        final dynColor = _extractColorPayloadForId(
+                          notifierLocal,
+                          id,
+                        );
+                        final parsed = ShapeMeta.parseColor(dynColor);
+                        return CircleMarker(
+                          point: c.point,
+                          color: parsed != null
+                              ? parsed.withValues(alpha: 0.35)
+                              : themeColor.withValues(alpha: 0.35),
+                          borderStrokeWidth: c.borderStrokeWidth,
+                          borderColor: parsed ?? themeColor,
+                          useRadiusInMeter: c.useRadiusInMeter,
+                          radius: c.radius,
+                        );
+                      })
+                      .toList(growable: false);
                   // Also accept circles provided as ShapeMeta in rawMarkers
                   final extraCircles = <CircleMarker>[];
                   for (final r in notifierLocal.rawMarkers) {
@@ -1506,42 +1605,47 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   if (markers.isEmpty) return const SizedBox.shrink();
                   final notifierLocal =
                       FormFieldsMapController.getNotifier(_controllerId) ??
-                          _fallbackNotifier;
-                  final mapped = markers.map((m) {
-                    // try to find a color for this marker from rawMarkers (by point)
-                    final dynColor =
-                        _extractColorPayloadForPoint(notifierLocal, m.point);
-                    ShapeMeta.parseColor(dynColor);
-                    // use idiomatic colorScheme.onSecondary for marker foreground
-                    final markerForeground =
-                        Theme.of(context).colorScheme.onSecondary;
-                    final child = m.child;
-                    Widget themedChild;
-                    if (child is Icon) {
-                      themedChild = Icon(
-                        child.icon,
-                        size: child.size,
-                        semanticLabel: child.semanticLabel,
-                        textDirection: child.textDirection,
-                        color: markerForeground,
-                      );
-                    } else {
-                      themedChild = IconTheme(
-                        data: IconThemeData(color: markerForeground),
-                        child: DefaultTextStyle.merge(
-                          style: TextStyle(color: markerForeground),
-                          child: child,
-                        ),
-                      );
-                    }
-                    return Marker(
-                      point: m.point,
-                      width: m.width,
-                      height: m.height,
-                      rotate: m.rotate,
-                      child: themedChild,
-                    );
-                  }).toList(growable: false);
+                      _fallbackNotifier;
+                  final mapped = markers
+                      .map((m) {
+                        // try to find a color for this marker from rawMarkers (by point)
+                        final dynColor = _extractColorPayloadForPoint(
+                          notifierLocal,
+                          m.point,
+                        );
+                        ShapeMeta.parseColor(dynColor);
+                        // use idiomatic colorScheme.onSecondary for marker foreground
+                        final markerForeground = Theme.of(
+                          context,
+                        ).colorScheme.onSecondary;
+                        final child = m.child;
+                        Widget themedChild;
+                        if (child is Icon) {
+                          themedChild = Icon(
+                            child.icon,
+                            size: child.size,
+                            semanticLabel: child.semanticLabel,
+                            textDirection: child.textDirection,
+                            color: markerForeground,
+                          );
+                        } else {
+                          themedChild = IconTheme(
+                            data: IconThemeData(color: markerForeground),
+                            child: DefaultTextStyle.merge(
+                              style: TextStyle(color: markerForeground),
+                              child: child,
+                            ),
+                          );
+                        }
+                        return Marker(
+                          point: m.point,
+                          width: m.width,
+                          height: m.height,
+                          rotate: m.rotate,
+                          child: themedChild,
+                        );
+                      })
+                      .toList(growable: false);
                   // Also accept markers provided as ShapeMeta in rawMarkers
                   final extraMarkers = <Marker>[];
                   for (final r in notifierLocal.rawMarkers) {
@@ -1571,14 +1675,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
               ValueListenableBuilder<bool>(
                 valueListenable:
                     FormFieldsMapController.getBlockingLoadingListenable(
-                        _controllerId),
-                builder: (context, isBlocking, __) {
+                      _controllerId,
+                    ),
+                builder: (context, isBlocking, _) {
                   return Selector<FormFieldsMapNotifier, List<dynamic>>(
                     selector: (_, n) => n.rawMarkers,
                     builder: (context, rawMarkers, _) {
                       if (rawMarkers.isEmpty) return const SizedBox.shrink();
-                      final renderedRawMarkers = rawMarkers.length >
-                              widget.maxRenderedRawMarkers
+                      final renderedRawMarkers =
+                          rawMarkers.length > widget.maxRenderedRawMarkers
                           ? rawMarkers.sublist(0, widget.maxRenderedRawMarkers)
                           : rawMarkers;
                       return Positioned.fill(
@@ -1589,21 +1694,25 @@ class FormFieldsMapState extends State<FormFieldsMap>
                               center: _lastCenter ?? widget.initialCenter,
                               zoom: _lastZoom ?? widget.initialZoom,
                               radius: _canvasMarkerRadiusEffective,
-                              devicePixelRatio:
-                                  MediaQuery.of(context).devicePixelRatio,
+                              devicePixelRatio: MediaQuery.of(
+                                context,
+                              ).devicePixelRatio,
                               iconImage: _canvasMarkerImage,
                               playbackIconImage: _playbackMarkerImage,
                               playbackHaloColor: _playbackHaloColor,
                               playbackHaloScale: _playbackHaloScale,
                               playbackHaloOpacity: _playbackHaloOpacity,
                               // hide titles while blocking loading is active or when zoom is low
-                              showTitle: _showTitleEffective &&
+                              showTitle:
+                                  _showTitleEffective &&
                                   !isBlocking &&
                                   ((_lastZoom ?? widget.initialZoom) >= 10.0),
-                              defaultColor:
-                                  Theme.of(context).colorScheme.secondary,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onSecondary,
+                              defaultColor: Theme.of(
+                                context,
+                              ).colorScheme.secondary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onSecondary,
                             ),
                           ),
                         ),
@@ -1630,9 +1739,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 child: FormFieldsAutocomplete<FormFieldsLocationPrediction>(
                   fieldLabel: 'Search',
                   hideTrailingIcon: true,
-                  apiUrl: _findConfigEffective.apiUrl ??
+                  apiUrl:
+                      _findConfigEffective.apiUrl ??
                       'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1',
-                  parseResults: _findConfigEffective.apiParseResults ??
+                  parseResults:
+                      _findConfigEffective.apiParseResults ??
                       (data) {
                         final out = <FormFieldsLocationPrediction>[];
                         try {
@@ -1647,9 +1758,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
                                     : (e['lon'] as num).toDouble();
                                 final display =
                                     e['display_name']?.toString() ?? '';
-                                out.add(FormFieldsLocationPrediction(
+                                out.add(
+                                  FormFieldsLocationPrediction(
                                     latLng: LatLng(lat, lon),
-                                    address: display));
+                                    address: display,
+                                  ),
+                                );
                               } catch (_) {}
                             }
                           } else if (data is Map && data['results'] is List) {
@@ -1663,9 +1777,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
                                     : (e['lon'] as num).toDouble();
                                 final display =
                                     e['display_name']?.toString() ?? '';
-                                out.add(FormFieldsLocationPrediction(
+                                out.add(
+                                  FormFieldsLocationPrediction(
                                     latLng: LatLng(lat, lon),
-                                    address: display));
+                                    address: display,
+                                  ),
+                                );
                               } catch (_) {}
                             }
                           }
@@ -1704,13 +1821,17 @@ class FormFieldsMapState extends State<FormFieldsMap>
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           try {
                             FormFieldsMapController.setLoading(
-                                _controllerId, false);
+                              _controllerId,
+                              false,
+                            );
                           } catch (_) {}
                         });
                       } catch (_) {
                         try {
                           FormFieldsMapController.setLoading(
-                              _controllerId, false);
+                            _controllerId,
+                            false,
+                          );
                         } catch (_) {}
                       }
                     }
@@ -1720,7 +1841,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     return ListTile(
                       title: Text(p.address),
                       subtitle: Text(
-                          '${p.latLng.latitude.toStringAsFixed(6)}, ${p.latLng.longitude.toStringAsFixed(6)}'),
+                        '${p.latLng.latitude.toStringAsFixed(6)}, ${p.latLng.longitude.toStringAsFixed(6)}',
+                      ),
                     );
                   },
                 ),
@@ -1731,38 +1853,41 @@ class FormFieldsMapState extends State<FormFieldsMap>
           Positioned.fill(
             child: IgnorePointer(
               child: Center(
-                child: Builder(builder: (ctx) {
-                  // Priority: `findConfig.centerMarker` -> explicit
-                  // `widget.centerMarker` -> rasterized `_canvasMarkerImage`
-                  // -> provided `canvasMarkerIcon` -> default icon.
-                  final centerWidget =
-                      _findConfigEffective.centerMarker ?? widget.centerMarker;
-                  if (centerWidget != null) return centerWidget;
-                  if (_canvasMarkerImage != null) {
-                    return RawImage(
-                      image: _canvasMarkerImage,
-                      width: _canvasMarkerRadiusEffective * 2,
-                      height: _canvasMarkerRadiusEffective * 2,
-                      fit: BoxFit.contain,
+                child: Builder(
+                  builder: (ctx) {
+                    // Priority: `findConfig.centerMarker` -> explicit
+                    // `widget.centerMarker` -> rasterized `_canvasMarkerImage`
+                    // -> provided `canvasMarkerIcon` -> default icon.
+                    final centerWidget =
+                        _findConfigEffective.centerMarker ??
+                        widget.centerMarker;
+                    if (centerWidget != null) return centerWidget;
+                    if (_canvasMarkerImage != null) {
+                      return RawImage(
+                        image: _canvasMarkerImage,
+                        width: _canvasMarkerRadiusEffective * 2,
+                        height: _canvasMarkerRadiusEffective * 2,
+                        fit: BoxFit.contain,
+                      );
+                    }
+                    final provider = _canvasMarkerIconEffective;
+                    if (provider is Widget) return provider;
+                    if (provider is Icon) return provider;
+                    if (provider is ImageProvider) {
+                      return Image(
+                        image: provider,
+                        width: _canvasMarkerRadiusEffective * 2,
+                        height: _canvasMarkerRadiusEffective * 2,
+                        fit: BoxFit.contain,
+                      );
+                    }
+                    return Icon(
+                      Icons.location_pin,
+                      color: Theme.of(context).colorScheme.onSecondary,
+                      size: 36,
                     );
-                  }
-                  final provider = _canvasMarkerIconEffective;
-                  if (provider is Widget) return provider;
-                  if (provider is Icon) return provider;
-                  if (provider is ImageProvider) {
-                    return Image(
-                      image: provider,
-                      width: _canvasMarkerRadiusEffective * 2,
-                      height: _canvasMarkerRadiusEffective * 2,
-                      fit: BoxFit.contain,
-                    );
-                  }
-                  return Icon(
-                    Icons.location_pin,
-                    color: Theme.of(context).colorScheme.onSecondary,
-                    size: 36,
-                  );
-                }),
+                  },
+                ),
               ),
             ),
           ),
@@ -1794,8 +1919,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   onPressed: () {
                     final center = _lastCenter ?? widget.initialCenter;
                     final currentZoom = _lastZoom ?? widget.initialZoom;
-                    final newZoom =
-                        (currentZoom + 1).clamp(widget.minZoom, widget.maxZoom);
+                    final newZoom = (currentZoom + 1).clamp(
+                      widget.minZoom,
+                      widget.maxZoom,
+                    );
                     animateTo(center, newZoom);
                   },
                 ),
@@ -1811,16 +1938,21 @@ class FormFieldsMapState extends State<FormFieldsMap>
                     LatLng? target;
                     try {
                       if (!_findConfigEffective.allowGeolocation) {
-                        messenger?.showSnackBar(const SnackBar(
-                            content: Text('Location access disabled')));
+                        messenger?.showSnackBar(
+                          const SnackBar(
+                            content: Text('Location access disabled'),
+                          ),
+                        );
                       } else if (widget.onRequestCurrentLocation != null) {
                         try {
-                          final Future<LatLng>? fut =
-                              widget.onRequestCurrentLocation!.call();
+                          final Future<LatLng>? fut = widget
+                              .onRequestCurrentLocation!
+                              .call();
                           if (fut != null) {
                             try {
-                              target = await fut
-                                  .timeout(_findConfigEffective.findTimeout);
+                              target = await fut.timeout(
+                                _findConfigEffective.findTimeout,
+                              );
                             } on TimeoutException {
                               target = null;
                             } catch (_) {
@@ -1850,8 +1982,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       await animateTo(target, zoom);
                       return;
                     }
-                    messenger?.showSnackBar(const SnackBar(
-                        content: Text('Current location not available')));
+                    messenger?.showSnackBar(
+                      const SnackBar(
+                        content: Text('Current location not available'),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 8),
@@ -1876,8 +2011,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       try {
                         if (_onCenterMarkerEffective != null) {
                           await _onCenterMarkerEffective!(
-                              FormFieldsLocationPrediction(
-                                  latLng: center, address: address));
+                            FormFieldsLocationPrediction(
+                              latLng: center,
+                              address: address,
+                            ),
+                          );
                         }
                       } catch (_) {}
                     },
@@ -1892,8 +2030,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   onPressed: () {
                     final center = _lastCenter ?? widget.initialCenter;
                     final currentZoom = _lastZoom ?? widget.initialZoom;
-                    final newZoom =
-                        (currentZoom - 1).clamp(widget.minZoom, widget.maxZoom);
+                    final newZoom = (currentZoom - 1).clamp(
+                      widget.minZoom,
+                      widget.maxZoom,
+                    );
                     animateTo(center, newZoom);
                   },
                 ),
@@ -1913,7 +2053,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 ValueListenableBuilder<bool>(
                   valueListenable:
                       FormFieldsMapController.getPlaybackPlayingListenable(
-                          _controllerId),
+                        _controllerId,
+                      ),
                   builder: (context, playing, _) {
                     return AppButton(
                       type: AppButtonType.fab,
@@ -1950,19 +2091,23 @@ class FormFieldsMapState extends State<FormFieldsMap>
         // Full-screen blocking overlay for data loads.
         ValueListenableBuilder<bool>(
           valueListenable: FormFieldsMapController.getBlockingLoadingListenable(
-              _controllerId),
+            _controllerId,
+          ),
           builder: (context, isBlocking, _) {
             if (isBlocking) {
               return Positioned.fill(
                 child: Stack(
                   children: [
                     const ModalBarrier(
-                        dismissible: false, color: Colors.black38),
+                      dismissible: false,
+                      color: Colors.black38,
+                    ),
                     Center(
                       child: Card(
                         elevation: 4,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
@@ -1974,8 +2119,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                                 child: CircularProgressIndicator(),
                               ),
                               const SizedBox(height: 12),
-                              Text(context.formTr('loading'),
-                                  style: const TextStyle(fontSize: 14)),
+                              Text(
+                                context.formTr('loading'),
+                                style: const TextStyle(fontSize: 14),
+                              ),
                             ],
                           ),
                         ),
@@ -1991,8 +2138,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
         // Small non-blocking indicator for brief camera/position updates.
         ValueListenableBuilder<bool>(
-          valueListenable:
-              FormFieldsMapController.getLoadingListenable(_controllerId),
+          valueListenable: FormFieldsMapController.getLoadingListenable(
+            _controllerId,
+          ),
           builder: (context, isLoading, _) {
             if (isLoading) {
               return const Positioned(
@@ -2003,9 +2151,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   child: Padding(
                     padding: EdgeInsets.all(8.0),
                     child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 ),
               );
@@ -2023,7 +2172,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       return;
     }
     try {
-      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+      final notifier =
+          FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
 
       // Compute local tap offset once for pixel-based hit tests.
@@ -2035,7 +2185,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
           local = (tapPosition as dynamic).local as Offset;
         } catch (_) {
           local = Offset(
-              (context.size?.width ?? 0) / 2, (context.size?.height ?? 0) / 2);
+            (context.size?.width ?? 0) / 2,
+            (context.size?.height ?? 0) / 2,
+          );
         }
       }
 
@@ -2103,7 +2255,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
               }
             }
             final distPx = pointToSegmentDistance(
-                local, Offset(dx0, dy0), Offset(dx1, dy1));
+              local,
+              Offset(dx0, dy0),
+              Offset(dx1, dy1),
+            );
             if (distPx < minEdgeDist) minEdgeDist = distPx;
           }
           if (minEdgeDist <= max(baseThreshPx, 16.0)) {
@@ -2159,8 +2314,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
               dx1 += worldSize;
             }
           }
-          final distPx =
-              pointToSegmentDistance(local, Offset(dx0, dy0), Offset(dx1, dy1));
+          final distPx = pointToSegmentDistance(
+            local,
+            Offset(dx0, dy0),
+            Offset(dx1, dy1),
+          );
           if (distPx < minPolyDist) {
             minPolyDist = distPx;
             minPolyId = lid;
@@ -2239,7 +2397,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final meta = _findMetaForShape(notifier, cid);
             final payload = <String, dynamic>{
               'id': cid,
-              'shapeType': ShapeTypes.circle
+              'shapeType': ShapeTypes.circle,
             };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
@@ -2284,10 +2442,12 @@ class FormFieldsMapState extends State<FormFieldsMap>
             if (m.length >= 4) subtitle = m[3]?.toString();
             if (m.length >= 5) shapeType = m[4]?.toString();
           } else if (m is Map) {
-            lat = (m['lat'] as num?)?.toDouble() ??
+            lat =
+                (m['lat'] as num?)?.toDouble() ??
                 (m['latitude'] as num?)?.toDouble() ??
                 0.0;
-            lon = (m['lon'] as num?)?.toDouble() ??
+            lon =
+                (m['lon'] as num?)?.toDouble() ??
                 (m['longitude'] as num?)?.toDouble() ??
                 0.0;
             title = m['title']?.toString();
@@ -2347,17 +2507,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
             try {
               final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
               final textStyle = TextStyle(
-                  color: Colors.black,
-                  fontSize: max(10.0, devicePixelRatio * 6),
-                  fontWeight: FontWeight.w600);
+                color: Colors.black,
+                fontSize: max(10.0, devicePixelRatio * 6),
+                fontWeight: FontWeight.w600,
+              );
               final lines = <String>[];
               if (title != null && title.isNotEmpty) lines.add(title);
               if (subtitle != null && subtitle.isNotEmpty) lines.add(subtitle);
               final tp = TextPainter(textDirection: TextDirection.ltr);
               final span = TextSpan(
-                  children: lines
-                      .map((l) => TextSpan(text: '$l\n', style: textStyle))
-                      .toList());
+                children: lines
+                    .map((l) => TextSpan(text: '$l\n', style: textStyle))
+                    .toList(),
+              );
               tp.text = span;
               tp.textAlign = TextAlign.center;
               tp.layout(minWidth: 0, maxWidth: size.width);
@@ -2366,10 +2528,13 @@ class FormFieldsMapState extends State<FormFieldsMap>
               final bgWidth = tp.width + pad * 2;
               final bgHeight = tp.height + pad * 2;
               final bgRect = Rect.fromCenter(
-                  center: Offset(headCenter.dx,
-                      headCenter.dy - headRadius - bgHeight / 2 - 6),
-                  width: bgWidth,
-                  height: bgHeight);
+                center: Offset(
+                  headCenter.dx,
+                  headCenter.dy - headRadius - bgHeight / 2 - 6,
+                ),
+                width: bgWidth,
+                height: bgHeight,
+              );
 
               if (bgRect.inflate(extraTapPad).contains(local)) {
                 final mapPayload = <String, dynamic>{};
@@ -2400,7 +2565,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   void _handleLongPress(TapPosition tapPosition, LatLng latlng) {
     try {
-      final notifier = FormFieldsMapController.getNotifier(_controllerId) ??
+      final notifier =
+          FormFieldsMapController.getNotifier(_controllerId) ??
           _fallbackNotifier;
 
       for (final entry in notifier.polygonMap.entries) {
@@ -2410,7 +2576,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
           final meta = _findMetaForShape(notifier, pid);
           final payload = <String, dynamic>{
             'id': pid,
-            'shapeType': ShapeTypes.polygon
+            'shapeType': ShapeTypes.polygon,
           };
           if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
           payload['point'] = latlng;
@@ -2429,14 +2595,16 @@ class FormFieldsMapState extends State<FormFieldsMap>
         final pl = entry.value;
         final pts = pl.points;
         for (var i = 0; i < pts.length - 1; i++) {
-          final mid = LatLng((pts[i].latitude + pts[i + 1].latitude) / 2,
-              (pts[i].longitude + pts[i + 1].longitude) / 2);
+          final mid = LatLng(
+            (pts[i].latitude + pts[i + 1].latitude) / 2,
+            (pts[i].longitude + pts[i + 1].longitude) / 2,
+          );
           final d = distance.distance(mid, latlng);
           if (d <= threshMeters) {
             final meta = _findMetaForShape(notifier, lid);
             final payload = <String, dynamic>{
               'id': lid,
-              'shapeType': ShapeTypes.polyline
+              'shapeType': ShapeTypes.polyline,
             };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
@@ -2459,7 +2627,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final meta = _findMetaForShape(notifier, cid);
             final payload = <String, dynamic>{
               'id': cid,
-              'shapeType': ShapeTypes.circle
+              'shapeType': ShapeTypes.circle,
             };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
@@ -2477,7 +2645,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
             final meta = _findMetaForShape(notifier, cid);
             final payload = <String, dynamic>{
               'id': cid,
-              'shapeType': ShapeTypes.circle
+              'shapeType': ShapeTypes.circle,
             };
             if (meta is Map) payload.addAll(Map<String, dynamic>.from(meta));
             payload['point'] = latlng;
@@ -2536,7 +2704,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
   /// Search rawMarkers for a color associated with a LatLng `point`.
   /// Returns the stored color value (int, String, or Color) or null.
   dynamic _extractColorPayloadForPoint(
-      FormFieldsMapNotifier notifier, LatLng point) {
+    FormFieldsMapNotifier notifier,
+    LatLng point,
+  ) {
     const tol = 0.00001; // ~1m tolerance
     for (final r in _rawMarkersForProcessing(notifier)) {
       if (r is ShapeMeta) {
@@ -2554,9 +2724,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
         }
       }
       if (r is Map) {
-        final lat = (r['lat'] as num?)?.toDouble() ??
+        final lat =
+            (r['lat'] as num?)?.toDouble() ??
             (r['latitude'] as num?)?.toDouble();
-        final lon = (r['lon'] as num?)?.toDouble() ??
+        final lon =
+            (r['lon'] as num?)?.toDouble() ??
             (r['longitude'] as num?)?.toDouble();
         if (lat != null && lon != null) {
           if ((lat - point.latitude).abs() <= tol &&
@@ -2577,7 +2749,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       final xj = polygon[j].longitude;
       final yj = polygon[j].latitude;
 
-      final intersect = ((yi > p.latitude) != (yj > p.latitude)) &&
+      final intersect =
+          ((yi > p.latitude) != (yj > p.latitude)) &&
           (p.longitude < (xj - xi) * (p.latitude - yi) / (yj - yi + 0.0) + xi);
       if (intersect) inside = !inside;
     }

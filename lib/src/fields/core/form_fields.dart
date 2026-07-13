@@ -45,7 +45,9 @@ class FormFields<T> extends StatefulWidget {
 
   /// Default builder for OTP countdown text (multi-language)
   static String _defaultOtpCountdownTextBuilder(
-      BuildContext context, int seconds) {
+    BuildContext context,
+    int seconds,
+  ) {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
@@ -63,8 +65,9 @@ class FormFields<T> extends StatefulWidget {
     TextStyle? linkStyle,
   }) {
     final localizations = FormFieldsLocalizations.of(context);
-    final resendPrefix = localizations
-        .get('otpResendPrefix'); //?? 'Didn\'t receive activation code? ';
+    final resendPrefix = localizations.get(
+      'otpResendPrefix',
+    ); //?? 'Didn\'t receive activation code? ';
     final resendLink = localizations.get('otpResendLink'); //?? 'Resend';
     final isEnabled = onResend != null;
     return Builder(
@@ -73,12 +76,14 @@ class FormFields<T> extends StatefulWidget {
         return Text.rich(
           TextSpan(
             text: resendPrefix,
-            style: style ??
+            style:
+                style ??
                 TextStyle(color: resolveTextColor(context), fontSize: 14),
             children: [
               TextSpan(
                 text: resendLink,
-                style: linkStyle ??
+                style:
+                    linkStyle ??
                     TextStyle(
                       color: isEnabled
                           ? theme.colorScheme.primary
@@ -100,7 +105,7 @@ class FormFields<T> extends StatefulWidget {
 
   /// Builder for countdown text. Receives context and remaining seconds.
   final String Function(BuildContext context, int seconds)?
-      otpCountdownTextBuilder;
+  otpCountdownTextBuilder;
 
   /// Custom input formatters for OTP input (default: digits only)
   final List<TextInputFormatter>? otpInputFormatters;
@@ -335,12 +340,102 @@ class FormFields<T> extends StatefulWidget {
     this.externalErrorText,
     this.readOnly = false,
     this.onRemove,
-  })  : assert(verificationLength > 0),
-        assert(otpBoxWidth > 0),
-        assert(otpBoxSpacing >= 0);
+  }) : assert(verificationLength > 0),
+       assert(otpBoxWidth > 0),
+       assert(otpBoxSpacing >= 0);
 
   @override
   State<FormFields<T>> createState() => _FormFieldsState<T>();
+}
+
+// Top-level dialog widget that owns its MobileScannerController lifecycle.
+class _BarcodeScannerDialog extends StatefulWidget {
+  final String? cancelButtonLabel;
+  final Color? overlayColor;
+  final Color? overlayBorderColor;
+  final double overlayBorderWidth;
+  final double overlayBorderRadius;
+
+  const _BarcodeScannerDialog({
+    this.cancelButtonLabel,
+    this.overlayColor,
+    this.overlayBorderColor,
+    this.overlayBorderWidth = 3.0,
+    this.overlayBorderRadius = 16.0,
+  });
+
+  @override
+  State<_BarcodeScannerDialog> createState() => _BarcodeScannerDialogState();
+}
+
+class _BarcodeScannerDialogState extends State<_BarcodeScannerDialog> {
+  late final MobileScannerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.unrestricted,
+    );
+  }
+
+  @override
+  void dispose() {
+    try {
+      _controller.dispose();
+    } catch (_) {}
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedOverlay =
+        widget.overlayColor ??
+        theme.colorScheme.surface.withValues(alpha: 0.54);
+    final resolvedBorder =
+        widget.overlayBorderColor ?? theme.colorScheme.onSurface;
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: Stack(
+        children: [
+          PermissionGate(
+            child: MobileScanner(
+              controller: _controller,
+              onDetect: (capture) {
+                final barcodes = capture.barcodes;
+                if (barcodes.isNotEmpty) {
+                  final code = barcodes.first.rawValue;
+                  if (code != null) {
+                    if (context.mounted) Navigator.of(context).pop(code);
+                  }
+                }
+              },
+            ),
+          ),
+          _ScannerOverlay(
+            overlayColor: resolvedOverlay,
+            borderColor: resolvedBorder,
+            borderWidth: widget.overlayBorderWidth,
+            borderRadius: widget.overlayBorderRadius,
+          ),
+          Positioned(
+            top: 48,
+            right: 24,
+            child: IconButton(
+              icon: Icon(
+                Icons.close,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: 32,
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              tooltip: widget.cancelButtonLabel ?? context.formTr('cancel'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ScannerOverlay extends StatelessWidget {
@@ -368,18 +463,13 @@ class _ScannerOverlay extends StatelessWidget {
         final resolvedBorder = borderColor ?? theme.colorScheme.onSurface;
         return Stack(
           children: [
-            Container(
-              color: resolvedOverlay,
-            ),
+            Container(color: resolvedOverlay),
             Center(
               child: Container(
                 width: width,
                 height: height,
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: resolvedBorder,
-                    width: borderWidth,
-                  ),
+                  border: Border.all(color: resolvedBorder, width: borderWidth),
                   borderRadius: BorderRadius.circular(borderRadius),
                   color: Colors.transparent,
                 ),
@@ -409,64 +499,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     double overlayBorderWidth = 3.0,
     double overlayBorderRadius = 16.0,
   }) async {
-    // Use an explicit controller configured for maximum detection speed.
-    final controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.unrestricted,
-    );
-
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        final theme = Theme.of(context);
-        final resolvedOverlay =
-            overlayColor ?? theme.colorScheme.surface.withValues(alpha: 0.54);
-        final resolvedBorder =
-            overlayBorderColor ?? theme.colorScheme.onSurface;
-        return Scaffold(
-          backgroundColor: theme.colorScheme.surface,
-          body: Stack(
-            children: [
-              PermissionGate(
-                child: MobileScanner(
-                  controller: controller,
-                  // Run in unrestricted detection mode for fastest scanning.
-                  onDetect: (capture) {
-                    final barcodes = capture.barcodes;
-                    if (barcodes.isNotEmpty) {
-                      final code = barcodes.first.rawValue;
-                      if (code != null) {
-                        Navigator.of(context).pop(code);
-                      }
-                    }
-                  },
-                ),
-              ),
-              _ScannerOverlay(
-                overlayColor: resolvedOverlay,
-                borderColor: resolvedBorder,
-                borderWidth: overlayBorderWidth,
-                borderRadius: overlayBorderRadius,
-              ),
-              Positioned(
-                top: 48,
-                right: 24,
-                child: IconButton(
-                  icon: Icon(Icons.close,
-                      color: Theme.of(context).colorScheme.onSurface, size: 32),
-                  onPressed: () => Navigator.of(context).pop(),
-                  tooltip: cancelButtonLabel ?? context.formTr('cancel'),
-                ),
-              ),
-            ],
-          ),
+        return _BarcodeScannerDialog(
+          cancelButtonLabel: cancelButtonLabel,
+          overlayColor: overlayColor,
+          overlayBorderColor: overlayBorderColor,
+          overlayBorderWidth: overlayBorderWidth,
+          overlayBorderRadius: overlayBorderRadius,
         );
       },
     );
 
-    // Ensure controller is disposed after the dialog closes.
-    try {
-      controller.dispose();
-    } catch (_) {}
     if (result != null) {
       onScanned(result);
     }
@@ -480,8 +525,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final scanIcon = const Icon(Icons.qr_code_scanner);
     // final scanButtonLabel = 'Scan';
     final cancelButtonLabel = context.formTr('cancel');
-    final overlayColor =
-        resolveTextColor(context, muted: true).withValues(alpha: 0.5);
+    final overlayColor = resolveTextColor(
+      context,
+      muted: true,
+    ).withValues(alpha: 0.5);
     final overlayBorderColor = Theme.of(context).colorScheme.onSurface;
     final overlayBorderWidth = 3.0;
     final overlayBorderRadius = 16.0;
@@ -507,8 +554,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       controller: model.controller,
       readOnly: widget.readOnly,
       decoration: _effectiveInputDecoration(widget.inputDecoration).copyWith(
-        labelText:
-            widget.labelPosition == LabelPosition.inBorder ? label : null,
+        labelText: widget.labelPosition == LabelPosition.inBorder
+            ? label
+            : null,
         errorText: errorText,
         suffixIcon: IconButton(
           constraints: const BoxConstraints.tightFor(width: 36, height: 36),
@@ -587,9 +635,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     _notifier = FormFieldsNotifier();
     _effectiveFieldExtraBottom = ValueNotifier<double>(0.0);
     if (_isPhoneType()) {
-      _initializePhoneCountryCode(
-        widget.currentValue?.toString(),
-      );
+      _initializePhoneCountryCode(widget.currentValue?.toString());
     }
     _initializeValue();
     _initializeModel();
@@ -664,8 +710,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         } else if (_isDateTimeType()) {
           newControllerText = _formatDateTime(widget.currentValue as DateTime);
         } else if (_isTimeOfDayType()) {
-          newControllerText =
-              _formatTimeOfDay(widget.currentValue as TimeOfDay);
+          newControllerText = _formatTimeOfDay(
+            widget.currentValue as TimeOfDay,
+          );
         } else if (_isDateTimeRangeType()) {
           newControllerText = _formatDateRange(
             widget.currentValue as DateTimeRange,
@@ -685,15 +732,19 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           newControllerText = widget.currentValue.toString();
           if (_isVerificationType() &&
               newControllerText.length > widget.verificationLength) {
-            newControllerText =
-                newControllerText.substring(0, widget.verificationLength);
+            newControllerText = newControllerText.substring(
+              0,
+              widget.verificationLength,
+            );
           }
         }
 
         if (_isVerificationType() && widget.verificationAsOtp) {
           if (newControllerText.length > widget.verificationLength) {
-            newControllerText =
-                newControllerText.substring(0, widget.verificationLength);
+            newControllerText = newControllerText.substring(
+              0,
+              widget.verificationLength,
+            );
           }
         }
 
@@ -724,13 +775,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void _onControllerTextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final error =
-          _computeMainFieldValidation(model.controller.text, model, context);
+      final error = _computeMainFieldValidation(
+        model.controller.text,
+        model,
+        context,
+      );
       final hasText = model.controller.text.trim().isNotEmpty;
       _effectiveFieldExtraBottom.value =
           (error != null || (hasText && _effectiveFocusNode.hasFocus))
-              ? _kExtraFieldBottom
-              : 0.0;
+          ? _kExtraFieldBottom
+          : 0.0;
     });
   }
 
@@ -739,14 +793,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     if (_isDateTimeType()) {
       model.setControllerSilent(
-          _formatDateTime(widget.currentValue as DateTime));
+        _formatDateTime(widget.currentValue as DateTime),
+      );
     } else if (_isTimeOfDayType()) {
       model.setControllerSilent(
-          _formatTimeOfDay(widget.currentValue as TimeOfDay));
+        _formatTimeOfDay(widget.currentValue as TimeOfDay),
+      );
     } else if (_isDateTimeRangeType()) {
-      model.setControllerSilent(_formatDateRange(
-        widget.currentValue as DateTimeRange,
-      ));
+      model.setControllerSilent(
+        _formatDateRange(widget.currentValue as DateTimeRange),
+      );
     } else if (_isPhoneType()) {
       _initializePhoneCountryCode(widget.currentValue.toString());
       final localFormatted = widget.formatPhone
@@ -761,8 +817,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       var controllerText = widget.currentValue.toString();
       if (_isVerificationType() && widget.verificationAsOtp) {
         if (controllerText.length > widget.verificationLength) {
-          controllerText =
-              controllerText.substring(0, widget.verificationLength);
+          controllerText = controllerText.substring(
+            0,
+            widget.verificationLength,
+          );
         }
       }
       model.setControllerSilent(controllerText);
@@ -789,10 +847,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     // Support simple language codes used by this package API.
-    final simpleCodeMap = {
-      'id': 'id_ID',
-      'en': 'en_US',
-    };
+    final simpleCodeMap = {'id': 'id_ID', 'en': 'en_US'};
 
     final mapped = simpleCodeMap[rawLocale.toLowerCase()] ?? rawLocale;
     final normalized = mapped.replaceAll('-', '_');
@@ -895,8 +950,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       final char = i < normalized.length ? normalized[i] : '';
       if (_verificationControllers[i].text != char) {
         _verificationControllers[i].text = char;
-        _verificationControllers[i].selection =
-            TextSelection.collapsed(offset: char.length);
+        _verificationControllers[i].selection = TextSelection.collapsed(
+          offset: char.length,
+        );
       }
     }
   }
@@ -970,9 +1026,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     if (digits.length > 1) {
       int cursor = index;
-      for (int i = 0;
-          i < digits.length && cursor < widget.verificationLength;
-          i++) {
+      for (
+        int i = 0;
+        i < digits.length && cursor < widget.verificationLength;
+        i++
+      ) {
         final char = digits[i];
         _verificationControllers[cursor].text = char;
         _verificationControllers[cursor].selection =
@@ -995,7 +1053,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     _verificationControllers[index].selection = TextSelection.collapsed(
-        offset: _verificationControllers[index].text.length);
+      offset: _verificationControllers[index].text.length,
+    );
 
     if (index < widget.verificationLength - 1) {
       _focusVerificationDigit(index + 1);
@@ -1034,8 +1093,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     }
 
     // Default to Indonesia (+62) if available, otherwise use first code
-    _selectedCountryCode =
-        candidates.contains('+62') ? '+62' : candidates.first;
+    _selectedCountryCode = candidates.contains('+62')
+        ? '+62'
+        : candidates.first;
   }
 
   String _stripPhoneToDigits(String value) {
@@ -1118,9 +1178,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     return Container(
       padding: const EdgeInsets.only(left: 4, right: 4),
       decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: theme.dividerColor, width: 1),
-        ),
+        border: Border(right: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -1146,10 +1204,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
               .map(
                 (code) => DropdownMenuItem<String>(
                   value: code,
-                  child: Text(
-                    code,
-                    style: const TextStyle(fontSize: 14),
-                  ),
+                  child: Text(code, style: const TextStyle(fontSize: 14)),
                 ),
               )
               .toList(),
@@ -1220,9 +1275,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     if (_isVerificationType()) {
       if (widget.verificationOtpAlphanumeric) {
         // Alfanumerik: tidak ada filter, hanya batasi panjang
-        return [
-          LengthLimitingTextInputFormatter(widget.verificationLength),
-        ];
+        return [LengthLimitingTextInputFormatter(widget.verificationLength)];
       } else {
         // Hanya angka
         return [
@@ -1249,8 +1302,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
         // Validate numeric input
         if (_isIntType()) {
-          final pattern =
-              widget.stripSeparators ? r'^-?[0-9,]*$' : r'^-?[0-9]*$';
+          final pattern = widget.stripSeparators
+              ? r'^-?[0-9,]*$'
+              : r'^-?[0-9]*$';
           if (!RegExp(pattern).hasMatch(cleaned)) {
             return oldValue;
           }
@@ -1336,7 +1390,12 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   String _formatTimeOfDay(TimeOfDay timeOfDay) {
     final now = DateTime.now();
     final dateTime = DateTime(
-        now.year, now.month, now.day, timeOfDay.hour, timeOfDay.minute);
+      now.year,
+      now.month,
+      now.day,
+      timeOfDay.hour,
+      timeOfDay.minute,
+    );
     if (widget.customFormat != null) {
       return DateFormat(widget.customFormat).format(dateTime);
     }
@@ -1365,8 +1424,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     final date = await showDatePicker(
       context: ctx,
-      initialDate:
-          now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
+      initialDate: now.isAfter(last)
+          ? last
+          : (now.isBefore(first) ? first : now),
       firstDate: first,
       lastDate: last,
       locale: locale,
@@ -1392,10 +1452,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       builder: locale == null
           ? null
           : (context, child) => Localizations.override(
-                context: context,
-                locale: locale,
-                child: child!,
-              ),
+              context: context,
+              locale: locale,
+              child: child!,
+            ),
     );
 
     if (time != null && mounted) {
@@ -1426,10 +1486,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       builder: locale == null
           ? null
           : (context, child) => Localizations.override(
-                context: context,
-                locale: locale,
-                child: child!,
-              ),
+              context: context,
+              locale: locale,
+              child: child!,
+            ),
     );
 
     if (time != null && mounted) {
@@ -1449,8 +1509,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
     final date = await showDatePicker(
       context: ctx,
-      initialDate:
-          now.isAfter(last) ? last : (now.isBefore(first) ? first : now),
+      initialDate: now.isAfter(last)
+          ? last
+          : (now.isBefore(first) ? first : now),
       firstDate: first,
       lastDate: last,
       locale: locale,
@@ -1465,10 +1526,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         builder: locale == null
             ? null
             : (context, child) => Localizations.override(
-                  context: context,
-                  locale: locale,
-                  child: child!,
-                ),
+                context: context,
+                locale: locale,
+                child: child!,
+              ),
       );
 
       if (time != null && mounted) {
@@ -1595,12 +1656,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           backgroundColor: WidgetStatePropertyAll(backgroundColor),
           foregroundColor: WidgetStatePropertyAll(foregroundColor),
           textStyle: WidgetStatePropertyAll(TextStyle(color: foregroundColor)),
-          overlayColor:
-              WidgetStatePropertyAll(foregroundColor.withValues(alpha: 0.08)),
+          overlayColor: WidgetStatePropertyAll(
+            foregroundColor.withValues(alpha: 0.08),
+          ),
           padding: WidgetStatePropertyAll(
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
           shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         );
 
         final customTheme = parentTheme.copyWith(
@@ -1612,7 +1676,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         );
 
         return Theme(
-            data: customTheme, child: child ?? const SizedBox.shrink());
+          data: customTheme,
+          child: child ?? const SizedBox.shrink(),
+        );
       },
     );
 
@@ -1710,13 +1776,16 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // messages so the field height stays consistent after clearing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final error =
-          _computeMainFieldValidation(vm.controller.text, vm, context);
+      final error = _computeMainFieldValidation(
+        vm.controller.text,
+        vm,
+        context,
+      );
       final hasText = vm.controller.text.trim().isNotEmpty;
       _effectiveFieldExtraBottom.value =
           (error != null || (hasText && _effectiveFocusNode.hasFocus))
-              ? _kExtraFieldBottom
-              : 0.0;
+          ? _kExtraFieldBottom
+          : 0.0;
     });
   }
 
@@ -1784,7 +1853,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       case FormType.email:
         if (effectiveValue is String) {
           return FormFieldValidators.email(vm.label.toTitleCases, l)(
-              effectiveValue);
+            effectiveValue,
+          );
         }
         break;
       case FormType.password:
@@ -1794,10 +1864,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
         if (effectiveValue is String &&
             effectiveValue.length < widget.minLengthPassword) {
           return widget.minLengthPasswordErrorText ??
-              l.getWithValue(
-                'passwordMinLength',
-                widget.minLengthPassword,
-              );
+              l.getWithValue('passwordMinLength', widget.minLengthPassword);
         }
         break;
       case FormType.verification:
@@ -1847,7 +1914,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   }
 
   String? _computeMainFieldValidation(
-      String? value, FormFieldsController vm, BuildContext context) {
+    String? value,
+    FormFieldsController vm,
+    BuildContext context,
+  ) {
     if (_isIntType()) {
       final normalized = value?.trim() ?? '';
       if (normalized.isEmpty) {
@@ -1859,9 +1929,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           context,
         );
       }
-      final parsed = int.tryParse(widget.stripSeparators
-          ? _stripSeparatorsForParse(normalized)
-          : normalized);
+      final parsed = int.tryParse(
+        widget.stripSeparators
+            ? _stripSeparatorsForParse(normalized)
+            : normalized,
+      );
       return _validateRequired(
         parsed as T?,
         widget.label.toTitleCases,
@@ -1880,9 +1952,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           context,
         );
       }
-      final parsed = double.tryParse(widget.stripSeparators
-          ? _stripSeparatorsForParse(normalized)
-          : normalized);
+      final parsed = double.tryParse(
+        widget.stripSeparators
+            ? _stripSeparatorsForParse(normalized)
+            : normalized,
+      );
       return _validateRequired(
         parsed as T?,
         widget.label.toTitleCases,
@@ -1944,8 +2018,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     );
 
     final theme = Theme.of(context);
-    final labelStyle = (widget.labelTextStyle ?? defaultLabelStyle)
-        .copyWith(color: resolveTextColor(context));
+    final labelStyle = (widget.labelTextStyle ?? defaultLabelStyle).copyWith(
+      color: resolveTextColor(context),
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -2061,8 +2136,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     );
   }
 
-  Color _effectiveBorderColor(BuildContext context,
-      {bool isError = false, bool isFocused = false}) {
+  Color _effectiveBorderColor(
+    BuildContext context, {
+    bool isError = false,
+    bool isFocused = false,
+  }) {
     final theme = Theme.of(context);
     final normal = theme.dividerColor;
     final focus = theme.colorScheme.primary;
@@ -2070,10 +2148,18 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     return isError ? error : (isFocused ? focus : normal);
   }
 
-  InputBorder _buildBorderFromType(BuildContext context, BorderType type,
-      {double radius = 8.0, bool isError = false, bool isFocused = false}) {
-    final color =
-        _effectiveBorderColor(context, isError: isError, isFocused: isFocused);
+  InputBorder _buildBorderFromType(
+    BuildContext context,
+    BorderType type, {
+    double radius = 8.0,
+    bool isError = false,
+    bool isFocused = false,
+  }) {
+    final color = _effectiveBorderColor(
+      context,
+      isError: isError,
+      isFocused: isFocused,
+    );
     switch (type) {
       case BorderType.none:
         return InputBorder.none;
@@ -2099,8 +2185,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final hasError = state.hasError;
 
     // Border style sesuai otpBorderType
-    final color =
-        _effectiveBorderColor(context, isError: hasError, isFocused: isFocused);
+    final color = _effectiveBorderColor(
+      context,
+      isError: hasError,
+      isFocused: isFocused,
+    );
 
     // Draw the border with a parent Container instead of relying on the
     // TextField's InputBorder. This avoids stroke clipping caused by the
@@ -2128,23 +2217,29 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 : TextInputType.number,
             obscureText: widget.verificationHidden && vm.obscure,
             obscuringCharacter: '•',
-            textInputAction:
-                isLastDigit ? TextInputAction.done : TextInputAction.next,
+            textInputAction: isLastDigit
+                ? TextInputAction.done
+                : TextInputAction.next,
             textAlign: TextAlign.center,
-            style: widget.otpTextStyle ??
+            style:
+                widget.otpTextStyle ??
                 const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-            inputFormatters: widget.otpInputFormatters ??
+            inputFormatters:
+                widget.otpInputFormatters ??
                 (widget.verificationOtpAlphanumeric
                     ? [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'[A-Za-z0-9]')),
+                          RegExp(r'[A-Za-z0-9]'),
+                        ),
                         LengthLimitingTextInputFormatter(
-                            widget.verificationLength)
+                          widget.verificationLength,
+                        ),
                       ]
                     : [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(
-                            widget.verificationLength)
+                          widget.verificationLength,
+                        ),
                       ]),
             onTap: () => _selectVerificationDigit(index),
             onChanged: (value) =>
@@ -2238,8 +2333,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     if (!_otpCountdownFinished)
                       Text(
                         (widget.otpCountdownTextBuilder ??
-                                FormFields._defaultOtpCountdownTextBuilder)(
-                            context, _otpCountdownRemaining),
+                            FormFields._defaultOtpCountdownTextBuilder)(
+                          context,
+                          _otpCountdownRemaining,
+                        ),
                         style: TextStyle(
                           fontSize: 14,
                           color: resolveActiveColor(context, null),
@@ -2267,27 +2364,25 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
               )
             : const SizedBox.shrink();
 
-        final errorText = hasError && state.errorText != null
-            ? Padding(
-                padding: const EdgeInsets.only(top: 8, left: 4),
-                child: Text(
-                  state.errorText!,
-                  style: TextStyle(
-                    color: _effectiveBorderColor(context, isError: true),
-                    fontSize: 12,
+        final List<Widget>? errorWidgets = hasError && state.errorText != null
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 4),
+                  child: Text(
+                    state.errorText!,
+                    style: TextStyle(
+                      color: _effectiveBorderColor(context, isError: true),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-              )
+              ]
             : null;
 
         // Gabungkan semua bagian utama OTP
         final otpContent = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            otpBoxes,
-            if (errorText != null) errorText,
-            countdown,
-          ],
+          children: [otpBoxes, ...?errorWidgets, countdown],
         );
 
         // Gunakan _buildFieldWithLabel agar label mengikuti labelPosition
@@ -2316,8 +2411,10 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 }
 
                 if (_isVerificationType() && widget.verificationAsOtp) {
-                  final verificationField =
-                      _buildVerificationOtpField(vm, context);
+                  final verificationField = _buildVerificationOtpField(
+                    vm,
+                    context,
+                  );
                   return Container(
                     margin: const EdgeInsets.only(bottom: 20),
                     child: verificationField,
@@ -2326,26 +2423,34 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
                 final phonePrefixIcon =
                     _isPhoneType() && widget.prefixIcon == null
-                        ? _buildPhoneCountryCodeDropdown()
-                        : null;
+                    ? _buildPhoneCountryCodeDropdown()
+                    : null;
 
-                final singleLine = (vm.formType == FormType.password ||
+                final singleLine =
+                    (vm.formType == FormType.password ||
                     _isVerificationType() ||
                     widget.multiLine <= 1);
 
-                final baseDecoration = widget.inputDecoration ??
+                final baseDecoration =
+                    widget.inputDecoration ??
                     InputDecoration(
                       contentPadding: (widget.multiLine > 1)
                           ? const EdgeInsets.symmetric(
-                              vertical: 22, horizontal: 16)
+                              vertical: 22,
+                              horizontal: 16,
+                            )
                           : const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                      suffix: vm.formType == FormType.password ||
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
+                      suffix:
+                          vm.formType == FormType.password ||
                               (_isVerificationType() &&
                                   widget.verificationHidden)
                           ? null
                           : widget.suffix,
-                      suffixIcon: vm.formType == FormType.password ||
+                      suffixIcon:
+                          vm.formType == FormType.password ||
                               (_isVerificationType() &&
                                   widget.verificationHidden)
                           ? IconButton(
@@ -2361,33 +2466,37 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                                   : () => _handleVisibilityToggleTap(vm),
                             )
                           : (_isDateTimeType() ||
-                                  _isTimeOfDayType() ||
-                                  _isDateTimeRangeType())
-                              ? IconButton(
+                                _isTimeOfDayType() ||
+                                _isDateTimeRangeType())
+                          ? IconButton(
+                              constraints: const BoxConstraints.tightFor(
+                                width: 36,
+                                height: 36,
+                              ),
+                              iconSize: 20,
+                              splashRadius: 20,
+                              icon: Icon(_getPickerIcon()),
+                              onPressed: widget.readOnly
+                                  ? null
+                                  : () async {
+                                      if (!mounted) return;
+                                      final ctx = context;
+                                      await _showPicker(ctx, vm);
+                                    },
+                            )
+                          : widget.suffixIcon ??
+                                IconButton(
                                   constraints: const BoxConstraints.tightFor(
-                                      width: 36, height: 36),
+                                    width: 36,
+                                    height: 36,
+                                  ),
                                   iconSize: 20,
                                   splashRadius: 20,
-                                  icon: Icon(_getPickerIcon()),
+                                  icon: const Icon(Icons.close),
                                   onPressed: widget.readOnly
                                       ? null
-                                      : () async {
-                                          if (!mounted) return;
-                                          final ctx = context;
-                                          await _showPicker(ctx, vm);
-                                        },
-                                )
-                              : widget.suffixIcon ??
-                                  IconButton(
-                                    constraints: const BoxConstraints.tightFor(
-                                        width: 36, height: 36),
-                                    iconSize: 20,
-                                    splashRadius: 20,
-                                    icon: const Icon(Icons.close),
-                                    onPressed: widget.readOnly
-                                        ? null
-                                        : () => _handleClearIconTap(vm),
-                                  ),
+                                      : () => _handleClearIconTap(vm),
+                                ),
                       prefix: widget.prefix,
                       prefixIcon: phonePrefixIcon ?? widget.prefixIcon,
                       hintText:
@@ -2396,25 +2505,38 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           ? '${_getLocalizations(context).enterPrefix}${vm.label.toTitleCases}${widget.isRequired ? ' *' : ''}'
                           : null,
                       focusedErrorBorder: _buildBorderFromType(
-                          ctx, widget.borderType,
-                          radius: widget.radius,
-                          isError: true,
-                          isFocused: true),
+                        ctx,
+                        widget.borderType,
+                        radius: widget.radius,
+                        isError: true,
+                        isFocused: true,
+                      ),
                       focusedBorder: _buildBorderFromType(
-                          ctx, widget.borderType,
-                          radius: widget.radius, isFocused: true),
+                        ctx,
+                        widget.borderType,
+                        radius: widget.radius,
+                        isFocused: true,
+                      ),
                       enabledBorder: _buildBorderFromType(
-                          ctx, widget.borderType,
-                          radius: widget.radius),
-                      border: _buildBorderFromType(ctx, widget.borderType,
-                          radius: widget.radius),
+                        ctx,
+                        widget.borderType,
+                        radius: widget.radius,
+                      ),
+                      border: _buildBorderFromType(
+                        ctx,
+                        widget.borderType,
+                        radius: widget.radius,
+                      ),
                       disabledBorder: _buildBorderFromType(
-                          ctx, widget.borderType,
-                          radius: widget.radius),
+                        ctx,
+                        widget.borderType,
+                        radius: widget.radius,
+                      ),
                     );
 
-                final effectiveDecoration =
-                    _effectiveInputDecoration(baseDecoration);
+                final effectiveDecoration = _effectiveInputDecoration(
+                  baseDecoration,
+                );
 
                 final textField = TextFormField(
                   textAlignVertical: singleLine
@@ -2422,14 +2544,17 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                       : TextAlignVertical.top,
                   textAlign: TextAlign.start,
                   readOnly: widget.readOnly,
-                  maxLength:
-                      _isVerificationType() ? widget.verificationLength : null,
-                  maxLines: vm.formType == FormType.password ||
+                  maxLength: _isVerificationType()
+                      ? widget.verificationLength
+                      : null,
+                  maxLines:
+                      vm.formType == FormType.password ||
                           _isVerificationType() ||
                           widget.multiLine <= 1
                       ? 1
                       : widget.multiLine,
-                  obscureText: vm.formType == FormType.password ||
+                  obscureText:
+                      vm.formType == FormType.password ||
                           (_isVerificationType() && widget.verificationHidden)
                       ? vm.obscure
                       : false,
@@ -2437,25 +2562,27 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                   autovalidateMode: widget.autovalidateMode,
                   focusNode: _effectiveFocusNode,
                   onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
-                  keyboardType: _isDateTimeType() ||
+                  keyboardType:
+                      _isDateTimeType() ||
                           _isTimeOfDayType() ||
                           _isDateTimeRangeType()
                       ? TextInputType.none
                       : _isIntType() || _isDoubleType()
-                          ? TextInputType.number
-                          : vm.formType == FormType.phone
-                              ? TextInputType.phone
-                              : _isVerificationType()
-                                  ? TextInputType.number
-                                  : vm.formType == FormType.email
-                                      ? TextInputType.emailAddress
-                                      : widget.multiLine == 0
-                                          ? TextInputType.text
-                                          : TextInputType.multiline,
+                      ? TextInputType.number
+                      : vm.formType == FormType.phone
+                      ? TextInputType.phone
+                      : _isVerificationType()
+                      ? TextInputType.number
+                      : vm.formType == FormType.email
+                      ? TextInputType.emailAddress
+                      : widget.multiLine == 0
+                      ? TextInputType.text
+                      : TextInputType.multiline,
                   inputFormatters: _getInputFormatters(),
                   onChanged: (v) {
                     if (debounce.isActive) debounce.cancel();
-                    final useDebounce = widget.stripSeparators ||
+                    final useDebounce =
+                        widget.stripSeparators ||
                         !(_isIntType() || _isDoubleType());
                     final delay = useDebounce
                         ? const Duration(milliseconds: 500)
@@ -2485,8 +2612,9 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                         if (parsed != null) widget.onChanged(parsed as T);
                       } else if (_isPhoneType()) {
                         final formatted = _formatPhoneWithCode(trimmed);
-                        final unformatted =
-                            _getPhoneWithoutFormatting(formatted);
+                        final unformatted = _getPhoneWithoutFormatting(
+                          formatted,
+                        );
                         widget.onChanged(unformatted as T);
                       } else if (_isDateTimeType() || _isTimeOfDayType()) {
                         // Do not cast String to DateTime or TimeOfDay, just skip
@@ -2529,16 +2657,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                     }
                   },
                   validator: (value) {
-                    final error =
-                        _computeMainFieldValidation(value, vm, context);
+                    final error = _computeMainFieldValidation(
+                      value,
+                      vm,
+                      context,
+                    );
                     final hasText =
                         (value != null && value.trim().isNotEmpty) ||
-                            vm.controller.text.trim().isNotEmpty;
+                        vm.controller.text.trim().isNotEmpty;
                     // Avoid updating ValueNotifier synchronously during build
                     // which can call markNeedsBuild. Defer update to next frame.
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (!mounted) return;
-                      _effectiveFieldExtraBottom.value = (error != null ||
+                      _effectiveFieldExtraBottom.value =
+                          (error != null ||
                               (hasText && _effectiveFocusNode.hasFocus))
                           ? _kExtraFieldBottom
                           : 0.0;
@@ -2576,12 +2708,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                 return ValueListenableBuilder<double>(
                   valueListenable: _effectiveFieldExtraBottom,
                   builder: (ctx2, extra, _) {
-                    final effectiveExtra =
-                        singleLine ? _kExtraFieldBottom : extra;
+                    final effectiveExtra = singleLine
+                        ? _kExtraFieldBottom
+                        : extra;
                     final effectiveField = singleLine
                         ? SizedBox(
                             height: fieldHeight + effectiveExtra,
-                            child: textField)
+                            child: textField,
+                          )
                         : textField;
                     return Container(
                       margin: widget.labelPosition == LabelPosition.none

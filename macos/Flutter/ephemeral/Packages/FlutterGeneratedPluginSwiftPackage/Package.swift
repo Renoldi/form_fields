@@ -27,7 +27,7 @@ let package = Package(
         .package(name: "package_info_plus", path: "../.packages/package_info_plus-9.0.1"),
         .package(name: "sqflite_darwin", path: "../.packages/sqflite_darwin-2.4.3+1"),
         .package(name: "url_launcher_macos", path: "../.packages/url_launcher_macos-3.2.5"),
-        .package(name: "video_player_avfoundation", path: "../.packages/video_player_avfoundation-2.10.0"),
+        .package(name: "video_player_avfoundation", path: "../.packages/video_player_avfoundation-2.11.0"),
         .package(name: "wakelock_plus", path: "../.packages/wakelock_plus-1.5.2"),
         .package(name: "webview_flutter_wkwebview", path: "../.packages/webview_flutter_wkwebview-3.26.0"),
         .package(name: "FlutterFramework", path: "../.packages/FlutterFramework")

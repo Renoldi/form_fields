@@ -5,8 +5,8 @@ import 'column_handler.dart';
 /// Optional decoder used to resolve payload columns. Receives the raw
 /// stored string, table and column and should return the decoded value
 /// (or null if not applicable).
-typedef PayloadDecoder = Future<dynamic> Function(
-    String raw, String table, String column);
+typedef PayloadDecoder =
+    Future<dynamic> Function(String raw, String table, String column);
 
 typedef RowMapper<T> = T Function(Map<String, dynamic> row);
 
@@ -36,8 +36,9 @@ class PayloadUtils {
     if (!inlinePayloads || rows.isEmpty) return;
 
     // Ensure adapters are present; if missing, provide conservative defaults
-    final getHandlerLocal = getHandler ?? ((_, __) => null);
-    final isColumnFileBackedLocal = isColumnFileBacked ?? ((_, __) => false);
+    final getHandlerLocal = getHandler ?? ((key, value) => null);
+    final isColumnFileBackedLocal =
+        isColumnFileBacked ?? ((key, value) => false);
     final readPayloadJsonLocal = readPayloadJson ?? ((_) async => null);
 
     for (final r in rows) {
@@ -61,8 +62,10 @@ class PayloadUtils {
         } else {
           try {
             final s = v.trim();
-            final fnRe =
-                RegExp(r'^[A-Za-z0-9._-]+\.json$', caseSensitive: false);
+            final fnRe = RegExp(
+              r'^[A-Za-z0-9._-]+\.json$',
+              caseSensitive: false,
+            );
             final looksLikeFilename = fnRe.hasMatch(s);
             if (isColumnFileBackedLocal(table, c) || looksLikeFilename) {
               final decoded = payloadDecoder != null

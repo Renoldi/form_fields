@@ -112,7 +112,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
     BuildContext context,
     Widget signaturePad,
     Widget? cameraWidget,
-  )? layoutBuilder;
+  )?
+  layoutBuilder;
 
   /// Custom wrapper for only the camera section.
   /// Receives the live-preview widget; return a decorated version.
@@ -167,20 +168,20 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// capture). The callback receives a `SignaturePadExportNullableResult`
   /// where a `null` field indicates that side succeeded (no error).
   final void Function(SignaturePadExportNullableResult result)?
-      onFailDirectUploadList;
+  onFailDirectUploadList;
 
   /// Alternative callback that receives a list of typed `DirectUploadPayload`.
   /// Each item is ready to be serialized via `toMap()`/`toJson()` for
   /// persistence or re-upload.
   final void Function(List<DirectUploadPayload> payloads)?
-      onFailDirectUploadPayload;
+  onFailDirectUploadPayload;
 
   /// New callback invoked when an individual upload payload is queued by the
   /// widget (e.g. network failure). Receives a sanitized `DirectUploadPayload`
   /// and a boolean `authExpired` which is true when the library detected an
   /// authentication expiry (401) situation.
   final void Function(DirectUploadPayload payload, bool authExpired)?
-      onUploadQueued;
+  onUploadQueued;
 
   /// Called when `isDirectUpload == true` and `exportPreviewSource == both`.
   /// Invoked when one or both uploads (signature, live capture) fail on server
@@ -284,15 +285,15 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.externalErrorText,
     this.descriptionField,
   }) : assert(
-          isDirectUpload == false ||
-              (uploadUrl != null && uploadUrl.isNotEmpty),
-          "For direct upload, uploadUrl must be provided and non-empty.",
-        ) {
+         isDirectUpload == false || (uploadUrl != null && uploadUrl.isNotEmpty),
+         "For direct upload, uploadUrl must be provided and non-empty.",
+       ) {
     // Warn developer about the conflicting combination at construction time.
     if (silentLiveCapture && showLiveCamera) {
       if (kDebugMode) {
         debugPrint(
-            'FormFieldsSignaturePad: silentLiveCapture ignored when showLiveCamera==true');
+          'FormFieldsSignaturePad: silentLiveCapture ignored when showLiveCamera==true',
+        );
       }
     }
   }
@@ -363,7 +364,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     // provide explicit colors.
     final theme = Theme.of(context);
     final resolvedPen = widget.penColor ?? theme.colorScheme.onSurface;
-    final resolvedBg = widget.exportBackgroundColor ??
+    final resolvedBg =
+        widget.exportBackgroundColor ??
         widget.backgroundColor ??
         theme.colorScheme.surface;
     _signatureController = SignatureController(
@@ -404,13 +406,15 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   // ── SignaturePadController binding ────────────────────────────────────────
 
   void _bindSignaturePadController(
-      FormFieldsSignaturePadController? controller) {
+    FormFieldsSignaturePadController? controller,
+  ) {
     controller?.registerClearHandler(_clearSignatureSession);
     controller?.addListener(_onSignaturePadControllerChanged);
   }
 
   void _unbindSignaturePadController(
-      FormFieldsSignaturePadController? controller) {
+    FormFieldsSignaturePadController? controller,
+  ) {
     controller?.unregisterClearHandler();
     controller?.removeListener(_onSignaturePadControllerChanged);
   }
@@ -622,8 +626,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final label = raw.toTitleCases;
     final theme = Theme.of(context);
     const defaultStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
-    final style = (widget.labelTextStyle ?? defaultStyle)
-        .copyWith(color: resolveTextColor(context));
+    final style = (widget.labelTextStyle ?? defaultStyle).copyWith(
+      color: resolveTextColor(context),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
@@ -729,8 +734,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (widget.showUploadLoading && mounted) {
         _padProvider.startUpload(initialProgress: 0.02);
       }
-      final updatedSignature =
-          await _uploadImageDio(signatureResult, showSuccessDialog: false);
+      final updatedSignature = await _uploadImageDio(
+        signatureResult,
+        showSuccessDialog: false,
+      );
       if (!mounted) return;
       if (widget.showUploadLoading && mounted) {
         if (updatedSignature != null &&
@@ -760,13 +767,15 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       // so _cameraController.images.first already has the server result.
       final finalLiveCapture =
           widget.showLiveCamera && _cameraController.images.isNotEmpty
-              ? _cameraController.images.first
-              : liveCapture;
+          ? _cameraController.images.first
+          : liveCapture;
       // Log final results for debugging (link/path/base64 length/status).
       debugPrint(
-          '[FormFieldsSignaturePad._exportSignature] finalSignature: link=${finalSignature.link}, path=${finalSignature.path}, base64Len=${finalSignature.base64.length}, status=${finalSignature.status}');
+        '[FormFieldsSignaturePad._exportSignature] finalSignature: link=${finalSignature.link}, path=${finalSignature.path}, base64Len=${finalSignature.base64.length}, status=${finalSignature.status}',
+      );
       debugPrint(
-          '[FormFieldsSignaturePad._exportSignature] finalLiveCapture: link=${finalLiveCapture.link}, path=${finalLiveCapture.path}, base64Len=${finalLiveCapture.base64.length}, status=${finalLiveCapture.status}');
+        '[FormFieldsSignaturePad._exportSignature] finalLiveCapture: link=${finalLiveCapture.link}, path=${finalLiveCapture.path}, base64Len=${finalLiveCapture.base64.length}, status=${finalLiveCapture.status}',
+      );
 
       // Update preview with final (server) results.
       if (widget.showExportPreview && mounted) {
@@ -785,8 +794,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       // `onExportedResult`.
       if (finalSignature.status == MyImageStatus.queued ||
           finalLiveCapture.status == MyImageStatus.queued) {
-        final nullable =
-            SignaturePadExportNullableResult.fromExportResult(finalResult);
+        final nullable = SignaturePadExportNullableResult.fromExportResult(
+          finalResult,
+        );
         try {
           // Prefer the nullable combined callback when provided so callers
           // receive both sides in one object where successful sides are
@@ -796,7 +806,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           }
         } catch (e, st) {
           debugPrint(
-              'FormFieldsSignaturePad.onFailDirectUploadList threw: $e\n$st');
+            'FormFieldsSignaturePad.onFailDirectUploadList threw: $e\n$st',
+          );
         }
 
         // Legacy single-item callback removed; callers should use
@@ -810,11 +821,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           if (nullable.liveCapture != null) imgs.add(nullable.liveCapture!);
           final payloads =
               await UploadHelper.buildDirectUploadPayloadsFromImages(
-            imgs,
-            defaultUrl: widget.uploadUrl,
-            fileFieldName: widget.uploadFileFieldName,
-            includeReqType: widget.uploadIncludeReqType,
-          );
+                imgs,
+                defaultUrl: widget.uploadUrl,
+                fileFieldName: widget.uploadFileFieldName,
+                includeReqType: widget.uploadIncludeReqType,
+              );
           if (payloads.isNotEmpty || _embeddedQueuedPayloads.isNotEmpty) {
             // Merge payloads generated here with any buffered payloads
             // emitted earlier by the embedded live camera. Dedupe by
@@ -829,12 +840,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             final merged = byId.values.toList(growable: false);
             if (kDebugMode) {
               debugPrint(
-                  'FormFieldsSignaturePad: onFailDirectUploadPayload -> ${merged.length} payload(s) (merged)');
+                'FormFieldsSignaturePad: onFailDirectUploadPayload -> ${merged.length} payload(s) (merged)',
+              );
               for (var i = 0; i < merged.length; i++) {
                 try {
                   final p = merged[i];
                   debugPrint(
-                      'FormFieldsSignaturePad: merged payload[$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}');
+                    'FormFieldsSignaturePad: merged payload[$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
+                  );
                 } catch (_) {}
               }
             }
@@ -842,7 +855,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
               widget.onFailDirectUploadPayload?.call(merged);
             } catch (e, st) {
               debugPrint(
-                  'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+                'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
+              );
             }
             // Per-payload notification as queued (network). Only call once per
             // payload and clear the embedded buffer afterwards.
@@ -855,7 +869,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           }
         } catch (e, st) {
           debugPrint(
-              'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+            'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
+          );
         }
       }
 
@@ -868,7 +883,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       if (widget.exportPreviewSource == SignaturePadPreviewSource.both &&
           widget.isDirectUpload) {
         // Determine if a live capture was present either before or after upload.
-        final liveWasCaptured = widget.showLiveCamera &&
+        final liveWasCaptured =
+            widget.showLiveCamera &&
             (liveCapture.path.trim().isNotEmpty ||
                 liveCapture.link.trim().isNotEmpty ||
                 _cameraController.images.isNotEmpty);
@@ -945,8 +961,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     };
     // Add a correlation id to help reliably match persisted payloads back to
     // controller images when retry succeeds.
-    final uploadCorrelationId =
-        DateTime.now().microsecondsSinceEpoch.toString();
+    final uploadCorrelationId = DateTime.now().microsecondsSinceEpoch
+        .toString();
     payload['uploadCorrelationId'] = uploadCorrelationId;
 
     final hasNet = await _hasNetwork();
@@ -969,9 +985,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       return updatedImage;
     }
 
-    debugPrint('[FormFieldsSignaturePad._uploadImageDio] '
-        'START upload url=${widget.uploadUrl}, file=${image.path}, '
-        'fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}');
+    debugPrint(
+      '[FormFieldsSignaturePad._uploadImageDio] '
+      'START upload url=${widget.uploadUrl}, file=${image.path}, '
+      'fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
+    );
 
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
@@ -1004,7 +1022,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
       debugPrint(
-          '[FormFieldsSignaturePad._uploadImageDio] response == null (network error)');
+        '[FormFieldsSignaturePad._uploadImageDio] response == null (network error)',
+      );
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -1017,7 +1036,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     // Treat 401 as queueable (auth expired) so callers can persist payloads.
     if (response.statusCode == 401) {
       debugPrint(
-          '[FormFieldsSignaturePad._uploadImageDio] upload failed: 401 -> queueing payload');
+        '[FormFieldsSignaturePad._uploadImageDio] upload failed: 401 -> queueing payload',
+      );
       MyImageResult? queuedImage;
       try {
         queuedImage = MyImageResult(
@@ -1039,7 +1059,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           if (kDebugMode) {
             try {
               debugPrint(
-                  'FormFieldsSignaturePad: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+                'FormFieldsSignaturePad: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+              );
             } catch (_) {}
           }
           try {
@@ -1051,12 +1072,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             widget.onFailDirectUploadPayload?.call([direct]);
           } catch (e, st) {
             debugPrint(
-                'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st');
+              'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
+            );
           }
         }
       } catch (e, st) {
         debugPrint(
-            'FormFieldsSignaturePad: error while building queued payload: $e\n$st');
+          'FormFieldsSignaturePad: error while building queued payload: $e\n$st',
+        );
       }
       if (widget.showUploadResultDialog) {
         await dialog.showError(
@@ -1073,18 +1096,27 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           response.statusCode! < 300) {
         final data = response.data;
 
-        final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
-            keys: widget.uploadFileUrlKey);
-        final imageId = UploadResponseMapper.extractImageId(data,
-            keys: widget.uploadImageIdKey);
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+          data,
+          keys: widget.uploadFileUrlKey,
+        );
+        final imageId = UploadResponseMapper.extractImageId(
+          data,
+          keys: widget.uploadImageIdKey,
+        );
         final uploadedDescription = UploadResponseMapper.extractDescription(
-            data,
-            keys: widget.descriptionField ?? 'description');
-        final uploadedPath =
-            UploadResponseMapper.extractFilePath(data, keys: 'filePath');
-        debugPrint('[FormFieldsSignaturePad._uploadImageDio] '
-            'status=${response.statusCode}, uploadedLink=$uploadedLink, '
-            'uploadedPath=$uploadedPath, imageId=$imageId');
+          data,
+          keys: widget.descriptionField ?? 'description',
+        );
+        final uploadedPath = UploadResponseMapper.extractFilePath(
+          data,
+          keys: 'filePath',
+        );
+        debugPrint(
+          '[FormFieldsSignaturePad._uploadImageDio] '
+          'status=${response.statusCode}, uploadedLink=$uploadedLink, '
+          'uploadedPath=$uploadedPath, imageId=$imageId',
+        );
 
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
@@ -1118,8 +1150,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
           try {
             final base = Uri.parse(widget.uploadUrl!);
-            final p =
-                uploadedPath.startsWith('/') ? uploadedPath : '/$uploadedPath';
+            final p = uploadedPath.startsWith('/')
+                ? uploadedPath
+                : '/$uploadedPath';
             finalLink = '${base.scheme}://${base.authority}$p';
           } catch (_) {
             // ignore and leave finalLink empty
@@ -1128,8 +1161,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
         final resolvedPath =
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)
-                ? uploadedPath
-                : image.path;
+            ? uploadedPath
+            : image.path;
 
         return MyImageResult(
           link: finalLink ?? image.link,
@@ -1143,7 +1176,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         );
       } else {
         debugPrint(
-            '[FormFieldsSignaturePad._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}');
+          '[FormFieldsSignaturePad._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}',
+        );
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,
@@ -1154,7 +1188,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       }
     } catch (e) {
       debugPrint(
-          '[FormFieldsSignaturePad._uploadImageDio] exception while processing response: $e');
+        '[FormFieldsSignaturePad._uploadImageDio] exception while processing response: $e',
+      );
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadErrorTitle,
@@ -1168,11 +1203,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   // ── Build helpers ──────────────────────────────────────────────────────────
 
-  Widget _buildPreviewImage(MyImageResult result,
-      {BoxFit fit = BoxFit.contain}) {
+  Widget _buildPreviewImage(
+    MyImageResult result, {
+    BoxFit fit = BoxFit.contain,
+  }) {
     Widget imageWidget;
-    final tokenHeader = (widget.uploadToken != null &&
-            widget.uploadToken!.isNotEmpty)
+    final tokenHeader =
+        (widget.uploadToken != null && widget.uploadToken!.isNotEmpty)
         ? <String, String>{HttpHeaders.authorizationHeader: widget.uploadToken!}
         : null;
 
@@ -1184,17 +1221,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final hasBase64 = result.base64.trim().isNotEmpty;
 
     if (hasLocalPath) {
-      imageWidget = Image.file(
-        File(result.path),
-        fit: fit,
-      );
+      imageWidget = Image.file(File(result.path), fit: fit);
     } else if (hasBase64) {
       final bytes = Uri.parse(result.base64).data?.contentAsBytes();
       if (bytes != null) {
-        imageWidget = Image.memory(
-          bytes,
-          fit: fit,
-        );
+        imageWidget = Image.memory(bytes, fit: fit);
       } else {
         imageWidget = Center(
           child: Icon(
@@ -1208,7 +1239,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       imageWidget = Image(
         image: NetworkImage(result.link, headers: tokenHeader),
         fit: fit,
-        errorBuilder: (_, __, ___) => Center(
+        errorBuilder: (_, error, stackTrace) => Center(
           child: Icon(
             Icons.broken_image_outlined,
             size: 28,
@@ -1251,10 +1282,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                 result.status == MyImageStatus.uploading
                     ? Icons.cloud_upload
                     : result.status == MyImageStatus.queued
-                        ? Icons.schedule
-                        : result.status == MyImageStatus.failed
-                            ? Icons.error_outline
-                            : Icons.check_circle,
+                    ? Icons.schedule
+                    : result.status == MyImageStatus.failed
+                    ? Icons.error_outline
+                    : Icons.check_circle,
                 size: 14,
                 color: result.status == MyImageStatus.failed
                     ? Theme.of(context).colorScheme.error
@@ -1298,9 +1329,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   child: live != null
                       ? _buildPreviewImage(live, fit: BoxFit.cover)
                       : Container(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           child: Center(
                             child: Text(
                               localizations.get('noLiveCapture'),
@@ -1319,9 +1350,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
-  Widget _buildSignaturePad(FormFieldsLocalizations localizations,
-      FormFieldsSignaturePadProvider provider) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+  Widget _buildSignaturePad(
+    FormFieldsLocalizations localizations,
+    FormFieldsSignaturePadProvider provider,
+  ) {
+    final loadingTheme =
+        Theme.of(context).extension<AppLoadingThemeData>() ??
         const AppLoadingThemeData.fallback();
     final progressTheme = Theme.of(context).progressIndicatorTheme;
     final progressColor = progressTheme.color ?? loadingTheme.indicatorColor;
@@ -1342,7 +1376,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   ? _buildPreviewCanvas(provider)
                   : Signature(
                       controller: _signatureController,
-                      backgroundColor: widget.backgroundColor ??
+                      backgroundColor:
+                          widget.backgroundColor ??
                           Theme.of(context).colorScheme.surface,
                     ),
             ),
@@ -1358,19 +1393,18 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withValues(alpha: .94),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surface.withValues(alpha: .94),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: progressColor.withValues(alpha: .20),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context)
-                                  .shadowColor
-                                  .withValues(alpha: .26),
+                              color: Theme.of(
+                                context,
+                              ).shadowColor.withValues(alpha: .26),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -1403,8 +1437,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                   text: '',
                   size: AppSize.small,
                   type: AppButtonType.icon,
-                  onPressed:
-                      provider.isUploading ? null : _clearSignatureSession,
+                  onPressed: provider.isUploading
+                      ? null
+                      : _clearSignatureSession,
                   customIconSize: 24,
                   customHeight: 36,
                 ),
@@ -1446,8 +1481,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         if (widget.onFailDirectUploadPayload != null) {
           // Merge into buffer, avoiding duplicates by correlation id.
           for (final p in list) {
-            final exists = _embeddedQueuedPayloads
-                .any((e) => e.uploadCorrelationId == p.uploadCorrelationId);
+            final exists = _embeddedQueuedPayloads.any(
+              (e) => e.uploadCorrelationId == p.uploadCorrelationId,
+            );
             if (!exists) _embeddedQueuedPayloads.add(p);
           }
         } else {
@@ -1505,8 +1541,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         builder: (context, provider, _) {
           final localizations = _localizations!;
           final pad = _buildSignaturePad(localizations, provider);
-          final cameraWidget =
-              widget.showLiveCamera ? _buildCameraWidget(context) : null;
+          final cameraWidget = widget.showLiveCamera
+              ? _buildCameraWidget(context)
+              : null;
 
           Widget content;
           if (widget.layoutBuilder != null) {
@@ -1517,11 +1554,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             content = Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                pad,
-                const SizedBox(height: 16),
-                cameraWidget,
-              ],
+              children: [pad, const SizedBox(height: 16), cameraWidget],
             );
           }
 
@@ -1541,16 +1574,19 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                       padding: const EdgeInsets.only(top: 6, left: 12),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline,
-                              color: Theme.of(context).colorScheme.error,
-                              size: 14),
+                          Icon(
+                            Icons.error_outline,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               state.errorText!,
                               style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                  fontSize: 12),
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -1594,9 +1630,9 @@ class _DefaultCameraSection extends StatelessWidget {
             Text(
               localizations.get('liveCaptureTitle'),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1607,9 +1643,10 @@ class _DefaultCameraSection extends StatelessWidget {
               child: Text(
                 localizations.get('liveCaptureAutoOnSign'),
                 style: TextStyle(
-                    fontSize: 10,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500),
+                  fontSize: 10,
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

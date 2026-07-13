@@ -8,8 +8,7 @@ repository: https://github.com/renoldi/form_fields
 issue_tracker: https://github.com/renoldi/form_fields/issues
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.0.0"
+  sdk: ^3.12.2
 
 dependencies:
   dio: any
@@ -25,7 +24,7 @@ dependencies:
   crypto: any
   workmanager: any
   provider: any
-  cunning_document_scanner: ^1.4.0
+  cunning_document_scanner: any
   image_picker: any
   permission_handler: any
   signature: any

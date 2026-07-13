@@ -28,12 +28,13 @@ class FormFieldsMapApi {
   }
 
   String _resolveId() {
-    if (_staticId != null) return _staticId!;
+    if (_staticId != null) return _staticId;
     if (_controller != null) {
-      return FormFieldsMapController.getIdForController(_controller!);
+      return FormFieldsMapController.getIdForController(_controller);
     }
     throw StateError(
-        'FormFieldsMapApi is not bound to a controller or notifier');
+      'FormFieldsMapApi is not bound to a controller or notifier',
+    );
   }
 
   // --- Raw markers ---

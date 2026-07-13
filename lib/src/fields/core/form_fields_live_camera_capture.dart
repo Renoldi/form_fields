@@ -72,14 +72,14 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
   /// Each item is ready to be serialized via `toMap()`/`toJson()` for
   /// persistence or re-upload.
   final void Function(List<DirectUploadPayload> payloads)?
-      onFailDirectUploadPayload;
+  onFailDirectUploadPayload;
 
   /// New callback invoked when an individual upload payload is queued by the
   /// widget (e.g. auth expiry). Receives a sanitized `DirectUploadPayload`
   /// and a boolean `authExpired` which is true when the library detected an
   /// authentication expiry (401) situation.
   final void Function(DirectUploadPayload payload, bool authExpired)?
-      onUploadQueued;
+  onUploadQueued;
 
   // `onFailDirectUploadResult` removed — live camera reports single results
   // via `onFailDirectUpload` only.
@@ -140,10 +140,9 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.preAcquire = false,
     this.descriptionField,
   }) : assert(
-          isDirectUpload == false ||
-              (uploadUrl != null && uploadUrl.isNotEmpty),
-          'For direct upload, uploadUrl must be provided and non-empty.',
-        );
+         isDirectUpload == false || (uploadUrl != null && uploadUrl.isNotEmpty),
+         'For direct upload, uploadUrl must be provided and non-empty.',
+       );
 
   @override
   State<FormFieldsLiveCameraCapture> createState() =>
@@ -283,8 +282,9 @@ class FormFieldsLiveCameraCaptureState
         result = await MyImageResult.fromFile(File(xfile.path));
       } else {
         await Future<void>.delayed(const Duration(milliseconds: 80));
-        final boundary = _previewKey.currentContext?.findRenderObject()
-            as RenderRepaintBoundary?;
+        final boundary =
+            _previewKey.currentContext?.findRenderObject()
+                as RenderRepaintBoundary?;
         if (boundary == null) return null;
 
         final image = await boundary.toImage(pixelRatio: 1.5);
@@ -304,8 +304,10 @@ class FormFieldsLiveCameraCaptureState
         if (widget.showUploadLoading) {
           _provider.startUpload(initialProgress: 0.02);
         }
-        final uploaded =
-            await _uploadImageDio(result, showSuccessDialog: false);
+        final uploaded = await _uploadImageDio(
+          result,
+          showSuccessDialog: false,
+        );
         if (mounted && widget.showUploadLoading) {
           if (uploaded != null && uploaded.status == MyImageStatus.uploaded) {
             _provider.completeUpload();
@@ -363,8 +365,8 @@ class FormFieldsLiveCameraCaptureState
     if (effDesc != null && effDesc.isNotEmpty) {
       extraFields.add(MapEntry('description', effDesc));
     }
-    final uploadCorrelationId =
-        DateTime.now().microsecondsSinceEpoch.toString();
+    final uploadCorrelationId = DateTime.now().microsecondsSinceEpoch
+        .toString();
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
       'headers': headers,
@@ -414,16 +416,19 @@ class FormFieldsLiveCameraCaptureState
           if (kDebugMode) {
             try {
               debugPrint(
-                  'FormFieldsLiveCameraCapture: onFailDirectUploadPayload -> 1 payload');
+                'FormFieldsLiveCameraCapture: onFailDirectUploadPayload -> 1 payload',
+              );
               debugPrint(
-                  'FormFieldsLiveCameraCapture: payload[0] correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+                'FormFieldsLiveCameraCapture: payload[0] correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+              );
             } catch (_) {}
           }
           widget.onFailDirectUploadPayload?.call([direct]);
         }
       } catch (e, st) {
         debugPrint(
-            'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
+          'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
+        );
       }
       // combined export callback removed; callers receive single-item
       // `onFailDirectUpload` for persisting queued payloads.
@@ -446,7 +451,8 @@ class FormFieldsLiveCameraCaptureState
     }
 
     debugPrint(
-        '[FormFieldsLiveCameraCapture._uploadImageDio] START upload url=${widget.uploadUrl}, file=${image.path}, fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}');
+      '[FormFieldsLiveCameraCapture._uploadImageDio] START upload url=${widget.uploadUrl}, file=${image.path}, fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
+    );
 
     final response = await DioUtil.uploadFile(
       url: widget.uploadUrl!,
@@ -479,7 +485,8 @@ class FormFieldsLiveCameraCaptureState
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
       debugPrint(
-          '[FormFieldsLiveCameraCapture._uploadImageDio] response == null (network error)');
+        '[FormFieldsLiveCameraCapture._uploadImageDio] response == null (network error)',
+      );
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -493,7 +500,8 @@ class FormFieldsLiveCameraCaptureState
     // notifying the caller so they can persist/retry later.
     if (response.statusCode == 401) {
       debugPrint(
-          '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: 401 -> queueing payload');
+        '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: 401 -> queueing payload',
+      );
       MyImageResult? queuedImage;
       try {
         queuedImage = MyImageResult(
@@ -515,26 +523,30 @@ class FormFieldsLiveCameraCaptureState
           if (kDebugMode) {
             try {
               debugPrint(
-                  'FormFieldsLiveCameraCapture: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+                'FormFieldsLiveCameraCapture: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+              );
             } catch (_) {}
           }
           try {
             widget.onUploadQueued?.call(direct, true);
           } catch (e, st) {
             debugPrint(
-                'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st');
+              'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st',
+            );
           }
           try {
             widget.onFailDirectUploadPayload?.call([direct]);
           } catch (e, st) {
             debugPrint(
-                'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
+              'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
+            );
           }
           return queuedImage;
         }
       } catch (e, st) {
         debugPrint(
-            'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st');
+          'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st',
+        );
       }
       if (widget.showUploadResultDialog) {
         await dialog.showError(
@@ -551,19 +563,28 @@ class FormFieldsLiveCameraCaptureState
           response.statusCode! < 300) {
         final data = response.data;
 
-        final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
-            keys: widget.uploadFileUrlKey);
-        final imageId = UploadResponseMapper.extractImageId(data,
-            keys: widget.uploadImageIdKey);
+        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+          data,
+          keys: widget.uploadFileUrlKey,
+        );
+        final imageId = UploadResponseMapper.extractImageId(
+          data,
+          keys: widget.uploadImageIdKey,
+        );
         final uploadedDescription = UploadResponseMapper.extractDescription(
-            data,
-            keys: widget.descriptionField ?? 'description');
-        final uploadedPath =
-            UploadResponseMapper.extractFilePath(data, keys: 'filePath');
+          data,
+          keys: widget.descriptionField ?? 'description',
+        );
+        final uploadedPath = UploadResponseMapper.extractFilePath(
+          data,
+          keys: 'filePath',
+        );
 
-        debugPrint('[FormFieldsLiveCameraCapture._uploadImageDio] '
-            'status=${response.statusCode}, uploadedLink=$uploadedLink, '
-            'uploadedPath=$uploadedPath, imageId=$imageId');
+        debugPrint(
+          '[FormFieldsLiveCameraCapture._uploadImageDio] '
+          'status=${response.statusCode}, uploadedLink=$uploadedLink, '
+          'uploadedPath=$uploadedPath, imageId=$imageId',
+        );
 
         if (showSuccessDialog && widget.showUploadResultDialog) {
           await dialog.showSuccess(
@@ -597,16 +618,17 @@ class FormFieldsLiveCameraCaptureState
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
           try {
             final base = Uri.parse(widget.uploadUrl!);
-            final p =
-                uploadedPath.startsWith('/') ? uploadedPath : '/$uploadedPath';
+            final p = uploadedPath.startsWith('/')
+                ? uploadedPath
+                : '/$uploadedPath';
             finalLink = '${base.scheme}://${base.authority}$p';
           } catch (_) {}
         }
 
         final resolvedPath =
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)
-                ? uploadedPath
-                : image.path;
+            ? uploadedPath
+            : image.path;
 
         final updatedImage = MyImageResult(
           link: finalLink ?? image.link,
@@ -627,7 +649,8 @@ class FormFieldsLiveCameraCaptureState
         // queueable payload and notify caller so they can persist/retry.
         final sc = response.statusCode ?? 0;
         debugPrint(
-            '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=$sc, statusMessage=${response.statusMessage}, data=${response.data}');
+          '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=$sc, statusMessage=${response.statusMessage}, data=${response.data}',
+        );
         try {
           final queuedImage = MyImageResult(
             link: image.link,
@@ -648,25 +671,29 @@ class FormFieldsLiveCameraCaptureState
             if (kDebugMode) {
               try {
                 debugPrint(
-                    'FormFieldsLiveCameraCapture: server queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}');
+                  'FormFieldsLiveCameraCapture: server queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+                );
               } catch (_) {}
             }
             try {
               widget.onUploadQueued?.call(direct, false);
             } catch (e, st) {
               debugPrint(
-                  'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st');
+                'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st',
+              );
             }
             try {
               widget.onFailDirectUploadPayload?.call([direct]);
             } catch (e, st) {
               debugPrint(
-                  'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st');
+                'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
+              );
             }
           }
         } catch (e, st) {
           debugPrint(
-              'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st');
+            'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st',
+          );
         }
         if (widget.showUploadResultDialog) {
           await dialog.showError(
@@ -715,7 +742,7 @@ class FormFieldsLiveCameraCaptureState
         builder: (context, provider, _) {
           final loadingTheme =
               Theme.of(context).extension<AppLoadingThemeData>() ??
-                  const AppLoadingThemeData.fallback();
+              const AppLoadingThemeData.fallback();
           final progressTheme = Theme.of(context).progressIndicatorTheme;
           final progressColor =
               progressTheme.color ?? loadingTheme.indicatorColor;
@@ -776,11 +803,12 @@ class FormFieldsLiveCameraCaptureState
                   if (provider.capturedResult != null)
                     _CapturedPhoto(
                       result: provider.capturedResult!,
-                      headers: (widget.uploadToken != null &&
+                      headers:
+                          (widget.uploadToken != null &&
                               widget.uploadToken!.isNotEmpty)
                           ? <String, String>{
                               HttpHeaders.authorizationHeader:
-                                  widget.uploadToken!
+                                  widget.uploadToken!,
                             }
                           : null,
                     ),
@@ -796,19 +824,18 @@ class FormFieldsLiveCameraCaptureState
                             child: Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surface
-                                    .withValues(alpha: .94),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surface.withValues(alpha: .94),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: progressColor.withValues(alpha: .20),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Theme.of(context)
-                                        .shadowColor
-                                        .withValues(alpha: 0.25),
+                                    color: Theme.of(
+                                      context,
+                                    ).shadowColor.withValues(alpha: 0.25),
                                     blurRadius: 8,
                                     offset: Offset(0, 3),
                                   ),
@@ -836,40 +863,38 @@ class FormFieldsLiveCameraCaptureState
                     left: 6,
                     child: provider.capturedResult == null
                         ? const SizedBox.shrink()
-                        : Builder(builder: (ctx) {
-                            final st = provider.capturedResult!.status;
-                            final icon = st == MyImageStatus.uploading
-                                ? Icons.cloud_upload
-                                : st == MyImageStatus.queued
-                                    ? Icons.schedule
-                                    : st == MyImageStatus.failed
-                                        ? Icons.error_outline
-                                        : Icons.check_circle;
-                            final iconColor = st == MyImageStatus.failed
-                                ? Theme.of(context).colorScheme.error
-                                : resolveTextColor(ctx);
-                            return Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(context)
-                                        .shadowColor
-                                        .withValues(alpha: .18),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                icon,
-                                size: 14,
-                                color: iconColor,
-                              ),
-                            );
-                          }),
+                        : Builder(
+                            builder: (ctx) {
+                              final st = provider.capturedResult!.status;
+                              final icon = st == MyImageStatus.uploading
+                                  ? Icons.cloud_upload
+                                  : st == MyImageStatus.queued
+                                  ? Icons.schedule
+                                  : st == MyImageStatus.failed
+                                  ? Icons.error_outline
+                                  : Icons.check_circle;
+                              final iconColor = st == MyImageStatus.failed
+                                  ? Theme.of(context).colorScheme.error
+                                  : resolveTextColor(ctx);
+                              return Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(
+                                        context,
+                                      ).shadowColor.withValues(alpha: .18),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(icon, size: 14, color: iconColor),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -887,8 +912,9 @@ class FormFieldsLiveCameraCaptureState
               : _CameraPlaceholder(
                   height: widget.height,
                   icon: Icons.camera_front,
-                  message: FormFieldsLocalizations.of(context)
-                      .get('cameraInitializing'),
+                  message: FormFieldsLocalizations.of(
+                    context,
+                  ).get('cameraInitializing'),
                   showSpinner: true,
                 );
 
@@ -920,18 +946,21 @@ class SharedCameraManager {
   void addListener(VoidCallback cb) {
     _listeners.add(cb);
     debugPrint(
-        '[SharedCameraManager] addListener; listeners=${_listeners.length}');
+      '[SharedCameraManager] addListener; listeners=${_listeners.length}',
+    );
   }
 
   void removeListener(VoidCallback cb) {
     _listeners.remove(cb);
     debugPrint(
-        '[SharedCameraManager] removeListener; listeners=${_listeners.length}');
+      '[SharedCameraManager] removeListener; listeners=${_listeners.length}',
+    );
   }
 
   void _notify() {
     debugPrint(
-        '[SharedCameraManager] _notify; listeners=${_listeners.length}; isReady=$isReady; initializing=$_initializing; ref=$_refCount');
+      '[SharedCameraManager] _notify; listeners=${_listeners.length}; isReady=$isReady; initializing=$_initializing; ref=$_refCount',
+    );
     for (final l in List<VoidCallback>.of(_listeners)) {
       try {
         l();
@@ -941,8 +970,9 @@ class SharedCameraManager {
     }
   }
 
-  Future<void> acquire(
-      [ResolutionPreset preset = ResolutionPreset.medium]) async {
+  Future<void> acquire([
+    ResolutionPreset preset = ResolutionPreset.medium,
+  ]) async {
     _refCount++;
     if (_controller != null && _controller!.value.isInitialized) return;
     if (_initializing) {
@@ -972,12 +1002,9 @@ class SharedCameraManager {
         orElse: () => cameras.first,
       );
       debugPrint(
-          '[SharedCameraManager] initializing controller for ${front.name}');
-      final ctrl = CameraController(
-        front,
-        preset,
-        enableAudio: false,
+        '[SharedCameraManager] initializing controller for ${front.name}',
       );
+      final ctrl = CameraController(front, preset, enableAudio: false);
       await ctrl.initialize().timeout(
         const Duration(seconds: 2),
         onTimeout: () {
@@ -999,7 +1026,8 @@ class SharedCameraManager {
     } finally {
       _initializing = false;
       debugPrint(
-          '[SharedCameraManager] acquire finished; initializing=$_initializing; error=$_errorMessage; ref=$_refCount; isReady=$isReady');
+        '[SharedCameraManager] acquire finished; initializing=$_initializing; error=$_errorMessage; ref=$_refCount; isReady=$isReady',
+      );
       _notify();
     }
   }
@@ -1028,8 +1056,10 @@ class _CapturedPhoto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kDebugMode) {
-      debugPrint('[FormFieldsLiveCameraCapture._CapturedPhoto] '
-          'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}');
+      debugPrint(
+        '[FormFieldsLiveCameraCapture._CapturedPhoto] '
+        'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}',
+      );
     }
 
     // Build local fallback (file -> base64 -> placeholder)
@@ -1050,11 +1080,7 @@ class _CapturedPhoto extends StatelessWidget {
     }
 
     if (hasBase64) {
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-        width: double.infinity,
-      );
+      return Image.memory(bytes, fit: BoxFit.cover, width: double.infinity);
     }
 
     if (result.link.isNotEmpty) {
@@ -1062,16 +1088,22 @@ class _CapturedPhoto extends StatelessWidget {
         image: NetworkImage(result.link, headers: headers),
         fit: BoxFit.cover,
         width: double.infinity,
-        errorBuilder: (_, __, ___) => Center(
-          child: Icon(Icons.broken_image_outlined,
-              size: 32, color: resolveTextColor(context, muted: true)),
+        errorBuilder: (_, error, stackTrace) => Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 32,
+            color: resolveTextColor(context, muted: true),
+          ),
         ),
       );
     }
 
     return Center(
-      child: Icon(Icons.broken_image_outlined,
-          size: 32, color: resolveTextColor(context, muted: true)),
+      child: Icon(
+        Icons.broken_image_outlined,
+        size: 32,
+        color: resolveTextColor(context, muted: true),
+      ),
     );
   }
 }
@@ -1104,26 +1136,27 @@ class _CameraPlaceholder extends StatelessWidget {
           children: [
             if (showSpinner)
               CircularProgressIndicator(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onPrimary
-                      .withValues(alpha: 0.54))
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.54),
+              )
             else
-              Icon(icon,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onPrimary
-                      .withValues(alpha: 0.54),
-                  size: 40),
+              Icon(
+                icon,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.54),
+                size: 40,
+              ),
             const SizedBox(height: 8),
             Text(
               message,
               style: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onPrimary
-                      .withValues(alpha: 0.54),
-                  fontSize: 12),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.54),
+                fontSize: 12,
+              ),
             ),
           ],
         ),

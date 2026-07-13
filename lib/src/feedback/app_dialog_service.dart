@@ -51,8 +51,8 @@ class AppDialogService {
       );
       final Widget dialogChild =
           loadingContainer == AppDialogLoadingContainer.card
-              ? _defaultDialogCard(context, child: visual)
-              : visual;
+          ? _defaultDialogCard(context, child: visual)
+          : visual;
       _showProtectedDialog(
         alignment: _alignment(position),
         insetPadding: _inset(position),
@@ -88,21 +88,20 @@ class AppDialogService {
   static ({
     String message,
     AppDialogType type,
-    Map<String, List<String>>? details
-  }) defaultErrorMapper(
-    Object error,
-  ) {
+    Map<String, List<String>>? details,
+  })
+  defaultErrorMapper(Object error) {
     if (error is ValidationException) {
       return (
         message: error.message,
         type: AppDialogType.validation,
-        details: error.details
+        details: error.details,
       );
     }
     return (
       message: error.toString(),
       type: AppDialogType.server,
-      details: null
+      details: null,
     );
   }
 
@@ -263,8 +262,10 @@ class AppDialogService {
     if (kDebugMode) {
       try {
         final loc = Localizations.localeOf(context);
-        debugPrint('AppDialogService.showLoading - locale: $loc, '
-            "messageParam: ${message ?? '<null>'}, resolved: $displayMessage");
+        debugPrint(
+          'AppDialogService.showLoading - locale: $loc, '
+          "messageParam: ${message ?? '<null>'}, resolved: $displayMessage",
+        );
       } catch (_) {}
     }
     final Widget visual = Column(
@@ -290,8 +291,8 @@ class AppDialogService {
     );
     final Widget dialogChild =
         loadingContainer == AppDialogLoadingContainer.card
-            ? _defaultDialogCard(context, child: visual)
-            : visual;
+        ? _defaultDialogCard(context, child: visual)
+        : visual;
     return _showProtectedDialog(
       alignment: _alignment(position),
       insetPadding: _inset(position),
@@ -347,10 +348,8 @@ class AppDialogService {
       if (progressNotifier != null) {
         return ValueListenableBuilder<double?>(
           valueListenable: progressNotifier,
-          builder: (_, value, __) => _buildProgressWidget(
-            progressType: progressType,
-            value: value,
-          ),
+          builder: (_, value, child) =>
+              _buildProgressWidget(progressType: progressType, value: value),
         );
       }
       return _buildProgressWidget(
@@ -359,10 +358,7 @@ class AppDialogService {
       );
     }
 
-    return AppLoadingIndicator(
-      variant: loadingVariant,
-      size: 34,
-    );
+    return AppLoadingIndicator(variant: loadingVariant, size: 34);
   }
 
   Widget _buildProgressWidget({
@@ -438,9 +434,11 @@ class AppDialogService {
     final extensionFilledStyle = appButtonExt?.filledStyle;
     final callerFilledStyle = ButtonStyle(
       backgroundColor: WidgetStatePropertyAll(buttonColor),
-      foregroundColor: WidgetStatePropertyAll(isWarning
-          ? Theme.of(context).colorScheme.onError
-          : Theme.of(context).colorScheme.onPrimary),
+      foregroundColor: WidgetStatePropertyAll(
+        isWarning
+            ? Theme.of(context).colorScheme.onError
+            : Theme.of(context).colorScheme.onPrimary,
+      ),
       padding: WidgetStatePropertyAll(const EdgeInsets.symmetric(vertical: 12)),
     );
     final dialogOkButtonStyle = resolveButtonStyle(
@@ -477,8 +475,9 @@ class AppDialogService {
             Text(
               message,
               style: TextStyle(
-                  fontSize: 14,
-                  color: theme.textTheme.bodyMedium?.color ?? Colors.black87),
+                fontSize: 14,
+                color: theme.textTheme.bodyMedium?.color ?? Colors.black87,
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -516,16 +515,18 @@ class AppDialogService {
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Builder(builder: (titleContext) {
-            final theme = Theme.of(titleContext);
-            return Row(
-              children: [
-                Icon(Icons.exit_to_app, color: theme.colorScheme.error),
-                const SizedBox(width: 8),
-                Text(resolvedTitle),
-              ],
-            );
-          }),
+          title: Builder(
+            builder: (titleContext) {
+              final theme = Theme.of(titleContext);
+              return Row(
+                children: [
+                  Icon(Icons.exit_to_app, color: theme.colorScheme.error),
+                  const SizedBox(width: 8),
+                  Text(resolvedTitle),
+                ],
+              );
+            },
+          ),
           content: Text(resolvedMessage),
           actions: [
             SizedBox(
@@ -728,7 +729,10 @@ class AppDialogService {
   void hideLoading() => _dismissLoadingIfVisible();
 
   (IconData, Color) _style(
-      BuildContext context, AppDialogType? type, bool isSuccess) {
+    BuildContext context,
+    AppDialogType? type,
+    bool isSuccess,
+  ) {
     final theme = Theme.of(context);
     if (isSuccess) {
       return (Icons.check_circle, theme.colorScheme.primary);
@@ -751,7 +755,10 @@ class AppDialogService {
   }
 
   Color _buttonColor(
-      BuildContext context, AppDialogType? type, bool isSuccess) {
+    BuildContext context,
+    AppDialogType? type,
+    bool isSuccess,
+  ) {
     final theme = Theme.of(context);
     if (isSuccess) return theme.colorScheme.primary;
     if (type == AppDialogType.validation) return Colors.orange.shade600;
