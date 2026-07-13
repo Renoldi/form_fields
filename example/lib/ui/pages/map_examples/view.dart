@@ -51,7 +51,8 @@ class View extends PresenterState {
                                     'Generate ${formatNumber(vm.createMarkers)} markers',
                                 icon: Icons.auto_awesome,
                                 onPressed: () => vm.generateMarkers(
-                                    markerCount: vm.createMarkers),
+                                  markerCount: vm.createMarkers,
+                                ),
                                 loading: vm.generatingMarkers,
                               ),
                               _ActionButton(
@@ -59,8 +60,9 @@ class View extends PresenterState {
                                 icon: Icons.cloud_download,
                                 onPressed: () async {
                                   final controller = TextEditingController(
-                                      text:
-                                          'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson');
+                                    text:
+                                        'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+                                  );
                                   final ok = await showDialog<bool?>(
                                     context: context,
                                     builder: (ctx) {
@@ -69,18 +71,21 @@ class View extends PresenterState {
                                         content: TextField(
                                           controller: controller,
                                           decoration: const InputDecoration(
-                                              hintText:
-                                                  'https://example.com/data.json'),
+                                            hintText:
+                                                'https://example.com/data.json',
+                                          ),
                                         ),
                                         actions: [
                                           TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(ctx).pop(false),
-                                              child: const Text('Cancel')),
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(false),
+                                            child: const Text('Cancel'),
+                                          ),
                                           TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(ctx).pop(true),
-                                              child: const Text('OK')),
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(true),
+                                            child: const Text('OK'),
+                                          ),
                                         ],
                                       );
                                     },
@@ -88,7 +93,8 @@ class View extends PresenterState {
                                   if (ok == true &&
                                       controller.text.trim().isNotEmpty) {
                                     vm.generateMarkers(
-                                        apiUrl: controller.text.trim());
+                                      apiUrl: controller.text.trim(),
+                                    );
                                   }
                                 },
                                 loading: vm.fetchingFromApi,
@@ -98,7 +104,8 @@ class View extends PresenterState {
                                     'Generate Polygons (${formatNumber(vm.createPolygons)})',
                                 icon: Icons.change_history,
                                 onPressed: () => vm.generatePolygons(
-                                    shapeCount: vm.createPolygons),
+                                  shapeCount: vm.createPolygons,
+                                ),
                                 loading: vm.generatingPolygons,
                               ),
                               _ActionButton(
@@ -106,7 +113,8 @@ class View extends PresenterState {
                                     'Generate Circles (${formatNumber(vm.createCircles)})',
                                 icon: Icons.circle,
                                 onPressed: () => vm.generateCircles(
-                                    shapeCount: vm.createCircles),
+                                  shapeCount: vm.createCircles,
+                                ),
                                 loading: vm.generatingCircles,
                               ),
                               _ActionButton(
@@ -114,7 +122,8 @@ class View extends PresenterState {
                                     'Generate Polylines (${formatNumber(vm.createPolylines)})',
                                 icon: Icons.timeline,
                                 onPressed: () => vm.generatePolylines(
-                                    shapeCount: vm.createPolylines),
+                                  shapeCount: vm.createPolylines,
+                                ),
                                 loading: vm.generatingPolylines,
                               ),
                             ] else if (vm.selectedFeature ==
@@ -162,9 +171,9 @@ class View extends PresenterState {
                                           FormFieldsMapFeature.playback
                                       ? Icons.play_arrow
                                       : vm.selectedFeature ==
-                                              FormFieldsMapFeature.map
-                                          ? Icons.map
-                                          : Icons.search,
+                                            FormFieldsMapFeature.map
+                                      ? Icons.map
+                                      : Icons.search,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 6),
@@ -219,7 +228,7 @@ class View extends PresenterState {
                         showMarkerInCenter: true,
                         // Use a free public geocoding API to avoid 403 issues
                         // (geocode.maps.co is an OpenStreetMap-based free service).
-                        externalSearchResults: vm.externalSearchResults,
+                        // externalSearchResults: vm.externalSearchResults,
                         // apiUrl: 'https://geocode.maps.co/search',
                         // apiParseResults: (data) {
                         //   final out = <FormFieldsLocationPrediction>[];
@@ -258,13 +267,15 @@ class View extends PresenterState {
                           // Only show the SnackBar if still mounted to avoid
                           // using BuildContext after disposal.
                           if (mounted) {
-                            messenger.showSnackBar(SnackBar(
-                                content: Text('Selected: ${pred.address}')));
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Selected: ${pred.address}'),
+                              ),
+                            );
                           }
                         },
-                        reverseGeocode: (lat) async {
-                          return 'Coords: ${lat.latitude.toStringAsFixed(6)}, ${lat.longitude.toStringAsFixed(6)}';
-                        },
+                        // Use package geocoding fallback by not providing
+                        // an explicit `reverseGeocode` here.
                       ),
                       playbackConfig: FormFieldsMapPlaybackConfig(
                         playbackInterval: vm.playbackInterval,
@@ -283,7 +294,8 @@ class View extends PresenterState {
                           // Update VM with latest playback info so sheet content
                           // (if open) can react immediately.
                           final raw = FormFieldsMapController.getRawMarkers(
-                              vm.controllerId);
+                            vm.controllerId,
+                          );
                           dynamic shape;
                           if (polylineId != null) {
                             try {
@@ -300,10 +312,11 @@ class View extends PresenterState {
                           }
 
                           vm.setLastPlaybackInfo(
-                              polylineId: polylineId,
-                              index: index,
-                              point: point,
-                              shape: shape);
+                            polylineId: polylineId,
+                            index: index,
+                            point: point,
+                            shape: shape,
+                          );
 
                           if (vm.isPlaybackSheetOpen) return;
                           vm.isPlaybackSheetOpen = true;
@@ -314,7 +327,8 @@ class View extends PresenterState {
                               showDragHandle: true,
                               shape: const RoundedRectangleBorder(
                                 borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(20)),
+                                  top: Radius.circular(20),
+                                ),
                               ),
                               builder: (ctx) {
                                 return ChangeNotifierProvider.value(
@@ -373,7 +387,11 @@ class View extends PresenterState {
 
                                       return Padding(
                                         padding: const EdgeInsets.fromLTRB(
-                                            16, 12, 16, 20),
+                                          16,
+                                          12,
+                                          16,
+                                          20,
+                                        ),
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           crossAxisAlignment:
@@ -403,8 +421,9 @@ class View extends PresenterState {
                                                       .textTheme
                                                       .titleLarge
                                                       ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                 ),
                                                 Row(
                                                   mainAxisSize:
@@ -412,36 +431,39 @@ class View extends PresenterState {
                                                   children: [
                                                     IconButton(
                                                       icon: const Icon(
-                                                          Icons.skip_previous),
+                                                        Icons.skip_previous,
+                                                      ),
                                                       onPressed: () =>
-                                                          FormFieldsMapController
-                                                              .stepPolylineBackward(
-                                                                  vm.controllerId,
-                                                                  vm.playbackPolylineId),
+                                                          FormFieldsMapController.stepPolylineBackward(
+                                                            vm.controllerId,
+                                                            vm.playbackPolylineId,
+                                                          ),
                                                     ),
                                                     ValueListenableBuilder<
-                                                        bool>(
+                                                      bool
+                                                    >(
                                                       valueListenable:
-                                                          FormFieldsMapController
-                                                              .getPlaybackPlayingListenable(
-                                                                  vm.controllerId),
-                                                      builder: (context,
-                                                          playing, _) {
+                                                          FormFieldsMapController.getPlaybackPlayingListenable(
+                                                            vm.controllerId,
+                                                          ),
+                                                      builder: (context, playing, _) {
                                                         return IconButton(
-                                                          icon: Icon(playing
-                                                              ? Icons.pause
-                                                              : Icons
-                                                                  .play_arrow),
+                                                          icon: Icon(
+                                                            playing
+                                                                ? Icons.pause
+                                                                : Icons
+                                                                      .play_arrow,
+                                                          ),
                                                           onPressed: () {
                                                             if (playing) {
-                                                              FormFieldsMapController
-                                                                  .pausePolylinePlayback(
-                                                                      vm.controllerId);
+                                                              FormFieldsMapController.pausePolylinePlayback(
+                                                                vm.controllerId,
+                                                              );
                                                             } else {
-                                                              FormFieldsMapController
-                                                                  .startPolylinePlayback(
-                                                                      vm.controllerId,
-                                                                      vm.playbackPolylineId);
+                                                              FormFieldsMapController.startPolylinePlayback(
+                                                                vm.controllerId,
+                                                                vm.playbackPolylineId,
+                                                              );
                                                             }
                                                           },
                                                           tooltip: playing
@@ -452,20 +474,22 @@ class View extends PresenterState {
                                                     ),
                                                     IconButton(
                                                       icon: const Icon(
-                                                          Icons.skip_next),
+                                                        Icons.skip_next,
+                                                      ),
                                                       onPressed: () =>
-                                                          FormFieldsMapController
-                                                              .stepPolylineForward(
-                                                                  vm.controllerId,
-                                                                  vm.playbackPolylineId),
+                                                          FormFieldsMapController.stepPolylineForward(
+                                                            vm.controllerId,
+                                                            vm.playbackPolylineId,
+                                                          ),
                                                     ),
                                                     IconButton(
                                                       icon: const Icon(
-                                                          Icons.replay),
+                                                        Icons.replay,
+                                                      ),
                                                       onPressed: () =>
-                                                          FormFieldsMapController
-                                                              .restartPolylinePlayback(
-                                                                  vm.controllerId),
+                                                          FormFieldsMapController.restartPolylinePlayback(
+                                                            vm.controllerId,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -475,25 +499,29 @@ class View extends PresenterState {
                                             Card(
                                               elevation: 2,
                                               shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          12)),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
                                               child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(12),
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
                                                 child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     if (displayIndex != null)
                                                       Text(
-                                                          'Index: $displayIndex'),
+                                                        'Index: $displayIndex',
+                                                      ),
                                                     if (displayPoint != null)
                                                       Text(
-                                                          'Coords: ${displayPoint.latitude.toStringAsFixed(6)}, ${displayPoint.longitude.toStringAsFixed(6)}'),
+                                                        'Coords: ${displayPoint.latitude.toStringAsFixed(6)}, ${displayPoint.longitude.toStringAsFixed(6)}',
+                                                      ),
                                                     if (pointCount != null)
                                                       Text(
-                                                          'Points: $pointCount'),
+                                                        'Points: $pointCount',
+                                                      ),
                                                   ],
                                                 ),
                                               ),
@@ -569,8 +597,8 @@ class View extends PresenterState {
                         final id = sm.id;
                         final pt =
                             (sm.pointMetas != null && sm.pointMetas!.isNotEmpty)
-                                ? sm.pointMetas!.first.point
-                                : LatLng(0, 0);
+                            ? sm.pointMetas!.first.point
+                            : LatLng(0, 0);
 
                         if (sm.shapeType == ShapeTypes.marker ||
                             (id != null && id.startsWith('m\$'))) {
@@ -586,54 +614,74 @@ class View extends PresenterState {
                                     if (subtitle.isNotEmpty) Text(subtitle),
                                     if (id != null) ...[
                                       const SizedBox(height: 8),
-                                      Text('ID: $id',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
+                                      Text(
+                                        'ID: $id',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
                                     ],
                                     if (sm.shapeType != null) ...[
                                       const SizedBox(height: 8),
-                                      Text('Type: ${sm.shapeType}',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey)),
+                                      Text(
+                                        'Type: ${sm.shapeType}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
                                     ],
                                     ...[
                                       const SizedBox(height: 8),
                                       Text(
-                                          'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}'),
-                                    ]
+                                        'Coords: ${pt.latitude.toStringAsFixed(6)}, ${pt.longitude.toStringAsFixed(6)}',
+                                      ),
+                                    ],
                                   ],
                                 ),
                                 actions: [
                                   TextButton(
-                                      onPressed: () => Navigator.of(ctx).pop(),
-                                      child: const Text('Close')),
+                                    onPressed: () => Navigator.of(ctx).pop(),
+                                    child: const Text('Close'),
+                                  ),
                                   if (id != null)
                                     TextButton(
                                       onPressed: () {
                                         if (id.startsWith('m\$')) {
-                                          FormFieldsMapController
-                                              .removeRawMarker(
-                                                  vm.controllerId, id);
+                                          FormFieldsMapController.removeRawMarker(
+                                            vm.controllerId,
+                                            id,
+                                          );
                                         } else if (id.startsWith('p\$')) {
                                           FormFieldsMapController.removePolygon(
-                                              vm.controllerId, id);
+                                            vm.controllerId,
+                                            id,
+                                          );
                                         } else if (id.startsWith('l\$')) {
-                                          FormFieldsMapController
-                                              .removePolyline(
-                                                  vm.controllerId, id);
+                                          FormFieldsMapController.removePolyline(
+                                            vm.controllerId,
+                                            id,
+                                          );
                                         } else if (id.startsWith('c\$')) {
                                           FormFieldsMapController.removeCircle(
-                                              vm.controllerId, id);
+                                            vm.controllerId,
+                                            id,
+                                          );
                                         }
                                         Navigator.of(ctx).pop();
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                                content: Text('Deleted')));
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Deleted'),
+                                          ),
+                                        );
                                       },
-                                      child: const Text('Delete',
-                                          style: TextStyle(color: Colors.red)),
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
                                     ),
                                 ],
                               );
@@ -641,17 +689,25 @@ class View extends PresenterState {
                           );
                         } else {
                           final shapeId = sm.id;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
                               content: Text(
-                                  'Tapped: ${sm.shapeType}${shapeId != null ? ' (ID: $shapeId)' : ''}')));
+                                'Tapped: ${sm.shapeType}${shapeId != null ? ' (ID: $shapeId)' : ''}',
+                              ),
+                            ),
+                          );
                         }
                       },
                       initialCenter: vm.center,
                       // initialZoom: 12.0,
                       onMapTap: (latlng) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
                             content: Text(
-                                'Tapped: ${latlng.latitude}, ${latlng.longitude}')));
+                              'Tapped: ${latlng.latitude}, ${latlng.longitude}',
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -683,31 +739,34 @@ class View extends PresenterState {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Polyline Playback',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Polyline Playback',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ValueListenableBuilder<bool>(
-                                valueListenable: FormFieldsMapController
-                                    .getPlaybackPlayingListenable(
-                                        vm.controllerId),
+                                valueListenable:
+                                    FormFieldsMapController.getPlaybackPlayingListenable(
+                                      vm.controllerId,
+                                    ),
                                 builder: (context, playing, _) {
                                   return IconButton(
-                                    icon: Icon(playing
-                                        ? Icons.pause
-                                        : Icons.play_arrow),
+                                    icon: Icon(
+                                      playing ? Icons.pause : Icons.play_arrow,
+                                    ),
                                     onPressed: () {
                                       if (playing) {
-                                        FormFieldsMapController
-                                            .pausePolylinePlayback(
-                                                vm.controllerId);
+                                        FormFieldsMapController.pausePolylinePlayback(
+                                          vm.controllerId,
+                                        );
                                       } else {
-                                        FormFieldsMapController
-                                            .startPolylinePlayback(
-                                                vm.controllerId,
-                                                vm.playbackPolylineId);
+                                        FormFieldsMapController.startPolylinePlayback(
+                                          vm.controllerId,
+                                          vm.playbackPolylineId,
+                                        );
                                       }
                                     },
                                     tooltip: playing ? 'Pause' : 'Play',
@@ -716,21 +775,27 @@ class View extends PresenterState {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.skip_previous),
-                                onPressed: () => FormFieldsMapController
-                                    .stepPolylineBackward(
-                                        vm.controllerId, vm.playbackPolylineId),
+                                onPressed: () =>
+                                    FormFieldsMapController.stepPolylineBackward(
+                                      vm.controllerId,
+                                      vm.playbackPolylineId,
+                                    ),
                                 tooltip: 'Previous',
                               ),
                               IconButton(
                                 icon: const Icon(Icons.replay),
-                                onPressed: () => FormFieldsMapController
-                                    .restartPolylinePlayback(vm.controllerId),
+                                onPressed: () =>
+                                    FormFieldsMapController.restartPolylinePlayback(
+                                      vm.controllerId,
+                                    ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.skip_next),
                                 onPressed: () =>
                                     FormFieldsMapController.stepPolylineForward(
-                                        vm.controllerId, vm.playbackPolylineId),
+                                      vm.controllerId,
+                                      vm.playbackPolylineId,
+                                    ),
                                 tooltip: 'Next',
                               ),
                             ],
@@ -742,12 +807,21 @@ class View extends PresenterState {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               const Text('Interval:'),
-                              _intervalButton(vm, '0.5s',
-                                  const Duration(milliseconds: 500)),
                               _intervalButton(
-                                  vm, '1s', const Duration(seconds: 1)),
+                                vm,
+                                '0.5s',
+                                const Duration(milliseconds: 500),
+                              ),
                               _intervalButton(
-                                  vm, '2s', const Duration(seconds: 2)),
+                                vm,
+                                '1s',
+                                const Duration(seconds: 1),
+                              ),
+                              _intervalButton(
+                                vm,
+                                '2s',
+                                const Duration(seconds: 2),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -772,7 +846,8 @@ class View extends PresenterState {
           );
 
           // Progress overlay
-          final showProgress = vm.isLoading ||
+          final showProgress =
+              vm.isLoading ||
               vm.generatedMarkers > 0 ||
               vm.generatedPolygons > 0 ||
               vm.generatedPolylines > 0 ||
@@ -795,66 +870,76 @@ class View extends PresenterState {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              '${vm.markerUpdatesActive ? 'Processed' : 'Markers'}: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}'),
+                            '${vm.markerUpdatesActive ? 'Processed' : 'Markers'}: ${formatNumber(vm.generatedMarkers)}/${formatNumber(vm.totalMarkers)}',
+                          ),
                           if (vm.totalMarkers > 0)
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
-                                  value: vm.totalMarkers > 0
-                                      ? vm.generatedMarkers / vm.totalMarkers
-                                      : null),
+                                value: vm.totalMarkers > 0
+                                    ? vm.generatedMarkers / vm.totalMarkers
+                                    : null,
+                              ),
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Polygons: ${formatNumber(vm.generatedPolygons)}/${formatNumber(vm.totalPolygons)}'),
+                            'Polygons: ${formatNumber(vm.generatedPolygons)}/${formatNumber(vm.totalPolygons)}',
+                          ),
                           if (vm.totalPolygons > 0)
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
-                                  value: vm.totalPolygons > 0
-                                      ? vm.generatedPolygons / vm.totalPolygons
-                                      : null),
+                                value: vm.totalPolygons > 0
+                                    ? vm.generatedPolygons / vm.totalPolygons
+                                    : null,
+                              ),
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Polylines: ${formatNumber(vm.generatedPolylines)}/${formatNumber(vm.totalPolylines)}'),
+                            'Polylines: ${formatNumber(vm.generatedPolylines)}/${formatNumber(vm.totalPolylines)}',
+                          ),
                           if (vm.totalPolylines > 0)
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
-                                  value: vm.totalPolylines > 0
-                                      ? vm.generatedPolylines /
-                                          vm.totalPolylines
-                                      : null),
+                                value: vm.totalPolylines > 0
+                                    ? vm.generatedPolylines / vm.totalPolylines
+                                    : null,
+                              ),
                             ),
                           const SizedBox(height: 6),
                           Text(
-                              'Circles: ${formatNumber(vm.generatedCircles)}/${formatNumber(vm.totalCircles)}'),
+                            'Circles: ${formatNumber(vm.generatedCircles)}/${formatNumber(vm.totalCircles)}',
+                          ),
                           if (vm.totalCircles > 0)
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
-                                  value: vm.totalCircles > 0
-                                      ? vm.generatedCircles / vm.totalCircles
-                                      : null),
+                                value: vm.totalCircles > 0
+                                    ? vm.generatedCircles / vm.totalCircles
+                                    : null,
+                              ),
                             ),
                           if (vm.markerUpdatesActive) ...[
                             const SizedBox(height: 8),
                             Text(
-                                'Next update in: ${vm.markerUpdateCountdownFormatted}'),
+                              'Next update in: ${vm.markerUpdateCountdownFormatted}',
+                            ),
                             const SizedBox(height: 6),
                             if (vm.lastMarkerUpdatesApplied > 0)
                               Text(
-                                  'Last update: +${formatNumber(vm.lastMarkerUpdatesApplied)}'),
+                                'Last update: +${formatNumber(vm.lastMarkerUpdatesApplied)}',
+                              ),
                             const SizedBox(height: 6),
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
-                                  value: vm.markerUpdateInterval.inSeconds > 0
-                                      ? (vm.markerUpdateInterval.inSeconds -
+                                value: vm.markerUpdateInterval.inSeconds > 0
+                                    ? (vm.markerUpdateInterval.inSeconds -
                                               vm.markerUpdateRemainingSeconds) /
                                           vm.markerUpdateInterval.inSeconds
-                                      : null),
+                                    : null,
+                              ),
                             ),
                           ],
                         ],
@@ -919,8 +1004,10 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textStyle =
-        const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+    final textStyle = const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+    );
     if (outlined) {
       return OutlinedButton.icon(
         onPressed: loading ? null : onPressed,
@@ -932,22 +1019,30 @@ class _ActionButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2)),
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                   const SizedBox(width: 8),
-                  Text(label,
-                      style: textStyle.copyWith(
-                          color: color ?? theme.colorScheme.primary)),
+                  Text(
+                    label,
+                    style: textStyle.copyWith(
+                      color: color ?? theme.colorScheme.primary,
+                    ),
+                  ),
                 ],
               )
-            : Text(label,
+            : Text(
+                label,
                 style: textStyle.copyWith(
-                    color: color ?? theme.colorScheme.primary)),
+                  color: color ?? theme.colorScheme.primary,
+                ),
+              ),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           side: BorderSide(color: color ?? theme.colorScheme.primary),
         ),
       );
@@ -961,12 +1056,15 @@ class _ActionButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.onPrimary))),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Text(label, style: textStyle),
               ],

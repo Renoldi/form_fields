@@ -36,6 +36,7 @@ dependencies:
   file_picker: ^11.0.2
   flutter_map: ^8.3.1
   latlong2: any
+  geocoding: ^5.0.0
   firebase_core: any
   firebase_messaging: any
   flutter_local_notifications: any

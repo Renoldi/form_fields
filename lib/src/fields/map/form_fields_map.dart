@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/src/fields/map/canvas_raw_marker_painter.dart';
+import 'package:form_fields/src/service/geocoding_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
@@ -290,6 +291,8 @@ class FormFieldsMap extends StatefulWidget {
 class FormFieldsMapState extends State<FormFieldsMap>
     with AutomaticKeepAliveClientMixin<FormFieldsMap> {
   late final MapController _mapController;
+  late final GeocodingService _geocodingService;
+  bool _centerActionInProgress = false;
   Timer? _debounceTimer;
   // Notifier removed from widget API. Consumers should register any
   // FormFieldsMapNotifier instances via the FormFieldsMapController
@@ -438,6 +441,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
     }
 
     _fallbackNotifier = FormFieldsMapNotifier();
+
+    // Shared geocoding service instance for reverse/search operations.
+    _geocodingService = GeocodingService();
 
     // Register the internal fallback notifier only when no notifier has been
     // previously registered for this controller id. This prevents the widget
@@ -1391,6 +1397,30 @@ class FormFieldsMapState extends State<FormFieldsMap>
     final notifier =
         FormFieldsMapController.getNotifier(_controllerId) ?? _fallbackNotifier;
 
+    final bool useFullGeocoding =
+        (widget.features == FormFieldsMapFeature.find);
+    final bool localAvailable =
+        useFullGeocoding && _findConfigEffective.allowGeolocation;
+    Future<List<FormFieldsLocationPrediction>> Function(String)?
+    localFetcherForMap = localAvailable
+        ? (String q) async {
+            if (q.trim().isEmpty) return [];
+            try {
+              final results = await _geocodingService.search(q);
+              return results
+                  .map(
+                    (r) => FormFieldsLocationPrediction(
+                      latLng: r.point,
+                      address: r.address ?? '',
+                    ),
+                  )
+                  .toList(growable: false);
+            } catch (_) {
+              return [];
+            }
+          }
+        : null;
+
     return Stack(
       children: [
         ChangeNotifierProvider<FormFieldsMapNotifier>.value(
@@ -1739,6 +1769,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 child: FormFieldsAutocomplete<FormFieldsLocationPrediction>(
                   fieldLabel: 'Search',
                   hideTrailingIcon: true,
+                  preferLocalOnly: localAvailable,
+                  localFetcher: localFetcherForMap,
                   apiUrl:
                       _findConfigEffective.apiUrl ??
                       'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1',
@@ -1930,63 +1962,122 @@ class FormFieldsMapState extends State<FormFieldsMap>
                 AppButton(
                   type: AppButtonType.fab,
                   size: AppSize.small,
+                  isLoading: _centerActionInProgress,
                   icon: const Icon(Icons.my_location),
                   useSafeArea: false,
                   heroTag: null,
                   onPressed: () async {
-                    final messenger = ScaffoldMessenger.maybeOf(context);
-                    LatLng? target;
+                    if (_centerActionInProgress) return;
+                    setState(() {
+                      _centerActionInProgress = true;
+                    });
                     try {
-                      if (!_findConfigEffective.allowGeolocation) {
-                        messenger?.showSnackBar(
-                          const SnackBar(
-                            content: Text('Location access disabled'),
-                          ),
-                        );
-                      } else if (widget.onRequestCurrentLocation != null) {
+                      final messenger = ScaffoldMessenger.maybeOf(context);
+                      LatLng? target;
+                      try {
+                        if (!_findConfigEffective.allowGeolocation) {
+                          messenger?.showSnackBar(
+                            const SnackBar(
+                              content: Text('Location access disabled'),
+                            ),
+                          );
+                        } else if (widget.onRequestCurrentLocation != null) {
+                          try {
+                            final Future<LatLng>? fut = widget
+                                .onRequestCurrentLocation!
+                                .call();
+                            if (fut != null) {
+                              try {
+                                target = await fut.timeout(
+                                  _findConfigEffective.findTimeout,
+                                );
+                              } on TimeoutException {
+                                target = null;
+                              } catch (_) {
+                                target = null;
+                              }
+                            }
+                          } catch (_) {
+                            target = null;
+                          }
+                        } else {
+                          // No callback provided yet — fall back to current map
+                          // center (if available) or the widget's initial center.
+                          target = _lastCenter ?? widget.initialCenter;
+                        }
+                      } catch (_) {
+                        target = null;
+                      }
+
+                      if (!mounted) return;
+                      if (target != null) {
+                        final currentZoom = _lastZoom ?? widget.initialZoom;
+                        // Prefer a playback-style zoom when a playback config is
+                        // present and the widget is configured to follow camera.
+                        final zoom = (widget.playbackConfig != null)
+                            ? _playbackTargetZoom
+                            : currentZoom;
+                        await animateTo(target, zoom);
+
+                        // After moving to the location, perform reverse-geocode
+                        // and notify consumer via `onCenterMarker` if provided.
                         try {
-                          final Future<LatLng>? fut = widget
-                              .onRequestCurrentLocation!
-                              .call();
-                          if (fut != null) {
+                          String address = '';
+                          PointMeta? pm;
+                          String? cbAddress;
+                          if (_reverseGeocodeEffective != null) {
                             try {
-                              target = await fut.timeout(
-                                _findConfigEffective.findTimeout,
+                              cbAddress = await _reverseGeocodeEffective!(
+                                target,
                               );
-                            } on TimeoutException {
-                              target = null;
                             } catch (_) {
-                              target = null;
+                              cbAddress = null;
                             }
                           }
-                        } catch (_) {
-                          target = null;
-                        }
-                      } else {
-                        // No callback provided yet — fall back to current map
-                        // center (if available) or the widget's initial center.
-                        target = _lastCenter ?? widget.initialCenter;
-                      }
-                    } catch (_) {
-                      target = null;
-                    }
 
-                    if (!mounted) return;
-                    if (target != null) {
-                      final currentZoom = _lastZoom ?? widget.initialZoom;
-                      // Prefer a playback-style zoom when a playback config is
-                      // present and the widget is configured to follow camera.
-                      final zoom = (widget.playbackConfig != null)
-                          ? _playbackTargetZoom
-                          : currentZoom;
-                      await animateTo(target, zoom);
-                      return;
+                          if (cbAddress != null && cbAddress.isNotEmpty) {
+                            address = cbAddress;
+                            pm = PointMeta(
+                              lat: target.latitude,
+                              lon: target.longitude,
+                              address: address,
+                            );
+                          } else if (_findConfigEffective.allowGeolocation) {
+                            pm = await _geocodingService.reverseToPointMeta(
+                              target,
+                            );
+                            address = pm?.address ?? '';
+                          } else {
+                            // GeocodingService disabled by configuration; leave address empty
+                            address = '';
+                            pm = null;
+                          }
+
+                          if (_onCenterMarkerEffective != null) {
+                            await _onCenterMarkerEffective!(
+                              FormFieldsLocationPrediction(
+                                latLng: pm?.point ?? target,
+                                address: address,
+                              ),
+                            );
+                          }
+                        } catch (_) {}
+
+                        return;
+                      }
+
+                      messenger?.showSnackBar(
+                        const SnackBar(
+                          content: Text('Current location not available'),
+                        ),
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          _centerActionInProgress = false;
+                        });
+                      }
                     }
-                    messenger?.showSnackBar(
-                      const SnackBar(
-                        content: Text('Current location not available'),
-                      ),
-                    );
                   },
                 ),
                 const SizedBox(height: 8),
@@ -1994,16 +2085,43 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   AppButton(
                     type: AppButtonType.fab,
                     size: AppSize.small,
+                    isLoading: _centerActionInProgress,
                     icon: const Icon(Icons.check),
                     useSafeArea: false,
                     heroTag: null,
                     onPressed: () async {
+                      if (_centerActionInProgress) return;
+                      setState(() {
+                        _centerActionInProgress = true;
+                      });
                       final center = _lastCenter ?? widget.initialCenter;
                       String address = '';
+                      PointMeta? pm;
                       try {
+                        String? cbAddress;
                         if (_reverseGeocodeEffective != null) {
-                          address =
-                              await _reverseGeocodeEffective!(center) ?? '';
+                          try {
+                            cbAddress = await _reverseGeocodeEffective!(center);
+                          } catch (_) {
+                            cbAddress = null;
+                          }
+                        }
+
+                        if (cbAddress != null && cbAddress.isNotEmpty) {
+                          address = cbAddress;
+                          pm = PointMeta(
+                            lat: center.latitude,
+                            lon: center.longitude,
+                            address: address,
+                          );
+                        } else if (_findConfigEffective.allowGeolocation) {
+                          pm = await _geocodingService.reverseToPointMeta(
+                            center,
+                          );
+                          address = pm?.address ?? '';
+                        } else {
+                          address = '';
+                          pm = null;
                         }
                       } catch (_) {
                         address = '';
@@ -2012,12 +2130,19 @@ class FormFieldsMapState extends State<FormFieldsMap>
                         if (_onCenterMarkerEffective != null) {
                           await _onCenterMarkerEffective!(
                             FormFieldsLocationPrediction(
-                              latLng: center,
+                              latLng: pm?.point ?? center,
                               address: address,
                             ),
                           );
                         }
-                      } catch (_) {}
+                      } catch (_) {
+                      } finally {
+                        if (mounted) {
+                          setState(() {
+                            _centerActionInProgress = false;
+                          });
+                        }
+                      }
                     },
                   ),
                 const SizedBox(height: 8),
@@ -2422,9 +2547,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
           String? shapeType;
           String? id;
           if (m is ShapeMeta) {
-            final pm = (m.pointMetas != null && m.pointMetas!.isNotEmpty)
-                ? m.pointMetas!.first
-                : null;
+            final pms = m.pointMetas;
+            final pm = (pms != null && pms.isNotEmpty) ? pms.first : null;
             if (pm == null) continue;
             lat = pm.lat;
             lon = pm.lon;
@@ -2710,9 +2834,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
     const tol = 0.00001; // ~1m tolerance
     for (final r in _rawMarkersForProcessing(notifier)) {
       if (r is ShapeMeta) {
-        final pm = (r.pointMetas != null && r.pointMetas!.isNotEmpty)
-            ? r.pointMetas!.first
-            : null;
+        final pms = r.pointMetas;
+        final pm = (pms != null && pms.isNotEmpty) ? pms.first : null;
         if (pm != null) {
           final lat = pm.lat;
           final lon = pm.lon;

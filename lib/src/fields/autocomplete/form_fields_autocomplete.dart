@@ -27,6 +27,15 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
   final bool hideTrailingIcon;
   final List<T>? externalResults;
 
+  /// Optional local fetcher used instead of HTTP when provided. This can be
+  /// used to supply platform/local geocoding results (e.g. via the
+  /// `geocoding` package) instead of calling a remote API.
+  final Future<List<T>> Function(String query)? localFetcher;
+
+  /// When true and `localFetcher` is provided, do not fall back to remote HTTP
+  /// fetches on error — only return local results. Defaults to `false`.
+  final bool preferLocalOnly;
+
   /// Returns a string label for the option (for text field display)
   final String Function(T)? itemSelectedBuilder;
 
@@ -50,16 +59,28 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
     this.itemSelectedBuilder,
     this.itemBuilder,
     this.externalResults,
+    this.localFetcher,
+    this.preferLocalOnly = false,
   });
 
   /// Fetches options from the URL using Dio, with custom query param, token header, and result processing.
   Future<List<T>> _fetchOptions(String query) async {
     if (query.isEmpty) return [];
+    // Prefer a provided local fetcher (e.g. platform geocoding) when available.
+    if (localFetcher != null) {
+      try {
+        return await localFetcher!(query);
+      } catch (_) {
+        if (preferLocalOnly) return [];
+        // fall through to HTTP fetch as a fallback
+      }
+    }
     try {
       final headers = <String, dynamic>{};
       if (apiToken != null && tokenHeaderName.isNotEmpty) {
-        headers[tokenHeaderName] =
-            tokenHeaderName == 'Authorization' ? 'Bearer $apiToken' : apiToken;
+        headers[tokenHeaderName] = tokenHeaderName == 'Authorization'
+            ? 'Bearer $apiToken'
+            : apiToken;
       }
       _logger.i('Fetching options from: $apiUrl with query: $query');
       final dio = Dio();
@@ -83,8 +104,11 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
       }
       return [];
     } catch (e, stack) {
-      _logger.e('FormFieldsAutocomplete fetch error',
-          error: e, stackTrace: stack);
+      _logger.e(
+        'FormFieldsAutocomplete fetch error',
+        error: e,
+        stackTrace: stack,
+      );
       return [];
     }
   }
@@ -155,17 +179,17 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             break;
           case BorderType.outlineInputBorder:
             border = OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: color));
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: color),
+            );
             break;
         }
 
-        final baseDecoration = (inputDecoration ??
-                InputDecoration(hintText: fieldLabel.toTitleCases))
-            .applyDefaults(Theme.of(context).inputDecorationTheme)
-            .copyWith(
-              border: border,
-            );
+        final baseDecoration =
+            (inputDecoration ??
+                    InputDecoration(hintText: fieldLabel.toTitleCases))
+                .applyDefaults(Theme.of(context).inputDecorationTheme)
+                .copyWith(border: border);
         InputDecoration effectiveDecoration;
         if (hideTrailingIcon) {
           effectiveDecoration = baseDecoration.copyWith(
@@ -199,8 +223,10 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 4.0),
-              child: Text(fieldLabel.toTitleCases,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                fieldLabel.toTitleCases,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
             field,
           ],
@@ -213,8 +239,10 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             field,
             Padding(
               padding: const EdgeInsets.only(top: 4.0),
-              child: Text(fieldLabel.toTitleCases,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                fieldLabel.toTitleCases,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
           ],
         );
@@ -225,8 +253,10 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
-              child: Text(fieldLabel.toTitleCases,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                fieldLabel.toTitleCases,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
             Expanded(child: field),
           ],
@@ -239,8 +269,10 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             Expanded(child: field),
             Padding(
               padding: const EdgeInsets.only(left: 8.0),
-              child: Text(fieldLabel.toTitleCases,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                fieldLabel.toTitleCases,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
           ],
         );
