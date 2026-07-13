@@ -316,3 +316,16 @@ playbackConfig: FormFieldsMapPlaybackConfig(
                       playbackFollowCamera: true,
                     ),
                     buat secara profesional
+
+Prompt lengkap (copy/paste, ganti placeholder):
+
+"Tolong refactor file [PATH_TO_FILE] agar lebih kecil dan reusable. Langkah yang diinginkan:
+1.Pisahkan widget utama ke file *_view.dart.
+2.Ekstrak state/logic/controller ke file *_controller.dart.
+3.Ekstrak helper/formatting/style ke *_utils.dart atau *_styles.dart.
+4.Buat index export di folder (mis. map.dart) agar import tetap singkat.
+5.Pertahankan public API (nama class/fungsi) agar kode yang memakai file ini tidak perlu diubah.
+6.Perbarui semua import di package dan jalankan analyzer, lalu perbaiki error kecil.
+7.Tambahkan komentar singkat di tiap file baru menjelaskan tanggung jawabnya.
+Target struktur folder output: lib/src/fields/<feature>/
+Berikan diff patch (apply_patch) atau file baru yang dibuat."
