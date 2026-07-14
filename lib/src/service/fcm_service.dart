@@ -294,22 +294,39 @@ class FCMService {
           final file = File(filePath);
           await file.writeAsBytes(bytes);
 
-          // Android: Big picture style
-          final bigPicture = FilePathAndroidBitmap(filePath);
+          // Determine whether sender requested only a small image.
+          final smallOnlyRaw = msg.data['small_image_only']?.toString();
+          final smallOnly = smallOnlyRaw == '1' || smallOnlyRaw == 'true';
+
+          // Android: create largeIcon; optionally use BigPicture style
           final largeIcon = FilePathAndroidBitmap(filePath);
-          final androidWithImage = AndroidNotificationDetails(
-            'form_fields_fcm_channel',
-            'FormFields FCM',
-            channelDescription: 'Notifications for FormFields package',
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            styleInformation: BigPictureStyleInformation(
-              bigPicture,
+          AndroidNotificationDetails androidWithImage;
+          if (smallOnly) {
+            androidWithImage = AndroidNotificationDetails(
+              'form_fields_fcm_channel',
+              'FormFields FCM',
+              channelDescription: 'Notifications for FormFields package',
+              importance: Importance.defaultImportance,
+              priority: Priority.defaultPriority,
               largeIcon: largeIcon,
-              contentTitle: msg.title ?? '',
-              summaryText: msg.body ?? '',
-            ),
-          );
+            );
+          } else {
+            final bigPicture = FilePathAndroidBitmap(filePath);
+            androidWithImage = AndroidNotificationDetails(
+              'form_fields_fcm_channel',
+              'FormFields FCM',
+              channelDescription: 'Notifications for FormFields package',
+              importance: Importance.defaultImportance,
+              priority: Priority.defaultPriority,
+              largeIcon: largeIcon,
+              styleInformation: BigPictureStyleInformation(
+                bigPicture,
+                largeIcon: largeIcon,
+                contentTitle: msg.title ?? '',
+                summaryText: msg.body ?? '',
+              ),
+            );
+          }
 
           // iOS: attachment
           final DarwinNotificationAttachment attachment =
