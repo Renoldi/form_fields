@@ -158,9 +158,7 @@ class AppStateNotifier extends ChangeNotifier {
   }
 
   /// Update app state after successful login with User class
-  void updateUserAfterLogin({
-    required User user,
-  }) {
+  void updateUserAfterLogin({required User user}) {
     _currentUser = user;
     _userError = null;
     _isLoggedIn = true;
@@ -174,6 +172,13 @@ class AppStateNotifier extends ChangeNotifier {
 
     // Save auth state to persistent storage
     _saveAuthState();
+
+    // Subscribe to topic(s) on successful login using user id.
+    try {
+      if (user.id != null) {
+        FCMService.instance.subscribeToTopic(user.id.toString());
+      }
+    } catch (_) {}
 
     notifyListeners();
   }
@@ -209,10 +214,7 @@ class AppStateNotifier extends ChangeNotifier {
 
     _setUserLoading(true);
     try {
-      final user = await User.login(
-        username: username,
-        password: password,
-      );
+      final user = await User.login(username: username, password: password);
       // Centralize state updates so tokens are saved and auth persisted
       updateUserAfterLogin(user: user);
       return true;
@@ -237,10 +239,7 @@ class AppStateNotifier extends ChangeNotifier {
     try {
       final user = accessToken.isNotEmpty
           ? await User.getMe(accessToken: accessToken)
-          : await User.login(
-              username: username,
-              password: password,
-            );
+          : await User.login(username: username, password: password);
       _currentUser = user;
       _userError = null;
 
@@ -276,6 +275,8 @@ class AppStateNotifier extends ChangeNotifier {
   }
 
   void logout() {
+    final int? loggedOutUserId = _currentUser?.id;
+
     _isLoggedIn = false;
     _currentUser = null;
     _userError = null;
@@ -287,6 +288,13 @@ class AppStateNotifier extends ChangeNotifier {
 
     // Clear auth state from persistent storage
     _clearAuthState();
+
+    // Unsubscribe from topics on logout using previous user id
+    try {
+      if (loggedOutUserId != null) {
+        FCMService.instance.unsubscribeFromTopic(loggedOutUserId.toString());
+      }
+    } catch (_) {}
 
     // Defer notifying listeners to avoid calling setState/markNeedsBuild
     // during the framework's build phase (which can happen when logout is

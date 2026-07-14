@@ -19,7 +19,6 @@ import 'package:form_fields/form_fields.dart';
 // register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // example-local service helpers (flush, handlers)
 

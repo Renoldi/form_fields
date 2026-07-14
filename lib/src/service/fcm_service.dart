@@ -244,8 +244,9 @@ class FCMService {
 
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
-      if (_messaging != null)
+      if (_messaging != null) {
         return await _messaging!.unsubscribeFromTopic(topic);
+      }
       await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
     } catch (_) {}
   }
