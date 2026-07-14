@@ -1834,7 +1834,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                       if (_onCenterMarkerEffective != null) {
                         try {
                           await animateTo(pred.latLng, zoom);
-                          await _onCenterMarkerEffective!(pred);
+                          // await _onCenterMarkerEffective!(pred);
                         } catch (_) {}
                       } else {
                         try {
