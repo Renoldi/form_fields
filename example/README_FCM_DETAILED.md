@@ -11,8 +11,7 @@ Ikuti setiap bagian secara berurutan dan pastikan Anda menjalankan build pada pe
 - Tempatkan file konfigurasi platform yang didownload dari Firebase Console:
   - Android: `google-services.json` → contoh path: [example/android/app/](example/android/app/)
   - iOS: `GoogleService-Info.plist` → contoh path: [example/ios/Runner/](example/ios/Runner/)
-- Daftarkan `fcmBackgroundHandler` (top-level function) sebelum `runApp()` menggunakan helper paket: `FCMService.registerBackgroundHandler(fcmBackgroundHandler);`
-- Panggil `await FCMService.instance.initialize(...)` setelah `Firebase.initializeApp()` dan sebelum `runApp()`.
+- Sertakan `fcmBackgroundHandler` (top-level function) ketika memanggil `await FCMService.instance.initialize(...)` sebelum `runApp()` menggunakan parameter `backgroundHandler:`; `FCMService.initialize()` akan memanggil `Firebase.initializeApp()` secara internal bila diperlukan.
 
 Referensi implementasi contoh startup: [example/lib/main.dart](example/lib/main.dart)
 
@@ -102,13 +101,14 @@ Contoh urutan (lihat [example/lib/main.dart](example/lib/main.dart)):
 ```dart
 WidgetsFlutterBinding.ensureInitialized();
 // app config (env, DB, logging)
-await Firebase.initializeApp();
+// `FCMService.instance.initialize()` akan memastikan Firebase terinisialisasi,
+// jadi tidak perlu memanggil `Firebase.initializeApp()` secara eksplisit.
 
-// Daftarkan top-level background handler (harus top-level fn)
-FCMService.registerBackgroundHandler(fcmBackgroundHandler);
-
+// Daftarkan top-level background handler dengan melewatkannya ke initialize
+// (harus top-level fn)
 // Inisialisasi helper FCM (foreground handlers, local notifications)
 await FCMService.instance.initialize(
+  backgroundHandler: fcmBackgroundHandler,
   options: const FCMOptions(showLocalNotification: true),
   onMessage: (msg) async { /* handle */ },
   onMessageOpenedApp: (msg) async { /* handle tap */ },

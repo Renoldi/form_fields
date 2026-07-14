@@ -201,9 +201,11 @@ Future<void> main() async {
 
   // Initialize FCM for the example app (non-fatal)
   try {
-    await Firebase.initializeApp();
-    FCMService.registerBackgroundHandler(fcmBackgroundHandler);
+    // `FCMService.initialize()` will call `Firebase.initializeApp()` as needed,
+    // so do not call it here to avoid duplicate initialization.
     await FCMService.instance.initialize(
+      backgroundHandler: fcmBackgroundHandler,
+
       options: const FCMOptions(showLocalNotification: true),
       onMessage: (msg) async {
         logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');

@@ -36,7 +36,7 @@ class FCMService {
   static final FCMService instance = FCMService._internal();
   factory FCMService() => instance;
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? _messaging;
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -54,18 +54,36 @@ class FCMService {
     FCMMessageHandler? onMessageOpenedApp,
     FutureOr<void> Function(String token)? onToken,
     FutureOr<void> Function(String token)? onTokenRefresh,
+    BackgroundMessageHandler? backgroundHandler,
   }) async {
-    // Ensure Firebase is initialized (safe to call multiple times).
+    // Register top-level background handler if provided. This centralizes
+    // background registration so consumers may pass their top-level handler
+    // into `initialize(...)` instead of calling a separate static API.
     try {
       await Firebase.initializeApp();
     } catch (_) {}
+
+    if (backgroundHandler != null) {
+      try {
+        FirebaseMessaging.onBackgroundMessage(backgroundHandler);
+      } catch (_) {}
+    }
+
+    // Initialize messaging instance after Firebase initialized.
+    try {
+      _messaging = FirebaseMessaging.instance;
+    } catch (_) {
+      _messaging = null;
+    }
 
     // Store handler so local notification taps can invoke it.
     _onMessageOpenedAppHandler = onMessageOpenedApp;
     await _initLocalNotifications();
 
     // Request permissions (iOS / macOS); Android returns granted by default.
-    await _messaging.requestPermission();
+    try {
+      await _messaging?.requestPermission();
+    } catch (_) {}
 
     // Foreground messages
     _onMessageSub = FirebaseMessaging.onMessage.listen((msg) async {
@@ -77,20 +95,22 @@ class FCMService {
     });
 
     // Tapped/opened messages
-    _onMessageOpenedAppSub =
-        FirebaseMessaging.onMessageOpenedApp.listen((msg) async {
+    _onMessageOpenedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((
+      msg,
+    ) async {
       final model = FCMMessage.fromRemoteMessage(msg);
       if (onMessageOpenedApp != null) await onMessageOpenedApp(model);
     });
 
     // Handle case where app was opened from a terminated state via a message.
     // Store the initial message so the app can consume it once UI is ready.
-    final initial = await _messaging.getInitialMessage();
+    final initial = await (_messaging?.getInitialMessage());
     if (initial != null) {
       _initialRemoteMessage = initial;
       try {
         debugPrint(
-            'FCMService: initial message received. title=${initial.notification?.title} data=${initial.data}');
+          'FCMService: initial message received. title=${initial.notification?.title} data=${initial.data}',
+        );
       } catch (_) {}
     }
 
@@ -107,8 +127,9 @@ class FCMService {
 
       // Register token refresh listener if caller provided handler
       if (onTokenRefresh != null) {
-        _onTokenRefreshSub =
-            FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        _onTokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((
+          newToken,
+        ) async {
           try {
             await onTokenRefresh(newToken);
           } catch (_) {}
@@ -127,36 +148,39 @@ class FCMService {
     final settings = InitializationSettings(android: android, iOS: ios);
 
     await _localNotificationsPlugin.initialize(
-        settings: settings,
-        onDidReceiveNotificationResponse: (response) async {
-          // When the user taps a local notification, log payload and try to
-          // invoke the `onMessageOpenedApp` handler (if any) with the parsed payload.
-          try {
-            final payload = response.payload;
-            debugPrint(
-                'FCMService: local notification tapped. payload=$payload');
-            if (payload != null && payload.isNotEmpty) {
-              final Map<String, dynamic> data = Map<String, dynamic>.from(
-                  jsonDecode(payload) as Map<String, dynamic>);
-              debugPrint('FCMService: parsed local notification data=$data');
-              final fcm = FCMMessage.fromData(data);
-              if (_onMessageOpenedAppHandler != null) {
-                try {
-                  await _onMessageOpenedAppHandler!(fcm);
-                  debugPrint('FCMService: invoked onMessageOpenedApp handler');
-                } catch (e, st) {
-                  debugPrint('FCMService: handler threw: $e\n$st');
-                }
-              } else {
-                debugPrint(
-                    'FCMService: no onMessageOpenedApp handler registered');
+      settings: settings,
+      onDidReceiveNotificationResponse: (response) async {
+        // When the user taps a local notification, log payload and try to
+        // invoke the `onMessageOpenedApp` handler (if any) with the parsed payload.
+        try {
+          final payload = response.payload;
+          debugPrint('FCMService: local notification tapped. payload=$payload');
+          if (payload != null && payload.isNotEmpty) {
+            final Map<String, dynamic> data = Map<String, dynamic>.from(
+              jsonDecode(payload) as Map<String, dynamic>,
+            );
+            debugPrint('FCMService: parsed local notification data=$data');
+            final fcm = FCMMessage.fromData(data);
+            if (_onMessageOpenedAppHandler != null) {
+              try {
+                await _onMessageOpenedAppHandler!(fcm);
+                debugPrint('FCMService: invoked onMessageOpenedApp handler');
+              } catch (e, st) {
+                debugPrint('FCMService: handler threw: $e\n$st');
               }
+            } else {
+              debugPrint(
+                'FCMService: no onMessageOpenedApp handler registered',
+              );
             }
-          } catch (e, st) {
-            debugPrint(
-                'FCMService: failed parsing notification payload: $e\n$st');
           }
-        });
+        } catch (e, st) {
+          debugPrint(
+            'FCMService: failed parsing notification payload: $e\n$st',
+          );
+        }
+      },
+    );
   }
 
   Future<void> _showLocalNotification(FCMMessage msg) async {
@@ -169,8 +193,10 @@ class FCMService {
       priority: Priority.defaultPriority,
     );
     final iosDetails = DarwinNotificationDetails();
-    final details =
-        NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     // Ensure payload contains something useful. If the remote message didn't
     // include a data payload, merge in the notification title/body so taps
@@ -193,15 +219,36 @@ class FCMService {
     );
   }
 
-  Future<String?> getToken() => _messaging.getToken();
+  Future<String?> getToken() async {
+    try {
+      if (_messaging != null) return await _messaging!.getToken();
+      return await FirebaseMessaging.instance.getToken();
+    } catch (_) {
+      return null;
+    }
+  }
 
-  Future<void> deleteToken() => _messaging.deleteToken();
+  Future<void> deleteToken() async {
+    try {
+      if (_messaging != null) return await _messaging!.deleteToken();
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (_) {}
+  }
 
-  Future<void> subscribeToTopic(String topic) =>
-      _messaging.subscribeToTopic(topic);
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      if (_messaging != null) return await _messaging!.subscribeToTopic(topic);
+      await FirebaseMessaging.instance.subscribeToTopic(topic);
+    } catch (_) {}
+  }
 
-  Future<void> unsubscribeFromTopic(String topic) =>
-      _messaging.unsubscribeFromTopic(topic);
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      if (_messaging != null)
+        return await _messaging!.unsubscribeFromTopic(topic);
+      await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
+    } catch (_) {}
+  }
 
   Future<void> dispose() async {
     await _onMessageSub?.cancel();
@@ -223,18 +270,13 @@ class FCMService {
     return FCMMessage.fromRemoteMessage(m);
   }
 
-  /// Register a top-level background message handler in one central place.
-  ///
-  /// Example (call from `main()` before `runApp()`):
-  /// `FCMService.registerBackgroundHandler(fcmBackgroundHandler);`
-  static void registerBackgroundHandler(BackgroundMessageHandler handler) {
-    FirebaseMessaging.onBackgroundMessage(handler);
-  }
+  // Background handler registration moved to `initialize(...)`.
 
   /// Register a token refresh listener centrally.
   /// Returns the created [StreamSubscription] so callers may cancel if desired.
   static StreamSubscription<String> registerOnTokenRefresh(
-      FutureOr<void> Function(String token) handler) {
+    FutureOr<void> Function(String token) handler,
+  ) {
     return FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
       try {
         await handler(token);
