@@ -4,7 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:form_fields/model/fcm_models.dart';
 
 /// Options to configure `FCMService` behavior on initialization.
@@ -141,9 +143,9 @@ class FCMService {
   Future<void> _initLocalNotifications() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     final ios = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
     );
     final settings = InitializationSettings(android: android, iOS: ios);
 
@@ -181,6 +183,57 @@ class FCMService {
         }
       },
     );
+    // Create Android notification channel for richer presentation
+    try {
+      final androidChannel = AndroidNotificationChannel(
+        'form_fields_fcm_channel',
+        'FormFields FCM',
+        description: 'Notifications for FormFields package',
+        importance: Importance.high,
+      );
+      await _localNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(androidChannel);
+    } catch (e) {
+      debugPrint('FCMService: failed creating Android channel: $e');
+    }
+
+    // Clean up old temporary files used for notification images
+    try {
+      await _cleanupOldTempFiles();
+    } catch (e) {
+      debugPrint('FCMService: cleanup temp files failed: $e');
+    }
+  }
+
+  Future<void> _cleanupOldTempFiles() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final dir = Directory(tempDir.path);
+      if (!await dir.exists()) return;
+      final now = DateTime.now();
+      await for (final f in dir.list()) {
+        try {
+          if (f is File) {
+            final name = f.uri.pathSegments.isNotEmpty
+                ? f.uri.pathSegments.last
+                : '';
+            if (name.startsWith('fcm_image_')) {
+              final stat = await f.stat();
+              if (now.difference(stat.modified) > const Duration(days: 1)) {
+                try {
+                  await f.delete();
+                } catch (_) {}
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('FCMService: _cleanupOldTempFiles error: $e');
+    }
   }
 
   Future<void> _showLocalNotification(FCMMessage msg) async {
@@ -192,11 +245,94 @@ class FCMService {
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     );
-    final iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    // Try to include an image if provided in payload (data.image|image_url|imageUrl).
+    String? imageUrl;
+    try {
+      imageUrl =
+          msg.data['image']?.toString() ??
+          msg.data['image_url']?.toString() ??
+          msg.data['imageUrl']?.toString();
+    } catch (_) {
+      imageUrl = null;
+    }
+
+    DarwinNotificationDetails iosDetails = const DarwinNotificationDetails();
+
+    NotificationDetails details;
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        // Download image to temporary directory
+        final uri = Uri.parse(imageUrl);
+        final filename = uri.pathSegments.isNotEmpty
+            ? uri.pathSegments.last
+            : 'fcm_image_$id';
+        final tempDir = await getTemporaryDirectory();
+        final filePath = '${tempDir.path}/$filename';
+
+        final httpClient = HttpClient();
+        final request = await httpClient.getUrl(uri);
+        // Provide a user-agent to avoid some servers blocking default clients
+        try {
+          request.headers.set(
+            'User-Agent',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
+          );
+        } catch (_) {}
+        final response = await request.close().timeout(
+          const Duration(seconds: 10),
+        );
+        if (response.statusCode == 200) {
+          try {
+            final contentType =
+                response.headers.contentType?.mimeType ?? 'unknown';
+            debugPrint(
+              'FCMService: downloaded image content-type=$contentType',
+            );
+          } catch (_) {}
+          final bytes = await consolidateHttpClientResponseBytes(response);
+          final file = File(filePath);
+          await file.writeAsBytes(bytes);
+
+          // Android: Big picture style
+          final bigPicture = FilePathAndroidBitmap(filePath);
+          final largeIcon = FilePathAndroidBitmap(filePath);
+          final androidWithImage = AndroidNotificationDetails(
+            'form_fields_fcm_channel',
+            'FormFields FCM',
+            channelDescription: 'Notifications for FormFields package',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            styleInformation: BigPictureStyleInformation(
+              bigPicture,
+              largeIcon: largeIcon,
+              contentTitle: msg.title ?? '',
+              summaryText: msg.body ?? '',
+            ),
+          );
+
+          // iOS: attachment
+          final DarwinNotificationAttachment attachment =
+              DarwinNotificationAttachment(filePath);
+          iosDetails = DarwinNotificationDetails(attachments: [attachment]);
+
+          details = NotificationDetails(
+            android: androidWithImage,
+            iOS: iosDetails,
+          );
+        } else {
+          details = NotificationDetails(
+            android: androidDetails,
+            iOS: iosDetails,
+          );
+        }
+      } catch (e) {
+        debugPrint('FCMService: failed to download image for notification: $e');
+        details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+      }
+    } else {
+      details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    }
 
     // Ensure payload contains something useful. If the remote message didn't
     // include a data payload, merge in the notification title/body so taps
