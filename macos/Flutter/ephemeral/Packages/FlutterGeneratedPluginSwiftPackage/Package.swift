@@ -20,7 +20,7 @@ let package = Package(
         .package(name: "file_picker", path: "../.packages/file_picker-11.0.2"),
         .package(name: "file_selector_macos", path: "../.packages/file_selector_macos-0.9.5"),
         .package(name: "firebase_core", path: "../.packages/firebase_core-4.12.0"),
-        .package(name: "firebase_messaging", path: "../.packages/firebase_messaging-16.4.2"),
+        .package(name: "firebase_messaging", path: "../.packages/firebase_messaging-16.4.1"),
         .package(name: "flutter_local_notifications", path: "../.packages/flutter_local_notifications-22.0.1"),
         .package(name: "geocoding_darwin", path: "../.packages/geocoding_darwin-1.0.2"),
         .package(name: "just_audio", path: "../.packages/just_audio-0.10.6"),

@@ -38,7 +38,7 @@ dependencies:
   latlong2: any
   geocoding: ^5.0.0
   firebase_core: ^4.12.0
-  firebase_messaging: 16.4.2
+  firebase_messaging: 16.4.1
   flutter_local_notifications: any
 
 dev_dependencies:
