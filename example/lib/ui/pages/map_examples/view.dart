@@ -206,7 +206,6 @@ class View extends PresenterState {
                   Expanded(
                     child: FormFieldsMap(
                       controller: vm.mapController,
-                      onRequestCurrentLocation: () async => vm.center,
                       features: vm.selectedFeature,
                       // Example: use OpenStreetMap tiles and show labels
                       // tileUrlTemplate:

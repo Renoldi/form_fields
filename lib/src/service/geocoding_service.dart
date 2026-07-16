@@ -1,4 +1,5 @@
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/shape_meta.dart';
 
@@ -118,5 +119,27 @@ class GeocodingService {
       p.country,
     ];
     return fields.where((s) => (s ?? '').trim().isNotEmpty).length;
+  }
+
+  /// Obtain the device's current geolocation as a minimal `PointMeta`.
+  /// Returns `null` if permissions are denied, location services disabled,
+  /// or any error occurs.
+  Future<PointMeta?> currentLocation() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return null;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      return PointMeta(lat: pos.latitude, lon: pos.longitude, address: '');
+    } catch (_) {
+      return null;
+    }
   }
 }

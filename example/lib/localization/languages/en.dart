@@ -275,6 +275,8 @@ const Map<String, String> enStrings = {
   'camera': 'Camera',
   'photos': 'Photos',
   'notification': 'Notification',
+  'locationAccessDisabled': 'Location access disabled',
+  'currentLocationNotAvailable': 'Current location not available',
 
   // Radio Button Communication Methods
   'communicationMethod': 'Communication Method',

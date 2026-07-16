@@ -24,14 +24,14 @@ class FormFieldsMapPlaybackConfig {
     this.playbackInterpolationSteps = 0,
     this.showBuiltinPlaybackControls = true,
     this.playbackPolylineColor,
-    this.playbackMarkerIcon,
-    this.playbackZoom = 18.0,
-    this.playbackFollowCamera = true,
-    this.playbackCurve = Curves.easeInOut,
-    this.playbackAutoStart = false,
     this.playbackHaloColor,
     this.playbackHaloScale = 1.6,
     this.playbackHaloOpacity = 0.95,
+    this.playbackMarkerIcon,
+    this.playbackFollowCamera = true,
+    this.playbackZoom = 17.0,
+    this.playbackCurve = Curves.easeInOut,
+    this.playbackAutoStart = false,
     this.onPointReached,
   });
 
@@ -39,63 +39,33 @@ class FormFieldsMapPlaybackConfig {
   final int playbackInterpolationSteps;
   final bool showBuiltinPlaybackControls;
   final Color? playbackPolylineColor;
-  final Object? playbackMarkerIcon; // Icon, Widget or ImageProvider
-  /// Preferred zoom level to use when starting/following playback.
-  /// This value is clamped to the widget's `minZoom`/`maxZoom` when applied.
-  final double playbackZoom;
-  final bool playbackFollowCamera;
-
-  /// Whether playback should automatically start when the first set of
-  /// raw markers for playback is appended. Defaults to `false`.
-  final bool playbackAutoStart;
-
-  /// The easing curve used when animating the camera for playback actions.
-  /// Defaults to [Curves.easeInOut].
-  final Curve playbackCurve;
-
-  /// Optional color used for the playback icon halo/border. If null, the
-  /// `playbackPolylineColor` (if set) will be used.
   final Color? playbackHaloColor;
-
-  /// Scale multiplier applied to the rasterized icon when drawing the halo.
-  /// Defaults to 1.6 (slightly larger than the icon).
   final double playbackHaloScale;
-
-  /// Opacity applied to the halo tint (0.0 - 1.0).
   final double playbackHaloOpacity;
-
-  /// Optional callback invoked when playback reaches a point during
-  /// polyline playback. Provides the `polylineId` (may be null), the
-  /// zero-based `index` into the interpolated playback points, and the
-  /// `LatLng` of the reached point. Consumers can use this to show
-  /// details (e.g. a bottom sheet) for the current playback location.
-  final void Function(String? polylineId, int index, LatLng point)?
+  final Object? playbackMarkerIcon;
+  final bool playbackFollowCamera;
+  final double playbackZoom;
+  final Curve playbackCurve;
+  final bool playbackAutoStart;
+  final Future<void> Function(String? polylineId, int index, LatLng point)?
   onPointReached;
 }
 
-/// Configuration bucket for general map options.
-///
-/// This mirrors the pattern used by `FormFieldsMapPlaybackConfig` so
-/// consumers can centralize map-related preferences instead of passing
-/// many loose parameters to `FormFieldsMap`.
+/// Lightweight map-specific configuration bucket used to surface a few
+/// canvas/map-related visual options without polluting the main widget
+/// constructor. This intentionally keeps types flexible to accept icons,
+/// image providers or widget-based markers for rasterization.
 class FormFieldsMapMapConfig {
   const FormFieldsMapMapConfig({
-    this.enableClustering = false,
+    this.enableClustering = true,
     this.canvasMarkerRadius = 20.0,
     this.canvasMarkerIcon,
     this.showTitle = true,
   });
 
-  /// Whether marker clustering should be enabled when rendering many markers.
   final bool enableClustering;
-
-  /// Radius used for canvas-rendered markers (in logical pixels).
   final double canvasMarkerRadius;
-
-  /// Optional provider/widget/icon used when rasterizing canvas markers.
   final Object? canvasMarkerIcon;
-
-  /// Whether marker titles should be displayed by the painter.
   final bool showTitle;
 }
 
@@ -126,7 +96,7 @@ class FormFieldsMapFindConfig {
 
   /// Whether a marker should be shown at the viewport center when performing
   /// find operations. Consumers can use this to indicate the target point
-  /// that will be returned by `onRequestCurrentLocation` or a search result.
+  /// that will be returned by a search result.
   final bool showMarkerInCenter;
 
   /// Optional widget drawn at the viewport center specifically for find
@@ -240,7 +210,6 @@ class FormFieldsMap extends StatefulWidget {
     this.onLongPress,
     this.onCameraIdle,
     this.cameraIdleDebounce = const Duration(milliseconds: 350),
-    this.onRequestCurrentLocation,
     this.maxRenderedRawMarkers = 10000,
     this.polygonBuilder,
     this.polylineBuilder,
@@ -278,8 +247,6 @@ class FormFieldsMap extends StatefulWidget {
   final ValueChanged<LatLng>? onLongPress;
   final VoidCallback? onCameraIdle;
   final Duration cameraIdleDebounce;
-
-  final Future<LatLng>? Function()? onRequestCurrentLocation;
 
   /// Interval between playback steps. Defaults to 1 second.
   // Playback configuration is centralized in `FormFieldsMapPlaybackConfig`.
@@ -332,6 +299,46 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
   late String _controllerId;
   bool _ownsController = false;
+
+  /// Center the map on the device's current location (uses internal
+  /// `GeocodingService.currentLocation()` which relies on `geolocator`).
+  Future<void> _centerMapOnCurrentLocation() async {
+    if (_centerActionInProgress) return;
+    setState(() {
+      _centerActionInProgress = true;
+    });
+    try {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final msgLocationDisabled = context.formTr('locationAccessDisabled');
+      final msgLocationNotAvailable = context.formTr(
+        'currentLocationNotAvailable',
+      );
+
+      if (!_findConfigEffective.allowGeolocation) {
+        messenger?.showSnackBar(SnackBar(content: Text(msgLocationDisabled)));
+        return;
+      }
+
+      final pm = await _geocodingService.currentLocation();
+      if (pm != null) {
+        final target = LatLng(pm.lat, pm.lon);
+        final currentZoom = _lastZoom ?? widget.initialZoom;
+        final zoom = (widget.playbackConfig != null)
+            ? _playbackTargetZoom
+            : currentZoom;
+        await animateTo(target, zoom);
+        return;
+      }
+
+      messenger?.showSnackBar(SnackBar(content: Text(msgLocationNotAvailable)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _centerActionInProgress = false;
+        });
+      }
+    }
+  }
 
   // Helpers to resolve playback configuration. Prefer explicit `features`
   // when provided; otherwise fallback to presence of `playbackConfig` for
@@ -969,26 +976,28 @@ class FormFieldsMapState extends State<FormFieldsMap>
     _debounceTimer = Timer(widget.cameraIdleDebounce, () {
       FormFieldsMapController.setLoading(_controllerId, false);
       // During playback, do not notify center changes to consumers.
-      widget.onCenterChanged?.call(_lastCenter!);
-      // Only notify center after camera becomes idle so consumers get the
-      // final/last center rather than a rapid stream of intermediate values.
-      try {
-        // Call the callbacks in a post-frame callback so user-provided
-        // handlers can safely call setState() without triggering the
-        // "setState() or markNeedsBuild() called during build" exception.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          try {
-            if (_lastCenter != null) widget.onCenterChanged?.call(_lastCenter!);
-          } catch (_) {}
-          try {
-            widget.onCameraIdle?.call();
-          } catch (_) {}
-        });
-        // The center-marker confirmation should only be triggered explicitly
-        // via the confirmation button (see the check `AppButton` below).
-        // Do not automatically invoke `onCenterMarker` when the camera
-        // becomes idle after panning/zooming.
-      } catch (_) {}
+      if (!_isPlaying) {
+        // Only notify center after camera becomes idle so consumers get the
+        // final/last center rather than a rapid stream of intermediate values.
+        try {
+          // Call the callbacks in a post-frame callback so user-provided
+          // handlers can safely call setState() without triggering the
+          // "setState() or markNeedsBuild() called during build" exception.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              if (_lastCenter != null)
+                widget.onCenterChanged?.call(_lastCenter!);
+            } catch (_) {}
+            try {
+              widget.onCameraIdle?.call();
+            } catch (_) {}
+          });
+          // The center-marker confirmation should only be triggered explicitly
+          // via the confirmation button (see the check `AppButton` below).
+          // Do not automatically invoke `onCenterMarker` when the camera
+          // becomes idle after panning/zooming.
+        } catch (_) {}
+      }
     });
   }
 
@@ -1966,119 +1975,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
                   icon: const Icon(Icons.my_location),
                   useSafeArea: false,
                   heroTag: null,
-                  onPressed: () async {
-                    if (_centerActionInProgress) return;
-                    setState(() {
-                      _centerActionInProgress = true;
-                    });
-                    try {
-                      final messenger = ScaffoldMessenger.maybeOf(context);
-                      LatLng? target;
-                      try {
-                        if (!_findConfigEffective.allowGeolocation) {
-                          messenger?.showSnackBar(
-                            const SnackBar(
-                              content: Text('Location access disabled'),
-                            ),
-                          );
-                        } else if (widget.onRequestCurrentLocation != null) {
-                          try {
-                            final Future<LatLng>? fut = widget
-                                .onRequestCurrentLocation!
-                                .call();
-                            if (fut != null) {
-                              try {
-                                target = await fut.timeout(
-                                  _findConfigEffective.findTimeout,
-                                );
-                              } on TimeoutException {
-                                target = null;
-                              } catch (_) {
-                                target = null;
-                              }
-                            }
-                          } catch (_) {
-                            target = null;
-                          }
-                        } else {
-                          // No callback provided yet — fall back to current map
-                          // center (if available) or the widget's initial center.
-                          target = _lastCenter ?? widget.initialCenter;
-                        }
-                      } catch (_) {
-                        target = null;
-                      }
-
-                      if (!mounted) return;
-                      if (target != null) {
-                        final currentZoom = _lastZoom ?? widget.initialZoom;
-                        // Prefer a playback-style zoom when a playback config is
-                        // present and the widget is configured to follow camera.
-                        final zoom = (widget.playbackConfig != null)
-                            ? _playbackTargetZoom
-                            : currentZoom;
-                        await animateTo(target, zoom);
-
-                        // After moving to the location, perform reverse-geocode
-                        // and notify consumer via `onCenterMarker` if provided.
-                        try {
-                          String address = '';
-                          PointMeta? pm;
-                          String? cbAddress;
-                          if (_reverseGeocodeEffective != null) {
-                            try {
-                              cbAddress = await _reverseGeocodeEffective!(
-                                target,
-                              );
-                            } catch (_) {
-                              cbAddress = null;
-                            }
-                          }
-
-                          if (cbAddress != null && cbAddress.isNotEmpty) {
-                            address = cbAddress;
-                            pm = PointMeta(
-                              lat: target.latitude,
-                              lon: target.longitude,
-                              address: address,
-                            );
-                          } else if (_findConfigEffective.allowGeolocation) {
-                            pm = await _geocodingService.reverseToPointMeta(
-                              target,
-                            );
-                            address = pm?.address ?? '';
-                          } else {
-                            // GeocodingService disabled by configuration; leave address empty
-                            address = '';
-                            pm = null;
-                          }
-
-                          if (_onCenterMarkerEffective != null) {
-                            await _onCenterMarkerEffective!(
-                              FormFieldsLocationPrediction(
-                                latLng: pm?.point ?? target,
-                                address: address,
-                              ),
-                            );
-                          }
-                        } catch (_) {}
-
-                        return;
-                      }
-
-                      messenger?.showSnackBar(
-                        const SnackBar(
-                          content: Text('Current location not available'),
-                        ),
-                      );
-                    } finally {
-                      if (mounted) {
-                        setState(() {
-                          _centerActionInProgress = false;
-                        });
-                      }
-                    }
-                  },
+                  onPressed: () => _centerMapOnCurrentLocation(),
                 ),
                 const SizedBox(height: 8),
                 if (_showMarkerInCenterEffective)

@@ -277,6 +277,8 @@ const Map<String, String> idStrings = {
   'camera': 'Kamera',
   'photos': 'Foto',
   'notification': 'Notifikasi',
+  'locationAccessDisabled': 'Akses lokasi dinonaktifkan',
+  'currentLocationNotAvailable': 'Lokasi saat ini tidak tersedia',
 
   // Radio Button Communication Methods
   'communicationMethod': 'Metode Komunikasi',

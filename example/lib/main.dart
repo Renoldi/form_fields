@@ -432,7 +432,6 @@ abstract class PresenterState extends State<MyApp> {
         defaultTargetPlatform != TargetPlatform.iOS) {
       return;
     }
-
     final config = BuildConfig.current;
     final permissions = <Permission>[];
 
@@ -537,11 +536,19 @@ class View extends PresenterState {
       // initial FCM message.
       () async {
         int tries = 0;
-        const int maxTries = 12; // ~12 frames ~= ~200ms on 60Hz
+        // Wait longer for the root navigator/context to become available.
+        // Initial app frames can be slower on some devices; allow up to
+        // ~2 seconds (125 * 16ms) before giving up.
+        const int maxTries = 125; // ~125 frames ~= ~2000ms on 60Hz
 
         while (true) {
           final agds = AppGlobalDialogService.instance;
-          if (agds.isConfigured) break;
+          // Consider configured either when the service has a context or
+          // when the root navigator's context becomes available.
+          if (agds.isConfigured ||
+              viewModel.rootNavigatorKey.currentContext != null) {
+            break;
+          }
           tries++;
           if (tries > maxTries) {
             logger.w(
