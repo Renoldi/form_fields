@@ -13,7 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 // Third-party packages
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:form_fields/fcm.dart';
+import 'package:form_fields_fcm/form_fields_fcm.dart';
 // Workmanager is initialized by `FormFieldsInitializer.initAll(...)` when
 // requested. The package will initialize the plugin and wire background
 // handlers for you when you pass `workmanagerHandler` to `initAll` or

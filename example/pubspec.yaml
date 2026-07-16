@@ -15,6 +15,8 @@ dependencies:
     sdk: flutter
   form_fields:
     path: ../
+  form_fields_fcm:
+    path: ../form_fields_fcm
   logger: any
   go_router: any
   shared_preferences: any
@@ -31,9 +33,8 @@ dependencies:
   geolocator: any
   flutter_map: any
   latlong2: any
-  firebase_core: any
-  firebase_messaging: any
-  flutter_local_notifications: any
+  # firebase_core, firebase_messaging and flutter_local_notifications
+  # are provided by the optional `form_fields_fcm` package.
 
 dev_dependencies:
   flutter_test:

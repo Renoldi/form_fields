@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'presenter.dart';
 import 'view_model.dart';
-import 'package:form_fields/fcm.dart';
+import 'package:form_fields_fcm/form_fields_fcm.dart';
 
 class View extends PresenterState {
   @override
