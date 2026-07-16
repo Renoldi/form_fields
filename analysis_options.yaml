@@ -6,3 +6,5 @@ analyzer:
     - "example/build/**"
     - "**/build/**"
     - "**/SourcePackages/**"
+    - ".dart_tool/**"
+    - "**/.dart_tool/**"
