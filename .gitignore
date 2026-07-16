@@ -18,10 +18,8 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be in version control.
 # Uncomment the next line if you want to include your VS Code settings repo.
-# .vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -74,3 +72,7 @@ coverage/
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 postman/googleusercontent.json
 postman/postman_collection.json
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
