@@ -127,7 +127,7 @@ class GeocodingService {
   ///
   /// Convenience static wrapper so callers can use
   /// `GeocodingService.getCurrentLocation()` without instantiating.
-  static Future<PointMeta?> getCurrentLocation() =>
+  Future<PointMeta?> getCurrentLocation() =>
       GeocodingService().currentLocation();
   Future<PointMeta?> currentLocation() async {
     try {
