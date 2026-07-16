@@ -7,7 +7,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/src/fields/map/canvas_raw_marker_painter.dart';
-import 'package:form_fields/src/service/geocoding_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
@@ -985,8 +984,9 @@ class FormFieldsMapState extends State<FormFieldsMap>
           // "setState() or markNeedsBuild() called during build" exception.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             try {
-              if (_lastCenter != null)
+              if (_lastCenter != null) {
                 widget.onCenterChanged?.call(_lastCenter!);
+              }
             } catch (_) {}
             try {
               widget.onCameraIdle?.call();

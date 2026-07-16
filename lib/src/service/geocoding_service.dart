@@ -124,6 +124,11 @@ class GeocodingService {
   /// Obtain the device's current geolocation as a minimal `PointMeta`.
   /// Returns `null` if permissions are denied, location services disabled,
   /// or any error occurs.
+  ///
+  /// Convenience static wrapper so callers can use
+  /// `GeocodingService.getCurrentLocation()` without instantiating.
+  static Future<PointMeta?> getCurrentLocation() =>
+      GeocodingService().currentLocation();
   Future<PointMeta?> currentLocation() async {
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
