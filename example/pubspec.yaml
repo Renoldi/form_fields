@@ -16,10 +16,10 @@ dependencies:
   form_fields:
     path: ../
   form_fields_fcm:
-    git:
-      url: https://github.com/Renoldi/form_fields.git
-      path: form_fields_fcm
-      ref: master
+    path: ../form_fields_fcm
+    # git:
+    #   url: https://github.com/Renoldi/form_fields.git
+    # ref: master
   logger: any
   go_router: any
   shared_preferences: any

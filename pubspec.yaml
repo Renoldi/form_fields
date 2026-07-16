@@ -40,11 +40,11 @@ dependencies:
   geocoding: ^5.0.0
   geolocator: any
   # Firebase deps moved to the optional `form_fields_fcm` package.
-  form_fields_fcm:
-    git:
-      url: https://github.com/Renoldi/form_fields.git
-      path: form_fields_fcm
-      ref: master
+  # form_fields_fcm:
+  #   git:
+  #     url: https://github.com/Renoldi/form_fields.git
+  #     path: form_fields_fcm
+  #     ref: master
 
 dev_dependencies:
   build_runner: any
