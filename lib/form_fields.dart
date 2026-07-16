@@ -135,6 +135,9 @@ export 'model/fcm_models.dart' show FCMMessage, FCMNotification;
 export 'src/service/flush_types.dart'
     show SubmitHandler, FlushAllHandler, FlushOneHandler;
 
+// Geocoding helper (device location & reverse geocoding)
+export 'src/service/geocoding_service.dart' show GeocodingService;
+
 export 'src/controllers/form_fields_controller.dart';
 export 'src/utilities/validators.dart';
 export 'src/utilities/extensions.dart';
