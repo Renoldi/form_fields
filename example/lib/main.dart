@@ -22,7 +22,7 @@ import 'package:form_fields/notifications.dart';
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 // example-local service helpers (flush, handlers)
 
@@ -42,10 +42,6 @@ final logger = Logger();
 Future<void> fcmBackgroundHandler(RemoteMessage msg) async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-  } catch (_) {}
-
-  try {
-    await Firebase.initializeApp();
   } catch (_) {}
 
   try {
