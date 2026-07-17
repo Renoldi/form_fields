@@ -1,0 +1,8 @@
+include: ../analysis_options.yaml
+
+# Example-specific analyzer exclusions (inherit root include above)
+# analyzer:
+#   exclude:
+#     - "build/**"
+#     - "**/SourcePackages/**"
+#     - ".dart_tool/**"
