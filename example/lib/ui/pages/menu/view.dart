@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields_example/localization/localizations.dart';
 import 'main.dart';
+import 'package:form_fields_example/config/app_routes.dart';
 
 class View extends PresenterState {
   @override
@@ -44,8 +46,10 @@ class View extends PresenterState {
                 ],
               ),
               body: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 32,
+                  horizontal: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -114,43 +118,99 @@ class View extends PresenterState {
                       child: ResponsiveMenuGrid(
                         allowScroll: true,
                         widgets: viewModel.menuItems
-                            .map((item) => Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Material(
-                                      color: item.color.withValues(alpha: 0.1),
-                                      shape: const CircleBorder(),
-                                      child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: () =>
-                                            handleMenuItemTap(item.routeName),
-                                        child: SizedBox(
-                                          width: 64,
-                                          height: 64,
-                                          child: Icon(
-                                            item.icon,
-                                            size: 36,
-                                            color: item.color,
+                            .map(
+                              (item) => Column(
+                                mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    alignment: Alignment.topRight,
+                                    children: [
+                                      Material(
+                                        color: item.color.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        shape: const CircleBorder(),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () =>
+                                              handleMenuItemTap(item.routeName),
+                                          child: SizedBox(
+                                            width: 64,
+                                            height: 64,
+                                            child: Icon(
+                                              item.icon,
+                                              size: 36,
+                                              color: item.color,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      // Show badge only for notification route
+                                      if (item.routeName ==
+                                          AppRoute.notification.name)
+                                        StreamBuilder<int>(
+                                          stream: NotificationRepository
+                                              .instance
+                                              .unreadCountStream,
+                                          initialData: 0,
+                                          builder: (context, snap) {
+                                            final count = snap.data ?? 0;
+                                            if (count <= 0) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            final text = count > 99
+                                                ? '99+'
+                                                : count.toString();
+                                            return Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 20,
+                                                      minHeight: 20,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    text,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Flexible(
+                                    child: Text(
+                                      item.title,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 6),
-                                    Flexible(
-                                      child: Text(
-                                        item.title,
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ))
+                                  ),
+                                ],
+                              ),
+                            )
                             .toList(),
                         itemSize: 100,
                         horizontalMargin: 8,

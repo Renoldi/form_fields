@@ -37,6 +37,8 @@ dependencies:
   latlong2: any
   # firebase_core, firebase_messaging and flutter_local_notifications
   # are provided by the optional `form_fields_fcm` package.
+  firebase_core: any
+  firebase_messaging: any
 
 dev_dependencies:
   flutter_test:

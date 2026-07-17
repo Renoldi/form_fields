@@ -44,5 +44,14 @@ CREATE TABLE IF NOT EXISTS asset (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT,
+  body TEXT,
+  data TEXT,
+  created_at INTEGER NOT NULL,
+  read INTEGER DEFAULT 0
+);
+
 COMMIT;
 

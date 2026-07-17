@@ -14,6 +14,12 @@ class AppGlobalDialogService {
 
   GlobalKey<NavigatorState>? _navigatorKey;
 
+  /// Expose the configured navigator key for advanced operations.
+  GlobalKey<NavigatorState>? get navigatorKey => _navigatorKey;
+
+  /// Returns the current NavigatorState if available.
+  NavigatorState? get navigator => _navigatorKey?.currentState;
+
   /// Returns true if the service is configured and context is available.
   bool get isConfigured => _navigatorKey?.currentContext != null;
 
@@ -47,6 +53,10 @@ class AppGlobalDialogService {
   }
 
   AppDialogService get _service => AppDialogService(_requireContext());
+
+  // Navigation helpers intentionally minimal: callers may access
+  // `navigatorKey`/`navigator` directly and perform navigation via
+  // `NavigatorState` to avoid capturing BuildContext across async gaps.
 
   // --- Dialog API Forwarders ---
 

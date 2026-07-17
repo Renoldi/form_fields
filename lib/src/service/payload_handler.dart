@@ -45,12 +45,17 @@ Future<dynamic> readPayloadJson(String filename) async {
 class FileBackedColumnHandler implements ColumnHandler {
   final String prefix;
   final bool overwriteOnDedupe;
-  FileBackedColumnHandler(
-      {required this.prefix, this.overwriteOnDedupe = true});
+  FileBackedColumnHandler({
+    required this.prefix,
+    this.overwriteOnDedupe = true,
+  });
 
   @override
   Future<void> onDelete(
-      String table, String column, Map<String, dynamic> row) async {
+    String table,
+    String column,
+    Map<String, dynamic> row,
+  ) async {
     final val = row[column];
     if (val is String && val.isNotEmpty) {
       try {
@@ -84,10 +89,27 @@ class FileBackedColumnHandler implements ColumnHandler {
           final dir = Directory(p.join(documents.path, payloadDirName));
           await dir.create(recursive: true);
           final filePath = p.join(dir.path, safeName);
-          final content = payload is String ? payload : json.encode(payload);
+          String content;
+          if (payload is String) {
+            final s = payload.trim();
+            if (s.startsWith('{') || s.startsWith('[')) {
+              try {
+                json.decode(s);
+                content = s;
+              } catch (_) {
+                content = json.encode(payload);
+              }
+            } else {
+              content = json.encode(payload);
+            }
+          } else {
+            content = json.encode(payload);
+          }
 
-          final tmpPath = p.join(dir.path,
-              '$safeName.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+          final tmpPath = p.join(
+            dir.path,
+            '$safeName.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}',
+          );
           final tmpFile = File(tmpPath);
           await tmpFile.writeAsString(content);
           final targetFile = File(filePath);
@@ -102,7 +124,8 @@ class FileBackedColumnHandler implements ColumnHandler {
               await tmpFile.delete();
             } catch (e2) {
               _phLog.warning(
-                  'Failed to atomically overwrite $filePath: $e / $e2');
+                'Failed to atomically overwrite $filePath: $e / $e2',
+              );
               rethrow;
             }
           }
@@ -127,7 +150,22 @@ class FileBackedColumnHandler implements ColumnHandler {
       final documents = await getApplicationDocumentsDirectory();
       final dir = Directory(p.join(documents.path, payloadDirName));
       await dir.create(recursive: true);
-      final content = value is String ? value : json.encode(value);
+      String content;
+      if (value is String) {
+        final s = value.trim();
+        if (s.startsWith('{') || s.startsWith('[')) {
+          try {
+            json.decode(s);
+            content = s;
+          } catch (_) {
+            content = json.encode(value);
+          }
+        } else {
+          content = json.encode(value);
+        }
+      } else {
+        content = json.encode(value);
+      }
 
       final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
       final safePrefix = prefix; // caller should manage prefix semantics
@@ -138,8 +176,10 @@ class FileBackedColumnHandler implements ColumnHandler {
       if (await file.exists()) {
         if (overwriteOnDedupe) {
           try {
-            final tmpPath2 = p.join(dir.path,
-                '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+            final tmpPath2 = p.join(
+              dir.path,
+              '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}',
+            );
             final tmpFile2 = File(tmpPath2);
             await tmpFile2.writeAsString(content);
             try {
@@ -151,7 +191,8 @@ class FileBackedColumnHandler implements ColumnHandler {
                 await tmpFile2.delete();
               } catch (e2) {
                 _phLog.warning(
-                    'Failed to overwrite existing $filePath: $e / $e2');
+                  'Failed to overwrite existing $filePath: $e / $e2',
+                );
                 rethrow;
               }
             }
@@ -166,8 +207,10 @@ class FileBackedColumnHandler implements ColumnHandler {
         return name;
       }
 
-      final tmpPath = p.join(dir.path,
-          '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
+      final tmpPath = p.join(
+        dir.path,
+        '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}',
+      );
       final tmpFile = File(tmpPath);
       await tmpFile.writeAsString(content);
       try {
@@ -188,7 +231,8 @@ class FileBackedColumnHandler implements ColumnHandler {
                 return name;
               } catch (e2) {
                 _phLog.warning(
-                    'Failed to write payload file $filePath: $e / $e2');
+                  'Failed to write payload file $filePath: $e / $e2',
+                );
                 rethrow;
               }
             }

@@ -14,6 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_fcm/form_fields_fcm.dart';
+import 'package:form_fields/notifications.dart';
 // Workmanager is initialized by `FormFieldsInitializer.initAll(...)` when
 // requested. The package will initialize the plugin and wire background
 // handlers for you when you pass `workmanagerHandler` to `initAll` or
@@ -21,13 +22,14 @@ import 'package:form_fields_fcm/form_fields_fcm.dart';
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 // example-local service helpers (flush, handlers)
 
 // Local configuration & state management
 import 'config/app_router.dart';
 import 'config/environment.dart';
 import 'config/app_routes.dart';
-import 'package:go_router/go_router.dart';
 import 'config/build_config.dart';
 import 'state/app_state_notifier.dart';
 import 'localization/localizations.dart' as loc;
@@ -35,6 +37,43 @@ import 'ui/pages/fcm_test/main.dart' as fcm_test;
 import 'ui/pages/notification/main.dart' as notification;
 
 final logger = Logger();
+
+@pragma('vm:entry-point')
+Future<void> fcmBackgroundHandler(RemoteMessage msg) async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+  } catch (_) {}
+
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
+
+  try {
+    await DBService.instance.init();
+  } catch (_) {}
+
+  try {
+    // Lightweight debug logging to help diagnose payload shapes in the
+    // background isolate. Keep concise to avoid noisy logs in production.
+    try {
+      final dynamic m = msg;
+      String? mid;
+      try {
+        mid = (msg.messageId as dynamic)?.toString();
+      } catch (_) {}
+      try {
+        mid ??= m is Map ? m['messageId']?.toString() : null;
+      } catch (_) {}
+      logger.i(
+        'fcmBackgroundHandler payload: messageId=$mid, data=${msg.data}, notification_title=${msg.notification?.title}, notification_body=${msg.notification?.body}',
+      );
+    } catch (_) {}
+
+    await NotificationRepository.instance.insertFromRemote(msg);
+  } catch (e, st) {
+    logger.w('fcmBackgroundHandler failed: $e\n$st');
+  }
+}
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -155,14 +194,9 @@ Future<void> main() async {
           register: true,
         ),
       ],
-      migrationAssetPaths: [
-        'migrations/migration.sql',
-        // 'migrations/migration_json_file.sql',
-        // 'migrations/v1.sql',
-        // 'migrations/v2.sql',
-        // 'migrations/v2_down.sql',
-      ],
-      dbVersion: 0,
+
+      migrationAssetPaths: ['migrations/migration.sql', 'migrations/v3.sql'],
+      dbVersion: 3,
       // Invoke each registration's handlers immediately at startup.
       // Explicitly show startup trigger and iOS deferral options.
       triggerWorkerHandlersOnStart: true,
@@ -173,16 +207,6 @@ Future<void> main() async {
     );
 
     // Register example flush handlers so `FlushApi` can invoke them.
-    // try {
-    //   FlushApi.register(
-    //       flushAll: flushPendingSubmissions,
-    //       flushOne: flushPendingSubmissionById);
-    // } catch (_) {}
-
-    // // Debug helper: schedule a one-off run immediately to verify dispatcher
-    // if (kDebugMode && !kIsWeb) {
-    //   try {
-    //     final err = await WorkmanagerService.instance
     //         .runOnceNowDetailed(taskName: 'dbg_now');
     //     logger.i('Debug: runOnceNowDetailed -> $err');
     //     // give a short delay for logs to populate
@@ -209,10 +233,135 @@ Future<void> main() async {
       options: const FCMOptions(showLocalNotification: true),
       onMessage: (msg) async {
         logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');
+        try {
+          try {
+            final dynamic m = msg;
+            String? mid;
+            try {
+              mid = (m.messageId as dynamic)?.toString();
+            } catch (_) {}
+            try {
+              mid ??= m is Map ? m['messageId']?.toString() : null;
+            } catch (_) {}
+            logger.i(
+              'FCM foreground detailed: messageId=$mid, data=${m.data}, notification_title=${m.notification?.title}, notification_body=${m.notification?.body}',
+            );
+          } catch (_) {}
+          await NotificationRepository.instance.insertFromRemote(msg);
+        } catch (_) {}
       },
       onMessageOpenedApp: (msg) async {
         logger.i('FCM opened app: ${msg.data}');
         try {
+          try {
+            final dynamic m = msg;
+            String? mid;
+            try {
+              mid = (m.messageId as dynamic)?.toString();
+            } catch (_) {}
+            try {
+              mid ??= m is Map ? m['messageId']?.toString() : null;
+            } catch (_) {}
+            logger.i(
+              'onMessageOpenedApp raw: messageId=$mid, data=${m.data}, notification_title=${m.notification?.title}, notification_body=${m.notification?.body}',
+            );
+          } catch (_) {}
+          await NotificationRepository.instance.insertFromRemote(msg);
+        } catch (_) {}
+        try {
+          // Prefer persisted DB payload when navigating after a tap.
+          Map<String, dynamic> navData = {};
+
+          try {
+            final dynamic m = msg;
+            String? mid;
+            try {
+              mid = m is Map ? m['messageId']?.toString() : null;
+            } catch (_) {}
+            try {
+              mid ??= (m.messageId as dynamic)?.toString();
+            } catch (_) {}
+            try {
+              mid ??= (m.data is Map ? m.data['messageId'] : null)?.toString();
+            } catch (_) {}
+
+            if (mid != null && mid.isNotEmpty) {
+              final stored = await NotificationRepository.instance
+                  .findByMessageId(mid);
+              if (stored != null) navData = stored.data ?? {};
+            }
+          } catch (_) {}
+
+          if (navData.isEmpty) {
+            try {
+              final dynamic m = msg;
+              final t = ((m.notification?.title ?? m.title ?? '') as String)
+                  .toString();
+              final b = ((m.notification?.body ?? m.body ?? '') as String)
+                  .toString();
+              if (t.isNotEmpty && b.isNotEmpty) {
+                final stored2 = await NotificationRepository.instance
+                    .findRecentByTitleBody(t, b, 60000);
+                if (stored2 != null) navData = stored2.data ?? {};
+              }
+            } catch (_) {}
+          }
+
+          if (navData.isEmpty) {
+            try {
+              final dynamic m = msg;
+              if (m.data is Map) {
+                navData = Map<String, dynamic>.from(m.data as Map);
+              }
+            } catch (_) {}
+          }
+
+          // If navData is still empty, synthesize a payload from available
+          // notification fields (title/body/image) so the detail page can
+          // render useful content even when the platform-provided data
+          // map is empty.
+          if (navData.isEmpty) {
+            try {
+              final dynamic m = msg;
+              final fallback = <String, dynamic>{};
+              try {
+                final t = (m.notification?.title ?? m.title ?? '').toString();
+                final b = (m.notification?.body ?? m.body ?? '').toString();
+                if (t.isNotEmpty) fallback['title'] = t;
+                if (b.isNotEmpty) fallback['body'] = b;
+              } catch (_) {}
+              try {
+                String? img;
+                try {
+                  img = (m.data is Map ? m.data['image'] : null)?.toString();
+                } catch (_) {}
+                try {
+                  img ??= (m.data is Map ? m.data['image_url'] : null)
+                      ?.toString();
+                } catch (_) {}
+                try {
+                  img ??= (m.fcmOptions?.image as dynamic)?.toString();
+                } catch (_) {}
+                try {
+                  img ??= m.notification?.android?.imageUrl?.toString();
+                } catch (_) {}
+                try {
+                  img ??= m.notification?.apple?.imageUrl?.toString();
+                } catch (_) {}
+                if (img != null && img.isNotEmpty) fallback['image'] = img;
+              } catch (_) {}
+
+              if (fallback.isNotEmpty) navData = fallback;
+            } catch (_) {}
+          }
+
+          // Attempt to resolve navData robustly (may retry DB reads).
+          try {
+            navData = await _resolveNavData(msg, navData);
+          } catch (_) {}
+          // Log navData for debugging when navigation happens.
+          logger.i('Computed navData for navigation: $navData');
+
           // Use the configured global dialog service; avoid using a
           // `BuildContext` across async gaps by not awaiting navigation
           // calls that require it. If the service isn't configured we
@@ -223,12 +372,18 @@ Future<void> main() async {
               'AppGlobalDialogService not configured; cannot navigate on notification click.',
             );
           } else {
-            final ctx = agds.context;
+            final navigator = agds.navigator;
+            if (navigator == null) {
+              logger.w(
+                'Navigator not available; cannot navigate on notification click.',
+              );
+              return;
+            }
 
             // If the notification payload contains a `route` field, try to
             // navigate using the named AppRoute. Fall back to pushing the
             // FCM test page if the route is not recognized.
-            final data = msg.data;
+            final data = navData;
             if (data.containsKey('route')) {
               final routeValue = (data['route'] ?? '').toString();
               try {
@@ -244,7 +399,16 @@ Future<void> main() async {
                     path: routeValue,
                     queryParameters: params.isEmpty ? null : params,
                   );
-                  ctx.go(uri.toString());
+                  try {
+                    navigator.pushNamed(uri.toString());
+                  } catch (_) {
+                    // fallback: push via MaterialPageRoute if named route not found
+                    navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) => const SizedBox.shrink(),
+                      ),
+                    );
+                  }
                   return;
                 }
 
@@ -260,14 +424,29 @@ Future<void> main() async {
                     (data['push'] ?? 'false').toString().toLowerCase() ==
                     'true';
                 if (usePush) {
-                  // Do not await here to avoid keeping a `BuildContext` across an async gap.
-                  ctx.pushRoute(match);
+                  try {
+                    navigator.pushNamed(match.name);
+                  } catch (_) {
+                    navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) => const SizedBox.shrink(),
+                      ),
+                    );
+                  }
                 } else {
-                  // If there are additional payload keys, pass them via `extra`.
-                  if (data.keys.length > 1) {
-                    ctx.goNamed(match.name, extra: data);
-                  } else {
-                    ctx.goToRoute(match);
+                  // If there are additional payload keys, pass them via `arguments`.
+                  try {
+                    if (data.keys.length > 1) {
+                      navigator.pushNamed(match.name, arguments: data);
+                    } else {
+                      navigator.pushNamed(match.name);
+                    }
+                  } catch (_) {
+                    navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) => const SizedBox.shrink(),
+                      ),
+                    );
                   }
                 }
                 return;
@@ -276,14 +455,63 @@ Future<void> main() async {
               }
             }
 
-            // Default: navigate to the notification page and pass payload
+            // Default: navigate to the notification page. Build a payload
+            // object that always includes a `data` map so the detail view's
+            // `prettyData()` can display useful JSON.
             try {
-              ctx.pushNamed(AppRoute.notification.name, extra: msg.data);
-            } catch (_) {
-              Navigator.of(ctx).push(
+              final payloadForNav = <String, dynamic>{};
+              try {
+                payloadForNav['title'] =
+                    (data['title'] ??
+                            data['notification_title'] ??
+                            data['title'])
+                        ?.toString() ??
+                    '';
+              } catch (_) {}
+              try {
+                payloadForNav['body'] =
+                    (data['body'] ?? data['notification_body'] ?? data['body'])
+                        ?.toString() ??
+                    '';
+              } catch (_) {}
+              try {
+                if (data.containsKey('id')) payloadForNav['id'] = data['id'];
+              } catch (_) {}
+              payloadForNav['data'] = data;
+
+              navigator.push(
                 MaterialPageRoute(
-                  builder: (_) => notification.Presenter(payload: msg.data),
-                  settings: RouteSettings(arguments: msg.data),
+                  builder: (_) =>
+                      notification.Presenter(payload: payloadForNav),
+                  settings: RouteSettings(arguments: payloadForNav),
+                ),
+              );
+            } catch (_) {
+              final payloadForNav = <String, dynamic>{};
+              try {
+                payloadForNav['title'] =
+                    (data['title'] ??
+                            data['notification_title'] ??
+                            data['title'])
+                        ?.toString() ??
+                    '';
+              } catch (_) {}
+              try {
+                payloadForNav['body'] =
+                    (data['body'] ?? data['notification_body'] ?? data['body'])
+                        ?.toString() ??
+                    '';
+              } catch (_) {}
+              try {
+                if (data.containsKey('id')) payloadForNav['id'] = data['id'];
+              } catch (_) {}
+              payloadForNav['data'] = data;
+
+              navigator.push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      notification.Presenter(payload: payloadForNav),
+                  settings: RouteSettings(arguments: payloadForNav),
                 ),
               );
             }
@@ -295,17 +523,25 @@ Future<void> main() async {
             logger.w('Notification payload (for debug): ${msg.data}');
 
             // Attempt a safe fallback navigation to the FCM test page
-            final fallbackCtx = AppGlobalDialogService.instance.context;
-            Navigator.of(fallbackCtx).push(
+            final fallbackNav = AppGlobalDialogService.instance.navigator;
+            if (fallbackNav == null) {
+              logger.w(
+                'Fallback navigator not available; cannot navigate to FCM Test.',
+              );
+              return;
+            }
+            fallbackNav.push(
               MaterialPageRoute(
                 builder: (_) => const fcm_test.Presenter(),
                 settings: RouteSettings(arguments: msg.data),
               ),
             );
             try {
-              ScaffoldMessenger.of(fallbackCtx).showSnackBar(
-                const SnackBar(content: Text('Opened FCM Test (fallback)')),
-              );
+              if (fallbackNav.mounted) {
+                ScaffoldMessenger.maybeOf(fallbackNav.context)?.showSnackBar(
+                  const SnackBar(content: Text('Opened FCM Test (fallback)')),
+                );
+              }
             } catch (_) {}
           } catch (e2, st2) {
             logger.w('Fallback navigation also failed: $e2\n$st2');
@@ -327,13 +563,185 @@ Future<void> main() async {
         } catch (_) {}
       },
     );
+    // Initial message handling is performed later in View.initState(), where
+    // navigation can safely wait for the root navigator and global dialog
+    // service to become available. Avoid consuming and navigating here to
+    // prevent early/incorrect navData during startup.
     // FCM token retrieval and refresh handling moved into FCMService.initialize().
   } catch (e, st) {
     logger.w('FCM initialization failed (example): $e\n$st');
   }
 
   // Start the app
+  // Register a lifecycle observer that refreshes notifications when the
+  // app resumes. This ensures the main isolate reloads DB rows inserted
+  // by background handlers and updates UI counts.
+  try {
+    WidgetsBinding.instance.addObserver(_appLifecycleObserver);
+  } catch (_) {}
+
   runApp(const MyApp());
+}
+
+// Lifecycle observer that refreshes the notification repository on resume.
+class _AppLifecycleObserver with WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    try {
+      if (state == AppLifecycleState.resumed) {
+        // Call `all()` which triggers an immediate stream emission.
+        NotificationRepository.instance.all();
+      }
+    } catch (_) {}
+  }
+}
+
+final _appLifecycleObserver = _AppLifecycleObserver();
+
+// Resolve navigation data robustly: prefer DB-stored payloads (by messageId
+// or recent title+body). If not immediately present, retry a few times to
+// allow background handlers to finish inserting, then synthesize a
+// fallback from notification fields (title/body/image) so the UI can
+// render useful content.
+Future<Map<String, dynamic>> _resolveNavData(
+  dynamic m,
+  Map<String, dynamic> navData,
+) async {
+  try {
+    if (navData.isNotEmpty) return navData;
+
+    String? mid;
+    try {
+      mid = m is Map ? m['messageId']?.toString() : null;
+    } catch (_) {}
+    try {
+      mid ??= (m.messageId as dynamic)?.toString();
+    } catch (_) {}
+    try {
+      mid ??= (m.data is Map ? m.data['messageId'] : null)?.toString();
+    } catch (_) {}
+
+    if (mid != null && mid.isNotEmpty) {
+      try {
+        final stored = await NotificationRepository.instance.findByMessageId(
+          mid,
+        );
+        if (stored != null && (stored.data?.isNotEmpty ?? false)) {
+          final out = <String, dynamic>{};
+          try {
+            out.addAll(Map<String, dynamic>.from(stored.data ?? {}));
+          } catch (_) {}
+          try {
+            out['id'] = stored.id;
+          } catch (_) {}
+          try {
+            if (!out.containsKey('title') && stored.title != null) {
+              out['title'] = stored.title;
+            }
+          } catch (_) {}
+          try {
+            if (!out.containsKey('body') && stored.body != null) {
+              out['body'] = stored.body;
+            }
+          } catch (_) {}
+          return out;
+        }
+      } catch (_) {}
+    }
+
+    String t = '';
+    String b = '';
+    try {
+      t = ((m.notification?.title ?? m.title ?? m.title) ?? '').toString();
+    } catch (_) {}
+    try {
+      b = ((m.notification?.body ?? m.body ?? m.body) ?? '').toString();
+    } catch (_) {}
+
+    if (t.isNotEmpty && b.isNotEmpty) {
+      try {
+        final stored2 = await NotificationRepository.instance
+            .findRecentByTitleBody(t, b, 60000);
+        if (stored2 != null && (stored2.data?.isNotEmpty ?? false)) {
+          final out = <String, dynamic>{};
+          try {
+            out.addAll(Map<String, dynamic>.from(stored2.data ?? {}));
+          } catch (_) {}
+          try {
+            out['id'] = stored2.id;
+          } catch (_) {}
+          try {
+            if (!out.containsKey('title') && stored2.title != null) {
+              out['title'] = stored2.title;
+            }
+          } catch (_) {}
+          try {
+            if (!out.containsKey('body') && stored2.body != null) {
+              out['body'] = stored2.body;
+            }
+          } catch (_) {}
+          return out;
+        }
+      } catch (_) {}
+    }
+
+    // Retry a few times to allow the background isolate to finish inserting.
+    final delays = [100, 300, 600];
+    for (final ms in delays) {
+      await Future.delayed(Duration(milliseconds: ms));
+      try {
+        if (mid != null && mid.isNotEmpty) {
+          final stored = await NotificationRepository.instance.findByMessageId(
+            mid,
+          );
+          if (stored != null && (stored.data?.isNotEmpty ?? false)) {
+            return stored.data ?? {};
+          }
+        }
+      } catch (_) {}
+      try {
+        if (t.isNotEmpty && b.isNotEmpty) {
+          final stored2 = await NotificationRepository.instance
+              .findRecentByTitleBody(t, b, 60000);
+          if (stored2 != null && (stored2.data?.isNotEmpty ?? false)) {
+            return stored2.data ?? {};
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Synthesize fallback from notification fields.
+    final fallback = <String, dynamic>{};
+    try {
+      if (t.isNotEmpty) fallback['title'] = t;
+    } catch (_) {}
+    try {
+      if (b.isNotEmpty) fallback['body'] = b;
+    } catch (_) {}
+    try {
+      String? img;
+      try {
+        img = (m.data is Map ? m.data['image'] : null)?.toString();
+      } catch (_) {}
+      try {
+        img ??= (m.data is Map ? m.data['image_url'] : null)?.toString();
+      } catch (_) {}
+      try {
+        img ??= (m.fcmOptions?.image as dynamic)?.toString();
+      } catch (_) {}
+      try {
+        img ??= m.notification?.android?.imageUrl?.toString();
+      } catch (_) {}
+      try {
+        img ??= m.notification?.apple?.imageUrl?.toString();
+      } catch (_) {}
+      if (img != null && img.isNotEmpty) fallback['image'] = img;
+    } catch (_) {}
+
+    return fallback;
+  } catch (_) {
+    return navData;
+  }
 }
 
 void _printStartupInfo() {
@@ -571,29 +979,35 @@ class View extends PresenterState {
             );
             final data = initial.data;
 
-            // Prefer using go_router so navigation integrates with router state.
-            try {
-              viewModel.routerConfig.goNamed(
-                AppRoute.notification.name,
-                extra: data,
+            // Navigate to the notification page directly to ensure the
+            // payload is passed into the presenter (router integration can
+            // sometimes transform/omit route arguments).
+            final navigator = viewModel.rootNavigatorKey.currentState;
+            if (navigator == null) {
+              logger.w(
+                'Root navigator not available; cannot navigate on initial notification.',
               );
               return;
-            } catch (_) {
-              // Fallback to direct navigator push if router fails.
-              final navigator = viewModel.rootNavigatorKey.currentState;
-              if (navigator == null) {
-                logger.w(
-                  'Root navigator not available; cannot navigate on initial notification.',
-                );
-                return;
-              }
-              navigator.push(
-                MaterialPageRoute(
-                  builder: (_) => notification.Presenter(payload: data),
-                  settings: RouteSettings(arguments: data),
-                ),
-              );
             }
+            final payloadForNav = <String, dynamic>{};
+            try {
+              payloadForNav['title'] =
+                  (data['title'] ?? initial.title ?? '')?.toString() ?? '';
+            } catch (_) {}
+            try {
+              payloadForNav['body'] =
+                  (data['body'] ?? initial.body ?? '')?.toString() ?? '';
+            } catch (_) {}
+            try {
+              if (data.containsKey('id')) payloadForNav['id'] = data['id'];
+            } catch (_) {}
+            payloadForNav['data'] = data;
+            navigator.push(
+              MaterialPageRoute(
+                builder: (_) => notification.Presenter(payload: payloadForNav),
+                settings: RouteSettings(arguments: payloadForNav),
+              ),
+            );
           } catch (e, st) {
             logger.w('Failed to handle initial FCM message: $e\n$st');
           }

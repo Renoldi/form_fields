@@ -29,9 +29,7 @@ class View extends PresenterState {
                   ],
                   ElevatedButton(
                     onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
                       final token = await FCMService.instance.getToken();
-                      if (!mounted) return;
                       if (!context.mounted) return;
                       await showDialog<void>(
                         context: context,
@@ -47,8 +45,10 @@ class View extends PresenterState {
                                     await Clipboard.setData(
                                       ClipboardData(text: t),
                                     );
-                                    if (mounted) {
-                                      messenger.showSnackBar(
+                                    if (dialogCtx.mounted) {
+                                      ScaffoldMessenger.maybeOf(
+                                        dialogCtx,
+                                      )?.showSnackBar(
                                         const SnackBar(
                                           content: Text('Token copied'),
                                         ),
@@ -80,12 +80,9 @@ class View extends PresenterState {
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () async {
-                      final ctx = context;
-                      final messenger = ScaffoldMessenger.of(ctx);
                       await FCMService.instance.subscribeToTopic('news');
-                      if (!mounted) return;
-                      if (!ctx.mounted) return;
-                      messenger.showSnackBar(
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                         const SnackBar(content: Text('Subscribed')),
                       );
                     },
