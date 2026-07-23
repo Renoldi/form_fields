@@ -813,51 +813,51 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     FormFieldsMyImageProvider provider,
   ) {
     final hasImage = provider.images.isNotEmpty;
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: widget.allow ? () => _pickImage(context, provider) : null,
-          child: Stack(
-            key: ValueKey(
-              provider.uploadProgress.isNotEmpty
-                  ? provider.uploadProgress[0]
-                  : 0.0,
-            ),
-            alignment: Alignment.center,
-            children: [
-              _buildImageDisplay(
-                context,
-                hasImage ? provider.images[0] : null,
-                0,
-                isSingle: true,
+    return SizedBox(
+      width: 100,
+      height: 100,
+      child: Stack(
+        children: [
+          GestureDetector(
+            onTap: widget.allow ? () => _pickImage(context, provider) : null,
+            child: Stack(
+              key: ValueKey(
+                provider.uploadProgress.isNotEmpty
+                    ? provider.uploadProgress[0]
+                    : 0.0,
               ),
-              if (hasImage && _shouldShowUploadOverlay(provider, 0))
-                Positioned.fill(
-                  child: _buildUploadOverlay(
-                    context,
-                    progress: provider.uploadProgress[0],
-                    cardWidth: 82,
-                  ),
+              alignment: Alignment.center,
+              children: [
+                _buildImageDisplay(
+                  context,
+                  hasImage ? provider.images[0] : null,
+                  0,
+                  isSingle: true,
                 ),
-            ],
+                if (hasImage && _shouldShowUploadOverlay(provider, 0))
+                  Positioned.fill(
+                    child: _buildUploadOverlay(
+                      context,
+                      progress: provider.uploadProgress[0],
+                      cardWidth: 82,
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-        if (hasImage)
-          Positioned(
-            top: 0,
-            right: 0,
-            child: _buildRemoveButton(context, 0, provider.images[0], () {
-              final removed = provider.images[0];
-              provider.removeImage(0);
-              _syncControllerImages(provider);
-              // widget.onImagesChanged?.call(
-              //   List<MyImageResult>.from(provider.images),
-              // );
-              widget.onRemoveImage?.call(0, removed);
-              // widget.onImageChanged?.call(MyImageResult());
-            }),
-          ),
-      ],
+          if (hasImage)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: _buildRemoveButton(context, 0, provider.images[0], () {
+                final removed = provider.images[0];
+                provider.removeImage(0);
+                _syncControllerImages(provider);
+                widget.onRemoveImage?.call(0, removed);
+              }),
+            ),
+        ],
+      ),
     );
   }
 
@@ -884,12 +884,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         return Container(
           width: tileSize,
           height: tileSize,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: active, width: 2),
-          ),
-          child: Center(child: Icon(Icons.image, size: 32, color: active)),
+          // decoration: BoxDecoration(
+          //   color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          //   borderRadius: BorderRadius.circular(8),
+          //   border: Border.all(color: active, width: 2),
+          // ),
+          // child: Center(child: Icon(Icons.image, size: 32, color: active)),
         );
       }
       if (!widget.isDirectUpload) {
