@@ -884,12 +884,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         return Container(
           width: tileSize,
           height: tileSize,
-          // decoration: BoxDecoration(
-          //   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          //   borderRadius: BorderRadius.circular(8),
-          //   border: Border.all(color: active, width: 2),
-          // ),
-          // child: Center(child: Icon(Icons.image, size: 32, color: active)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: active, width: 2),
+          ),
+          child: Center(child: Icon(Icons.image, size: 32, color: active)),
         );
       }
       if (!widget.isDirectUpload) {
