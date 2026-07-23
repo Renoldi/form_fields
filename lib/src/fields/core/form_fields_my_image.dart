@@ -710,6 +710,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         ? _provider.images
         : images;
 
+    if (kDebugMode) {
+      try {
+        debugPrint(
+          'FormFieldsMyImage._validateImages -> imagesParam=${images?.length ?? 0} provider=${_provider.images.length} isRequired=${widget.isRequired}',
+        );
+      } catch (_) {}
+    }
+
     if (widget.isRequired && (effectiveImages.isEmpty)) {
       final l = _localizations;
       if (l == null) return '';
@@ -828,7 +836,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   child: _buildUploadOverlay(
                     context,
                     progress: provider.uploadProgress[0],
-                    cardWidth: 98,
+                    cardWidth: 82,
                   ),
                 ),
             ],
@@ -859,20 +867,23 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     int index, {
     bool isSingle = false,
   }) {
+    final tileSize = 100.0;
     if (image == null) {
       if (widget.imageBuilder != null) {
         return SizedBox(
-          width: 120,
-          height: 120,
+          width: tileSize,
+          height: tileSize,
           child: widget.imageBuilder!(context, MyImageResult(), index),
         );
       }
       // Single-image default: show an add-tile (plus) placeholder.
       if (isSingle) {
+        // Use same default size as multi-image tiles so single-image mode
+        // without explicit sizing matches the multi-image appearance.
         final active = resolveActiveColor(context, null);
         return Container(
-          width: 120,
-          height: 120,
+          width: tileSize,
+          height: tileSize,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
@@ -884,8 +895,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       if (!widget.isDirectUpload) {
         final active = resolveActiveColor(context, null);
         return Container(
-          width: 120,
-          height: 120,
+          width: tileSize,
+          height: tileSize,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
@@ -896,8 +907,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       }
       final active = resolveActiveColor(context, null);
       return Container(
-        width: 120,
-        height: 120,
+        width: tileSize,
+        height: tileSize,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
@@ -908,8 +919,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     }
     if (widget.imageBuilder != null) {
       return SizedBox(
-        width: 120,
-        height: 120,
+        width: tileSize,
+        height: tileSize,
         child: widget.imageBuilder!(context, image, index),
       );
     }
@@ -952,11 +963,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       );
     }
 
+    // Use tileSize for displayed images so single-image mode matches
+    // the multi-image tile dimensions.
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
-        width: 120,
-        height: 120,
+        width: tileSize,
+        height: tileSize,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -1349,6 +1362,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
         // Pastikan controller sinkron sebelum callback.
         _syncControllerImages(provider);
+        // Ensure FormField re-validates and clears any previous errors
+        // immediately after a single-image is added.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          try {
+            _formFieldKey.currentState?.validate();
+          } catch (_) {}
+        });
         // Callback khusus single image
         if (!widget.isDirectUpload) {
           widget.onImagesChanged?.call(
