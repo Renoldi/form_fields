@@ -878,6 +878,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       }
       // Single-image default: show an add-tile (plus) placeholder.
       if (isSingle) {
+        // renoldi
         // Use same default size as multi-image tiles so single-image mode
         // without explicit sizing matches the multi-image appearance.
         final active = resolveActiveColor(context, null);
