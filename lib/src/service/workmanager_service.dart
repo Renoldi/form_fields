@@ -91,7 +91,8 @@ class WorkmanagerService {
             if (kDebugMode) {
               // ignore: avoid_print
               print(
-                  'acquireFlushGuard: clearing stale guard (age=${age.inMinutes}m)');
+                'acquireFlushGuard: clearing stale guard (age=${age.inMinutes}m)',
+              );
             }
             isFlushing = true; // re-acquire
             _flushGuardSetAt = DateTime.now();
@@ -123,7 +124,9 @@ class WorkmanagerService {
 
   /// Register a foreground handler for a specific task name.
   void setForegroundHandlerForTask(
-      String taskName, Future<void> Function()? handler) {
+    String taskName,
+    Future<void> Function()? handler,
+  ) {
     try {
       if (handler == null) {
         _perTaskForegroundHandlers.remove(taskName);
@@ -138,7 +141,9 @@ class WorkmanagerService {
   /// scheduling work for that task (so background isolates can resolve
   /// the correct entrypoint).
   void setBackgroundHandlerForTask(
-      String taskName, BackgroundTaskHandler? handler) {
+    String taskName,
+    BackgroundTaskHandler? handler,
+  ) {
     try {
       if (handler == null) {
         _perTaskBackgroundHandlers.remove(taskName);
@@ -187,7 +192,9 @@ class WorkmanagerService {
             await fg();
           } else {
             await runOnceNowDetailed(
-                taskName: name, inputData: data.isEmpty ? null : data);
+              taskName: name,
+              inputData: data.isEmpty ? null : data,
+            );
           }
         } catch (e) {
           try {
@@ -256,7 +263,9 @@ class WorkmanagerService {
           await fg();
         } else {
           await runOnceNowDetailed(
-              taskName: name, inputData: data.isEmpty ? null : data);
+            taskName: name,
+            inputData: data.isEmpty ? null : data,
+          );
         }
       } catch (e) {
         try {
@@ -356,9 +365,10 @@ class WorkmanagerService {
   }
 
   /// Initialize the workmanager plugin and optionally the connectivity listener.
-  Future<void> initialize(
-      {void Function()? callbackDispatcher,
-      bool useConnectivity = true}) async {
+  Future<void> initialize({
+    void Function()? callbackDispatcher,
+    bool useConnectivity = true,
+  }) async {
     if (_initialized) return;
     try {
       final cb = callbackDispatcher ?? workmanagerCallbackDispatcher;
@@ -374,8 +384,9 @@ class WorkmanagerService {
       // `initialize(..., useConnectivity: false)`.
       if (useConnectivity) {
         try {
-          _connectivitySub =
-              Connectivity().onConnectivityChanged.listen((_) async {
+          _connectivitySub = Connectivity().onConnectivityChanged.listen((
+            _,
+          ) async {
             try {
               final current = await Connectivity().checkConnectivity();
               final curStr = current.toString().toLowerCase();
@@ -441,7 +452,8 @@ class WorkmanagerService {
             if (kDebugMode) {
               // ignore: avoid_print
               print(
-                  'embedding callback_handle raw=${handle.toRawHandle()} into inputData');
+                'embedding callback_handle raw=${handle.toRawHandle()} into inputData',
+              );
             }
           }
         }
@@ -471,12 +483,14 @@ class WorkmanagerService {
           if (frequency != null && frequency < kAndroidMinPeriodic) {
             effectiveFreq = kAndroidMinPeriodic;
             _addLog(
-                'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}');
+              'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
+            );
             try {
               // also print to console to aid debugging via logcat
               // ignore: avoid_print
               print(
-                  'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}');
+                'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
+              );
             } catch (_) {}
           }
         } catch (_) {}
@@ -489,13 +503,15 @@ class WorkmanagerService {
               ?.add(_scheduledFrequencyPerTask[name] ?? Duration.zero)
               .toIso8601String();
           _addLog(
-              'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next');
+            'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next',
+          );
           try {
             // Print to console so it's visible in adb logcat (helpful when
             // the UI dialog isn't easily copyable).
             // ignore: avoid_print
             print(
-                'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next');
+              'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next',
+            );
           } catch (_) {}
         } catch (_) {}
         _startCountdownTimer();
@@ -510,8 +526,9 @@ class WorkmanagerService {
 
       _registeredTasks.add(name);
       registeredCountListenable.value = _registeredTasks.length;
-      statusListenable.value =
-          periodic ? 'registered_periodic' : 'registered_once';
+      statusListenable.value = periodic
+          ? 'registered_periodic'
+          : 'registered_once';
       _addLog('registered ${periodic ? 'periodic' : 'one-off'}: $name');
     } catch (e) {
       if (kDebugMode) {
@@ -626,7 +643,8 @@ class WorkmanagerService {
       _connectivitySub = null;
       foregroundFlushHandler = null;
       _addLog(
-          'stopped: connectivity listener cancelled and flush handler cleared');
+        'stopped: connectivity listener cancelled and flush handler cleared',
+      );
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -641,11 +659,13 @@ class WorkmanagerService {
       countdownListenable.value = null;
       try {
         _addLog(
-            'countdown: starting timer; registered=${_registeredTasks.length}');
+          'countdown: starting timer; registered=${_registeredTasks.length}',
+        );
         if (kDebugMode) {
           // ignore: avoid_print
           print(
-              'countdown: starting timer; registered=${_registeredTasks.length}');
+            'countdown: starting timer; registered=${_registeredTasks.length}',
+          );
         }
       } catch (_) {}
       if (_registeredTasks.isEmpty) return;
@@ -733,13 +753,15 @@ class WorkmanagerService {
             } catch (_) {}
             try {
               _addLog(
-                  'countdown-trigger: invoking handlers for ${toTrigger.join(',')}');
+                'countdown-trigger: invoking handlers for ${toTrigger.join(',')}',
+              );
             } catch (_) {}
             try {
               if (kDebugMode) {
                 // ignore: avoid_print
                 print(
-                    'countdown-trigger: invoking handlers for ${toTrigger.join(',')}');
+                  'countdown-trigger: invoking handlers for ${toTrigger.join(',')}',
+                );
               }
             } catch (_) {}
 
@@ -749,11 +771,13 @@ class WorkmanagerService {
                   final eff = _scheduledFrequencyPerTask[n];
                   final req = _scheduledRequestedFrequencyPerTask[n];
                   _addLog(
-                      'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}');
+                    'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
+                  );
                   if (kDebugMode) {
                     // ignore: avoid_print
                     print(
-                        'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}');
+                      'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
+                    );
                   }
                 } catch (_) {}
               }
@@ -836,7 +860,8 @@ class WorkmanagerService {
                             if ((def['name'] as String) == repTask &&
                                 def['inputData'] != null) {
                               inputData = Map<String, dynamic>.from(
-                                  def['inputData'] as Map<String, dynamic>);
+                                def['inputData'] as Map<String, dynamic>,
+                              );
                               break;
                             }
                           } catch (_) {}
@@ -886,7 +911,8 @@ class WorkmanagerService {
                             if ((def['name'] as String) == rep &&
                                 def['inputData'] != null) {
                               inputData = Map<String, dynamic>.from(
-                                  def['inputData'] as Map<String, dynamic>);
+                                def['inputData'] as Map<String, dynamic>,
+                              );
                               break;
                             }
                           } catch (_) {}
@@ -932,11 +958,13 @@ class WorkmanagerService {
 
               try {
                 _addLog(
-                    'countdown-triggered handlers result: ${success ? 'success' : 'failure'}');
+                  'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
+                );
                 if (kDebugMode) {
                   // ignore: avoid_print
                   print(
-                      'countdown-triggered handlers result: ${success ? 'success' : 'failure'}');
+                    'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
+                  );
                 }
               } catch (_) {}
 
@@ -953,14 +981,16 @@ class WorkmanagerService {
                     _scheduledAtPerTask[n] = now2;
                     try {
                       _addLog(
-                          'updated scheduledAt for $n -> ${now2.toIso8601String()} (effective freq)');
+                        'updated scheduledAt for $n -> ${now2.toIso8601String()} (effective freq)',
+                      );
                     } catch (_) {}
                   } else if (_providedWorkerDefinitions != null &&
                       _scheduledRequestedFrequencyPerTask[n] != null) {
                     _scheduledAtPerTask[n] = now2;
                     try {
                       _addLog(
-                          'updated scheduledAt for $n -> ${now2.toIso8601String()} (requested freq)');
+                        'updated scheduledAt for $n -> ${now2.toIso8601String()} (requested freq)',
+                      );
                     } catch (_) {}
                   }
                 }
@@ -1131,16 +1161,17 @@ class WorkmanagerService {
             }
             if (cb is BackgroundTaskHandler) {
               final res = await cb(task, inputData as Map<String, dynamic>?);
-              return Future.value(res);
+              return await Future.value(res);
             } else {
               if (kDebugMode) {
                 // ignore: avoid_print
                 print(
-                    'Callback resolved but is not BackgroundTaskHandler: $cb');
+                  'Callback resolved but is not BackgroundTaskHandler: $cb',
+                );
               }
               // If we could not resolve a usable callback, bail out with
               // `false` so Workmanager does not treat the task as succeeded.
-              return Future.value(false);
+              return await Future.value(false);
             }
           } catch (e) {
             if (kDebugMode) {
@@ -1155,16 +1186,17 @@ class WorkmanagerService {
             if (kDebugMode) {
               // ignore: avoid_print
               print(
-                  'Using static _backgroundHandler fallback: $_backgroundHandler');
+                'Using static _backgroundHandler fallback: $_backgroundHandler',
+              );
             }
             final res = await _backgroundHandler!(task, inputData);
-            return Future.value(res);
+            return await Future.value(res);
           } catch (e) {
             if (kDebugMode) {
               // ignore: avoid_print
               print('background handler threw: $e');
             }
-            return Future.value(false);
+            return await Future.value(false);
           }
         }
       } catch (_) {}
