@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.form_fields_example.debug"
-    compileSdk = 36
+    compileSdk = 37
     // Use highest required NDK version to satisfy plugins (backward compatible)
     ndkVersion = "28.2.13676358"
 
@@ -31,7 +31,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
         manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyB9ajaXlTbNq6KZcgXXLscc0fIAf8mWkoo"}
