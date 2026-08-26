@@ -45,9 +45,11 @@ extension StringExtensions on String? {
     if (this == null || this!.isEmpty) return this ?? '';
     return this!
         .split(' ')
-        .map((word) => word.isEmpty
-            ? word
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
         .join(' ');
   }
 
@@ -99,3 +101,22 @@ extension TimeOfDayExtensions on TimeOfDay? {
     return DateTime(date.year, date.month, date.day, this!.hour, this!.minute);
   }
 }
+
+DateTime? dateTimeUtcFromJson(String? s) {
+  if (s == null) {
+    return null;
+  } else {
+    try {
+      if (s.contains("Z")) {
+        return DateTime.parse(s).toLocal();
+      } else {
+        String utcString = "${s}Z";
+        return DateTime.parse(utcString).toLocal();
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+String? dateTimeUtcToJson(DateTime? dt) => dt?.toUtc().toIso8601String();
