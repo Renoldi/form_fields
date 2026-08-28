@@ -28,6 +28,7 @@ dependencies:
   cunning_document_scanner: any
   image_picker: any
   permission_handler: any
+  image: ^4.0.17
   signature: any
   mobile_scanner: any
   camera: any
