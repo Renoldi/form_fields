@@ -909,7 +909,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     final hasBase64 = image.base64.trim().isNotEmpty;
     Widget displayed;
     if (hasLocalPath) {
-      displayed = Image.file(File(image.path), fit: BoxFit.cover);
+      displayed = Image.file(
+        File(image.path),
+        fit: BoxFit.cover,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              const Center(child: CircularProgressIndicator()),
+            ],
+          );
+        },
+      );
     } else if (hasBase64) {
       try {
         var b64 = image.base64;
@@ -918,7 +931,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           if (comma >= 0) b64 = b64.substring(comma + 1);
         }
         final bytes = base64Decode(b64);
-        displayed = Image.memory(bytes, fit: BoxFit.cover);
+        displayed = Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded || frame != null) return child;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                child,
+                const Center(child: CircularProgressIndicator()),
+              ],
+            );
+          },
+        );
       } catch (_) {
         displayed = Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -929,7 +955,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         );
       }
     } else if (image.link.trim().isNotEmpty) {
-      displayed = Image.network(image.link, fit: BoxFit.cover);
+      displayed = Image.network(
+        image.link,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              const Center(child: CircularProgressIndicator()),
+            ],
+          );
+        },
+      );
     } else {
       displayed = Container(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
