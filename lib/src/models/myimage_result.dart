@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:image/image.dart' as img;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:form_fields/form_fields.dart';
 
@@ -28,33 +29,90 @@ class MyImageResult {
 
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
-      : link = url,
-        base64 = "",
-        path = "",
-        imageId = "",
-        description = "",
-        payload = const <String, dynamic>{},
-        status = MyImageStatus.idle;
+    : link = url,
+      base64 = "",
+      path = "",
+      imageId = "",
+      description = "",
+      payload = const <String, dynamic>{},
+      status = MyImageStatus.idle;
   @override
   String toString() {
-    final b64Preview =
-        (base64.length > 20) ? '${base64.substring(0, 20)}...' : base64;
+    final b64Preview = (base64.length > 20)
+        ? '${base64.substring(0, 20)}...'
+        : base64;
     return 'MyimageResult(path: $path, link: $link, base64: $b64Preview, imageId: $imageId, description: $description, status: $status)';
   }
 
-  static Future<MyImageResult> fromFile(File file,
-      {String? link, String? description}) async {
-    final bytes = await file.readAsBytes();
+  static Future<MyImageResult> fromFile(
+    File file, {
+    String? link,
+    String? description,
+    int? maxWidth,
+    int? maxHeight,
+    int quality = 85,
+  }) async {
+    final originalBytes = await file.readAsBytes();
+    List<int> bytes = originalBytes;
+    String mime = getMimeType(file.path);
+
+    try {
+      if (mime.startsWith('image/') && !mime.contains('svg')) {
+        final decoded = img.decodeImage(originalBytes);
+        if (decoded != null) {
+          img.Image processed = decoded;
+
+          if (maxWidth != null || maxHeight != null) {
+            final targetW =
+                maxWidth ??
+                ((decoded.width * (maxHeight! / decoded.height)).round());
+            final targetH =
+                maxHeight ??
+                ((decoded.height * (maxWidth! / decoded.width)).round());
+            if (targetW > 0 &&
+                targetH > 0 &&
+                (targetW != decoded.width || targetH != decoded.height)) {
+              processed = img.copyResize(
+                processed,
+                width: targetW,
+                height: targetH,
+                interpolation: img.Interpolation.average,
+              );
+            }
+          }
+
+          final ext = file.path.split('.').last.toLowerCase();
+          List<int> encoded;
+          if (ext == 'png') {
+            encoded = img.encodePng(processed);
+            mime = 'image/png';
+          } else if (ext == 'webp') {
+            // Some versions of the `image` package have varying WebP APIs.
+            // To keep behavior stable we re-encode WebP as JPEG with quality.
+            encoded = img.encodeJpg(processed, quality: quality);
+            mime = 'image/jpeg';
+          } else {
+            encoded = img.encodeJpg(processed, quality: quality);
+            mime = 'image/jpeg';
+          }
+
+          bytes = encoded;
+        }
+      }
+    } catch (_) {
+      // If compression fails, fall back to original bytes.
+      bytes = originalBytes;
+    }
+
     final base64Raw = base64Encode(bytes);
-    final mime = getMimeType(file.path);
     final base64Str = 'data:$mime;base64,$base64Raw';
     return MyImageResult(
-        link: link ?? "",
-        base64: base64Str,
-        path: file.path,
-        description: description ?? "",
-        // payload: const <String, dynamic>{},
-        status: MyImageStatus.idle);
+      link: link ?? "",
+      base64: base64Str,
+      path: file.path,
+      description: description ?? "",
+      status: MyImageStatus.idle,
+    );
   }
 
   factory MyImageResult.fromJson(Map<String, dynamic> json) =>
@@ -70,8 +128,10 @@ class MyImageResult {
   /// arbitrary dynamic payload. This preserves existing normalization logic
   /// while still allowing `json_serializable`-based (de)serialization via
   /// `fromJson`/`toJson`.
-  static MyImageResult fromServerResponse(dynamic json,
-      {MyImageStatus defaultStatus = MyImageStatus.uploaded}) {
+  static MyImageResult fromServerResponse(
+    dynamic json, {
+    MyImageStatus defaultStatus = MyImageStatus.uploaded,
+  }) {
     if (json == null) return MyImageResult();
 
     String link = '';
@@ -89,7 +149,7 @@ class MyImageResult {
       path = UploadResponseMapper.extractFilePath(json, keys: 'filePath') ?? '';
       description =
           UploadResponseMapper.extractDescription(json, keys: 'description') ??
-              '';
+          '';
     } else if (json is String) {
       link = json;
       payload = {'raw': json};
@@ -121,13 +181,14 @@ class MyImageResult {
     }
 
     return MyImageResult(
-        link: link,
-        base64: '',
-        path: path,
-        imageId: imageId,
-        description: description,
-        // payload: payload,
-        status: status);
+      link: link,
+      base64: '',
+      path: path,
+      imageId: imageId,
+      description: description,
+      // payload: payload,
+      status: status,
+    );
   }
 
   /// Returns the MIME type based on file extension.

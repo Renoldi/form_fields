@@ -8,3 +8,7 @@ analyzer:
     - "**/SourcePackages/**"
     - ".dart_tool/**"
     - "**/.dart_tool/**"
+    - android/**
+    - ios/**
+    - macos/**
+    - linux/**
