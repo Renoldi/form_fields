@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:form_fields/form_fields.dart';
@@ -36,6 +38,7 @@ class MyImageResult {
       description = "",
       payload = const <String, dynamic>{},
       status = MyImageStatus.idle;
+
   @override
   String toString() {
     final b64Preview = (base64.length > 20)
@@ -44,6 +47,8 @@ class MyImageResult {
     return 'MyimageResult(path: $path, link: $link, base64: $b64Preview, imageId: $imageId, description: $description, status: $status)';
   }
 
+  /// Read file, compress in a background isolate, and return a model with a
+  /// base64 data URI. Uses `compute` to avoid blocking the UI isolate.
   static Future<MyImageResult> fromFile(
     File file, {
     String? link,
@@ -58,49 +63,23 @@ class MyImageResult {
 
     try {
       if (mime.startsWith('image/') && !mime.contains('svg')) {
-        final decoded = img.decodeImage(originalBytes);
-        if (decoded != null) {
-          img.Image processed = decoded;
-
-          if (maxWidth != null || maxHeight != null) {
-            final targetW =
-                maxWidth ??
-                ((decoded.width * (maxHeight! / decoded.height)).round());
-            final targetH =
-                maxHeight ??
-                ((decoded.height * (maxWidth! / decoded.width)).round());
-            if (targetW > 0 &&
-                targetH > 0 &&
-                (targetW != decoded.width || targetH != decoded.height)) {
-              processed = img.copyResize(
-                processed,
-                width: targetW,
-                height: targetH,
-                interpolation: img.Interpolation.average,
-              );
-            }
-          }
-
-          final ext = file.path.split('.').last.toLowerCase();
-          List<int> encoded;
-          if (ext == 'png') {
-            encoded = img.encodePng(processed);
-            mime = 'image/png';
-          } else if (ext == 'webp') {
-            // Some versions of the `image` package have varying WebP APIs.
-            // To keep behavior stable we re-encode WebP as JPEG with quality.
-            encoded = img.encodeJpg(processed, quality: quality);
-            mime = 'image/jpeg';
-          } else {
-            encoded = img.encodeJpg(processed, quality: quality);
-            mime = 'image/jpeg';
-          }
-
-          bytes = encoded;
-        }
+        final Map<String, dynamic> result =
+            await compute<Map<String, dynamic>, Map<String, dynamic>>(
+              _compressImageIsolate,
+              {
+                'bytes': originalBytes,
+                'path': file.path,
+                'maxWidth': maxWidth,
+                'maxHeight': maxHeight,
+                'quality': quality,
+              },
+            );
+        final rbytes = result['bytes'] as List<int>?;
+        final rmime = result['mime'] as String?;
+        if (rbytes != null) bytes = rbytes;
+        if (rmime != null) mime = rmime;
       }
     } catch (_) {
-      // If compression fails, fall back to original bytes.
       bytes = originalBytes;
     }
 
@@ -121,13 +100,6 @@ class MyImageResult {
   Map<String, dynamic> toJson() => _$MyImageResultToJson(this);
 
   /// Construct a [MyImageResult] from a server response shape.
-  /// Accepts a Map or a raw String (URL) and attempts to normalize common
-  /// keys into the model. If the payload contains a `status` string it will
-  /// be mapped to [MyImageStatus].
-  /// Legacy helper to build a `MyImageResult` from a server response or
-  /// arbitrary dynamic payload. This preserves existing normalization logic
-  /// while still allowing `json_serializable`-based (de)serialization via
-  /// `fromJson`/`toJson`.
   static MyImageResult fromServerResponse(
     dynamic json, {
     MyImageStatus defaultStatus = MyImageStatus.uploaded,
@@ -186,7 +158,6 @@ class MyImageResult {
       path: path,
       imageId: imageId,
       description: description,
-      // payload: payload,
       status: status,
     );
   }
@@ -220,6 +191,55 @@ class MyImageResult {
         return 'application/octet-stream';
     }
   }
+}
+
+/// Background compression worker run inside `compute`.
+Map<String, dynamic> _compressImageIsolate(Map<String, dynamic> args) {
+  final List<int> originalBytes = List<int>.from(args['bytes'] as List);
+  final String path = args['path'] as String;
+  final int? maxWidth = args['maxWidth'] as int?;
+  final int? maxHeight = args['maxHeight'] as int?;
+  final int quality = args['quality'] as int? ?? 85;
+  String mime = MyImageResult.getMimeType(path);
+
+  try {
+    if (mime.startsWith('image/') && !mime.contains('svg')) {
+      final decoded = img.decodeImage(Uint8List.fromList(originalBytes));
+      if (decoded != null) {
+        img.Image processed = decoded;
+        if (maxWidth != null || maxHeight != null) {
+          final targetW =
+              maxWidth ??
+              ((decoded.width * (maxHeight! / decoded.height)).round());
+          final targetH =
+              maxHeight ??
+              ((decoded.height * (maxWidth! / decoded.width)).round());
+          if (targetW > 0 &&
+              targetH > 0 &&
+              (targetW != decoded.width || targetH != decoded.height)) {
+            processed = img.copyResize(
+              processed,
+              width: targetW,
+              height: targetH,
+              interpolation: img.Interpolation.average,
+            );
+          }
+        }
+
+        final ext = path.split('.').last.toLowerCase();
+        List<int> encoded;
+        if (ext == 'png') {
+          encoded = img.encodePng(processed);
+          mime = 'image/png';
+        } else {
+          encoded = img.encodeJpg(processed, quality: quality);
+          mime = 'image/jpeg';
+        }
+        return {'bytes': encoded, 'mime': mime};
+      }
+    }
+  } catch (_) {}
+  return {'bytes': originalBytes, 'mime': mime};
 }
 
 MyImageStatus _statusFromJson(String? value) {
