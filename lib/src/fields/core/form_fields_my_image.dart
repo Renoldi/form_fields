@@ -1363,35 +1363,35 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         } catch (_) {}
       }
 
-      MyImageResult result = await MyImageResult.fromFile(
-        file!,
-        description: pickedDescription,
+      // Add a quick placeholder so UI shows an immediate tile/loading state
+      final placeholder = MyImageResult(
+        link: '',
+        base64: '',
+        path: file!.path,
+        description: pickedDescription ?? '',
+        status: MyImageStatus.uploading,
       );
-      if (!mounted) return;
       if (widget.maxImages == 1) {
         bool isNew =
-            provider.images.isEmpty || provider.images[0].path != result.path;
+            provider.images.isEmpty ||
+            provider.images[0].path != placeholder.path;
         provider.clearImages();
-        provider.addImage(result);
+        provider.addImage(placeholder);
         uploadIdx = 0;
         if (isNew) {
           provider.setUploadProgress(0, 0.0);
         }
-        // Pastikan controller sinkron sebelum callback.
         _syncControllerImages(provider);
-        // Callback khusus single image
         if (!widget.isDirectUpload) {
           widget.onImagesChanged?.call(
             List<MyImageResult>.from(provider.images),
           );
         }
-        // Untuk direct upload, callback final (dengan link/imageId) akan
-        // dipanggil setelah upload sukses di _uploadImageDio.
         if (!widget.isDirectUpload) {
-          widget.onImageChanged?.call(result);
+          widget.onImageChanged?.call(placeholder);
         }
       } else if (widget.maxImages == null) {
-        provider.addImage(result);
+        provider.addImage(placeholder);
         uploadIdx = provider.images.length - 1;
         if (provider.uploadProgress.length < provider.images.length) {
           provider.setUploadProgress(provider.images.length - 1, 0.0);
@@ -1404,7 +1404,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
       } else {
         if (provider.images.length < widget.maxImages!) {
-          provider.addImage(result);
+          provider.addImage(placeholder);
           uploadIdx = provider.images.length - 1;
           if (provider.uploadProgress.length < provider.images.length) {
             provider.setUploadProgress(provider.images.length - 1, 0.0);
@@ -1417,6 +1417,30 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           }
         }
       }
+
+      // Start compression in background (doesn't block UI thanks to compute)
+      final result = await MyImageResult.fromFile(
+        file!,
+        description: pickedDescription,
+      );
+      if (!mounted) return;
+      // Replace placeholder with real result
+      if (uploadIdx != null &&
+          uploadIdx >= 0 &&
+          uploadIdx < provider.images.length) {
+        provider.updateImage(uploadIdx, result);
+        _syncControllerImages(provider);
+        if (!widget.isDirectUpload) {
+          if (widget.maxImages == 1) {
+            widget.onImageChanged?.call(result);
+          } else {
+            widget.onImagesChanged?.call(
+              List<MyImageResult>.from(provider.images),
+            );
+          }
+        }
+      }
+
       if (widget.isDirectUpload && uploadIdx != null) {
         _uploadingIndex = uploadIdx;
         provider.commit();
