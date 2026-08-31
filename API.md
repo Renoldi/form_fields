@@ -1664,17 +1664,27 @@ Immutable data class representing a captured, picked, or uploaded image.
 ### Factory
 
 ```dart
-static Future<MyimageResult> fromFile(File file, {String? link})
+static Future<MyImageResult> fromFile(
+  File file, {
+  String? link,
+  String? description,
+  int? maxWidth,
+  int? maxHeight,
+  int quality = 80,
+})
 ```
 
-Reads bytes, encodes to base64, and auto-detects MIME type from extension.
+Reads bytes, optionally compresses/resizes (controlled by `maxWidth`, `maxHeight`, and `quality`), encodes to base64, and auto-detects MIME type from extension.
 
 **Supported MIME types:** `image/jpeg`, `image/png`, `image/gif`, `image/bmp`, `image/webp`, `image/svg+xml`, `image/heic`, `video/mp4`, `video/quicktime`, `application/pdf`, `application/octet-stream` (fallback).
 
 ### Usage Example
 
 ```dart
-final result = await MyimageResult.fromFile(File('/tmp/photo.png'));
+final result = await MyImageResult.fromFile(
+  File('/tmp/photo.png'),
+  quality: 80,
+);
 print(result.path);   // /tmp/photo.png
 print(result.base64); // data:image/png;base64,...
 print(result.link);   // '' (until uploaded)
