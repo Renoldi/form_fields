@@ -125,6 +125,9 @@ class FormFieldsMyImage extends StatefulWidget {
   final bool showDesc;
   final String? descriptionField;
 
+  /// Image compression quality passed to `MyImageResult.fromFile` (1-100).
+  final int quality;
+
   /// Callback invoked when a direct upload is queued/failed due to lack of
   /// network. Receives the current images list (including any attached
   /// payloads) so the caller can persist or retry uploads later.
@@ -202,6 +205,7 @@ class FormFieldsMyImage extends StatefulWidget {
     this.showUploadResultDialog = false,
     this.showDesc = false,
     this.descriptionField,
+    this.quality = 80,
     this.isRequired = false,
     this.validator,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
@@ -1424,6 +1428,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       final result = await MyImageResult.fromFile(
         file!,
         description: pickedDescription,
+        quality: widget.quality,
       );
       if (!mounted) return;
       // Replace placeholder with real result

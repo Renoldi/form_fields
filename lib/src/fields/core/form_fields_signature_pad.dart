@@ -118,6 +118,8 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// Custom wrapper for only the camera section.
   /// Receives the live-preview widget; return a decorated version.
   /// Ignored when [layoutBuilder] is provided.
+  /// Image compression quality passed to `MyImageResult.fromFile` (1-100).
+  final int quality;
   final Widget Function(BuildContext context, Widget camera)? liveCameraBuilder;
 
   // ── Upload ─────────────────────────────────────────────────────────────────
@@ -284,6 +286,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.externalErrorText,
     this.descriptionField,
+    this.quality = 80,
   }) : assert(
          isDirectUpload == false || (uploadUrl != null && uploadUrl.isNotEmpty),
          "For direct upload, uploadUrl must be provided and non-empty.",
@@ -664,7 +667,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       }
       try {
         final xfile = await ctrl.takePicture();
-        final result = await MyImageResult.fromFile(File(xfile.path));
+        final result = await MyImageResult.fromFile(
+          File(xfile.path),
+          quality: widget.quality,
+        );
         _cameraController.images = [result];
         widget.onLiveCaptured?.call(result);
       } catch (_) {
@@ -714,7 +720,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       '${tempDir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png',
     ).create();
     await file.writeAsBytes(data);
-    final signatureResult = await MyImageResult.fromFile(file);
+    final signatureResult = await MyImageResult.fromFile(
+      file,
+      quality: widget.quality,
+    );
     // Prefer any captured image from the camera controller (covers silent
     // background captures) — do not require `showLiveCamera` to be true.
     final liveCapture = _cameraController.images.isNotEmpty

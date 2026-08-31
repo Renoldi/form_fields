@@ -113,6 +113,9 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
 
   final String? descriptionField;
 
+  /// Image compression quality passed to `MyImageResult.fromFile` (1-100).
+  final int quality;
+
   FormFieldsLiveCameraCapture({
     super.key,
     this.height = 100,
@@ -139,6 +142,7 @@ class FormFieldsLiveCameraCapture extends StatefulWidget {
     this.hidePreview = false,
     this.preAcquire = false,
     this.descriptionField,
+    this.quality = 80,
   }) : assert(
          isDirectUpload == false || (uploadUrl != null && uploadUrl.isNotEmpty),
          'For direct upload, uploadUrl must be provided and non-empty.',
@@ -279,7 +283,10 @@ class FormFieldsLiveCameraCaptureState
       if (widget.hidePreview) {
         // Silent mode: use CameraController.takePicture() — no widget needed.
         final xfile = await _cam.controller!.takePicture();
-        result = await MyImageResult.fromFile(File(xfile.path));
+        result = await MyImageResult.fromFile(
+          File(xfile.path),
+          quality: widget.quality,
+        );
       } else {
         await Future<void>.delayed(const Duration(milliseconds: 80));
         final boundary =
@@ -297,7 +304,7 @@ class FormFieldsLiveCameraCaptureState
           '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
         ).create();
         await file.writeAsBytes(bytes);
-        result = await MyImageResult.fromFile(file);
+        result = await MyImageResult.fromFile(file, quality: widget.quality);
       }
 
       if (widget.isDirectUpload && mounted) {

@@ -54,7 +54,7 @@ class MyImageResult {
     String? description,
     int? maxWidth,
     int? maxHeight,
-    int quality = 85,
+    int quality = 80,
   }) async {
     final originalBytes = await file.readAsBytes();
     List<int> bytes = originalBytes;
