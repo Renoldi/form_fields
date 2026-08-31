@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:form_fields/form_fields.dart';
