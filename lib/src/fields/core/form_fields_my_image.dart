@@ -1369,7 +1369,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         base64: '',
         path: file!.path,
         description: pickedDescription ?? '',
-        status: MyImageStatus.uploading,
+        status: widget.isDirectUpload
+            ? MyImageStatus.uploading
+            : MyImageStatus.idle,
       );
       if (widget.maxImages == 1) {
         bool isNew =
