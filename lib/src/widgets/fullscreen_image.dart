@@ -30,13 +30,19 @@ class FullscreenImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ImageProvider provider = NetworkImage(imageUrl);
     return Material(
       color: Colors.transparent,
       elevation: elevation,
       borderRadius: borderRadius,
       child: InkWell(
         borderRadius: borderRadius,
-        onTap: () {
+        onTap: () async {
+          try {
+            await precacheImage(provider, context);
+          } catch (_) {
+            // ignore precache errors and still navigate
+          }
           Navigator.of(context).push(
             MaterialPageRoute(
               fullscreenDialog: true,
@@ -44,6 +50,7 @@ class FullscreenImage extends StatelessWidget {
                 imageUrl: imageUrl,
                 heroTag: heroTag,
                 semanticLabel: semanticLabel,
+                imageProvider: provider,
               ),
             ),
           );
@@ -55,8 +62,8 @@ class FullscreenImage extends StatelessWidget {
             child: SizedBox(
               width: width,
               height: height,
-              child: Image.network(
-                imageUrl,
+              child: Image(
+                image: provider,
                 gaplessPlayback: true,
                 fit: fit,
                 loadingBuilder: (context, child, loadingProgress) {
@@ -104,6 +111,7 @@ class FullscreenImagePage extends StatefulWidget {
     this.enableZoom = true,
     this.minScale = 1.0,
     this.maxScale = 3.0,
+    this.imageProvider,
   });
 
   final String imageUrl;
@@ -112,6 +120,7 @@ class FullscreenImagePage extends StatefulWidget {
   final bool enableZoom;
   final double minScale;
   final double maxScale;
+  final ImageProvider? imageProvider;
 
   @override
   State<FullscreenImagePage> createState() => _FullscreenImagePageState();
@@ -186,8 +195,8 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
                 panEnabled: true,
                 minScale: widget.enableZoom ? widget.minScale : 1.0,
                 maxScale: widget.enableZoom ? widget.maxScale : 1.0,
-                child: Image.network(
-                  widget.imageUrl,
+                child: Image(
+                  image: widget.imageProvider ?? NetworkImage(widget.imageUrl),
                   gaplessPlayback: true,
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
