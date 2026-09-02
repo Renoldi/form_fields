@@ -57,6 +57,7 @@ class FullscreenImage extends StatelessWidget {
               height: height,
               child: Image.network(
                 imageUrl,
+                gaplessPlayback: true,
                 fit: fit,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -187,6 +188,7 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
                 maxScale: widget.enableZoom ? widget.maxScale : 1.0,
                 child: Image.network(
                   widget.imageUrl,
+                  gaplessPlayback: true,
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
