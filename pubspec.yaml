@@ -36,6 +36,7 @@ dependencies:
   flutter_widget_from_html: any
   skeleton_text: any
   file_picker: ^11.0.2
+  cached_network_image: ^3.2.3
   flutter_map: ^8.3.1
   latlong2: any
   geocoding: ^5.0.0
