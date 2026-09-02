@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+// Using `cached_network_image` for robust disk+memory caching.
 
 class FullscreenImage extends StatelessWidget {
   const FullscreenImage({
@@ -30,7 +33,7 @@ class FullscreenImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ImageProvider provider = NetworkImage(imageUrl);
+    final ImageProvider provider = CachedNetworkImageProvider(imageUrl);
     return Material(
       color: Colors.transparent,
       elevation: elevation,
@@ -38,22 +41,23 @@ class FullscreenImage extends StatelessWidget {
       child: InkWell(
         borderRadius: borderRadius,
         onTap: () async {
+          final NavigatorState navigator = Navigator.of(context);
+          final route = MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => FullscreenImagePage(
+              imageUrl: imageUrl,
+              heroTag: heroTag,
+              semanticLabel: semanticLabel,
+              imageProvider: provider,
+            ),
+          );
           try {
             await precacheImage(provider, context);
           } catch (_) {
-            // ignore precache errors and still navigate
+            // ignore precache errors
           }
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              fullscreenDialog: true,
-              builder: (_) => FullscreenImagePage(
-                imageUrl: imageUrl,
-                heroTag: heroTag,
-                semanticLabel: semanticLabel,
-                imageProvider: provider,
-              ),
-            ),
-          );
+          if (!navigator.mounted) return;
+          navigator.push(route);
         },
         child: ClipRRect(
           borderRadius: borderRadius,
@@ -62,29 +66,22 @@ class FullscreenImage extends StatelessWidget {
             child: SizedBox(
               width: width,
               height: height,
-              child: Image(
-                image: provider,
-                gaplessPlayback: true,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
                 fit: fit,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    color: Colors.transparent,
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: 28,
-                      height: 28,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
+                progressIndicatorBuilder: (context, url, progress) => Container(
+                  color: Colors.transparent,
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      value: progress.progress,
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => Container(
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
                   color: Colors.transparent,
                   alignment: Alignment.center,
                   child: Icon(
@@ -195,27 +192,20 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
                 panEnabled: true,
                 minScale: widget.enableZoom ? widget.minScale : 1.0,
                 maxScale: widget.enableZoom ? widget.maxScale : 1.0,
-                child: Image(
-                  image: widget.imageProvider ?? NetworkImage(widget.imageUrl),
-                  gaplessPlayback: true,
+                child: CachedNetworkImage(
+                  imageUrl: widget.imageUrl,
                   fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
+                  progressIndicatorBuilder: (context, url, progress) => Center(
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        value: progress.progress,
                       ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => Container(
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
                     color: Colors.transparent,
                     alignment: Alignment.center,
                     child: Icon(
