@@ -69,6 +69,15 @@ class FullscreenImage extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: fit,
+                fadeInDuration: const Duration(milliseconds: 200),
+                fadeInCurve: Curves.easeIn,
+                placeholder: (context, url) => Container(
+                  width: width,
+                  height: height,
+                  color: Colors.grey.shade300,
+                  alignment: Alignment.center,
+                  child: Icon(Icons.image, size: 28, color: Colors.white24),
+                ),
                 imageBuilder: (context, imageProvider) => Image(
                   image: imageProvider,
                   fit: fit,
@@ -199,34 +208,39 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
                 panEnabled: true,
                 minScale: widget.enableZoom ? widget.minScale : 1.0,
                 maxScale: widget.enableZoom ? widget.maxScale : 1.0,
-                child: CachedNetworkImage(
-                  imageUrl: widget.imageUrl,
-                  fit: BoxFit.contain,
-                  imageBuilder: (context, imageProvider) => Image(
-                    image: imageProvider,
-                    fit: BoxFit.contain,
-                    semanticLabel: widget.semanticLabel,
-                  ),
-                  progressIndicatorBuilder: (context, url, progress) => Center(
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        value: progress.progress,
+                child: widget.imageProvider != null
+                    ? Image(
+                        image: widget.imageProvider!,
+                        fit: BoxFit.contain,
+                        semanticLabel: widget.semanticLabel,
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: widget.imageUrl,
+                        fit: BoxFit.contain,
+                        fadeInDuration: const Duration(milliseconds: 200),
+                        fadeInCurve: Curves.easeIn,
+                        placeholder: (context, url) => const SizedBox.shrink(),
+                        progressIndicatorBuilder: (context, url, progress) =>
+                            Center(
+                              child: SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  value: progress.progress,
+                                ),
+                              ),
+                            ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.transparent,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 72,
+                            color: Colors.white70,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.transparent,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 72,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
               ),
             ),
           ),
