@@ -63,46 +63,58 @@ class FullscreenImage extends StatelessWidget {
           borderRadius: borderRadius,
           child: Hero(
             tag: heroTag,
+            flightShuttleBuilder:
+                (
+                  flightContext,
+                  animation,
+                  flightDirection,
+                  fromHeroContext,
+                  toHeroContext,
+                ) {
+                  return Image(
+                    image: provider,
+                    fit: fit,
+                    width: width,
+                    height: height,
+                  );
+                },
             child: SizedBox(
               width: width,
               height: height,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
+              child: Image(
+                image: provider,
                 fit: fit,
-                fadeInDuration: const Duration(milliseconds: 200),
-                fadeInCurve: Curves.easeIn,
-                placeholder: (context, url) => Container(
+                width: width,
+                height: height,
+                semanticLabel: semanticLabel,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: width,
+                    height: height,
+                    color: Colors.grey.shade300,
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => Container(
                   width: width,
                   height: height,
                   color: Colors.grey.shade300,
                   alignment: Alignment.center,
-                  child: Icon(Icons.image, size: 28, color: Colors.white24),
-                ),
-                imageBuilder: (context, imageProvider) => Image(
-                  image: imageProvider,
-                  fit: fit,
-                  width: width,
-                  height: height,
-                  semanticLabel: semanticLabel,
-                ),
-                progressIndicatorBuilder: (context, url, progress) => Container(
-                  color: Colors.transparent,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      value: progress.progress,
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.transparent,
-                  alignment: Alignment.center,
                   child: Icon(
                     Icons.broken_image,
-                    size: 40,
+                    size: 32,
                     color: Colors.white70,
                   ),
                 ),
@@ -189,7 +201,7 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black.withValues(alpha: 0.2),
+        backgroundColor: Colors.black.withOpacity(0.2),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -203,6 +215,19 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
             onDoubleTap: _handleDoubleTap,
             child: Hero(
               tag: widget.heroTag,
+              flightShuttleBuilder:
+                  (
+                    flightContext,
+                    animation,
+                    flightDirection,
+                    fromHeroContext,
+                    toHeroContext,
+                  ) {
+                    final ImageProvider destProvider =
+                        widget.imageProvider ??
+                        CachedNetworkImageProvider(widget.imageUrl);
+                    return Image(image: destProvider, fit: BoxFit.contain);
+                  },
               child: InteractiveViewer(
                 transformationController: _transformationController,
                 panEnabled: true,
