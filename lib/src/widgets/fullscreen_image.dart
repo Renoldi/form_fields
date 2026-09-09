@@ -69,6 +69,13 @@ class FullscreenImage extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: fit,
+                imageBuilder: (context, imageProvider) => Image(
+                  image: imageProvider,
+                  fit: fit,
+                  width: width,
+                  height: height,
+                  semanticLabel: semanticLabel,
+                ),
                 progressIndicatorBuilder: (context, url, progress) => Container(
                   color: Colors.transparent,
                   alignment: Alignment.center,
@@ -195,6 +202,11 @@ class _FullscreenImagePageState extends State<FullscreenImagePage>
                 child: CachedNetworkImage(
                   imageUrl: widget.imageUrl,
                   fit: BoxFit.contain,
+                  imageBuilder: (context, imageProvider) => Image(
+                    image: imageProvider,
+                    fit: BoxFit.contain,
+                    semanticLabel: widget.semanticLabel,
+                  ),
                   progressIndicatorBuilder: (context, url, progress) => Center(
                     child: SizedBox(
                       width: 48,
