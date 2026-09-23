@@ -120,3 +120,32 @@ DateTime? dateTimeUtcFromJson(String? s) {
 }
 
 String? dateTimeUtcToJson(DateTime? dt) => dt?.toUtc().toIso8601String();
+
+/// Convert DateTime to ISO8601 string including local timezone offset
+String? dateTimeToIsoWithTimezone(DateTime? dt) {
+  if (dt == null) return null;
+  final local = dt.toLocal();
+
+  String two(int n) => n.toString().padLeft(2, '0');
+
+  final year = local.year.toString().padLeft(4, '0');
+  final month = two(local.month);
+  final day = two(local.day);
+  final hour = two(local.hour);
+  final minute = two(local.minute);
+  final second = two(local.second);
+  final ms = local.millisecond.toString().padLeft(3, '0');
+
+  final offset = local.timeZoneOffset;
+  String offsetString;
+  if (offset == Duration.zero) {
+    offsetString = 'Z';
+  } else {
+    final sign = offset.isNegative ? '-' : '+';
+    final h = offset.inHours.abs().toString().padLeft(2, '0');
+    final m = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    offsetString = '$sign$h:$m';
+  }
+
+  return '$year-$month-${day}T$hour:$minute:$second.$ms$offsetString';
+}
