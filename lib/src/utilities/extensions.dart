@@ -119,6 +119,18 @@ DateTime? dateTimeUtcFromJson(String? s) {
   }
 }
 
+DateTime? dateTimeOffsetFromJson(String? s) {
+  if (s == null) {
+    return null;
+  } else {
+    try {
+      return DateTime.parse(s).toLocal();
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
 String? dateTimeUtcToJson(DateTime? dt) => dt?.toUtc().toIso8601String();
 
 /// Convert DateTime to ISO8601 string including local timezone offset
