@@ -1,51 +1,19 @@
 // ===================== Dio Utility =====================
 
 import 'dart:io';
+
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
+
+/// Key set on [Response.extra] when a request failed before any HTTP response
+/// arrived (DNS failure, refused connection, timeout). Callers should check
+/// [DioUtil.isNetworkFailure] rather than inspecting error text.
+const String kDioNetworkErrorKey = 'form_fields.networkError';
 
 /// Utility class for file upload and download using Dio.
 class DioUtil {
-  /// Generic request wrapper to handle DioException globally.
-  static Future<T?> safeRequest<T>(
-    Future<T> Function() request, {
-    String? url,
-  }) async {
-    try {
-      return await request();
-    } on DioException catch (e) {
-      _logger.e('DioUtil DioException: $e', error: e, stackTrace: e.stackTrace);
-      if (T == Response) {
-        return (e.response ??
-            Response(
-              requestOptions: RequestOptions(path: url ?? ''),
-              statusCode: 500,
-              statusMessage: 'Network/server error. Please try again later.',
-              data: {
-                'errorType': e.type.toString(),
-                'errorMessage': e.message,
-              },
-            )) as T;
-      }
-      return null;
-    } catch (e, stack) {
-      _logger.e('DioUtil error: $e', error: e, stackTrace: stack);
-      if (T == Response) {
-        return Response(
-          requestOptions: RequestOptions(path: url ?? ''),
-          statusCode: 500,
-          statusMessage: 'Network/server error. Please try again later.',
-          data: {'errorType': 'Unknown', 'errorMessage': e.toString()},
-        ) as T;
-      }
-      return null;
-    }
-  }
-
-  // Dio instance is created via `_createDio` so it can be recreated/configured.
-  static Dio _dio = _createDio();
-
   static final Logger _logger = Logger(
     printer: PrettyPrinter(
       methodCount: 0,
@@ -57,6 +25,39 @@ class DioUtil {
     ),
   );
 
+  // Dio instance is created via `_createDio` so it can be recreated/configured.
+  static Dio _dio = _createDio();
+
+  /// Generic request wrapper to handle DioException globally.
+  static Future<T?> safeRequest<T>(
+    Future<T> Function() request, {
+    String? url,
+  }) async {
+    try {
+      return await request();
+    } on DioException catch (e) {
+      _logger.e('DioUtil DioException: ${e.type} ${e.message}');
+      if (T == Response) {
+        return (e.response ?? _networkErrorResponse<dynamic>(url ?? '', e))
+            as T;
+      }
+      return null;
+    } catch (e, stack) {
+      _logger.e('DioUtil error: $e', error: e, stackTrace: stack);
+      if (T == Response) {
+        return _unknownErrorResponse<dynamic>(url ?? '', e) as T;
+      }
+      return null;
+    }
+  }
+
+  /// Returns true when [response] describes a failure that happened before
+  /// any HTTP status was received (no connectivity, DNS, timeout).
+  static bool isNetworkFailure(Response? response) {
+    if (response == null) return true;
+    return response.extra[kDioNetworkErrorKey] == true;
+  }
+
   /// Create a configured Dio instance used by this utility.
   static Dio _createDio({
     String? baseUrl,
@@ -65,56 +66,59 @@ class DioUtil {
     Duration? receiveTimeout,
     Map<String, dynamic>? headers,
   }) {
-    final timeStamp = DateTime.now();
-    final newHeaders = <String, dynamic>{};
-    newHeaders.addAll({
-      HttpHeaders.acceptHeader: "application/json",
-      HttpHeaders.contentMD5Header: "application/json",
-      "Content-Type": "application/json",
-      "Client-Timestamp": timeStamp.toIso8601String(),
-      'Access-Control-Allow-Origin': '*', // Replace your domain
-      'Access-Control-Allow-Methods': 'POST, GET, DELETE, HEAD, OPTIONS',
-      "deviceOs": Platform.isAndroid ? "A" : "I",
-      "deviiceOsVersion": Platform.operatingSystemVersion,
-    });
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl ?? '',
+        connectTimeout: connectTimeout,
+        sendTimeout: sendTimeout,
+        receiveTimeout: receiveTimeout,
+        headers: <String, dynamic>{
+          HttpHeaders.acceptHeader: 'application/json',
+          HttpHeaders.contentTypeHeader: 'application/json',
+          'deviceOs': Platform.isAndroid ? 'A' : 'I',
+          'deviceOsVersion': Platform.operatingSystemVersion,
+          ...?headers,
+        },
+      ),
+    );
 
-    final mergedHeaders = <String, dynamic>{};
-    mergedHeaders.addAll(newHeaders);
-    if (headers != null) {
-      mergedHeaders.addAll(headers);
+    // Timestamp must describe the moment each request is sent, not the moment
+    // the client was created.
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.headers['Client-Timestamp'] = DateTime.now()
+              .toIso8601String();
+          handler.next(options);
+        },
+      ),
+    );
+
+    // Full request/response logging is for debug builds only. Headers are
+    // never logged because they carry credentials such as Authorization.
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          logPrint: (object) => _logger.d(object),
+        ),
+      );
     }
 
-    final dio = Dio(BaseOptions(
-      baseUrl: baseUrl ?? '',
-      connectTimeout: connectTimeout,
-      sendTimeout: sendTimeout,
-      receiveTimeout: receiveTimeout,
-      headers: mergedHeaders,
-    ));
-
-    dio.interceptors.add(LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-      logPrint: (object) => _logger.d(object),
-    ));
-
-    dio.interceptors.add(InterceptorsWrapper(
-      onError: (DioException error, ErrorInterceptorHandler handler) {
-        final request = error.requestOptions;
-        final statusCode = error.response?.statusCode;
-        _logger.e('[DioUtil] HTTP error ${request.method} ${request.uri}');
-        _logger.e(
-            '[DioUtil] type=${error.type} status=${statusCode ?? '-'} message=${error.message ?? '-'}');
-        if (error.response?.data != null) {
-          _logger.e('[DioUtil] response=${error.response!.data}');
-        }
-        handler.next(error);
-      },
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (error, handler) {
+          final request = error.requestOptions;
+          _logger.e(
+            '[DioUtil] ${request.method} ${request.path} failed: '
+            'type=${error.type} status=${error.response?.statusCode ?? '-'}',
+          );
+          handler.next(error);
+        },
+      ),
+    );
 
     return dio;
   }
@@ -138,26 +142,37 @@ class DioUtil {
     _logger.i('[DioUtil] configured baseUrl=${baseUrl ?? ''}');
   }
 
-  /// Downloads a file from the given URL and saves it to a temp path.
+  /// Downloads a file from the given URL into the system temp directory.
+  /// Returns the saved path, or null when the download did not succeed.
   static Future<String?> downloadFile(String url) async {
-    final response = await safeRequest<Response>(
-      () => _dio.get(url, options: Options(responseType: ResponseType.bytes)),
-      url: url,
+    final name = _safeFileName(
+      Uri.tryParse(url)?.pathSegments.lastOrNull ?? 'download',
     );
-    if (response != null && response.statusCode == 200) {
-      final tempDir = Directory.systemTemp;
-      final fileName = url.split('/').last;
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(response.data);
+    // A timestamp prefix keeps concurrent downloads of the same name apart.
+    final file = File(
+      '${Directory.systemTemp.path}/${DateTime.now().microsecondsSinceEpoch}_$name',
+    );
+    try {
+      final response = await _dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      await file.writeAsBytes(response.data ?? const <int>[]);
       return file.path;
+    } on DioException catch (e) {
+      _logger.e('[DioUtil] download failed: ${e.type} ${e.message}');
+      return null;
     }
-    return null;
   }
 
   // =============================================================
   // Reusable HTTP helpers (get/post/put/download)
   // These methods provide a consistent, reusable surface similar
   // to HttpService but kept inside this utility for package reuse.
+  //
+  // They never throw for HTTP or network failures. Every outcome is returned
+  // as a Response: the server's response when one arrived, otherwise a
+  // synthetic 500 Response (see [isNetworkFailure] to tell the two apart).
   // =============================================================
 
   static Dio get dio => _dio;
@@ -185,177 +200,71 @@ class DioUtil {
     String path, {
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
-  }) async {
-    _logger.i('🌐 GET Request: ${_dio.options.baseUrl}$path');
-    try {
-      Options? requestOptions;
-      if (headers != null) {
-        final merged = <String, dynamic>{};
-        merged.addAll(_dio.options.headers);
-        merged.addAll(headers);
-        requestOptions = Options(headers: merged, validateStatus: (_) => true);
-      }
-
-      final response = await _dio.get<T>(
-        path,
-        queryParameters: queryParameters,
-        options: requestOptions,
-      );
-      return response;
-    } on DioException catch (e) {
-      _logger.e('❌ GET Failed: ${_dio.options.baseUrl}$path');
-      if (e.response != null) {
-        try {
-          final r = e.response!;
-          return Response<T>(
-            requestOptions: r.requestOptions,
-            statusCode: r.statusCode,
-            statusMessage: r.statusMessage,
-            data: r.data as T,
-          );
-        } catch (_) {
-          return Response(
-            requestOptions: RequestOptions(path: path),
-            statusCode: e.response?.statusCode,
-            statusMessage: e.response?.statusMessage,
-            data: e.response?.data,
-          ) as Response<T>;
-        }
-      }
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Network/server error',
-        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
-      ) as Response<T>;
-    } catch (e) {
-      _logger.e('❌ GET Failed (unknown): ${_dio.options.baseUrl}$path');
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Unknown error',
-        data: {'error': e.toString()},
-      ) as Response<T>;
-    }
-  }
+  }) =>
+      _send<T>('GET', path, queryParameters: queryParameters, headers: headers);
 
   static Future<Response<T>> post<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
-  }) async {
-    _logger.i('🌐 POST Request: ${_dio.options.baseUrl}$path');
-    try {
-      Options? requestOptions;
-      if (headers != null) {
-        final merged = <String, dynamic>{};
-        merged.addAll(_dio.options.headers);
-        merged.addAll(headers);
-        requestOptions = Options(headers: merged, validateStatus: (_) => true);
-      }
-
-      final response = await _dio.post<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: requestOptions,
-      );
-      return response;
-    } on DioException catch (e) {
-      _logger.e('❌ POST Failed: ${_dio.options.baseUrl}$path');
-      if (e.response != null) {
-        try {
-          final r = e.response!;
-          return Response<T>(
-            requestOptions: r.requestOptions,
-            statusCode: r.statusCode,
-            statusMessage: r.statusMessage,
-            data: r.data as T,
-          );
-        } catch (_) {
-          return Response(
-            requestOptions: RequestOptions(path: path),
-            statusCode: e.response?.statusCode,
-            statusMessage: e.response?.statusMessage,
-            data: e.response?.data,
-          ) as Response<T>;
-        }
-      }
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Network/server error',
-        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
-      ) as Response<T>;
-    } catch (e) {
-      _logger.e('❌ POST Failed (unknown): ${_dio.options.baseUrl}$path');
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Unknown error',
-        data: {'error': e.toString()},
-      ) as Response<T>;
-    }
-  }
+  }) => _send<T>(
+    'POST',
+    path,
+    data: data,
+    queryParameters: queryParameters,
+    headers: headers,
+  );
 
   static Future<Response<T>> put<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
-  }) async {
-    _logger.i('🌐 PUT Request: ${_dio.options.baseUrl}$path');
-    try {
-      Options? requestOptions;
-      if (headers != null) {
-        final merged = <String, dynamic>{};
-        merged.addAll(_dio.options.headers);
-        merged.addAll(headers);
-        requestOptions = Options(headers: merged, validateStatus: (_) => true);
-      }
+  }) => _send<T>(
+    'PUT',
+    path,
+    data: data,
+    queryParameters: queryParameters,
+    headers: headers,
+  );
 
-      final response = await _dio.put<T>(
+  /// Single code path for get/post/put. Every HTTP status is returned as a
+  /// Response, so callers branch on `statusCode` instead of catching errors.
+  static Future<Response<T>> _send<T>(
+    String method,
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? headers,
+  }) async {
+    _logger.i('🌐 $method Request: ${_dio.options.baseUrl}$path');
+    try {
+      return await _dio.request<T>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: requestOptions,
+        options: Options(
+          method: method,
+          headers: headers,
+          validateStatus: (_) => true,
+        ),
       );
-      return response;
     } on DioException catch (e) {
-      _logger.e('❌ PUT Failed: ${_dio.options.baseUrl}$path');
-      if (e.response != null) {
-        try {
-          final r = e.response!;
-          return Response<T>(
-            requestOptions: r.requestOptions,
-            statusCode: r.statusCode,
-            statusMessage: r.statusMessage,
-            data: r.data as T,
-          );
-        } catch (_) {
-          return Response(
-            requestOptions: RequestOptions(path: path),
-            statusCode: e.response?.statusCode,
-            statusMessage: e.response?.statusMessage,
-            data: e.response?.data,
-          ) as Response<T>;
-        }
+      _logger.e('❌ $method Failed: ${_dio.options.baseUrl}$path (${e.type})');
+      final server = e.response;
+      if (server != null) {
+        return Response<T>(
+          requestOptions: server.requestOptions,
+          statusCode: server.statusCode,
+          statusMessage: server.statusMessage,
+          data: _asType<T>(server.data),
+        );
       }
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Network/server error',
-        data: {'errorType': e.type.toString(), 'errorMessage': e.message},
-      ) as Response<T>;
+      return _networkErrorResponse<T>(path, e);
     } catch (e) {
-      _logger.e('❌ PUT Failed (unknown): ${_dio.options.baseUrl}$path');
-      return Response(
-        requestOptions: RequestOptions(path: path),
-        statusCode: 500,
-        statusMessage: 'Unknown error',
-        data: {'error': e.toString()},
-      ) as Response<T>;
+      _logger.e('❌ $method Failed (unknown): ${_dio.options.baseUrl}$path');
+      return _unknownErrorResponse<T>(path, e);
     }
   }
 
@@ -386,7 +295,16 @@ class DioUtil {
     }
   }
 
+  /// Maximum number of attempts for an upload that fails before the server
+  /// answers. HTTP error responses are never retried.
+  static const int _uploadMaxAttempts = 3;
+
   /// Uploads a file to the given URL with optional headers and progress callback.
+  ///
+  /// Retries up to [_uploadMaxAttempts] times, but only when no HTTP response
+  /// arrived and the failure looks transient. A response with status >= 400 is
+  /// returned at once. A timeout while receiving the response is not retried,
+  /// because the server may already have stored the file.
   static Future<Response?> uploadFile({
     required String url,
     required String filePath,
@@ -395,123 +313,150 @@ class DioUtil {
     void Function(double progress)? onProgress,
     List<MapEntry<String, String>>? fields,
 
-    /// Name of the multipart file field (default: 'fileToUpload')
+    /// Name of the multipart file field (default: 'file')
     String fileFieldName = 'file',
 
     /// Whether to include the legacy 'reqtype=fileupload' field.
-    /// Some servers expect it; others do not. Default: true.
+    /// Some servers expect it; others do not. Default: false.
     bool includeReqType = false,
   }) async {
-    final file = File(filePath);
-    final formData = FormData();
-    if (includeReqType) {
-      formData.fields.add(MapEntry('reqtype', 'fileupload'));
+    final uploadName = filename ?? _baseName(filePath);
+    if (kDebugMode) {
+      debugLog(
+        '[DioUtil.uploadFile] url=$url, fileField=$fileFieldName, '
+        'includeReqType=$includeReqType, filename=$uploadName, '
+        'headers=${headers?.keys.toList()}, fields=${fields?.map((e) => e.key).toList()}',
+      );
     }
-    if (fields != null && fields.isNotEmpty) {
-      formData.fields.addAll(fields);
-    }
-    formData.files.add(
-      MapEntry(
-        fileFieldName,
-        await MultipartFile.fromFile(
-          filePath,
-          filename: filename ?? file.path.split('/').last,
+
+    for (var attempt = 1; ; attempt++) {
+      // A MultipartFile stream can be read only once, so the form is rebuilt
+      // for every attempt.
+      final formData = FormData();
+      if (includeReqType) {
+        formData.fields.add(const MapEntry('reqtype', 'fileupload'));
+      }
+      if (fields != null && fields.isNotEmpty) {
+        formData.fields.addAll(fields);
+      }
+      formData.files.add(
+        MapEntry(
+          fileFieldName,
+          await MultipartFile.fromFile(filePath, filename: uploadName),
         ),
-      ),
-    );
-    // Debug: log upload details to help diagnose server errors (avoid
-    // printing full header values to reduce secret leakage).
-    try {
-      final fileSize = file.existsSync() ? file.lengthSync() : null;
-      debugPrint(
-          '[DioUtil.uploadFile] url=$url, fileField=$fileFieldName, includeReqType=$includeReqType, filename=${filename ?? file.path.split('/').last}, fileSize=$fileSize, headers=${headers?.keys.toList()}, fields=${fields?.map((e) => '${e.key}=${e.value}').toList()}');
-    } catch (_) {}
-    // Retry loop for transient network/DNS errors. We still use
-    // `safeRequest` to normalize DioExceptions into Responses when
-    // possible, but wrap it here to catch any thrown SocketExceptions
-    // or DioExceptions that might escape and retry a few times.
-    const maxAttempts = 3;
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      );
+
       try {
-        final resp = await safeRequest<Response>(
-          () => _dio.post(
-            url,
-            data: formData,
-            options: Options(
-              headers: headers,
-              followRedirects: true,
-              validateStatus: (status) => status != null && status < 400,
-            ),
-            onSendProgress: (sent, total) {
-              if (onProgress != null) {
-                onProgress(total > 0 ? sent / total : 0.0);
-              }
-            },
+        return await _dio.post<dynamic>(
+          url,
+          data: formData,
+          options: Options(
+            headers: headers,
+            followRedirects: true,
+            validateStatus: (status) => status != null && status < 400,
           ),
-          url: url,
-        );
-
-        // If we received a valid response object, return it.
-        if (resp != null) {
-          return resp;
-        }
-
-        // Otherwise, treat as transient and retry (unless last attempt).
-        if (attempt < maxAttempts) {
-          final backoff = Duration(milliseconds: 200 * attempt);
-          debugPrint(
-              '[DioUtil.uploadFile] transient null response, retrying in $backoff (attempt $attempt)');
-          await Future.delayed(backoff);
-          continue;
-        }
-
-        // Last attempt and still null -> return a synthetic 500 Response.
-        return Response(
-          requestOptions: RequestOptions(path: url),
-          statusCode: 500,
-          statusMessage: 'Network error (no response)',
-          data: {'error': 'no_response'},
+          onSendProgress: (sent, total) {
+            if (onProgress != null) {
+              onProgress(total > 0 ? sent / total : 0.0);
+            }
+          },
         );
       } on DioException catch (e) {
+        // The server answered with an error status. That is its final answer.
+        if (e.response != null) return e.response;
+
+        final retryable = _isRetryableUploadError(e);
         _logger.w(
-            '[DioUtil.uploadFile] DioException on attempt $attempt: ${e.message}');
-        // If last attempt, convert to a Response so callers can proceed.
-        if (attempt >= maxAttempts) {
-          return e.response ??
-              Response(
-                requestOptions: RequestOptions(path: url),
-                statusCode: 500,
-                statusMessage: 'Dio connection error',
-                data: {
-                  'errorType': e.type.toString(),
-                  'errorMessage': e.message
-                },
-              );
+          '[DioUtil.uploadFile] attempt $attempt failed: ${e.type} '
+          '(retryable=$retryable)',
+        );
+        if (retryable && attempt < _uploadMaxAttempts) {
+          await Future<void>.delayed(Duration(milliseconds: 200 * attempt));
+          continue;
         }
-        // small backoff before next try
-        await Future.delayed(Duration(milliseconds: 200 * attempt));
-        continue;
+        return _networkErrorResponse<dynamic>(url, e);
       } catch (e, st) {
-        _logger.w('[DioUtil.uploadFile] Error on attempt $attempt: $e',
-            error: e, stackTrace: st);
-        if (attempt >= maxAttempts) {
-          return Response(
-            requestOptions: RequestOptions(path: url),
-            statusCode: 500,
-            statusMessage: 'Network/error',
-            data: {'errorType': 'Unknown', 'errorMessage': e.toString()},
-          );
-        }
-        await Future.delayed(Duration(milliseconds: 200 * attempt));
-        continue;
+        _logger.w(
+          '[DioUtil.uploadFile] unexpected error: $e',
+          error: e,
+          stackTrace: st,
+        );
+        return _unknownErrorResponse<dynamic>(url, e);
       }
     }
-    // Shouldn't reach here, but return a fallback.
-    return Response(
-      requestOptions: RequestOptions(path: url),
-      statusCode: 500,
-      statusMessage: 'Network/error',
-      data: {'error': 'unexpected_fallback'},
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  static bool _isRetryableUploadError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+        return true;
+      case DioExceptionType.unknown:
+        return e.error is SocketException;
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
+      case DioExceptionType.badCertificate:
+      case DioExceptionType.badResponse:
+      case DioExceptionType.cancel:
+        return false;
+    }
+  }
+
+  /// Builds a synthetic error Response for [T]. The error details are placed
+  /// in `data` only when they fit [T]. A Map is not a String, for example, so
+  /// `data` is left null in that case instead of failing with a TypeError.
+  static Response<T> _errorResponse<T>(
+    String path,
+    int statusCode,
+    String statusMessage,
+    Map<String, dynamic> details, {
+    bool networkError = false,
+  }) {
+    return Response<T>(
+      requestOptions: RequestOptions(path: path),
+      statusCode: statusCode,
+      statusMessage: statusMessage,
+      data: _asType<T>(details),
+      extra: {if (networkError) kDioNetworkErrorKey: true},
     );
+  }
+
+  static Response<T> _networkErrorResponse<T>(String path, DioException e) {
+    return _errorResponse<T>(
+      path,
+      500,
+      'Network/server error. Please try again later.',
+      {'errorType': e.type.toString(), 'errorMessage': e.message},
+      networkError: true,
+    );
+  }
+
+  static Response<T> _unknownErrorResponse<T>(String path, Object error) {
+    return _errorResponse<T>(path, 500, 'Unknown error', {
+      'errorType': 'Unknown',
+      'errorMessage': error.toString(),
+    });
+  }
+
+  /// Returns [value] when it has type [T], otherwise null.
+  static T? _asType<T>(Object? value) => value is T ? value : null;
+
+  static String _baseName(String path) {
+    final normalized = path.replaceAll('\\', '/');
+    return normalized.substring(normalized.lastIndexOf('/') + 1);
+  }
+
+  /// Keeps only characters that are safe in a file name and caps the length.
+  static String _safeFileName(String name) {
+    final cleaned = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final trimmed = cleaned.length > 120 ? cleaned.substring(0, 120) : cleaned;
+    return trimmed.isEmpty || trimmed == '.' || trimmed == '..'
+        ? 'download'
+        : trimmed;
   }
 }

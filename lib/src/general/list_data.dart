@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:skeleton_text/skeleton_text.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
 class ListDataComponent<T> extends StatefulWidget {
   final ListDataComponentController<T>? controller;
@@ -110,30 +111,53 @@ class ListDataComponent<T> extends StatefulWidget {
 
 class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   VoidCallback? _searchListener;
+
+  /// The search controller that currently has [_searchListener] attached. It
+  /// is tracked directly, because the widget's controller can change.
+  TextEditingController? _attachedSearch;
+
+  /// Controller used when the widget was built without one. It belongs to this
+  /// state and is disposed with it. Before this, a missing controller crashed
+  /// `build`.
+  ListDataComponentController<T>? _ownedController;
+
+  ListDataComponentController<T> get _controller {
+    final given = widget.controller;
+    if (given != null) return given;
+    return _ownedController ??= ListDataComponentController<T>();
+  }
+
+  /// Copies the widget's callbacks onto the controller's value. Runs at startup
+  /// and whenever the widget is rebuilt with different callbacks, so a parent
+  /// that passes a new data source is not ignored.
+  void _syncCallbacks() {
+    final value = _controller.value;
+    value.dataSource = widget.dataSource;
+    value.onDataReceived = widget.onDataReceived;
+    value.onSelected = widget.onSelected;
+    value.onUpdated = widget.onUpdated;
+  }
+
   @override
   void initState() {
-    widget.controller?.value.dataSource = widget.dataSource;
-    widget.controller?.value.onDataReceived = widget.onDataReceived;
-    widget.controller?.value.onSelected = widget.onSelected;
-    widget.controller?.value.onUpdated = widget.onUpdated;
+    _syncCallbacks();
     super.initState();
 
     // Listen to search controller text changes to update the clear button state
-    _attachSearchListener(widget.controller?.value.searchController);
+    _attachSearchListener(_controller.value.searchController);
 
     // Defer any refresh or state change until after the first frame to avoid
     // calling notifyListeners()/setState() during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.autoLoad == true) {
-        widget.controller?.refresh();
+        _controller.refresh();
       } else {
         // If autoLoad is disabled, don't show the initial loading skeleton.
         // Switch to `loaded` so the empty view is shown and its controls can
         // trigger loading later.
-        if (widget.controller?.value.state ==
-            ListDataComponentState.firstLoad) {
-          widget.controller?.value.state = ListDataComponentState.loaded;
-          widget.controller?.commit();
+        if (_controller.value.state == ListDataComponentState.firstLoad) {
+          _controller.value.state = ListDataComponentState.loaded;
+          _controller.commit();
         }
       }
     });
@@ -142,18 +166,20 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   @override
   void didUpdateWidget(covariant ListDataComponent<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If controller instance changed, reattach listener
-    final oldController = oldWidget.controller?.value.searchController;
-    final newController = widget.controller?.value.searchController;
-    if (oldController != newController) {
-      _detachSearchListener(oldController);
-      _attachSearchListener(newController);
+    _syncCallbacks();
+    // The controller may have changed (given one, or the owned one). Move the
+    // listener to the controller that is in use now.
+    final next = _controller.value.searchController;
+    if (!identical(next, _attachedSearch)) {
+      _detachSearchListener(_attachedSearch);
+      _attachSearchListener(next);
     }
   }
 
   @override
   void dispose() {
-    _detachSearchListener(widget.controller?.value.searchController);
+    _detachSearchListener(_attachedSearch);
+    _ownedController?.dispose();
     super.dispose();
   }
 
@@ -163,6 +189,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       if (mounted) setState(() {});
     };
     c.addListener(_searchListener!);
+    _attachedSearch = c;
   }
 
   void _detachSearchListener(TextEditingController? c) {
@@ -171,6 +198,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       c.removeListener(_searchListener!);
     } catch (_) {}
     _searchListener = null;
+    _attachedSearch = null;
   }
 
   @override
@@ -178,7 +206,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     return Container(
       color: Colors.transparent,
       child: ValueListenableBuilder<ListDataComponentValue<T>>(
-        valueListenable: widget.controller!,
+        valueListenable: _controller,
         builder: (BuildContext context, value, Widget? child) {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -207,7 +235,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
 
   Future<void> _doSearch() async {
     try {
-      await widget.controller?.refresh();
+      await _controller.refresh();
     } catch (_) {}
   }
 
@@ -230,12 +258,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               child: FormFields<String>(
                 onChanged: (v) async {
                   try {
-                    final c = widget.controller?.value.searchController;
-                    if (c != null) c.text = v;
+                    final c = _controller.value.searchController;
+                    c.text = v;
                     if (widget.searchIconInside == true &&
                         widget.autoSearch == true) {
-                      final t =
-                          widget.controller?.value.searchController.text ?? '';
+                      final t = _controller.value.searchController.text;
                       if (t.trim().isEmpty ||
                           t.trim().length >= widget.minSearchChars) {
                         await _doSearch();
@@ -255,15 +282,12 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                     FormFieldsLocalizations.of(context).searchHint,
                 labelPosition: LabelPosition.none,
                 fieldSize: AppSize.medium,
-                currentValue: widget.controller != null
-                    ? widget.controller!.value.searchController.text
-                    : '',
+                currentValue: _controller.value.searchController.text,
                 onRemove: () async {
                   try {
-                    final c = widget.controller?.value.searchController;
-                    if (c != null) c.text = '';
-                    final t =
-                        widget.controller?.value.searchController.text ?? '';
+                    final c = _controller.value.searchController;
+                    c.text = '';
+                    final t = _controller.value.searchController.text;
                     if (t.trim().isEmpty ||
                         t.trim().length >= widget.minSearchChars) {
                       await _doSearch();
@@ -345,11 +369,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   Widget childBuilder() {
     Future<void> onRefreshHandler() async {
       try {
-        await widget.controller?.refresh();
+        await _controller.refresh();
       } catch (_) {}
     }
 
-    switch (widget.controller?.value.state) {
+    switch (_controller.value.state) {
       case ListDataComponentState.firstLoad:
         return RefreshIndicator(
           onRefresh: onRefreshHandler,
@@ -360,7 +384,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           displacement: widget.refreshDisplacement ?? 40.0,
           edgeOffset: widget.refreshEdgeOffset ?? 0.0,
           child: CustomScrollView(
-            controller: widget.controller?.value.scrollController,
+            controller: _controller.value.scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverFillRemaining(
@@ -385,7 +409,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
           displacement: widget.refreshDisplacement ?? 40.0,
           edgeOffset: widget.refreshEdgeOffset ?? 0.0,
           child: CustomScrollView(
-            controller: widget.controller?.value.scrollController,
+            controller: _controller.value.scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverFillRemaining(hasScrollBody: false, child: errorLoaded()),
@@ -394,14 +418,14 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         );
       default:
         final hasData =
-            (widget.controller?.value.data.length ?? 0) > 0 ||
-            (widget.controller?.value.state == ListDataComponentState.loading);
+            _controller.value.data.isNotEmpty ||
+            (_controller.value.state == ListDataComponentState.loading);
         Widget content;
         if (hasData) {
           content = listModeBuilder();
         } else {
           content = CustomScrollView(
-            controller: widget.controller?.value.scrollController,
+            controller: _controller.value.scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverFillRemaining(hasScrollBody: false, child: emptyData()),
@@ -433,19 +457,18 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   }
 
   Widget columnMode() {
-    List<T> data = List.from(widget.controller?.value.data ?? []);
+    List<T> data = List.from(_controller.value.data);
     return Container(
       color: Colors.transparent,
       child: SingleChildScrollView(
-        controller: widget.controller?.value.scrollController,
+        controller: _controller.value.scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             Column(
               children: List.generate(
                 (data.length) +
-                    (widget.controller?.value.state ==
-                            ListDataComponentState.loading
+                    (_controller.value.state == ListDataComponentState.loading
                         ? widget.loaderCount!
                         : 0),
                 (index) {
@@ -453,8 +476,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                     if (index < (data.length)) {
                       return GestureDetector(
                         onTap: () {
-                          widget.controller?.value.selected = data[index];
-                          widget.controller?.commit();
+                          _controller.value.selected = data[index];
+                          _controller.commit();
                           if (widget.onSelected != null) {
                             widget.onSelected!(data[index]);
                           }
@@ -477,7 +500,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                     color: Colors.transparent,
                     child: GestureDetector(
                       onTap: () {
-                        widget.controller?.getOther();
+                        _controller.getOther();
                       },
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -502,60 +525,47 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   }
 
   Widget tilewMode() {
-    List<T> data = List.from(widget.controller?.value.data ?? []);
+    List<T> data = List.from(_controller.value.data);
     return Container(
       color: Colors.transparent,
       width: double.infinity,
       child: NotificationListener(
         onNotification: (n) {
           if (n is ScrollEndNotification) {
-            var current =
-                widget.controller?.value.scrollController.position.pixels;
-            var min = widget
-                .controller
-                ?.value
-                .scrollController
-                .position
-                .minScrollExtent;
-            var max = widget
-                .controller
-                ?.value
-                .scrollController
-                .position
-                .maxScrollExtent;
-            if (widget
-                        .controller
-                        ?.value
+            var current = _controller.value.scrollController.position.pixels;
+            var min =
+                _controller.value.scrollController.position.minScrollExtent;
+            var max =
+                _controller.value.scrollController.position.maxScrollExtent;
+            if (_controller
+                        .value
                         .scrollController
                         .position
                         .userScrollDirection ==
                     ScrollDirection.forward &&
-                ((current ?? 0) <=
-                    (min ?? 0 + widget.autoRefreshTopThreshold))) {
+                (current <= (min + widget.autoRefreshTopThreshold))) {
               if (widget.enableAutoRefreshOnTop == true) {
-                widget.controller?.refresh();
+                _controller.refresh();
               }
-            } else if (widget
-                        .controller
-                        ?.value
+            } else if (_controller
+                        .value
                         .scrollController
                         .position
                         .userScrollDirection ==
                     ScrollDirection.reverse &&
-                ((current ?? 0) >= (max ?? 0))) {
-              if (widget.enableGetMore == true) widget.controller?.getOther();
+                (current >= max)) {
+              if (widget.enableGetMore == true) _controller.getOther();
             }
           }
           return true;
         },
         child: SingleChildScrollView(
-          controller: widget.controller?.value.scrollController,
+          controller: _controller.value.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           child: Wrap(
             children: List.generate(
               (data.length) +
-                  (widget.controller?.value.state ==
-                          ListDataComponentState.loading
+                  (_controller.value.state == ListDataComponentState.loading
                       ? widget.loaderCount!
                       : 0),
               (index) {
@@ -563,8 +573,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                   if (index < (data.length)) {
                     return GestureDetector(
                       onTap: () {
-                        widget.controller?.value.selected = data[index];
-                        widget.controller?.commit();
+                        _controller.value.selected = data[index];
+                        _controller.commit();
                         if (widget.onSelected != null) {
                           widget.onSelected!(data[index]);
                         }
@@ -588,54 +598,37 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   }
 
   Widget listMode() {
-    List<T> data = List.from(widget.controller?.value.data ?? []);
+    List<T> data = List.from(_controller.value.data);
     return NotificationListener(
       onNotification: (n) {
         if (n is ScrollEndNotification) {
-          var current =
-              widget.controller?.value.scrollController.position.pixels;
-          var min = widget
-              .controller
-              ?.value
-              .scrollController
-              .position
-              .minScrollExtent;
-          var max = widget
-              .controller
-              ?.value
-              .scrollController
-              .position
-              .maxScrollExtent;
-          if (widget
-                      .controller
-                      ?.value
-                      .scrollController
-                      .position
-                      .userScrollDirection ==
+          var current = _controller.value.scrollController.position.pixels;
+          var min = _controller.value.scrollController.position.minScrollExtent;
+          var max = _controller.value.scrollController.position.maxScrollExtent;
+          if (_controller.value.scrollController.position.userScrollDirection ==
                   ScrollDirection.forward &&
-              ((current ?? 0) <= (min ?? 0 + widget.autoRefreshTopThreshold))) {
+              (current <= (min + widget.autoRefreshTopThreshold))) {
             if (widget.enableAutoRefreshOnTop == true) {
-              widget.controller?.refresh();
+              _controller.refresh();
             }
-          } else if (widget
-                      .controller
-                      ?.value
+          } else if (_controller
+                      .value
                       .scrollController
                       .position
                       .userScrollDirection ==
                   ScrollDirection.reverse &&
-              ((current ?? 0) >= (max ?? 0))) {
-            if (widget.enableGetMore == true) widget.controller?.getOther();
+              (current >= max)) {
+            if (widget.enableGetMore == true) _controller.getOther();
           }
         }
         return true;
       },
       child: ListView(
-        controller: widget.controller?.value.scrollController,
+        controller: _controller.value.scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         children: List.generate(
           (data.length) +
-              (widget.controller?.value.state == ListDataComponentState.loading
+              (_controller.value.state == ListDataComponentState.loading
                   ? widget.loaderCount!
                   : 0),
           (index) {
@@ -643,8 +636,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               if (index < (data.length)) {
                 return GestureDetector(
                   onTap: () {
-                    widget.controller?.value.selected = data[index];
-                    widget.controller?.commit();
+                    _controller.value.selected = data[index];
+                    _controller.commit();
                     if (widget.onSelected != null) {
                       widget.onSelected!(data[index]);
                     }
@@ -681,7 +674,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               )
             : widget.itemBuilder!(data, index),
       ),
-      index == (widget.controller?.value.data.length ?? 0) - 1
+      index == (_controller.value.data.length) - 1
           ? draggable(data, index + 1)
           : const SizedBox(),
     ];
@@ -696,34 +689,34 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     return DragTarget<Object>(
       builder: (c, d, w) {
         return Container(
-          height: widget.controller?.value.droppedItem != null ? null : 1,
+          height: _controller.value.droppedItem != null ? null : 1,
           width: double.infinity,
           color: Colors.transparent,
           child:
-              (widget.controller?.value.droppedItem != null &&
-                  widget.controller?.value.droppedIndexTarget == index &&
-                  widget.controller?.value.droppedItem != data)
-              ? widget.itemBuilder!(widget.controller?.value.droppedItem, -1)
+              (_controller.value.droppedItem != null &&
+                  _controller.value.droppedIndexTarget == index &&
+                  _controller.value.droppedItem != data)
+              ? widget.itemBuilder!(_controller.value.droppedItem, -1)
               : const SizedBox(),
         );
       },
       onMove: (object) {
         if (object.data is T) {
-          if (widget.controller?.value.droppedItem == (object.data as T)) {
+          if (_controller.value.droppedItem == (object.data as T)) {
             return;
           }
-          widget.controller?.value.droppedItem = (object.data as T);
-          widget.controller?.value.droppedIndexTarget = index;
-          widget.controller?.commit();
+          _controller.value.droppedItem = (object.data as T);
+          _controller.value.droppedIndexTarget = index;
+          _controller.commit();
         }
       },
       onLeave: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
       },
       onWillAcceptWithDetails: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
         if (widget.onWillReceiveDropedData != null) {
           return widget.onWillReceiveDropedData!((object as T), index);
         } else {
@@ -731,8 +724,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         }
       },
       onAcceptWithDetails: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
         if (widget.onReceiveDropedData != null) {
           widget.onReceiveDropedData!((object as T), index);
         }
@@ -790,18 +783,16 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
             size: 50,
           ),
           const SizedBox(height: 10),
-          !(widget.controller?.value.errorMessage ?? "").contains("<div")
+          !(_controller.value.errorMessage ?? "").contains("<div")
               ? Text(
-                  widget.controller?.value.errorMessage ?? "Error",
+                  _controller.value.errorMessage ?? "Error",
                   textAlign: TextAlign.center,
                 )
               : Container(
                   height: 300,
                   color: Colors.transparent,
                   child: SingleChildScrollView(
-                    child: HtmlWidget(
-                      widget.controller?.value.errorMessage ?? "",
-                    ),
+                    child: HtmlWidget(_controller.value.errorMessage ?? ""),
                   ),
                 ),
         ],
@@ -812,14 +803,11 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   Widget emptyData() {
     return DragTarget<Object>(
       builder: (c, lo, ld) {
-        if (widget.controller?.value.droppedItem != null) {
-          return widget.itemBuilder!(widget.controller?.value.droppedItem, -1);
+        if (_controller.value.droppedItem != null) {
+          return widget.itemBuilder!(_controller.value.droppedItem, -1);
         } else {
-          if (widget.controller?.value.droppedItem != null) {
-            return widget.itemBuilder!(
-              widget.controller?.value.droppedItem,
-              -1,
-            );
+          if (_controller.value.droppedItem != null) {
+            return widget.itemBuilder!(_controller.value.droppedItem, -1);
           } else {
             // Default empty view: allow caller override via `emptyWidget`.
             // Otherwise show a friendly, localized empty state with action.
@@ -848,7 +836,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
                         IconButton(
                           onPressed: () {
                             try {
-                              widget.controller?.refresh();
+                              _controller.refresh();
                             } catch (_) {}
                           },
                           icon: Icon(
@@ -868,20 +856,20 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
       },
       onMove: (object) {
         if (object.data is T) {
-          if (widget.controller?.value.droppedItem == (object.data as T)) {
+          if (_controller.value.droppedItem == (object.data as T)) {
             return;
           }
-          widget.controller?.value.droppedItem = (object.data as T);
-          widget.controller?.commit();
+          _controller.value.droppedItem = (object.data as T);
+          _controller.commit();
         }
       },
       onLeave: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
       },
       onWillAcceptWithDetails: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
         if (widget.onWillReceiveDropedData != null) {
           return widget.onWillReceiveDropedData!((object as T), 0);
         } else {
@@ -889,8 +877,8 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
         }
       },
       onAcceptWithDetails: (object) {
-        widget.controller?.value.droppedItem = null;
-        widget.controller?.commit();
+        _controller.value.droppedItem = null;
+        _controller.commit();
         if (widget.onReceiveDropedData != null) {
           widget.onReceiveDropedData!((object as T), 0);
         }
@@ -904,29 +892,45 @@ class ListDataComponentController<T>
   ListDataComponentController({ListDataComponentValue<T>? value})
     : super(value ?? ListDataComponentValue<T>());
 
+  /// Bumped by [refresh] and [clear]. A data request that finishes after a
+  /// newer refresh or clear was started belongs to a list that no longer
+  /// exists, so its result is dropped instead of overwriting the new one.
+  int _generation = 0;
+
+  /// Releases the scroll and search controllers that the current value owns.
+  /// Without this, each disposed list controller leaked both objects.
+  @override
+  void dispose() {
+    value.scrollController.dispose();
+    value.searchController.dispose();
+    super.dispose();
+  }
+
   void addAll(List<T> datas) {
     value.data.addAll(datas);
     commit();
   }
 
   Future<void> refresh({int? refreshDelayed}) {
-    debugPrint('ListDataComponentController.refresh: start');
+    debugLog('ListDataComponentController.refresh: start');
+    final generation = ++_generation;
     value.state = ListDataComponentState.loading;
     value.data = [];
     commit();
     if (value.dataSource == null) {
-      debugPrint('ListDataComponentController.refresh: no dataSource');
+      debugLog('ListDataComponentController.refresh: no dataSource');
       value.state = ListDataComponentState.loaded;
       commit();
       return Future.value();
     }
-    debugPrint('ListDataComponentController.refresh: calling dataSource...');
+    debugLog('ListDataComponentController.refresh: calling dataSource...');
     return Future.delayed(
       Duration(seconds: refreshDelayed ?? value.refreshDelayed),
     ).then((_) async {
       try {
         final datas = await value.dataSource!(0, value.searchController.text);
-        debugPrint(
+        if (generation != _generation) return;
+        debugLog(
           'ListDataComponentController.refresh: got ${datas.length} items',
         );
         value.data = (datas);
@@ -937,7 +941,8 @@ class ListDataComponentController<T>
         setSelectedData();
         commit();
       } catch (onError) {
-        debugPrint('ListDataComponentController.refresh: error: $onError');
+        if (generation != _generation) return;
+        debugLog('ListDataComponentController.refresh: error: $onError');
         value.state = ListDataComponentState.errorLoaded;
         final mapped = AppDialogService.defaultErrorMapper(onError);
         value.errorMessage = mapped.message;
@@ -947,31 +952,43 @@ class ListDataComponentController<T>
   }
 
   void clear() {
+    _generation++;
     value.data = [];
     commit();
   }
 
   Future<void> getOther() async {
+    // A page is requested at offset `total`. A second request while one is
+    // still running would ask for the same offset and append the page twice,
+    // so it is ignored. Refresh and load-more both set the loading state.
+    if (value.state == ListDataComponentState.loading) return;
+
     double latPosition = 0;
     try {
       latPosition = value.scrollController.position.pixels;
     } catch (e) {
-      debugPrint("");
+      debugLog("");
     }
     value.state = ListDataComponentState.loading;
     commit();
     if (value.dataSource == null) {
       value.state = ListDataComponentState.loaded;
-      value.selected ??= value.data.first;
+      // Default to the first row when there is one. Empty data has no first row.
+      if (value.selected == null && value.data.isNotEmpty) {
+        value.selected = value.data.first;
+      }
       commit();
       return;
     }
+    final generation = _generation;
     try {
-      debugPrint(
+      debugLog(
         'ListDataComponentController.getOther: calling dataSource at offset $total',
       );
       final datas = await value.dataSource!(total, value.searchController.text);
-      debugPrint(
+      // The list was refreshed or cleared while this page was loading.
+      if (generation != _generation) return;
+      debugLog(
         'ListDataComponentController.getOther: got ${datas.length} items',
       );
       value.data.addAll(List.from(datas));
@@ -984,10 +1001,11 @@ class ListDataComponentController<T>
       try {
         value.scrollController.jumpTo(latPosition);
       } catch (e) {
-        debugPrint("");
+        debugLog("");
       }
     } catch (onError) {
-      debugPrint('ListDataComponentController.getOther: error: $onError');
+      if (generation != _generation) return;
+      debugLog('ListDataComponentController.getOther: error: $onError');
       value.state = ListDataComponentState.errorLoaded;
       final mapped = AppDialogService.defaultErrorMapper(onError);
       value.errorMessage = mapped.message;
@@ -1018,7 +1036,7 @@ class ListDataComponentController<T>
         try {
           value.onSelected!(value.selected);
         } catch (e) {
-          debugPrint('ListDataComponentController.onSelected error: $e');
+          debugLog('ListDataComponentController.onSelected error: $e');
         }
       }
     }
@@ -1033,13 +1051,13 @@ class ListDataComponentController<T>
       try {
         notifyListeners();
       } catch (e) {
-        debugPrint('ListDataComponentController.notifyListeners error: $e');
+        debugLog('ListDataComponentController.notifyListeners error: $e');
       }
       if (value.updateWhenEmpty == true || value.data.isNotEmpty) {
         try {
           value.onUpdated?.call();
         } catch (e) {
-          debugPrint('ListDataComponentController.onUpdated error: $e');
+          debugLog('ListDataComponentController.onUpdated error: $e');
         }
       }
     }

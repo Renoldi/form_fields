@@ -174,6 +174,13 @@ class OfflineUploadManager {
 
     final images = loc.provider.images.toList();
     if (loc.index < 0 || loc.index >= images.length) return false;
+    // The cached index can go stale when the list changes without going
+    // through the field. Only trust it when the image at that index still
+    // carries the same correlation id.
+    if (images[loc.index].payload['uploadCorrelationId']?.toString() != corr) {
+      _locations.remove(corr);
+      return false;
+    }
 
     images[loc.index] = _markUploaded(images[loc.index], result);
     loc.provider.setImages(images);
@@ -322,11 +329,21 @@ class OfflineUploadManager {
   ) {
     var updated = false;
     for (var i = 0; i < images.length; i++) {
-      if (!ref.matches(images[i])) continue;
+      if (!ref.matchesStrongly(images[i])) continue;
       images[i] = _markUploaded(images[i], result);
       updated = true;
     }
-    return updated;
+    if (updated) return true;
+
+    // File-name matching is a last resort, and only the first image is marked.
+    // Many images can share a name such as "image.jpg", so marking every match
+    // would mark images that were never uploaded.
+    for (var i = 0; i < images.length; i++) {
+      if (!ref.matchesByFileName(images[i])) continue;
+      images[i] = _markUploaded(images[i], result);
+      return true;
+    }
+    return false;
   }
 
   static MyImageResult _markUploaded(MyImageResult img, _UploadResult result) {
@@ -394,9 +411,8 @@ class _PersistedRef {
   final String? base64;
   final String? fileName;
 
-  /// An image matches when it shares the correlation id, or else the same
-  /// file path, base64 content or file name.
-  bool matches(MyImageResult img) {
+  /// Strong match: same correlation id, file path, or base64 content.
+  bool matchesStrongly(MyImageResult img) {
     final imgCorr = img.payload['uploadCorrelationId']?.toString();
     if (correlationId != null && imgCorr != null && correlationId == imgCorr) {
       return true;
@@ -406,16 +422,20 @@ class _PersistedRef {
     if (path != null && imgPath != null && path == imgPath) return true;
 
     final imgBase64 = _nonEmpty(img.base64);
-    if (base64 != null &&
+    return base64 != null &&
         imgBase64 != null &&
-        base64 == _stripDataPrefix(imgBase64)) {
-      return true;
-    }
+        base64 == _stripDataPrefix(imgBase64);
+  }
 
+  /// Weak match: same file name. Several images can share a name, so callers
+  /// must use this only as a fallback.
+  bool matchesByFileName(MyImageResult img) {
+    if (fileName == null) return false;
+    final imgPath = _nonEmpty(img.path);
     final imgFileName = imgPath != null
         ? p.basename(imgPath)
         : _nonEmpty(_fileMapOf(img)?['fileName']);
-    return fileName != null && imgFileName != null && fileName == imgFileName;
+    return imgFileName != null && fileName == imgFileName;
   }
 
   static Map<String, dynamic>? _fileMapOf(MyImageResult img) {

@@ -169,4 +169,26 @@ void main() {
     final names = (await db.selectSqliteMaster()).map((r) => r['name']);
     expect(names, contains('b'));
   });
+
+  test('G: upgrading from v1 applies only v2 and records version 2', () async {
+    // First start: only v1 exists, so the DB is recorded at version 1.
+    await FormFieldsInitializer.initAll(
+      dbName: 'g.db',
+      enableWorkmanager: false,
+      migrationAssetPaths: const ['migrations/v1.sql'],
+    );
+    await db.close();
+
+    // Second start ships v2. Re-running v1 (CREATE TABLE a) would fail, so
+    // the upgrade must skip it.
+    await FormFieldsInitializer.initAll(
+      dbName: 'g.db',
+      enableWorkmanager: false,
+      migrationAssetPaths: const ['migrations/v1.sql', 'migrations/v2.sql'],
+    );
+
+    expect(await db.selectDbVersion(), 2);
+    final names = (await db.selectSqliteMaster()).map((r) => r['name']);
+    expect(names, containsAll(['a', 'b']));
+  });
 }

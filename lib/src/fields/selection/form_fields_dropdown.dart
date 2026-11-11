@@ -87,6 +87,13 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
   }
 
   @override
+  void dispose() {
+    // Created in initState and never released before.
+    _notifier.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant FormFieldsDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.externalErrorText != widget.externalErrorText) {

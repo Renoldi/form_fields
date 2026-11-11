@@ -68,10 +68,11 @@ class KDTree {
 /// Helper to build KDTree from a list of markers at a given zoom using
 /// world pixel projection functions supplied by the caller.
 KDTree buildKDTreeFromMarkers(
-    List<dynamic> markers,
-    double zoom,
-    double Function(double lon, double zoom) worldX,
-    double Function(double lat, double zoom) worldY) {
+  List<dynamic> markers,
+  double zoom,
+  double Function(double lon, double zoom) worldX,
+  double Function(double lat, double zoom) worldY,
+) {
   final pts = <_KDPoint>[];
   for (final m in markers) {
     double lon;
@@ -91,10 +92,12 @@ KDTree buildKDTreeFromMarkers(
       lat = pm.lat;
       lon = pm.lon;
     } else if (m is Map) {
-      lat = (m['lat'] as num?)?.toDouble() ??
+      lat =
+          (m['lat'] as num?)?.toDouble() ??
           (m['latitude'] as num?)?.toDouble() ??
           0.0;
-      lon = (m['lon'] as num?)?.toDouble() ??
+      lon =
+          (m['lon'] as num?)?.toDouble() ??
           (m['longitude'] as num?)?.toDouble() ??
           0.0;
     } else {
@@ -109,10 +112,11 @@ KDTree buildKDTreeFromMarkers(
 
 /// Helper to build KDTree from raw coordinate pairs `[lat, lon]`.
 KDTree buildKDTreeFromRawCoords(
-    List<dynamic> coords,
-    double zoom,
-    double Function(double lon, double zoom) worldX,
-    double Function(double lat, double zoom) worldY) {
+  List<dynamic> coords,
+  double zoom,
+  double Function(double lon, double zoom) worldX,
+  double Function(double lat, double zoom) worldY,
+) {
   final pts = <_KDPoint>[];
   for (final c in coords) {
     double lat;
@@ -136,10 +140,12 @@ KDTree buildKDTreeFromRawCoords(
       payload = c;
     } else if (c is Map) {
       // support {'lat': ..., 'lon': ..., 'title': ..., 'subtitle': ...}
-      lat = (c['lat'] as num?)?.toDouble() ??
+      lat =
+          (c['lat'] as num?)?.toDouble() ??
           (c['latitude'] as num?)?.toDouble() ??
           0.0;
-      lon = (c['lon'] as num?)?.toDouble() ??
+      lon =
+          (c['lon'] as num?)?.toDouble() ??
           (c['longitude'] as num?)?.toDouble() ??
           0.0;
       payload = c;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
 import '../utilities/theme_helpers.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
 class AppDialogService {
   /// Example usage in UI or ViewModel:
@@ -80,7 +81,10 @@ class AppDialogService {
   }
 
   final BuildContext context;
-  bool _isLoadingDialogVisible = false;
+  /// Shared by every instance. A new `AppDialogService` is created for almost
+  /// every call, so a per-instance flag let `hideLoading()` on one instance miss
+  /// a loading dialog that another instance had shown, and it stayed on screen.
+  static bool _isLoadingDialogVisible = false;
 
   AppDialogService(this.context);
 
@@ -262,7 +266,7 @@ class AppDialogService {
     if (kDebugMode) {
       try {
         final loc = Localizations.localeOf(context);
-        debugPrint(
+        debugLog(
           'AppDialogService.showLoading - locale: $loc, '
           "messageParam: ${message ?? '<null>'}, resolved: $displayMessage",
         );

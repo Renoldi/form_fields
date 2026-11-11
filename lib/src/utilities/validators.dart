@@ -98,7 +98,7 @@ class FormFieldValidators {
         if (l10n != null) return l10n.getWithLabel('required', label);
         return 'Enter $label';
       }
-      if (!value.isValidNumber) {
+      if (!value.isValidDecimal) {
         if (customMessage != null) return customMessage;
         if (l10n != null) return l10n.getWithLabel('enterValidNumber', label);
         return 'Enter valid number';
@@ -166,12 +166,12 @@ class FormFieldValidators {
         if (l10n != null) return l10n.getWithLabel('required', label);
         return 'Enter $label';
       }
-      if (!value.isValidNumber) {
+      if (!value.isValidDecimal) {
         if (customMessage != null) return customMessage;
         if (l10n != null) return l10n.getWithLabel('enterValidNumber', label);
         return 'Enter valid number';
       }
-      final num? numValue = num.tryParse(value);
+      final num? numValue = num.tryParse(value.trim());
       if (numValue == null || numValue < min || numValue > max) {
         if (customMessage != null) return customMessage;
         return '$label must be between $min and $max';
@@ -187,13 +187,15 @@ class FormFieldValidators {
     String? customMessage,
     FormFieldsLocalizations? l10n,
   }) {
+    // Compiled once, so an invalid pattern fails when the validator is built
+    // rather than on every validation.
+    final regExp = RegExp(pattern);
     return (value) {
       if (value == null || value.isWhiteSpace) {
         if (customMessage != null) return customMessage;
         if (l10n != null) return l10n.getWithLabel('required', label);
         return 'Enter $label';
       }
-      final regExp = RegExp(pattern);
       if (!regExp.hasMatch(value)) {
         if (customMessage != null) return customMessage;
         if (l10n != null) return l10n.getWithLabel('invalid', label);

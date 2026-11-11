@@ -10,6 +10,12 @@ typedef PayloadDecoder =
 
 typedef RowMapper<T> = T Function(Map<String, dynamic> row);
 
+/// A stored value that looks like a payload file name (`something.json`).
+final RegExp _payloadFileNamePattern = RegExp(
+  r'^[A-Za-z0-9._-]+\.json$',
+  caseSensitive: false,
+);
+
 /// Small, dependency-free utilities around payload inlining and decoding.
 /// This file intentionally doesn't refer to private DBService members so it
 /// can be unit tested independently. Callers must provide the minimal
@@ -62,11 +68,7 @@ class PayloadUtils {
         } else {
           try {
             final s = v.trim();
-            final fnRe = RegExp(
-              r'^[A-Za-z0-9._-]+\.json$',
-              caseSensitive: false,
-            );
-            final looksLikeFilename = fnRe.hasMatch(s);
+            final looksLikeFilename = _payloadFileNamePattern.hasMatch(s);
             if (isColumnFileBackedLocal(table, c) || looksLikeFilename) {
               final decoded = payloadDecoder != null
                   ? await payloadDecoder(v, table, c)

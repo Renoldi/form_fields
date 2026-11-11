@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/models/direct_upload_payload.dart';
+import 'package:form_fields/src/utilities/base64_image.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
@@ -11,6 +13,9 @@ import 'package:signature/signature.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/utilities/signature_pad_export_nullable_result.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
+import 'package:form_fields/src/utilities/persisted_headers.dart';
+import 'package:form_fields/src/utilities/url_origin.dart';
 
 // SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
 // SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
@@ -100,7 +105,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
   /// mode with an existing image:
   /// ```dart
   /// final ctrl = FormFieldsSignaturePadController.fromSignature(
-  ///   MyimageResult.network('https://example.com/sig.png'),
+  ///   MyImageResult.network('https://example.com/sig.png'),
   /// );
   /// ```
   final FormFieldsSignaturePadController? signaturePadController;
@@ -294,7 +299,7 @@ class FormFieldsSignaturePad extends StatefulWidget {
     // Warn developer about the conflicting combination at construction time.
     if (silentLiveCapture && showLiveCamera) {
       if (kDebugMode) {
-        debugPrint(
+        debugLog(
           'FormFieldsSignaturePad: silentLiveCapture ignored when showLiveCamera==true',
         );
       }
@@ -327,8 +332,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
 
   // Other internal state members
   late SignatureController _signatureController;
+  bool _hasSignatureController = false;
   late FormFieldsMyImageController _cameraController;
   bool _ownsCamera = false;
+  // True while this widget holds a reference on the shared camera, so that
+  // release() is only ever paired with an acquire() that succeeded.
+  bool _holdsSilentCamera = false;
   Timer? _autoExportTimer;
   final Duration _autoExportDebounce = const Duration(milliseconds: 700);
   @override
@@ -336,6 +345,9 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     super.initState();
     _padProvider = FormFieldsSignaturePadProvider();
     _initCameraController();
+    // Bound once here. Doing it in didChangeDependencies would add the same
+    // listener again on every dependency change.
+    _bindSignaturePadController(widget.signaturePadController);
     // SignatureController initialized in didChangeDependencies to allow
     // resolving theme-aware default colors via Theme.of(context).
     // Acquire camera for silent background capture, but only after permission.
@@ -349,7 +361,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             // Use a lower resolution for background/silent capture to speed
             // up camera initialization.
             await SharedCameraManager.instance.acquire(ResolutionPreset.low);
+            _holdsSilentCamera = true;
           } catch (_) {}
+          // Disposed while the camera was starting: give the reference back.
+          if (!mounted) _releaseSilentCamera();
         }
       });
     }
@@ -371,14 +386,33 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
         widget.exportBackgroundColor ??
         widget.backgroundColor ??
         theme.colorScheme.surface;
+    // Dependency changes also fire for unrelated inherited updates. The
+    // controller is replaced only when its colors change, so the drawing is
+    // not wiped on every one of them.
+    if (_hasSignatureController &&
+        _signatureController.penColor == resolvedPen &&
+        _signatureController.exportBackgroundColor == resolvedBg) {
+      return;
+    }
+    // The colors of a SignatureController are final, so a new one is needed.
+    // The strokes move to it, and the old one is released.
+    // A growable list: the controller appends to it while drawing.
+    final previousPoints = _hasSignatureController
+        ? List<Point>.of(_signatureController.points)
+        : <Point>[];
+    if (_hasSignatureController) {
+      _signatureController.removeListener(_onSignatureChanged);
+      _signatureController.dispose();
+    }
     _signatureController = SignatureController(
       penStrokeWidth: widget.penStrokeWidth,
       penColor: resolvedPen,
       exportBackgroundColor: resolvedBg,
       onDrawStart: _onDrawStart,
     );
+    _signatureController.points = previousPoints;
     _signatureController.addListener(_onSignatureChanged);
-    _bindSignaturePadController(widget.signaturePadController);
+    _hasSignatureController = true;
   }
 
   void _initCameraController() {
@@ -548,6 +582,11 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             _padProvider.previewLiveCaptureResult != null)) {
       _padProvider.clearPreviewResults();
     }
+    if (widget.signaturePadController != oldWidget.signaturePadController) {
+      _unbindSignaturePadController(oldWidget.signaturePadController);
+      _bindSignaturePadController(widget.signaturePadController);
+      _syncPreviewFromSignaturePadController();
+    }
     // If the external liveCameraController changed, rebind/unbind so the
     // OfflineUploadManager and listeners attach to the new controller.
     if (widget.liveCameraController != oldWidget.liveCameraController) {
@@ -564,7 +603,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   Future<bool> _hasNetwork() async {
     try {
       final conn = await Connectivity().checkConnectivity();
-      return conn.contains(ConnectivityResult.none) ? false : true;
+      // Offline means no results, or only `none`. An empty list is offline too.
+      return conn.any((r) => r != ConnectivityResult.none);
     } catch (_) {
       return false;
     }
@@ -578,11 +618,18 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     _signatureController.removeListener(_onSignatureChanged);
     _signatureController.dispose();
     if (_ownsCamera) _cameraController.dispose();
-    if (widget.silentLiveCapture && !widget.showLiveCamera) {
-      SharedCameraManager.instance.release();
-    }
+    _releaseSilentCamera();
     _padProvider.dispose();
     super.dispose();
+  }
+
+  /// Gives back the shared camera reference, but only when one was acquired.
+  /// Releasing without an acquire would drop a reference that another user of
+  /// the shared camera still holds.
+  void _releaseSilentCamera() {
+    if (!_holdsSilentCamera) return;
+    _holdsSilentCamera = false;
+    SharedCameraManager.instance.release();
   }
 
   // ── Auto-capture on draw start ─────────────────────────────────────────────
@@ -671,6 +718,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           File(xfile.path),
           quality: widget.quality,
         );
+        // The widget may have been removed while the photo was being taken.
+        if (!mounted) return;
         _cameraController.images = [result];
         widget.onLiveCaptured?.call(result);
       } catch (_) {
@@ -720,6 +769,8 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       '${tempDir.path}/signature_${DateTime.now().millisecondsSinceEpoch}.png',
     ).create();
     await file.writeAsBytes(data);
+    // The PNG is kept on purpose: the direct upload reads it, and an
+    // offline-queued payload refers to its path.
     final signatureResult = await MyImageResult.fromFile(
       file,
       quality: widget.quality,
@@ -771,7 +822,13 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           message: widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage'),
         );
       }
-      final finalSignature = updatedSignature ?? signatureResult;
+      // A direct upload that returned nothing was refused and not queued, so the
+      // signature is shown as failed rather than as a plain capture.
+      final finalSignature =
+          updatedSignature ??
+          (widget.isDirectUpload
+              ? signatureResult.copyWith(status: MyImageStatus.failed)
+              : signatureResult);
       // Live capture is already uploaded by FormFieldsLiveCameraCapture.capture()
       // so _cameraController.images.first already has the server result.
       final finalLiveCapture =
@@ -779,10 +836,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           ? _cameraController.images.first
           : liveCapture;
       // Log final results for debugging (link/path/base64 length/status).
-      debugPrint(
+      debugLog(
         '[FormFieldsSignaturePad._exportSignature] finalSignature: link=${finalSignature.link}, path=${finalSignature.path}, base64Len=${finalSignature.base64.length}, status=${finalSignature.status}',
       );
-      debugPrint(
+      debugLog(
         '[FormFieldsSignaturePad._exportSignature] finalLiveCapture: link=${finalLiveCapture.link}, path=${finalLiveCapture.path}, base64Len=${finalLiveCapture.base64.length}, status=${finalLiveCapture.status}',
       );
 
@@ -814,7 +871,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             widget.onFailDirectUploadList?.call(nullable);
           }
         } catch (e, st) {
-          debugPrint(
+          debugLog(
             'FormFieldsSignaturePad.onFailDirectUploadList threw: $e\n$st',
           );
         }
@@ -836,25 +893,20 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
                 includeReqType: widget.uploadIncludeReqType,
               );
           if (payloads.isNotEmpty || _embeddedQueuedPayloads.isNotEmpty) {
-            // Merge payloads generated here with any buffered payloads
-            // emitted earlier by the embedded live camera. Dedupe by
-            // `uploadCorrelationId` to avoid duplicates.
-            final Map<String?, DirectUploadPayload> byId = {};
-            for (final p in _embeddedQueuedPayloads) {
-              byId[p.uploadCorrelationId] = p;
-            }
-            for (final p in payloads) {
-              byId[p.uploadCorrelationId] = p;
-            }
-            final merged = byId.values.toList(growable: false);
+            // Merge with payloads buffered by the embedded live camera, so a
+            // capture that arrives on both paths is queued only once.
+            final merged = mergeQueuedPayloads(
+              _embeddedQueuedPayloads,
+              payloads,
+            );
             if (kDebugMode) {
-              debugPrint(
+              debugLog(
                 'FormFieldsSignaturePad: onFailDirectUploadPayload -> ${merged.length} payload(s) (merged)',
               );
               for (var i = 0; i < merged.length; i++) {
                 try {
                   final p = merged[i];
-                  debugPrint(
+                  debugLog(
                     'FormFieldsSignaturePad: merged payload[$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
                   );
                 } catch (_) {}
@@ -863,7 +915,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             try {
               widget.onFailDirectUploadPayload?.call(merged);
             } catch (e, st) {
-              debugPrint(
+              debugLog(
                 'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
               );
             }
@@ -877,7 +929,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             _embeddedQueuedPayloads.clear();
           }
         } catch (e, st) {
-          debugPrint(
+          debugLog(
             'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
           );
         }
@@ -908,6 +960,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           } catch (_) {}
         }
       }
+      // Payloads the embedded camera queued earlier must still reach the
+      // caller, even when this export itself uploaded. Before, they waited in
+      // the buffer until some later export failed.
+      _flushEmbeddedQueuedPayloads();
       widget.signaturePadController?.updateFromWidget(finalResult);
       widget.onExported?.call(finalSignature);
       if (widget.onExportedResult != null) {
@@ -932,8 +988,71 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
   }
 
+  /// Reports and clears the payloads buffered from the embedded camera.
+  void _flushEmbeddedQueuedPayloads() {
+    if (_embeddedQueuedPayloads.isEmpty) return;
+    final pending = List<DirectUploadPayload>.of(_embeddedQueuedPayloads);
+    _embeddedQueuedPayloads.clear();
+    try {
+      widget.onFailDirectUploadPayload?.call(pending);
+    } catch (e, st) {
+      debugLog(
+        'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
+      );
+    }
+  }
+
+  /// Persists a failed upload through the queue callbacks so it is retried
+  /// later. Returns the queued result.
+  Future<MyImageResult?> _queueFailedUpload(
+    MyImageResult image,
+    Map<String, dynamic> payload, {
+    required bool authExpired,
+  }) async {
+    final queuedImage = MyImageResult(
+      link: image.link,
+      base64: image.base64,
+      path: image.path,
+      imageId: image.imageId,
+      description: image.description,
+      payload: payload,
+      status: MyImageStatus.queued,
+    );
+    try {
+      final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+        queuedImage,
+        defaultUrl: widget.uploadUrl,
+        fileFieldName: widget.uploadFileFieldName,
+        includeReqType: widget.uploadIncludeReqType,
+      );
+      if (direct != null) {
+        debugLog(
+          'FormFieldsSignaturePad: queued -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+        );
+        try {
+          widget.onUploadQueued?.call(direct, authExpired);
+        } catch (e, st) {
+          debugLog('FormFieldsSignaturePad.onUploadQueued threw: $e\n$st');
+        }
+        try {
+          widget.onFailDirectUploadPayload?.call([direct]);
+        } catch (e, st) {
+          debugLog(
+            'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
+          );
+        }
+      }
+    } catch (e, st) {
+      debugLog(
+        'FormFieldsSignaturePad: error while building queued payload: $e\n$st',
+      );
+    }
+    return queuedImage;
+  }
+
   /// Uploads [image] to [uploadUrl] and returns the updated [MyImageResult]
-  /// with server link/imageId filled in. Returns `null` on failure.
+  /// with server link/imageId filled in. Returns `null` on failure when the
+  /// upload was refused and not queued.
   Future<MyImageResult?> _uploadImageDio(
     MyImageResult image, {
     bool showSuccessDialog = true,
@@ -956,7 +1075,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
-      'headers': headers,
+      'headers': headersForPersistence(headers),
       'fields': Map<String, String>.fromEntries(extraFields),
       'file': {
         'fileName': fileName,
@@ -994,10 +1113,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       return updatedImage;
     }
 
-    debugPrint(
+    debugLog(
       '[FormFieldsSignaturePad._uploadImageDio] '
       'START upload url=${widget.uploadUrl}, file=${image.path}, '
-      'fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
+      'fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=${headers.keys.toList()}, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
     );
 
     final response = await DioUtil.uploadFile(
@@ -1030,7 +1149,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     final uploadErrorMessage =
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
-      debugPrint(
+      debugLog(
         '[FormFieldsSignaturePad._uploadImageDio] response == null (network error)',
       );
       if (widget.showUploadResultDialog) {
@@ -1044,52 +1163,14 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     }
     // Treat 401 as queueable (auth expired) so callers can persist payloads.
     if (response.statusCode == 401) {
-      debugPrint(
+      debugLog(
         '[FormFieldsSignaturePad._uploadImageDio] upload failed: 401 -> queueing payload',
       );
-      MyImageResult? queuedImage;
-      try {
-        queuedImage = MyImageResult(
-          link: image.link,
-          base64: image.base64,
-          path: image.path,
-          imageId: image.imageId,
-          description: image.description,
-          payload: payload,
-          status: MyImageStatus.queued,
-        );
-        final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
-          queuedImage,
-          defaultUrl: widget.uploadUrl,
-          fileFieldName: widget.uploadFileFieldName,
-          includeReqType: widget.uploadIncludeReqType,
-        );
-        if (direct != null) {
-          if (kDebugMode) {
-            try {
-              debugPrint(
-                'FormFieldsSignaturePad: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
-              );
-            } catch (_) {}
-          }
-          try {
-            widget.onUploadQueued?.call(direct, true);
-          } catch (e, st) {
-            debugPrint('FormFieldsSignaturePad.onUploadQueued threw: $e\n$st');
-          }
-          try {
-            widget.onFailDirectUploadPayload?.call([direct]);
-          } catch (e, st) {
-            debugPrint(
-              'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
-            );
-          }
-        }
-      } catch (e, st) {
-        debugPrint(
-          'FormFieldsSignaturePad: error while building queued payload: $e\n$st',
-        );
-      }
+      final queued = await _queueFailedUpload(
+        image,
+        payload,
+        authExpired: true,
+      );
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadFailedTitle,
@@ -1097,7 +1178,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           dialogType: AppDialogType.server,
         );
       }
-      return queuedImage;
+      return queued;
     }
     try {
       if (response.statusCode != null &&
@@ -1121,7 +1202,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           data,
           keys: 'filePath',
         );
-        debugPrint(
+        debugLog(
           '[FormFieldsSignaturePad._uploadImageDio] '
           'status=${response.statusCode}, uploadedLink=$uploadedLink, '
           'uploadedPath=$uploadedPath, imageId=$imageId',
@@ -1184,9 +1265,16 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
           status: MyImageStatus.uploaded,
         );
       } else {
-        debugPrint(
+        debugLog(
           '[FormFieldsSignaturePad._uploadImageDio] upload failed: status=${response.statusCode}, statusMessage=${response.statusMessage}, data=${response.data}',
         );
+        // Server-side or transient failures can succeed later, so they are
+        // queued the same way as the live camera. Permanent client errors
+        // (400, 403, 404, 422, ...) are reported and not queued.
+        MyImageResult? queued;
+        if (UploadService.isRetryableStatus(response.statusCode)) {
+          queued = await _queueFailedUpload(image, payload, authExpired: false);
+        }
         if (widget.showUploadResultDialog) {
           await dialog.showError(
             title: uploadFailedTitle,
@@ -1194,9 +1282,10 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
             dialogType: AppDialogType.server,
           );
         }
+        return queued;
       }
     } catch (e) {
-      debugPrint(
+      debugLog(
         '[FormFieldsSignaturePad._uploadImageDio] exception while processing response: $e',
       );
       if (widget.showUploadResultDialog) {
@@ -1232,7 +1321,7 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
     if (hasLocalPath) {
       imageWidget = Image.file(File(result.path), fit: fit);
     } else if (hasBase64) {
-      final bytes = Uri.parse(result.base64).data?.contentAsBytes();
+      final bytes = decodeBase64Image(result.base64);
       if (bytes != null) {
         imageWidget = Image.memory(bytes, fit: fit);
       } else {
@@ -1246,7 +1335,12 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
       }
     } else if (result.link.trim().isNotEmpty) {
       imageWidget = Image(
-        image: NetworkImage(result.link, headers: tokenHeader),
+        image: NetworkImage(
+          result.link,
+          headers: isSameOrigin(result.link, widget.uploadUrl)
+              ? tokenHeader
+              : null,
+        ),
         fit: fit,
         errorBuilder: (_, error, stackTrace) => Center(
           child: Icon(

@@ -78,8 +78,10 @@ class FormFieldsRadioButton<T> extends StatefulWidget {
     this.externalErrorText,
     this.backgroundColor,
     this.filled = true,
-  }) : assert(items != null || sections != null,
-            'Either items or sections must be provided');
+  }) : assert(
+         items != null || sections != null,
+         'Either items or sections must be provided',
+       );
 
   @override
   State<FormFieldsRadioButton<T>> createState() =>
@@ -303,9 +305,11 @@ class _FormFieldsRadioButtonBodyView<T>
     final errorColor = theme.colorScheme.error;
     final containerBorder = widget.itemBorderColor == null
         ? (widget.borderType == BorderType.none
-            ? null
-            : Border.all(
-                color: hasError ? errorColor : normalColor, width: 1.5))
+              ? null
+              : Border.all(
+                  color: hasError ? errorColor : normalColor,
+                  width: 1.5,
+                ))
         : null;
 
     final radioContainer = Container(
@@ -313,11 +317,12 @@ class _FormFieldsRadioButtonBodyView<T>
       decoration: BoxDecoration(
         color: widget.filled
             ? (widget.backgroundColor ??
-                Theme.of(context).colorScheme.surfaceContainerHighest)
+                  Theme.of(context).colorScheme.surfaceContainerHighest)
             : null,
         border: containerBorder,
-        borderRadius:
-            widget.itemBorderColor == null ? BorderRadius.circular(10) : null,
+        borderRadius: widget.itemBorderColor == null
+            ? BorderRadius.circular(10)
+            : null,
         boxShadow: widget.itemShadow && !hasError
             ? [
                 BoxShadow(
@@ -341,10 +346,7 @@ class _FormFieldsRadioButtonBodyView<T>
                       widget.state.errorText!.isNotEmpty)
                   ? widget.state.errorText!
                   : l.getWithLabel('selectRequired', widget.label.toTitleCases),
-              style: const TextStyle(
-                color: Color(0xFFB71C1C),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFFB71C1C), fontSize: 12),
             ),
           )
         : const SizedBox.shrink();
@@ -388,10 +390,7 @@ class _FormFieldsRadioButtonBodyView<T>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    radioContainer,
-                    errorWidget,
-                  ],
+                  children: [radioContainer, errorWidget],
                 ),
               ),
             ],
@@ -406,10 +405,7 @@ class _FormFieldsRadioButtonBodyView<T>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    radioContainer,
-                    errorWidget,
-                  ],
+                  children: [radioContainer, errorWidget],
                 ),
               ),
               const SizedBox(width: 8),
@@ -422,10 +418,7 @@ class _FormFieldsRadioButtonBodyView<T>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              radioContainer,
-              errorWidget,
-            ],
+            children: [radioContainer, errorWidget],
           ),
         );
       case LabelPosition.none:
@@ -433,10 +426,7 @@ class _FormFieldsRadioButtonBodyView<T>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              radioContainer,
-              errorWidget,
-            ],
+            children: [radioContainer, errorWidget],
           ),
         );
     }
@@ -519,11 +509,11 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
-                        widget.textStyle?.color ??
-                        resolveTextColor(context))
+                          widget.textStyle?.color ??
+                          resolveTextColor(context))
                     : (widget.textStyle?.color != null
-                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
-                        : resolveTextColor(context, muted: true)),
+                          ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                          : resolveTextColor(context, muted: true)),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
               child: widget.itemBuilder!(item, selected),
@@ -540,11 +530,11 @@ class _FormFieldsRadioButtonBodyView<T>
               style: TextStyle(
                 color: selected
                     ? (widget.selectedItemTextColor ??
-                        widget.textStyle?.color ??
-                        resolveTextColor(context))
+                          widget.textStyle?.color ??
+                          resolveTextColor(context))
                     : (widget.textStyle?.color != null
-                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
-                        : resolveTextColor(context, muted: true)),
+                          ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                          : resolveTextColor(context, muted: true)),
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: selected ? 14 : 13.5,
               ),
@@ -567,7 +557,9 @@ class _FormFieldsRadioButtonBodyView<T>
               builder: (context) {
                 final containerColor = selected
                     ? (widget.selectedItemBackgroundColor ??
-                        _effectiveActiveColor(context).withValues(alpha: 0.12))
+                          _effectiveActiveColor(
+                            context,
+                          ).withValues(alpha: 0.12))
                     : Colors.transparent;
 
                 final itemBox = AnimatedContainer(
@@ -585,13 +577,15 @@ class _FormFieldsRadioButtonBodyView<T>
                                 : widget.itemBorderWidth,
                           )
                         : null,
-                    borderRadius:
-                        BorderRadius.circular(widget.itemBorderRadius),
+                    borderRadius: BorderRadius.circular(
+                      widget.itemBorderRadius,
+                    ),
                     boxShadow: widget.itemShadow && selected
                         ? [
                             BoxShadow(
-                              color: _effectiveActiveColor(context)
-                                  .withValues(alpha: 0.15),
+                              color: _effectiveActiveColor(
+                                context,
+                              ).withValues(alpha: 0.15),
                               blurRadius: 12,
                               offset: const Offset(0, 3),
                             ),
@@ -607,11 +601,13 @@ class _FormFieldsRadioButtonBodyView<T>
                             // Re-validate so externalErrorText clears when user selects
                             widget.state.validate();
                           },
-                    hoverColor: (widget.hoverBackgroundColor ??
-                            _effectiveActiveColor(context))
-                        .withValues(alpha: 0.08),
-                    borderRadius:
-                        BorderRadius.circular(widget.itemBorderRadius),
+                    hoverColor:
+                        (widget.hoverBackgroundColor ??
+                                _effectiveActiveColor(context))
+                            .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(
+                      widget.itemBorderRadius,
+                    ),
                     child: Padding(
                       padding: widget.itemPadding,
                       child: Row(
@@ -649,9 +645,7 @@ class _FormFieldsRadioButtonBodyView<T>
                           if (isCompactHorizontal)
                             itemContent
                           else
-                            Expanded(
-                              child: itemContent,
-                            ),
+                            Expanded(child: itemContent),
                         ],
                       ),
                     ),

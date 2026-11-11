@@ -371,6 +371,10 @@ class _BarcodeScannerDialog extends StatefulWidget {
 class _BarcodeScannerDialogState extends State<_BarcodeScannerDialog> {
   late final MobileScannerController _controller;
 
+  /// The scanner reports every frame that contains a code, so `onDetect` can
+  /// fire again before the route is gone. Only the first result may close it.
+  bool _closed = false;
+
   @override
   void initState() {
     super.initState();
@@ -406,8 +410,9 @@ class _BarcodeScannerDialogState extends State<_BarcodeScannerDialog> {
                 final barcodes = capture.barcodes;
                 if (barcodes.isNotEmpty) {
                   final code = barcodes.first.rawValue;
-                  if (code != null) {
-                    if (context.mounted) Navigator.of(context).pop(code);
+                  if (code != null && !_closed && context.mounted) {
+                    _closed = true;
+                    Navigator.of(context).pop(code);
                   }
                 }
               },
@@ -512,7 +517,8 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       },
     );
 
-    if (result != null) {
+    // The field may have been removed while the scanner was open.
+    if (result != null && mounted) {
       onScanned(result);
     }
   }
@@ -588,13 +594,17 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   int _otpCountdownRemaining = 0;
   bool _otpCountdownFinished = false;
 
+  /// Resets the countdown and starts ticking. Callers that run after the first
+  /// frame must wrap this in `setState` so the new state is rendered.
   void _startOtpCountdown() {
     _otpCountdownTimer?.cancel();
-    setState(() {
-      _otpCountdownRemaining = widget.otpCountdownDuration.inSeconds;
-      _otpCountdownFinished = false;
-    });
+    _otpCountdownRemaining = widget.otpCountdownDuration.inSeconds;
+    _otpCountdownFinished = false;
     _otpCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
         if (_otpCountdownRemaining > 0) {
           _otpCountdownRemaining--;
@@ -763,12 +773,14 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   @override
   void dispose() {
+    _otpCountdownTimer?.cancel();
     _disposeVerificationInputs();
     model.controller.removeListener(_onControllerTextChanged);
     model.dispose();
     debounce.cancel();
     _internalFocusNode?.dispose();
     _effectiveFieldExtraBottom.dispose();
+    _notifier.dispose();
     super.dispose();
   }
 
@@ -1563,10 +1575,15 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     DateTime initialEnd;
 
     if (widget.currentValue != null) {
-      // Use current value if available
+      // Use current value if available. It can fall outside the picker bounds
+      // when the bounds changed after it was set, and the picker asserts that
+      // the initial range lies inside them. Clamp it.
       final currentRange = widget.currentValue as DateTimeRange;
-      initialStart = currentRange.start;
-      initialEnd = currentRange.end;
+      DateTime clampToBounds(DateTime d) =>
+          d.isBefore(first) ? first : (d.isAfter(last) ? last : d);
+      initialStart = clampToBounds(currentRange.start);
+      initialEnd = clampToBounds(currentRange.end);
+      if (initialEnd.isBefore(initialStart)) initialEnd = initialStart;
     } else {
       // Create default 7-day range respecting constraints
       initialStart = now.isAfter(last)
@@ -1820,24 +1837,27 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // treat that as a non-empty value for validation purposes. This fixes
     // cases where date/time pickers update the controller but the parent
     // doesn't immediately pass the new `currentValue` back in.
+    // The text only stands in for the value when T can hold a String. For other
+    // types (DateTime, TimeOfDay, ...) a non-empty text just proves that
+    // something was picked, so it counts as present without a cast.
+    final ctrlText = vm.controller.text.trim();
+    final textPresent = value == null && ctrlText.isNotEmpty;
     T? effectiveValue = value;
-    if (effectiveValue == null) {
-      final ctrlText = vm.controller.text.trim();
-      if (ctrlText.isNotEmpty) {
-        effectiveValue = ctrlText as T?;
-      }
+    if (textPresent && ctrlText is T?) {
+      effectiveValue = ctrlText as T?;
     }
 
     // 2. Check required field constraint
     final isBlankString =
         effectiveValue is String && effectiveValue.trim().isEmpty;
+    final isEmpty = !textPresent && (effectiveValue == null || isBlankString);
 
-    if (isRequired && (effectiveValue == null || isBlankString)) {
+    if (isRequired && isEmpty) {
       return l.getWithLabel('required', label.toTitleCases);
     }
 
     // 3. Skip validation for optional empty fields
-    if (!isRequired && (effectiveValue == null || isBlankString)) {
+    if (!isRequired && isEmpty) {
       return null;
     }
 
@@ -2350,7 +2370,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
                           context: context,
                           onResend: _otpCountdownFinished
                               ? () {
-                                  _startOtpCountdown();
+                                  setState(_startOtpCountdown);
                                   if (widget.onOtpCountdownReload != null) {
                                     widget.onOtpCountdownReload!();
                                   }

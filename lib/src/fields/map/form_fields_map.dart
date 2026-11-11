@@ -10,6 +10,8 @@ import 'package:form_fields/src/fields/map/canvas_raw_marker_painter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/utilities/geo_distance.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
 const double _tapPad = 12.0;
 
@@ -258,6 +260,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     with AutomaticKeepAliveClientMixin<FormFieldsMap> {
   late final MapController _mapController;
   late final GeocodingService _geocodingService;
+
+  /// Owns the HTTP client for map tiles. Created once: `build` runs on every
+  /// playback tick, and a provider created there was never closed.
+  final NetworkTileProvider _tileProvider = NetworkTileProvider();
   bool _centerActionInProgress = false;
   Timer? _debounceTimer;
   // Notifier removed from widget API. Consumers should register any
@@ -458,7 +464,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     try {
       final existing = FormFieldsMapController.getNotifier(_controllerId);
       try {
-        debugPrint(
+        debugLog(
           '[FormFieldsMap] initState controllerId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}',
         );
       } catch (_) {}
@@ -472,7 +478,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
     // Notifier lifecycle is managed externally via FormFieldsMapController.
     // The widget no longer accepts a `notifier` parameter.
-    _resolveCanvasMarkerIcon();
+    // Not called here: it reads the theme and asset bundle through the
+    // context, and Flutter does not allow that from initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _resolveCanvasMarkerIcon();
+    });
     _playbackInterval = _playbackIntervalEffective;
     _playbackInterpolationSteps = _playbackInterpolationStepsEffective;
     _playbackSubstepInterval = _computeSubstepInterval(
@@ -575,6 +585,11 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // Unregister handlers from the old id
       FormFieldsMapController.removeOnMarkerTap(oldId);
       FormFieldsMapController.unregisterPlaybackHandler(oldId);
+      // An internal controller created for the old id is no longer used. Drop
+      // its registry entries, or each controller swap leaves one behind.
+      if (_ownsController) {
+        FormFieldsMapController.remove(oldId);
+      }
 
       if (widget.controller != null) {
         _mapController = widget.controller!;
@@ -602,7 +617,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
       try {
         final existing = FormFieldsMapController.getNotifier(_controllerId);
         try {
-          debugPrint(
+          debugLog(
             '[FormFieldsMap] didUpdateWidget moved controller oldId=$oldId newId=$_controllerId existingNotifier=${existing?.hashCode} fallback=${_fallbackNotifier.hashCode}',
           );
         } catch (_) {}
@@ -679,23 +694,29 @@ class FormFieldsMapState extends State<FormFieldsMap>
             pl.points,
             _playbackInterpolationSteps,
           );
+          // Fewer interpolation steps means a shorter list. Keep the index in
+          // range, or the next step reads past the end.
+          _playbackIndex = _playbackIndex.clamp(
+            0,
+            max(0, _playbackPoints.length - 1),
+          );
         }
       }
     }
   }
 
+  /// Bumped on every [_resolveCanvasMarkerIcon] call. Rasterization is
+  /// asynchronous, so a result that arrives after a newer call started is
+  /// for an icon that is no longer configured and must not replace the new one.
+  int _markerIconGeneration = 0;
+
   void _resolveCanvasMarkerIcon() {
+    final generation = ++_markerIconGeneration;
     // Clean up any existing image streams/listeners for both images.
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
       _canvasMarkerImageStream!.removeListener(
         _canvasMarkerImageStreamListener!,
-      );
-    }
-    if (_playbackMarkerImageStream != null &&
-        _playbackMarkerImageStreamListener != null) {
-      _playbackMarkerImageStream!.removeListener(
-        _playbackMarkerImageStreamListener!,
       );
     }
     if (_playbackMarkerImageStream != null &&
@@ -745,14 +766,21 @@ class FormFieldsMapState extends State<FormFieldsMap>
           if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
         }, isPlayback: false);
       } else if (canvasProvider is Icon) {
-        _renderIconToImage(canvasProvider).then((img) {
-          _canvasMarkerImage = img;
-          if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
-          _safeSetState(() {});
-        });
+        _renderIconToImage(canvasProvider)
+            .then((img) {
+              if (generation != _markerIconGeneration) return;
+              _canvasMarkerImage = img;
+              if (playbackProvider == canvasProvider) {
+                _playbackMarkerImage = img;
+              }
+              _safeSetState(() {});
+            })
+            .catchError((_) {
+              // Without a marker image the icon is simply not drawn.
+            });
       } else if (canvasProvider is Widget) {
         _rasterizeWidgetToImage(canvasProvider).then((img) {
-          if (img != null) {
+          if (img != null && generation == _markerIconGeneration) {
             _canvasMarkerImage = img;
             if (playbackProvider == canvasProvider) _playbackMarkerImage = img;
             _safeSetState(() {});
@@ -768,13 +796,18 @@ class FormFieldsMapState extends State<FormFieldsMap>
           _playbackMarkerImage = img;
         }, isPlayback: true);
       } else if (playbackProvider is Icon) {
-        _renderIconToImage(playbackProvider).then((img) {
-          _playbackMarkerImage = img;
-          _safeSetState(() {});
-        });
+        _renderIconToImage(playbackProvider)
+            .then((img) {
+              if (generation != _markerIconGeneration) return;
+              _playbackMarkerImage = img;
+              _safeSetState(() {});
+            })
+            .catchError((_) {
+              // Without a marker image the icon is simply not drawn.
+            });
       } else if (playbackProvider is Widget) {
         _rasterizeWidgetToImage(playbackProvider).then((img) {
-          if (img != null) {
+          if (img != null && generation == _markerIconGeneration) {
             _playbackMarkerImage = img;
             _safeSetState(() {});
           }
@@ -831,6 +864,10 @@ class FormFieldsMapState extends State<FormFieldsMap>
     Widget widget, {
     double logicalSize = 36.0,
   }) async {
+    // The overlay entry must come down on every path. A failure after the
+    // insert used to leave an invisible box over the map that could absorb
+    // touches.
+    OverlayEntry? entry;
     try {
       if (!mounted) return null;
 
@@ -838,7 +875,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
 
       final key = GlobalKey();
       final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-      final entry = OverlayEntry(
+      final created = OverlayEntry(
         builder: (ctx) => Positioned(
           left: 0,
           top: 0,
@@ -859,37 +896,28 @@ class FormFieldsMapState extends State<FormFieldsMap>
         ),
       );
 
-      overlay.insert(entry);
+      overlay.insert(created);
+      entry = created;
 
       await Future.delayed(Duration.zero);
       await WidgetsBinding.instance.endOfFrame;
 
-      if (!mounted) {
-        entry.remove();
-        return null;
-      }
+      if (!mounted) return null;
 
       final contextForKey = key.currentContext;
-      if (contextForKey == null) {
-        entry.remove();
-        return null;
-      }
+      if (contextForKey == null) return null;
 
-      if (contextForKey is! Element || !contextForKey.mounted) {
-        entry.remove();
-        return null;
-      }
+      if (contextForKey is! Element || !contextForKey.mounted) return null;
 
       final renderObject = contextForKey.findRenderObject();
       if (renderObject is RenderRepaintBoundary) {
-        final img = await renderObject.toImage(pixelRatio: devicePixelRatio);
-        entry.remove();
-        return img;
+        return await renderObject.toImage(pixelRatio: devicePixelRatio);
       }
-      entry.remove();
       return null;
     } catch (_) {
       return null;
+    } finally {
+      entry?.remove();
     }
   }
 
@@ -897,10 +925,18 @@ class FormFieldsMapState extends State<FormFieldsMap>
   void dispose() {
     _debounceTimer?.cancel();
     _playbackTimer?.cancel();
+    // Release both marker image listeners. A listener left attached keeps
+    // this State alive and calls setState after dispose.
     if (_canvasMarkerImageStream != null &&
         _canvasMarkerImageStreamListener != null) {
       _canvasMarkerImageStream!.removeListener(
         _canvasMarkerImageStreamListener!,
+      );
+    }
+    if (_playbackMarkerImageStream != null &&
+        _playbackMarkerImageStreamListener != null) {
+      _playbackMarkerImageStream!.removeListener(
+        _playbackMarkerImageStreamListener!,
       );
     }
     // Unregister and dispose fallback notifier if created.
@@ -931,6 +967,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
     if (_ownsController) {
       FormFieldsMapController.remove(_controllerId);
     }
+    _tileProvider.dispose();
     super.dispose();
   }
 
@@ -949,16 +986,6 @@ class FormFieldsMapState extends State<FormFieldsMap>
         if (pos.zoom != null) {
           _lastZoom = (pos.zoom as num).toDouble();
         }
-        if (mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            try {
-              FormFieldsMapController.setLoading(_controllerId, true);
-            } catch (_) {}
-            _safeSetState(() {});
-          });
-        }
-
         if (mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
@@ -1023,6 +1050,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
       _playbackInterval,
       _playbackInterpolationSteps,
     );
+    // The running timer keeps the old period until it is replaced. Reschedule
+    // it so the new speed takes effect now.
+    if (_isPlaying) {
+      _playbackTimer?.cancel();
+      _playbackTimer = Timer.periodic(
+        _playbackSubstepInterval,
+        (_) => _advancePlaybackStep(),
+      );
+    }
     // rebuild playback list if currently playing
     if (_playbackPolylineId != null) {
       final notifier =
@@ -1199,6 +1235,8 @@ class FormFieldsMapState extends State<FormFieldsMap>
       try {
         FormFieldsMapController.setPlaybackPlaying(_controllerId, false);
       } catch (_) {}
+      // Rebuild so the play/pause control shows "play" again.
+      _safeSetState(() {});
     }
     _updatePlaybackMarker();
   }
@@ -1251,24 +1289,20 @@ class FormFieldsMapState extends State<FormFieldsMap>
       double bearing = 0.0;
       try {
         if (_playbackPoints.length > 1) {
-          LatLng from;
+          // The heading is the direction of travel. Between the previous point
+          // and this one when there is a previous point. At the first point,
+          // it is this point toward the next one. The reverse would turn the
+          // marker around at the start.
+          final LatLng from;
+          final LatLng to;
           if (_playbackIndex > 0) {
             from = _playbackPoints[_playbackIndex - 1];
+            to = p;
           } else {
-            from =
-                _playbackPoints[(_playbackIndex + 1).clamp(
-                  0,
-                  _playbackPoints.length - 1,
-                )];
+            from = p;
+            to = _playbackPoints[1];
           }
-          final lat1 = from.latitude * pi / 180.0;
-          final lat2 = p.latitude * pi / 180.0;
-          final dLon = (p.longitude - from.longitude) * pi / 180.0;
-          final y = sin(dLon) * cos(lat2);
-          final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
-          var brng = atan2(y, x) * 180.0 / pi;
-          brng = (brng + 360.0) % 360.0;
-          bearing = brng;
+          bearing = bearingDegrees(from, to);
         }
       } catch (_) {}
 
@@ -1306,18 +1340,15 @@ class FormFieldsMapState extends State<FormFieldsMap>
       // derived polylines/polygons). This keeps playback marker updates
       // isolated and preserves existing shape layers.
       try {
-        try {
-          FormFieldsMapController.removeRawMarker(
-            _controllerId,
-            'playback_marker',
-          );
-        } catch (_) {}
-        try {
-          FormFieldsMapController.appendRawMarkers(_controllerId, [payload]);
-        } catch (_) {
-          // fallback to setRawMarkers if append isn't available for some reason
-          FormFieldsMapController.setRawMarkers(_controllerId, [payload]);
-        }
+        // updateRawMarker replaces the marker synchronously. appendRawMarkers
+        // waits and retries while the map is not ready, and called on every
+        // playback tick those retries piled up and could add the marker more
+        // than once.
+        FormFieldsMapController.updateRawMarker(
+          _controllerId,
+          'playback_marker',
+          payload,
+        );
       } catch (_) {
         // fallback to direct notifier mutation if registry isn't available
         try {
@@ -1401,8 +1432,6 @@ class FormFieldsMapState extends State<FormFieldsMap>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final tileProvider = NetworkTileProvider();
-
     final notifier =
         FormFieldsMapController.getNotifier(_controllerId) ?? _fallbackNotifier;
 
@@ -1448,7 +1477,7 @@ class FormFieldsMapState extends State<FormFieldsMap>
               TileLayer(
                 urlTemplate: _tileUrlTemplateEffective,
                 subdomains: const ['mt0', 'mt1', 'mt2', 'mt3'],
-                tileProvider: tileProvider,
+                tileProvider: _tileProvider,
                 maxZoom: widget.maxZoom,
                 minZoom: widget.minZoom,
               ),
@@ -2610,17 +2639,14 @@ class FormFieldsMapState extends State<FormFieldsMap>
       }
 
       const threshMeters = 200.0;
-      final distance = Distance();
       for (final entry in notifier.polylineMap.entries) {
         final lid = entry.key;
         final pl = entry.value;
         final pts = pl.points;
         for (var i = 0; i < pts.length - 1; i++) {
-          final mid = LatLng(
-            (pts[i].latitude + pts[i + 1].latitude) / 2,
-            (pts[i].longitude + pts[i + 1].longitude) / 2,
-          );
-          final d = distance.distance(mid, latlng);
+          // Distance to the segment itself. Measuring to the midpoint missed
+          // taps on long segments, which are far from their midpoint.
+          final d = distanceToSegmentMeters(latlng, pts[i], pts[i + 1]);
           if (d <= threshMeters) {
             final meta = _findMetaForShape(notifier, lid);
             final payload = <String, dynamic>{

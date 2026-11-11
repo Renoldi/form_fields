@@ -90,10 +90,11 @@ class View extends PresenterState {
                       exportBackgroundColor: Colors.transparent,
                       isDirectUpload: true,
                       showLiveCamera: true,
+
                       uploadUrl:
                           'https://app.smartsafetee.com/mobile-api/api/HseFormData/SaveAttachment',
                       uploadToken:
-                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3ODA4MjI2MTYsImV4cCI6MTc4MDg2NTgxNiwiaWF0IjoxNzgwODIyNjE2fQ.ScZ4i-21ey7yhVbXt-vZvU1axEGmln1dFnPm4m2KIsU",
+                          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiIzYTg4NGZjMy1iMDZjLTQzYjAtYWQwYi03Yjk3ZTliZTVjM2QiLCJVc2VyTmFtZSI6Im9iaXRlc3R1c2VyQG1haWwuY29tIiwiU3Vic2NyaXB0aW9uSWQiOiJjYzlkMWJmNC1kOThiLTQ3MjYtODcwYS05OTk2ZWI0MzM3ZWYiLCJDb21wYW55TmFtZSI6Ind3dmUiLCJuYmYiOjE3OTQzODcyNjMsImV4cCI6MTc5NDQzMDQ2MywiaWF0IjoxNzk0Mzg3MjYzfQ.OHpTBEsSoAqbkOFZIIlTp97uPv-iUwPuAScL9jQCbu4",
                       onFailDirectUploadPayload:
                           (List<DirectUploadPayload> payloads) {
                         if (kDebugMode) {

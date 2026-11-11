@@ -4,6 +4,25 @@ library;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Local part, then one or more dot-separated labels, then "@" and a domain
+/// whose last label is at least two letters long.
+final RegExp _emailPattern = RegExp(
+  r"^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*"
+  r'@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?'
+  r'(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*'
+  r'\.[a-zA-Z]{2,}$',
+);
+
+final RegExp _integerPattern = RegExp(r'^-?[0-9]+$');
+
+final RegExp _decimalPattern = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)$');
+
+/// A trailing UTC offset: "Z", "+07:00", "-0500".
+final RegExp _offsetSuffixPattern = RegExp(
+  r'(Z|[+-]\d{2}:?\d{2})$',
+  caseSensitive: false,
+);
+
 extension StringExtensions on String? {
   /// Check if string is empty or contains only whitespace
   bool get isWhiteSpace {
@@ -11,13 +30,11 @@ extension StringExtensions on String? {
     return this!.trim().isEmpty;
   }
 
-  /// Check if email is valid
+  /// Check if email is valid. The whole value must match: trailing text such
+  /// as "john@mail.com) junk" is rejected.
   bool get isValidEmail {
     if (this == null) return false;
-    final emailRegExp = RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
-    );
-    return emailRegExp.hasMatch(this!);
+    return _emailPattern.hasMatch(this!.trim());
   }
 
   /// Check if password is valid (minimum 6 characters)
@@ -33,11 +50,18 @@ extension StringExtensions on String? {
     return phoneRegExp.hasMatch(this!);
   }
 
-  /// Check if string is a valid number
+  /// Check if string is a whole number (optional leading minus).
   bool get isValidNumber {
     if (this == null) return false;
-    final phoneRegExp = RegExp(r'^-?[0-9]+$');
-    return phoneRegExp.hasMatch(this!);
+    return _integerPattern.hasMatch(this!);
+  }
+
+  /// Check if string is a finite decimal number, such as `-3`, `2.5` or `.5`.
+  bool get isValidDecimal {
+    if (this == null) return false;
+    final text = this!.trim();
+    if (!_decimalPattern.hasMatch(text)) return false;
+    return double.tryParse(text)?.isFinite ?? false;
   }
 
   /// Convert string to title case
@@ -102,20 +126,17 @@ extension TimeOfDayExtensions on TimeOfDay? {
   }
 }
 
+/// Parses a timestamp that is UTC when it carries no offset. A value that
+/// already has an offset ("...+07:00") is parsed as written. Appending "Z" to
+/// it would produce an invalid string.
 DateTime? dateTimeUtcFromJson(String? s) {
-  if (s == null) {
+  if (s == null) return null;
+  try {
+    final text = s.trim();
+    final hasOffset = _offsetSuffixPattern.hasMatch(text);
+    return DateTime.parse(hasOffset ? text : '${text}Z').toLocal();
+  } catch (_) {
     return null;
-  } else {
-    try {
-      if (s.contains("Z")) {
-        return DateTime.parse(s).toLocal();
-      } else {
-        String utcString = "${s}Z";
-        return DateTime.parse(utcString).toLocal();
-      }
-    } catch (e) {
-      return null;
-    }
   }
 }
 

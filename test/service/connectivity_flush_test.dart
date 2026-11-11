@@ -172,4 +172,28 @@ void main() {
     WorkmanagerService.instance.startConnectivityFlush();
     expect(WorkmanagerService.instance.isConnectivityFlushActive, isTrue);
   });
+
+  test('stopping one worker leaves the connectivity flush running', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+
+    await WorkmanagerService.instance.stop(taskName: 'form_fields_flush');
+
+    expect(WorkmanagerService.instance.isConnectivityFlushActive, isTrue);
+    expect(WorkmanagerService.instance.foregroundFlushHandler, isNotNull);
+    _current = const ['wifi'];
+    WorkmanagerService.instance.notifyPendingAdded();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(
+      runs,
+      1,
+      reason: 'pending rows must still flush after a worker stop',
+    );
+  });
+
+  test('stopConnectivityFlush turns the listener off', () async {
+    await start();
+    await WorkmanagerService.instance.stopConnectivityFlush();
+    expect(WorkmanagerService.instance.isConnectivityFlushActive, isFalse);
+  });
 }

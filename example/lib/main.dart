@@ -197,10 +197,13 @@ Future<void> main() async {
 
       options: const FCMOptions(showLocalNotification: true),
       onMessage: (msg) async {
-        logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');
+        // Message content and tokens are personal data. Log them in debug only.
+        if (kDebugMode) {
+          logger.i('FCM foreground: ${msg.title} ${msg.body} ${msg.data}');
+        }
       },
       onMessageOpenedApp: (msg) async {
-        logger.i('FCM opened app: ${msg.data}');
+        if (kDebugMode) logger.i('FCM opened app: ${msg.data}');
         try {
           // Use the configured global dialog service; avoid using a
           // `BuildContext` across async gaps by not awaiting navigation
@@ -281,7 +284,9 @@ Future<void> main() async {
           logger.w('Failed to navigate on notification click: $e\n$st');
           try {
             // Log payload for easier debugging
-            logger.w('Notification payload (for debug): ${msg.data}');
+            if (kDebugMode) {
+              logger.w('Notification payload (for debug): ${msg.data}');
+            }
 
             // Attempt a safe fallback navigation to the FCM test page
             final fallbackCtx = AppGlobalDialogService.instance.context;
@@ -302,14 +307,14 @@ Future<void> main() async {
         }
       },
       onToken: (token) async {
-        logger.i('FCM token: $token');
+        if (kDebugMode) logger.i('FCM token: $token');
         try {
           final prefs = await SharedPreferences.getInstance();
           if (token.isNotEmpty) await prefs.setString('fcm_token', token);
         } catch (_) {}
       },
       onTokenRefresh: (newToken) async {
-        logger.i('FCM token refreshed: $newToken');
+        if (kDebugMode) logger.i('FCM token refreshed: $newToken');
         try {
           final p = await SharedPreferences.getInstance();
           await p.setString('fcm_token', newToken);
@@ -997,6 +1002,7 @@ class ViewModel {
 
   /// Clean up resources on app dispose
   void dispose() {
+    routerConfig.dispose();
     appState.dispose();
   }
 }

@@ -28,6 +28,17 @@ class MyImageResult {
     this.status = MyImageStatus.idle,
   }) : payload = payload ?? const <String, dynamic>{};
 
+  /// A copy of this result with a different [status].
+  MyImageResult copyWith({MyImageStatus? status}) => MyImageResult(
+    link: link,
+    base64: base64,
+    path: path,
+    imageId: imageId,
+    description: description,
+    payload: payload,
+    status: status ?? this.status,
+  );
+
   /// Convenience constructor for a network-only result (e.g. prefilled image).
   MyImageResult.network(String url)
     : link = url,
@@ -205,17 +216,20 @@ Map<String, dynamic> _compressImageIsolate(Map<String, dynamic> args) {
     if (mime.startsWith('image/') && !mime.contains('svg')) {
       final decoded = img.decodeImage(Uint8List.fromList(originalBytes));
       if (decoded != null) {
-        img.Image processed = decoded;
+        // Cameras store rotation in EXIF, not in the pixels. Re-encoding drops
+        // the EXIF, so apply the rotation to the pixels first. Otherwise a
+        // portrait photo comes out sideways.
+        img.Image processed = img.bakeOrientation(decoded);
         if (maxWidth != null || maxHeight != null) {
           final targetW =
               maxWidth ??
-              ((decoded.width * (maxHeight! / decoded.height)).round());
+              ((processed.width * (maxHeight! / processed.height)).round());
           final targetH =
               maxHeight ??
-              ((decoded.height * (maxWidth! / decoded.width)).round());
+              ((processed.height * (maxWidth! / processed.width)).round());
           if (targetW > 0 &&
               targetH > 0 &&
-              (targetW != decoded.width || targetH != decoded.height)) {
+              (targetW != processed.width || targetH != processed.height)) {
             processed = img.copyResize(
               processed,
               width: targetW,

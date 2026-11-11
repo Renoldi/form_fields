@@ -269,9 +269,11 @@ class _FormFieldsCheckboxBodyView<T>
     final errorColor = theme.colorScheme.error;
     final containerBorder = widget.itemBorderColor == null
         ? (widget.borderType == BorderType.none
-            ? null
-            : Border.all(
-                color: hasError ? errorColor : normalColor, width: 1.5))
+              ? null
+              : Border.all(
+                  color: hasError ? errorColor : normalColor,
+                  width: 1.5,
+                ))
         : null;
 
     final checkboxContainer = Container(
@@ -279,7 +281,7 @@ class _FormFieldsCheckboxBodyView<T>
       decoration: BoxDecoration(
         color: widget.filled
             ? (widget.backgroundColor ??
-                Theme.of(context).colorScheme.surfaceContainerHighest)
+                  Theme.of(context).colorScheme.surfaceContainerHighest)
             : null,
         border: containerBorder,
         borderRadius: BorderRadius.circular(10),
@@ -287,16 +289,16 @@ class _FormFieldsCheckboxBodyView<T>
       padding: const EdgeInsets.symmetric(vertical: 4),
       child:
           (widget.direction == Axis.horizontal || widget.horizontalSideBySide)
-              ? Wrap(
-                  children: widget.items
-                      .map((item) => _buildItem(item, selectedValues))
-                      .toList(),
-                )
-              : Column(
-                  children: widget.items
-                      .map((item) => _buildItem(item, selectedValues))
-                      .toList(),
-                ),
+          ? Wrap(
+              children: widget.items
+                  .map((item) => _buildItem(item, selectedValues))
+                  .toList(),
+            )
+          : Column(
+              children: widget.items
+                  .map((item) => _buildItem(item, selectedValues))
+                  .toList(),
+            ),
     );
 
     // Error message
@@ -307,10 +309,7 @@ class _FormFieldsCheckboxBodyView<T>
               widget.state.errorText?.isEmpty ?? true
                   ? l.selectAtLeastOne(widget.label.toTitleCases)
                   : widget.state.errorText!,
-              style: TextStyle(
-                color: errorColor,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: errorColor, fontSize: 12),
             ),
           )
         : const SizedBox.shrink();
@@ -354,10 +353,7 @@ class _FormFieldsCheckboxBodyView<T>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    checkboxContainer,
-                    errorWidget,
-                  ],
+                  children: [checkboxContainer, errorWidget],
                 ),
               ),
             ],
@@ -372,10 +368,7 @@ class _FormFieldsCheckboxBodyView<T>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    checkboxContainer,
-                    errorWidget,
-                  ],
+                  children: [checkboxContainer, errorWidget],
                 ),
               ),
               const SizedBox(width: 8),
@@ -388,10 +381,7 @@ class _FormFieldsCheckboxBodyView<T>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              checkboxContainer,
-              errorWidget,
-            ],
+            children: [checkboxContainer, errorWidget],
           ),
         );
       case LabelPosition.none:
@@ -399,10 +389,7 @@ class _FormFieldsCheckboxBodyView<T>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              checkboxContainer,
-              errorWidget,
-            ],
+            children: [checkboxContainer, errorWidget],
           ),
         );
     }
@@ -432,11 +419,11 @@ class _FormFieldsCheckboxBodyView<T>
               style: TextStyle(
                 color: isSelected
                     ? (widget.selectedItemTextColor ??
-                        widget.textStyle?.color ??
-                        resolveTextColor(context))
+                          widget.textStyle?.color ??
+                          resolveTextColor(context))
                     : (widget.textStyle?.color != null
-                        ? widget.textStyle!.color!.withValues(alpha: 0.7)
-                        : resolveTextColor(context, muted: true)),
+                          ? widget.textStyle!.color!.withValues(alpha: 0.7)
+                          : resolveTextColor(context, muted: true)),
               ),
             ),
           );
@@ -475,8 +462,9 @@ class _FormFieldsCheckboxBodyView<T>
             padding: widget.itemPadding,
             child: Row(
               crossAxisAlignment: _itemCrossAxisAlignment,
-              mainAxisSize:
-                  isCompactHorizontal ? MainAxisSize.min : MainAxisSize.max,
+              mainAxisSize: isCompactHorizontal
+                  ? MainAxisSize.min
+                  : MainAxisSize.max,
               children: [
                 Checkbox(
                   value: isSelected,
@@ -502,9 +490,7 @@ class _FormFieldsCheckboxBodyView<T>
                 if (isCompactHorizontal)
                   itemContent
                 else
-                  Expanded(
-                    child: itemContent,
-                  ),
+                  Expanded(child: itemContent),
               ],
             ),
           ),

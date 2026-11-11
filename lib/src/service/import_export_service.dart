@@ -15,12 +15,17 @@ class ImportExportService {
   ImportExportService._();
   static final ImportExportService instance = ImportExportService._();
 
+  /// Export file name. ISO-8601 timestamps contain ':', which Windows does not
+  /// allow in file names, so it is replaced with '-'.
+  static String _exportFileName() {
+    final stamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+    return 'form_fields_export_$stamp.sql';
+  }
+
   /// Export the database to the app's documents directory and return the path.
   Future<String> exportToDocuments() async {
     final dir = await getApplicationDocumentsDirectory();
-    final fileName =
-        'form_fields_export_${DateTime.now().toIso8601String()}.sql';
-    final dest = p.join(dir.path, fileName);
+    final dest = p.join(dir.path, _exportFileName());
     await DBService.instance.exportToSqlFile(dest);
     _log.info('Exported DB to $dest');
     return dest;
@@ -39,9 +44,7 @@ class ImportExportService {
     try {
       final dirPath = await FilePicker.getDirectoryPath();
       if (dirPath == null) return null;
-      final fileName =
-          'form_fields_export_${DateTime.now().toIso8601String()}.sql';
-      final dest = p.join(dirPath, fileName);
+      final dest = p.join(dirPath, _exportFileName());
       await exportToPath(dest);
       return dest;
     } catch (e, st) {
@@ -57,13 +60,17 @@ class ImportExportService {
       final data = await rootBundle.loadString(assetPath);
       final tmpDir = await getTemporaryDirectory();
       final tmpPath = p.join(
-          tmpDir.path, 'import_${DateTime.now().millisecondsSinceEpoch}.sql');
+        tmpDir.path,
+        'import_${DateTime.now().millisecondsSinceEpoch}.sql',
+      );
       final f = File(tmpPath);
       await f.writeAsString(data);
       // Ensure core schema exists before importing DML from the asset.
       try {
-        await DBService.instance
-            .runMigrationAsset('migrations/migration.sql', applyDml: true);
+        await DBService.instance.runMigrationAsset(
+          'migrations/migration.sql',
+          applyDml: true,
+        );
       } catch (e) {
         _log.warning('Failed to ensure migrations before asset import: $e');
       }
@@ -91,13 +98,17 @@ class ImportExportService {
       // Copy to temp to ensure read permissions and consistent path
       final tmpDir = await getTemporaryDirectory();
       final destPath = p.join(
-          tmpDir.path, 'import_${DateTime.now().millisecondsSinceEpoch}.sql');
+        tmpDir.path,
+        'import_${DateTime.now().millisecondsSinceEpoch}.sql',
+      );
       final src = File(filePath);
       await src.copy(destPath);
       // Ensure core schema exists before importing user-provided SQL.
       try {
-        await DBService.instance
-            .runMigrationAsset('migrations/migration.sql', applyDml: true);
+        await DBService.instance.runMigrationAsset(
+          'migrations/migration.sql',
+          applyDml: true,
+        );
       } catch (e) {
         _log.warning('Failed to ensure migrations before file import: $e');
       }

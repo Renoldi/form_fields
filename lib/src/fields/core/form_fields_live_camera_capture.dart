@@ -8,10 +8,14 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
+import 'package:form_fields/src/utilities/base64_image.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
+import 'package:form_fields/src/utilities/persisted_headers.dart';
+import 'package:form_fields/src/utilities/url_origin.dart';
 
 /// Reusable front-camera live preview that can capture a frame into
 /// [FormFieldsMyImageController].
@@ -223,7 +227,8 @@ class FormFieldsLiveCameraCaptureState
   Future<bool> _hasNetwork() async {
     try {
       final conn = await Connectivity().checkConnectivity();
-      return conn.contains(ConnectivityResult.none) ? false : true;
+      // Offline means no results, or only `none`. An empty list is offline too.
+      return conn.any((r) => r != ConnectivityResult.none);
     } catch (_) {
       return false;
     }
@@ -277,6 +282,9 @@ class FormFieldsLiveCameraCaptureState
   /// controller) will already contain the server link/imageId.
   Future<MyImageResult?> capture() async {
     if (!_cam.isReady) return null;
+    // Temp PNG written for this capture. It must outlive the upload attempt:
+    // the upload reads it, and an offline-queued payload refers to its path.
+    File? tempCapture;
     try {
       MyImageResult result;
 
@@ -304,6 +312,7 @@ class FormFieldsLiveCameraCaptureState
           '${tempDir.path}/live_capture_${DateTime.now().millisecondsSinceEpoch}.png',
         ).create();
         await file.writeAsBytes(bytes);
+        tempCapture = file;
         result = await MyImageResult.fromFile(file, quality: widget.quality);
       }
 
@@ -338,7 +347,17 @@ class FormFieldsLiveCameraCaptureState
                 widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage'),
           );
         }
-        if (uploaded != null) result = uploaded;
+        if (uploaded != null) {
+          result = uploaded;
+          // Only a confirmed upload lets the temp PNG go. A queued payload
+          // still needs the file, so it is kept until the queue flushes.
+          if (uploaded.status == MyImageStatus.uploaded) {
+            await _deleteTempCapture(tempCapture);
+          }
+        } else {
+          // Refused and not queued: show it as failed, not as a capture.
+          result = result.copyWith(status: MyImageStatus.failed);
+        }
       }
 
       widget.cameraController?.images = [result];
@@ -348,6 +367,13 @@ class FormFieldsLiveCameraCaptureState
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _deleteTempCapture(File? file) async {
+    if (file == null) return;
+    try {
+      if (await file.exists()) await file.delete();
+    } catch (_) {}
   }
 
   /// Uploads [image] and returns the updated [MyImageResult] with server
@@ -376,7 +402,7 @@ class FormFieldsLiveCameraCaptureState
         .toString();
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
-      'headers': headers,
+      'headers': headersForPersistence(headers),
       'fields': Map<String, String>.fromEntries(extraFields),
       'file': {
         'fileName': fileName,
@@ -422,10 +448,10 @@ class FormFieldsLiveCameraCaptureState
         if (direct != null) {
           if (kDebugMode) {
             try {
-              debugPrint(
+              debugLog(
                 'FormFieldsLiveCameraCapture: onFailDirectUploadPayload -> 1 payload',
               );
-              debugPrint(
+              debugLog(
                 'FormFieldsLiveCameraCapture: payload[0] correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
               );
             } catch (_) {}
@@ -433,7 +459,7 @@ class FormFieldsLiveCameraCaptureState
           widget.onFailDirectUploadPayload?.call([direct]);
         }
       } catch (e, st) {
-        debugPrint(
+        debugLog(
           'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
         );
       }
@@ -457,8 +483,8 @@ class FormFieldsLiveCameraCaptureState
       _syncCapturedFromController();
     }
 
-    debugPrint(
-      '[FormFieldsLiveCameraCapture._uploadImageDio] START upload url=${widget.uploadUrl}, file=${image.path}, fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=$headers, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
+    debugLog(
+      '[FormFieldsLiveCameraCapture._uploadImageDio] START upload url=${widget.uploadUrl}, file=${image.path}, fileField=${widget.uploadFileFieldName}, includeReqType=${widget.uploadIncludeReqType}, headers=${headers.keys.toList()}, extraFields=${extraFields.map((e) => '${e.key}=${e.value}').toList()}',
     );
 
     final response = await DioUtil.uploadFile(
@@ -491,7 +517,7 @@ class FormFieldsLiveCameraCaptureState
     final uploadErrorMessage =
         widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
-      debugPrint(
+      debugLog(
         '[FormFieldsLiveCameraCapture._uploadImageDio] response == null (network error)',
       );
       if (widget.showUploadResultDialog) {
@@ -506,7 +532,7 @@ class FormFieldsLiveCameraCaptureState
     // Handle auth expiry (401) by building a queueable payload and
     // notifying the caller so they can persist/retry later.
     if (response.statusCode == 401) {
-      debugPrint(
+      debugLog(
         '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: 401 -> queueing payload',
       );
       MyImageResult? queuedImage;
@@ -529,7 +555,7 @@ class FormFieldsLiveCameraCaptureState
         if (direct != null) {
           if (kDebugMode) {
             try {
-              debugPrint(
+              debugLog(
                 'FormFieldsLiveCameraCapture: auth queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
               );
             } catch (_) {}
@@ -537,21 +563,21 @@ class FormFieldsLiveCameraCaptureState
           try {
             widget.onUploadQueued?.call(direct, true);
           } catch (e, st) {
-            debugPrint(
+            debugLog(
               'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st',
             );
           }
           try {
             widget.onFailDirectUploadPayload?.call([direct]);
           } catch (e, st) {
-            debugPrint(
+            debugLog(
               'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
             );
           }
           return queuedImage;
         }
       } catch (e, st) {
-        debugPrint(
+        debugLog(
           'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st',
         );
       }
@@ -587,7 +613,7 @@ class FormFieldsLiveCameraCaptureState
           keys: 'filePath',
         );
 
-        debugPrint(
+        debugLog(
           '[FormFieldsLiveCameraCapture._uploadImageDio] '
           'status=${response.statusCode}, uploadedLink=$uploadedLink, '
           'uploadedPath=$uploadedPath, imageId=$imageId',
@@ -655,52 +681,57 @@ class FormFieldsLiveCameraCaptureState
         // For server/client errors treat similarly to 401: build a
         // queueable payload and notify caller so they can persist/retry.
         final sc = response.statusCode ?? 0;
-        debugPrint(
+        debugLog(
           '[FormFieldsLiveCameraCapture._uploadImageDio] upload failed: status=$sc, statusMessage=${response.statusMessage}, data=${response.data}',
         );
-        try {
-          final queuedImage = MyImageResult(
-            link: image.link,
-            base64: image.base64,
-            path: image.path,
-            imageId: image.imageId,
-            description: image.description,
-            payload: payload,
-            status: MyImageStatus.queued,
-          );
-          final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
-            queuedImage,
-            defaultUrl: widget.uploadUrl,
-            fileFieldName: widget.uploadFileFieldName,
-            includeReqType: widget.uploadIncludeReqType,
-          );
-          if (direct != null) {
-            if (kDebugMode) {
+        // Only failures that can succeed later are queued. A permanent client
+        // error (400, 403, 404, 422, ...) would be retried forever, so it is
+        // reported and not queued.
+        if (UploadService.isRetryableStatus(response.statusCode)) {
+          try {
+            final queuedImage = MyImageResult(
+              link: image.link,
+              base64: image.base64,
+              path: image.path,
+              imageId: image.imageId,
+              description: image.description,
+              payload: payload,
+              status: MyImageStatus.queued,
+            );
+            final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
+              queuedImage,
+              defaultUrl: widget.uploadUrl,
+              fileFieldName: widget.uploadFileFieldName,
+              includeReqType: widget.uploadIncludeReqType,
+            );
+            if (direct != null) {
+              if (kDebugMode) {
+                try {
+                  debugLog(
+                    'FormFieldsLiveCameraCapture: server queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+                  );
+                } catch (_) {}
+              }
               try {
-                debugPrint(
-                  'FormFieldsLiveCameraCapture: server queue -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
+                widget.onUploadQueued?.call(direct, false);
+              } catch (e, st) {
+                debugLog(
+                  'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st',
                 );
-              } catch (_) {}
+              }
+              try {
+                widget.onFailDirectUploadPayload?.call([direct]);
+              } catch (e, st) {
+                debugLog(
+                  'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
+                );
+              }
             }
-            try {
-              widget.onUploadQueued?.call(direct, false);
-            } catch (e, st) {
-              debugPrint(
-                'FormFieldsLiveCameraCapture.onUploadQueued threw: $e\n$st',
-              );
-            }
-            try {
-              widget.onFailDirectUploadPayload?.call([direct]);
-            } catch (e, st) {
-              debugPrint(
-                'FormFieldsLiveCameraCapture.onFailDirectUploadPayload threw: $e\n$st',
-              );
-            }
+          } catch (e, st) {
+            debugLog(
+              'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st',
+            );
           }
-        } catch (e, st) {
-          debugPrint(
-            'FormFieldsLiveCameraCapture: error while building queued payload: $e\n$st',
-          );
         }
         if (widget.showUploadResultDialog) {
           await dialog.showError(
@@ -812,7 +843,11 @@ class FormFieldsLiveCameraCaptureState
                       result: provider.capturedResult!,
                       headers:
                           (widget.uploadToken != null &&
-                              widget.uploadToken!.isNotEmpty)
+                              widget.uploadToken!.isNotEmpty &&
+                              isSameOrigin(
+                                provider.capturedResult!.link,
+                                widget.uploadUrl,
+                              ))
                           ? <String, String>{
                               HttpHeaders.authorizationHeader:
                                   widget.uploadToken!,
@@ -952,27 +987,27 @@ class SharedCameraManager {
 
   void addListener(VoidCallback cb) {
     _listeners.add(cb);
-    debugPrint(
+    debugLog(
       '[SharedCameraManager] addListener; listeners=${_listeners.length}',
     );
   }
 
   void removeListener(VoidCallback cb) {
     _listeners.remove(cb);
-    debugPrint(
+    debugLog(
       '[SharedCameraManager] removeListener; listeners=${_listeners.length}',
     );
   }
 
   void _notify() {
-    debugPrint(
+    debugLog(
       '[SharedCameraManager] _notify; listeners=${_listeners.length}; isReady=$isReady; initializing=$_initializing; ref=$_refCount',
     );
     for (final l in List<VoidCallback>.of(_listeners)) {
       try {
         l();
       } catch (e, st) {
-        debugPrint('[SharedCameraManager] listener threw: $e\n$st');
+        debugLog('[SharedCameraManager] listener threw: $e\n$st');
       }
     }
   }
@@ -992,7 +1027,7 @@ class SharedCameraManager {
     _initializing = true;
     _errorMessage = null;
     try {
-      debugPrint('[SharedCameraManager] acquiring cameras...');
+      debugLog('[SharedCameraManager] acquiring cameras...');
       // Give the camera init a reasonable timeout to avoid indefinite spinner.
       final cameras = await availableCameras().timeout(
         const Duration(seconds: 2),
@@ -1008,18 +1043,35 @@ class SharedCameraManager {
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      debugPrint(
+      debugLog(
         '[SharedCameraManager] initializing controller for ${front.name}',
       );
       final ctrl = CameraController(front, preset, enableAudio: false);
-      await ctrl.initialize().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          throw Exception('CameraController.initialize() timeout');
-        },
-      );
+      try {
+        await ctrl.initialize().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {
+            throw Exception('CameraController.initialize() timeout');
+          },
+        );
+      } catch (_) {
+        // A failed or timed-out initialize can leave the device camera open.
+        // Release it, or the next attempt finds the camera busy. Not awaited:
+        // CameraController.dispose() waits for the pending initialize to end,
+        // and after a timeout that may never happen. Waiting here would hang
+        // every later acquire().
+        ctrl.dispose().catchError((_) {});
+        rethrow;
+      }
+      if (_refCount == 0) {
+        // Every user released while this was initializing. Nothing will ever
+        // release the camera again, so release it now.
+        ctrl.dispose().catchError((_) {});
+        debugLog('[SharedCameraManager] released during init; disposed');
+        return;
+      }
       _controller = ctrl;
-      debugPrint('[SharedCameraManager] camera initialized');
+      debugLog('[SharedCameraManager] camera initialized');
     } catch (e, st) {
       final msg = e.toString();
       if (msg.contains('availableCameras() timeout')) {
@@ -1029,10 +1081,10 @@ class SharedCameraManager {
       } else {
         _errorMessage = msg;
       }
-      debugPrint('[SharedCameraManager] acquire failed: $e\n$st');
+      debugLog('[SharedCameraManager] acquire failed: $e\n$st');
     } finally {
       _initializing = false;
-      debugPrint(
+      debugLog(
         '[SharedCameraManager] acquire finished; initializing=$_initializing; error=$_errorMessage; ref=$_refCount; isReady=$isReady',
       );
       _notify();
@@ -1041,12 +1093,12 @@ class SharedCameraManager {
 
   void release() {
     _refCount = (_refCount - 1).clamp(0, double.maxFinite.toInt());
-    debugPrint('[SharedCameraManager] release called; refCount=$_refCount');
+    debugLog('[SharedCameraManager] release called; refCount=$_refCount');
     if (_refCount == 0) {
       _controller?.dispose();
       _controller = null;
       _errorMessage = null;
-      debugPrint('[SharedCameraManager] controller disposed');
+      debugLog('[SharedCameraManager] controller disposed');
     }
   }
 
@@ -1063,7 +1115,7 @@ class _CapturedPhoto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kDebugMode) {
-      debugPrint(
+      debugLog(
         '[FormFieldsLiveCameraCapture._CapturedPhoto] '
         'path=${result.path}, link=${result.link}, base64Len=${result.base64.length}, headers=${headers?.keys.toList()}',
       );
@@ -1075,7 +1127,7 @@ class _CapturedPhoto extends StatelessWidget {
     // already have the bytes locally.
     final hasLocalPath =
         result.path.isNotEmpty && File(result.path).existsSync();
-    final bytes = Uri.tryParse(result.base64)?.data?.contentAsBytes();
+    final bytes = decodeBase64Image(result.base64);
     final hasBase64 = bytes != null && bytes.isNotEmpty;
 
     if (hasLocalPath) {

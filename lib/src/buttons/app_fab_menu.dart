@@ -72,10 +72,17 @@ class _AppFabMenuState extends State<AppFabMenu>
 
   void _toggle() {
     if (_isOpen) {
-      _controller.reverse().then((_) {
-        _removeOverlay();
-        if (mounted) setState(() => _isOpen = false);
-      });
+      // reverse() completes with an error when the widget is disposed during
+      // the animation. Handle it, or it surfaces as an unhandled async error.
+      _controller.reverse().then(
+        (_) {
+          _removeOverlay();
+          if (mounted) setState(() => _isOpen = false);
+        },
+        onError: (_) {
+          _removeOverlay();
+        },
+      );
     } else {
       setState(() => _isOpen = true);
       _overlayEntry = _buildOverlayEntry();

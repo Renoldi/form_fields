@@ -47,8 +47,10 @@ class FormFieldsRating extends StatefulWidget {
     this.borderType = BorderType.none,
     this.externalErrorText,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
-  }) : assert(initialRating == null ||
-            (initialRating >= 0 && initialRating <= maxRating));
+  }) : assert(
+         initialRating == null ||
+             (initialRating >= 0 && initialRating <= maxRating),
+       );
 
   @override
   State<FormFieldsRating> createState() => _FormFieldsRatingState();
@@ -130,9 +132,10 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
         final labelWidget = (widget.label != null && widget.label!.isNotEmpty)
             ? Padding(
                 padding: const EdgeInsets.only(left: 12.0, bottom: 4.0),
-                child: Text(widget.label!,
-                    style:
-                        widget.textStyle ?? DefaultTextStyle.of(context).style),
+                child: Text(
+                  widget.label!,
+                  style: widget.textStyle ?? DefaultTextStyle.of(context).style,
+                ),
               )
             : null;
 
@@ -144,15 +147,15 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
             final filled = i <= (state.value ?? _rating ?? 0);
             final iconWidget = filled
                 ? (widget.filledIcon ??
-                    // When caller doesn't provide a custom icon, allow theme to
-                    // control color/size by avoiding hard-coded color/size.
-                    (widget.activeColor != null
-                        ? Icon(Icons.star, color: active)
-                        : const Icon(Icons.star)))
+                      // When caller doesn't provide a custom icon, allow theme to
+                      // control color/size by avoiding hard-coded color/size.
+                      (widget.activeColor != null
+                          ? Icon(Icons.star, color: active)
+                          : const Icon(Icons.star)))
                 : (widget.emptyIcon ??
-                    (widget.inactiveColor != null
-                        ? Icon(Icons.star_border, color: inactive)
-                        : const Icon(Icons.star_border)));
+                      (widget.inactiveColor != null
+                          ? Icon(Icons.star_border, color: inactive)
+                          : const Icon(Icons.star_border)));
 
             return AppButton(
               type: AppButtonType.icon,
@@ -172,12 +175,18 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
 
         final errorWidget = state.errorText != null
             ? Padding(
-                padding:
-                    const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 8.0),
-                child: Text(state.errorText!,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12)),
+                padding: const EdgeInsets.only(
+                  left: 12.0,
+                  right: 12.0,
+                  bottom: 8.0,
+                ),
+                child: Text(
+                  state.errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
               )
             : null;
 
@@ -197,10 +206,7 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    labelWidget,
-                    innerChild,
-                  ],
+                  children: [labelWidget, innerChild],
                 )
               : innerChild;
         }
@@ -217,8 +223,9 @@ class _FormFieldsRatingState extends State<FormFieldsRating> {
               )
             : BoxDecoration(
                 border: Border(
-                    bottom:
-                        BorderSide(color: borderColor, width: borderWidth)));
+                  bottom: BorderSide(color: borderColor, width: borderWidth),
+                ),
+              );
 
         double fieldHeight;
         switch (widget.fieldSize) {

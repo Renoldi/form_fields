@@ -6,6 +6,15 @@ import 'package:form_fields/src/models/shape_meta.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Utilities
+/// Reads a coordinate or rotation value. Returns null for anything that is not
+/// a finite number, so malformed input is skipped instead of thrown.
+double? _coordinate(Object? value) {
+  final d = value is num
+      ? value.toDouble()
+      : (value is String ? double.tryParse(value.trim()) : null);
+  return (d != null && d.isFinite) ? d : null;
+}
+
 double pointToSegmentDistance(Offset p, Offset v, Offset w) {
   final l2 = pow((v.dx - w.dx), 2) + pow((v.dy - w.dy), 2);
   if (l2 == 0) return (p - v).distance;
@@ -23,7 +32,8 @@ bool pointInPolygon(LatLng p, List<LatLng> polygon) {
     final xj = polygon[j].longitude;
     final yj = polygon[j].latitude;
 
-    final intersect = ((yi > p.latitude) != (yj > p.latitude)) &&
+    final intersect =
+        ((yi > p.latitude) != (yj > p.latitude)) &&
         (p.longitude < (xj - xi) * (p.latitude - yi) / (yj - yi + 0.0) + xi);
     if (intersect) inside = !inside;
   }
@@ -124,23 +134,29 @@ class CanvasRawMarkerPainter extends CustomPainter {
         lat = m.latitude;
         lon = m.longitude;
       } else if (m is List && m.length >= 2) {
-        lat = (m[0] as num).toDouble();
-        lon = (m[1] as num).toDouble();
+        // Skip malformed entries. A cast that throws here fails the whole
+        // paint, so one bad marker blanked every marker on the map.
+        final la = _coordinate(m[0]);
+        final lo = _coordinate(m[1]);
+        if (la == null || lo == null) continue;
+        lat = la;
+        lon = lo;
         if (m.length >= 3) title = m[2]?.toString();
         if (m.length >= 4) subtitle = m[3]?.toString();
         if (m.length >= 5) shapeType = m[4]?.toString();
       } else if (m is Map) {
-        lat = (m['lat'] as num?)?.toDouble() ??
-            (m['latitude'] as num?)?.toDouble() ??
-            0.0;
-        lon = (m['lon'] as num?)?.toDouble() ??
-            (m['longitude'] as num?)?.toDouble() ??
-            0.0;
+        // A marker without coordinates is skipped rather than drawn at 0,0.
+        final la = _coordinate(m['lat']) ?? _coordinate(m['latitude']);
+        final lo = _coordinate(m['lon']) ?? _coordinate(m['longitude']);
+        if (la == null || lo == null) continue;
+        lat = la;
+        lon = lo;
         title = m['title']?.toString();
         subtitle = m['subtitle']?.toString();
         shapeType = m['shapeType']?.toString();
-        rotationDeg = (m['rotation'] as num?)?.toDouble() ??
-            (m['bearing'] as num?)?.toDouble() ??
+        rotationDeg =
+            _coordinate(m['rotation']) ??
+            _coordinate(m['bearing']) ??
             rotationDeg;
       } else {
         continue;
@@ -266,29 +282,40 @@ class CanvasRawMarkerPainter extends CustomPainter {
           canvas.drawPath(arrowPath, pinPaint);
           canvas.drawPath(arrowPath, strokePaint);
         } else {
-          final useImage =
-              (isPlayback ? playbackIconImage ?? iconImage : iconImage);
+          final useImage = (isPlayback
+              ? playbackIconImage ?? iconImage
+              : iconImage);
           if (useImage != null) {
             final src = Rect.fromLTWH(
-                0, 0, useImage.width.toDouble(), useImage.height.toDouble());
+              0,
+              0,
+              useImage.width.toDouble(),
+              useImage.height.toDouble(),
+            );
             final double destSize =
                 useImage.width.toDouble() / devicePixelRatio;
             final dst = Rect.fromCenter(
-                center: Offset.zero, width: destSize, height: destSize);
+              center: Offset.zero,
+              width: destSize,
+              height: destSize,
+            );
 
             paint.isAntiAlias = true;
             final oldFilter = paint.colorFilter;
             final outlineRect = Rect.fromCenter(
-                center: Offset.zero,
-                width: destSize * 1.5,
-                height: destSize * 1.5);
+              center: Offset.zero,
+              width: destSize * 1.5,
+              height: destSize * 1.5,
+            );
             final haloScale = isPlayback ? playbackHaloScale : 1.6;
             final haloAlpha = isPlayback ? playbackHaloOpacity : 0.72;
             final haloRect = Rect.fromCenter(
-                center: Offset.zero,
-                width: destSize * haloScale,
-                height: destSize * haloScale);
-            final isPlaybackImage = isPlayback &&
+              center: Offset.zero,
+              width: destSize * haloScale,
+              height: destSize * haloScale,
+            );
+            final isPlaybackImage =
+                isPlayback &&
                 playbackIconImage != null &&
                 useImage == playbackIconImage;
 
@@ -301,11 +328,15 @@ class CanvasRawMarkerPainter extends CustomPainter {
                 // otherwise fall back to `markerColor`.
                 final haloColor = playbackHaloColor ?? markerColor;
                 paint.colorFilter = ColorFilter.mode(
-                    haloColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
+                  haloColor.withValues(alpha: haloAlpha),
+                  BlendMode.srcIn,
+                );
                 canvas.drawImageRect(useImage, src, haloRect, paint);
 
-                paint.colorFilter =
-                    ColorFilter.mode(Colors.white, BlendMode.srcIn);
+                paint.colorFilter = ColorFilter.mode(
+                  Colors.white,
+                  BlendMode.srcIn,
+                );
                 canvas.drawImageRect(useImage, src, outlineRect, paint);
                 paint.colorFilter = oldFilter;
               }
@@ -314,14 +345,20 @@ class CanvasRawMarkerPainter extends CustomPainter {
             } else {
               // Existing behavior: tint the rasterized icon to match markerColor
               paint.colorFilter = ColorFilter.mode(
-                  markerColor.withValues(alpha: haloAlpha), BlendMode.srcIn);
+                markerColor.withValues(alpha: haloAlpha),
+                BlendMode.srcIn,
+              );
               canvas.drawImageRect(useImage, src, haloRect, paint);
 
-              paint.colorFilter =
-                  ColorFilter.mode(Colors.white, BlendMode.srcIn);
+              paint.colorFilter = ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              );
               canvas.drawImageRect(useImage, src, outlineRect, paint);
-              paint.colorFilter =
-                  ColorFilter.mode(markerColor, BlendMode.srcIn);
+              paint.colorFilter = ColorFilter.mode(
+                markerColor,
+                BlendMode.srcIn,
+              );
               canvas.drawImageRect(useImage, src, dst, paint);
               paint.colorFilter = oldFilter;
             }
@@ -332,8 +369,11 @@ class CanvasRawMarkerPainter extends CustomPainter {
                 ..color = markerColor.withValues(alpha: 0.95)
                 ..style = PaintingStyle.stroke
                 ..strokeWidth = max(3.0, devicePixelRatio * 3.0);
-              canvas.drawCircle(Offset.zero,
-                  headRadius + haloPaint.strokeWidth / 2, haloPaint);
+              canvas.drawCircle(
+                Offset.zero,
+                headRadius + haloPaint.strokeWidth / 2,
+                haloPaint,
+              );
             }
             canvas.drawCircle(Offset.zero, headRadius, pinPaint);
             canvas.drawCircle(Offset.zero, headRadius, strokePaint);
@@ -361,14 +401,16 @@ class CanvasRawMarkerPainter extends CustomPainter {
 
         final tp = TextPainter(textDirection: TextDirection.ltr);
         final textStyle = TextStyle(
-            color: Colors.black,
-            fontSize: max(10.0, devicePixelRatio * 6),
-            fontWeight: FontWeight.w600);
+          color: Colors.black,
+          fontSize: max(10.0, devicePixelRatio * 6),
+          fontWeight: FontWeight.w600,
+        );
 
         final span = TextSpan(
-            children: lines
-                .map((l) => TextSpan(text: '$l\n', style: textStyle))
-                .toList());
+          children: lines
+              .map((l) => TextSpan(text: '$l\n', style: textStyle))
+              .toList(),
+        );
         tp.text = span;
         tp.textAlign = TextAlign.center;
         tp.layout(minWidth: 0, maxWidth: size.width);
@@ -377,10 +419,13 @@ class CanvasRawMarkerPainter extends CustomPainter {
         final bgWidth = tp.width + pad * 2;
         final bgHeight = tp.height + pad * 2;
         final bgRect = Rect.fromCenter(
-            center: Offset(
-                headCenter.dx, headCenter.dy - headRadius - bgHeight / 2 - 6),
-            width: bgWidth,
-            height: bgHeight);
+          center: Offset(
+            headCenter.dx,
+            headCenter.dy - headRadius - bgHeight / 2 - 6,
+          ),
+          width: bgWidth,
+          height: bgHeight,
+        );
 
         final rrect = RRect.fromRectAndRadius(bgRect, Radius.circular(4));
         final bgPaint = Paint()..color = Colors.white.withValues(alpha: 0.85);

@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
+import 'package:form_fields/src/fields/core/form_fields_my_image_description_sheet.dart';
+import 'package:form_fields/src/utilities/base64_image.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
 // `UploadResponseMapper` is exported by `package:form_fields/form_fields.dart`.
 // Import removed to avoid unnecessary import lint.
@@ -13,6 +13,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
+import 'package:form_fields/src/utilities/persisted_headers.dart';
 
 /// A form field widget that lets the user pick one or more images, with
 /// optional direct upload support.
@@ -221,180 +223,15 @@ class FormFieldsMyImage extends StatefulWidget {
   State<FormFieldsMyImage> createState() => _FormFieldsMyImageState();
 }
 
-class _ImageDescriptionSheet extends StatefulWidget {
-  final AutovalidateMode autovalidateMode;
-
-  const _ImageDescriptionSheet()
-    : autovalidateMode = AutovalidateMode.onUserInteraction;
-
-  @override
-  State<_ImageDescriptionSheet> createState() => _ImageDescriptionSheetState();
-}
-
-class _ImageDescriptionSheetState extends State<_ImageDescriptionSheet> {
-  late final TextEditingController _descController;
-  late final FocusNode _descFocusNode;
-  late final FocusNode _rawKeyboardFocusNode;
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _descController = TextEditingController();
-    _descFocusNode = FocusNode();
-    _rawKeyboardFocusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      // Wait a short time for the sheet animation to finish so that
-      // the Flutter view is "served" and IME can attach reliably.
-      await Future.delayed(const Duration(milliseconds: 250));
-      if (!mounted) return;
-      try {
-        FocusScope.of(context).requestFocus(_descFocusNode);
-        SystemChannels.textInput.invokeMethod('TextInput.show');
-      } catch (_) {}
-    });
-  }
-
-  @override
-  void dispose() {
-    _descController.dispose();
-    _descFocusNode.dispose();
-    _rawKeyboardFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dl = FormFieldsLocalizations.of(context);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              KeyboardListener(
-                focusNode: _rawKeyboardFocusNode,
-                onKeyEvent: (KeyEvent event) {
-                  if (event is KeyDownEvent) {
-                    final key = event.logicalKey;
-                    if (key == LogicalKeyboardKey.enter) {
-                      if (_formKey.currentState?.validate() ?? true) {
-                        if (!context.mounted) return;
-                        Navigator.pop(context, _descController.text.trim());
-                      }
-                      return;
-                    }
-
-                    if (key == LogicalKeyboardKey.backspace) {
-                      final text = _descController.text;
-                      final sel = _descController.selection;
-                      if (sel.start > 0) {
-                        final newStart = sel.start - 1;
-                        final newText = text.replaceRange(
-                          newStart,
-                          sel.start,
-                          '',
-                        );
-                        _descController.text = newText;
-                        _descController.selection = TextSelection.collapsed(
-                          offset: newStart,
-                        );
-                      }
-                      return;
-                    }
-
-                    final char = event.character;
-                    if (char != null && char.isNotEmpty) {
-                      final text = _descController.text;
-                      final sel = _descController.selection;
-                      final start = sel.start >= 0 ? sel.start : text.length;
-                      final end = sel.end >= 0 ? sel.end : text.length;
-                      final newText = text.replaceRange(start, end, char);
-                      final newOffset = start + char.length;
-                      _descController.text = newText;
-                      _descController.selection = TextSelection.collapsed(
-                        offset: newOffset,
-                      );
-                    }
-                  }
-                },
-                child: TextFormField(
-                  controller: _descController,
-                  focusNode: _descFocusNode,
-                  autofocus: true,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    labelText: dl.get('description'),
-                  ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                  autovalidateMode: widget.autovalidateMode,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return dl.getWithLabel('required', dl.get('description'));
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) {
-                    if (_formKey.currentState?.validate() ?? true) {
-                      if (!context.mounted) return;
-                      Navigator.pop(context, _descController.text.trim());
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      child: AppButton(
-                        type: AppButtonType.outlined,
-                        size: AppSize.medium,
-                        useSafeArea: false,
-                        text: dl.cancel,
-                        onPressed: () {
-                          if (!context.mounted) return;
-                          Navigator.pop(context, null);
-                        },
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 12),
-                      child: AppButton(
-                        type: AppButtonType.filled,
-                        size: AppSize.medium,
-                        useSafeArea: false,
-                        text: dl.yes,
-                        onPressed: () {
-                          if (_formKey.currentState?.validate() ?? true) {
-                            if (!context.mounted) return;
-                            Navigator.pop(context, _descController.text.trim());
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   static const double _tileSize = 100.0;
   late FormFieldsMyImageProvider _provider;
   int? _uploadingIndex;
   FormFieldsMyImageController? _controller;
+
+  /// True when [_controller] was created by this state rather than supplied
+  /// by the parent. Only internal controllers are disposed here.
+  bool _ownsController = false;
 
   final _formFieldKey = GlobalKey<FormFieldState<List<MyImageResult>>>();
   FormFieldsLocalizations? _localizations;
@@ -417,6 +254,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       });
     } else {
       _controller = FormFieldsMyImageController();
+      _ownsController = true;
       _provider.setImages(_controller!.images);
       _controller!.addListener(_onControllerChanged);
     }
@@ -444,6 +282,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       }
       oldWidget.controller?.unregisterPickImageHandler();
       oldWidget.controller?.removeListener(_onControllerChanged);
+      // Release the internal controller before a different one replaces it.
+      if (_ownsController) {
+        _controller?.removeListener(_onControllerChanged);
+        _controller?.dispose();
+        _ownsController = false;
+      }
       if (widget.controller != null) {
         _controller = widget.controller;
         // If the new controller is empty but provider already has images,
@@ -460,6 +304,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           if (!mounted) return;
           await _pickImage(context, _provider, initialSource: source);
         });
+        OfflineUploadManager.instance.registerController(_controller!);
+      } else {
+        // The parent detached its controller. Switch to an internal one, so
+        // this widget does not keep writing into a controller it no longer
+        // owns.
+        _controller = FormFieldsMyImageController.fromImages(_provider.images);
+        _ownsController = true;
+        _controller!.addListener(_onControllerChanged);
         OfflineUploadManager.instance.registerController(_controller!);
       }
     }
@@ -478,6 +330,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     // Unregister provider
     OfflineUploadManager.instance.unregisterProvider(_provider);
     _controller?.removeListener(_onControllerChanged);
+    if (_ownsController) _controller?.dispose();
+    // Created in initState and not released before. In-flight uploads check
+    // `mounted` before touching the provider again.
+    _provider.dispose();
     super.dispose();
   }
 
@@ -837,11 +693,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               final removed = provider.images[0];
               provider.removeImage(0);
               _syncControllerImages(provider);
-              // widget.onImagesChanged?.call(
-              //   List<MyImageResult>.from(provider.images),
-              // );
               widget.onRemoveImage?.call(0, removed);
-              // widget.onImageChanged?.call(MyImageResult());
+              // Documented contract: onImagesChanged fires after every change
+              // to the list, removals included. Without this call the parent
+              // keeps the removed image.
+              widget.onImagesChanged?.call(
+                List<MyImageResult>.from(provider.images),
+              );
             }),
           ),
       ],
@@ -928,13 +786,18 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         },
       );
     } else if (hasBase64) {
-      try {
-        var b64 = image.base64;
-        if (b64.startsWith('data:')) {
-          final comma = b64.indexOf(',');
-          if (comma >= 0) b64 = b64.substring(comma + 1);
-        }
-        final bytes = base64Decode(b64);
+      // Decoded here for display only. Inside `build` this runs on every
+      // rebuild, so the decode must stay cheap and must not throw.
+      final bytes = decodeBase64Image(image.base64);
+      if (bytes == null) {
+        displayed = Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Icon(
+            Icons.broken_image,
+            color: Theme.of(context).disabledColor,
+          ),
+        );
+      } else {
         displayed = Image.memory(
           bytes,
           fit: BoxFit.cover,
@@ -948,14 +811,6 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               ],
             );
           },
-        );
-      } catch (_) {
-        displayed = Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Icon(
-            Icons.broken_image,
-            color: Theme.of(context).disabledColor,
-          ),
         );
       }
     } else if (image.link.trim().isNotEmpty) {
@@ -1122,10 +977,10 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   final removed = images[idx];
                   provider.removeImage(idx);
                   _syncControllerImages(provider);
-                  // widget.onImagesChanged?.call(
-                  //   List<MyImageResult>.from(provider.images),
-                  // );
                   widget.onRemoveImage?.call(idx, removed);
+                  widget.onImagesChanged?.call(
+                    List<MyImageResult>.from(provider.images),
+                  );
                 }),
               ),
             ],
@@ -1359,7 +1214,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         try {
           final desc = await showAppModalBottomSheet<String>(
             context: context,
-            builder: (ctx) => _ImageDescriptionSheet(),
+            builder: (ctx) => ImageDescriptionSheet(),
           );
           if (desc != null && desc.trim().isNotEmpty) {
             pickedDescription = desc.trim();
@@ -1462,9 +1317,8 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   Future<bool> _hasNetwork() async {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
-      return connectivityResult.contains(ConnectivityResult.none)
-          ? false
-          : true;
+      // Offline means no results, or only `none`. An empty list is offline too.
+      return connectivityResult.any((r) => r != ConnectivityResult.none);
     } catch (_) {
       return false;
     }
@@ -1478,8 +1332,29 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
   }) async {
     if (widget.uploadUrl == null) return;
     final images = provider.images;
-    final index = idx ?? images.indexOf(image);
+    // The image may have been removed while it was being compressed, and then
+    // another image can sit at the same index. Match on the object itself.
+    var index =
+        (idx != null && idx < images.length && identical(images[idx], image))
+        ? idx
+        : images.indexWhere((e) => identical(e, image));
     if (index < 0) return;
+    // The upload is for this object. Its position in the list can change while
+    // the request is in flight, for example when the user removes another
+    // image. Every update therefore finds the position again from this object,
+    // instead of trusting the index captured at the start.
+    var live = images[index];
+    int? locate() {
+      if (!mounted) return null;
+      final i = provider.images.indexWhere((e) => identical(e, live));
+      return i < 0 ? null : i;
+    }
+
+    void replaceLive(int at, MyImageResult updated) {
+      provider.updateImage(at, updated);
+      live = updated;
+    }
+
     // Keep overlay visible from the beginning, even when onProgress only
     // emits at completion on some devices/networks.
     provider.setUploadProgress(index, 0.02);
@@ -1508,7 +1383,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         .toString();
     final payload = <String, dynamic>{
       'url': widget.uploadUrl,
-      'headers': headers,
+      'headers': headersForPersistence(headers),
       'fields': Map<String, String>.fromEntries(extraFields),
       'file': {
         'fileName': fileName,
@@ -1525,22 +1400,25 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     };
 
     final hasNet = await _hasNetwork();
+    final afterNetCheck = locate();
+    if (afterNetCheck == null) return; // removed or disposed meanwhile
+    index = afterNetCheck;
     if (!hasNet) {
       // Keep overlay visible to indicate pending upload.
       provider.setUploadProgress(index, 0.0);
       // Attach payload to the image so UI/controller can access it later.
       final updatedImage = MyImageResult(
-        link: images[index].link,
-        base64: images[index].base64,
-        path: images[index].path,
-        imageId: images[index].imageId,
+        link: live.link,
+        base64: live.base64,
+        path: live.path,
+        imageId: live.imageId,
         description: (effDesc != null && effDesc.isNotEmpty)
             ? effDesc
-            : images[index].description,
+            : live.description,
         payload: payload,
         status: MyImageStatus.queued,
       );
-      provider.updateImage(index, updatedImage);
+      replaceLive(index, updatedImage);
       _syncControllerImages(provider);
       // Notify callers specifically about a failed/queued direct upload so
       // they can persist the payloads for later retry. Wrap the callback in
@@ -1566,13 +1444,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         }
 
         if (kDebugMode) {
-          debugPrint(
+          debugLog(
             'FormFieldsMyImage: queuedImages=${queued.length} uploadable=${uploadable.length}',
           );
           for (var i = 0; i < queued.length; i++) {
             try {
               final qi = queued[i];
-              debugPrint(
+              debugLog(
                 'FormFieldsMyImage: queued[$i] status=${qi.status} path=${qi.path} base64=${qi.base64.isNotEmpty} payloadFile=${qi.payload['file'] is Map}',
               );
             } catch (_) {}
@@ -1587,13 +1465,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         );
         if (payloads.isNotEmpty) {
           if (kDebugMode) {
-            debugPrint(
+            debugLog(
               'FormFieldsMyImage: onFailDirectUploadPayload -> ${payloads.length} payload(s) (offline)',
             );
             for (var i = 0; i < payloads.length; i++) {
               try {
                 final p = payloads[i];
-                debugPrint(
+                debugLog(
                   'FormFieldsMyImage: payload[offline][$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
                 );
               } catch (_) {}
@@ -1602,9 +1480,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           widget.onFailDirectUploadPayload?.call(payloads);
         }
       } catch (e, st) {
-        debugPrint(
-          'FormFieldsMyImage.onFailDirectUploadPayload threw: $e\n$st',
-        );
+        debugLog('FormFieldsMyImage.onFailDirectUploadPayload threw: $e\n$st');
       }
 
       // Stop further processing when offline — avoid attempting the
@@ -1615,7 +1491,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
 
     // If we have network, mark the image as uploading before starting the request.
     if (hasNet) {
-      final img = images[index];
+      final img = live;
       final uploadingImage = MyImageResult(
         link: img.link,
         base64: img.base64,
@@ -1625,7 +1501,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         payload: img.payload,
         status: MyImageStatus.uploading,
       );
-      provider.updateImage(index, uploadingImage);
+      replaceLive(index, uploadingImage);
       _syncControllerImages(provider);
     }
 
@@ -1634,6 +1510,9 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     try {
       // Build an upload-ready payload map (may write temp file for base64)
       built = await UploadHelper.buildUploadPayloadFromMap(payload);
+      final afterBuild = locate();
+      if (afterBuild == null) return;
+      index = afterBuild;
       if (built == null) {
         provider.resetUploadProgress(index);
         return;
@@ -1691,18 +1570,21 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         onUploadQueued: (sanitized, authExpired) async {
           try {
             final sanitizedMap = sanitized.toJson();
+            final at = locate();
+            if (at == null) return;
+            index = at;
             final updatedImage = MyImageResult(
-              link: images[index].link,
-              base64: images[index].base64,
-              path: images[index].path,
-              imageId: images[index].imageId,
+              link: live.link,
+              base64: live.base64,
+              path: live.path,
+              imageId: live.imageId,
               description: (effDesc != null && effDesc.isNotEmpty)
                   ? effDesc
-                  : images[index].description,
+                  : live.description,
               payload: sanitizedMap,
               status: MyImageStatus.queued,
             );
-            provider.updateImage(index, updatedImage);
+            replaceLive(index, updatedImage);
             _syncControllerImages(provider);
 
             try {
@@ -1740,13 +1622,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               }
 
               if (kDebugMode) {
-                debugPrint(
+                debugLog(
                   'FormFieldsMyImage:onUploadQueued queued=${queued.length} uploadable=${uploadable.length}',
                 );
                 for (var i = 0; i < queued.length; i++) {
                   try {
                     final qi = queued[i];
-                    debugPrint(
+                    debugLog(
                       'FormFieldsMyImage:onUploadQueued queued[$i] status=${qi.status} path=${qi.path} base64=${qi.base64.isNotEmpty} payloadFile=${qi.payload['file'] is Map}',
                     );
                   } catch (_) {}
@@ -1761,13 +1643,13 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                   );
               if (payloads.isNotEmpty) {
                 if (kDebugMode) {
-                  debugPrint(
+                  debugLog(
                     'FormFieldsMyImage: onFailDirectUploadPayload -> ${payloads.length} payload(s) (queued)',
                   );
                   for (var i = 0; i < payloads.length; i++) {
                     try {
                       final p = payloads[i];
-                      debugPrint(
+                      debugLog(
                         'FormFieldsMyImage: payload[queued][$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
                       );
                     } catch (_) {}
@@ -1787,7 +1669,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               //   widget.onFailDirectUploadPayload?.call(payloads);
               // }
             } catch (e, st) {
-              debugPrint('Failed to call onFailDirectUploadPayload: $e\n$st');
+              debugLog('Failed to call onFailDirectUploadPayload: $e\n$st');
             }
 
             if (authExpired) {
@@ -1796,11 +1678,12 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
               } catch (_) {}
             }
           } catch (e, st) {
-            debugPrint('onUploadQueued handler error: $e\n$st');
+            debugLog('onUploadQueued handler error: $e\n$st');
           }
         },
         onProgress: (progress) {
-          provider.setUploadProgress(index, progress);
+          final at = locate();
+          if (at != null) provider.setUploadProgress(at, progress);
         },
       );
 
@@ -1815,6 +1698,11 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       } catch (_) {}
     }
     if (!mounted) return;
+    // The request may have finished after the user removed this image. There
+    // is nothing left to update in that case.
+    final afterUpload = locate();
+    if (afterUpload == null) return;
+    index = afterUpload;
     final l = FormFieldsLocalizations.of(context);
     final dialog = AppDialogService(context);
     final uploadSuccessTitle =
@@ -1860,7 +1748,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
           keys: 'filePath',
         );
         // Build absolute link if server provided only a relative path.
-        String? finalLink = (uploadedLink ?? images[index].link).trim();
+        String? finalLink = (uploadedLink ?? live.link).trim();
         if ((finalLink.isEmpty) &&
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
           try {
@@ -1875,28 +1763,33 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
         final resolvedPath =
             (uploadedPath != null && uploadedPath.trim().isNotEmpty)
             ? uploadedPath
-            : images[index].path;
+            : live.path;
 
         final updatedImage = MyImageResult(
-          link: finalLink ?? images[index].link,
-          base64: images[index].base64,
+          link: finalLink ?? live.link,
+          base64: live.base64,
           // Preserve the local picked file path unless the server
           // returned an absolute filesystem path (rare). Avoid
           // overwriting with server-relative paths which are not
           // accessible locally and cause PathNotFound errors.
           path: resolvedPath,
-          imageId: imageId ?? images[index].imageId,
-          description:
-              uploadedDescription ?? description ?? images[index].description,
+          imageId: imageId ?? live.imageId,
+          description: uploadedDescription ?? description ?? live.description,
           payload: data,
           status: MyImageStatus.uploaded,
         );
-        provider.updateImage(index, updatedImage);
+        replaceLive(index, updatedImage);
         // Keep a short completion transition so users can perceive progress.
         provider.setUploadProgress(index, 0.98);
         await Future<void>.delayed(uploadCompletionTransitionDelay);
-        provider.setUploadProgress(index, 1.0);
+        final afterFirstDelay = locate();
+        if (afterFirstDelay != null) {
+          provider.setUploadProgress(afterFirstDelay, 1.0);
+        }
         await Future<void>.delayed(uploadCompletionTransitionDelay);
+        final afterSecondDelay = locate();
+        if (afterSecondDelay == null) return;
+        index = afterSecondDelay;
         _syncControllerImages(provider);
         widget.onImagesChanged?.call(List<MyImageResult>.from(provider.images));
         if (widget.maxImages == 1 && index == 0) {
@@ -1917,15 +1810,15 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       } else {
         // mark as failed
         final failedImage = MyImageResult(
-          link: images[index].link,
-          base64: images[index].base64,
-          path: images[index].path,
-          imageId: images[index].imageId,
-          description: images[index].description,
-          payload: images[index].payload,
+          link: live.link,
+          base64: live.base64,
+          path: live.path,
+          imageId: live.imageId,
+          description: live.description,
+          payload: live.payload,
           status: MyImageStatus.failed,
         );
-        provider.updateImage(index, failedImage);
+        replaceLive(index, failedImage);
         provider.resetUploadProgress(index);
         if (widget.showUploadResultDialog) {
           await dialog.showError(
@@ -1937,17 +1830,20 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
       }
     } catch (e) {
       // mark as failed on exception
-      final failedImage = MyImageResult(
-        link: images[index].link,
-        base64: images[index].base64,
-        path: images[index].path,
-        imageId: images[index].imageId,
-        description: images[index].description,
-        payload: images[index].payload,
-        status: MyImageStatus.failed,
-      );
-      provider.updateImage(index, failedImage);
-      provider.resetUploadProgress(index);
+      final at = locate();
+      if (at != null) {
+        final failedImage = MyImageResult(
+          link: live.link,
+          base64: live.base64,
+          path: live.path,
+          imageId: live.imageId,
+          description: live.description,
+          payload: live.payload,
+          status: MyImageStatus.failed,
+        );
+        replaceLive(at, failedImage);
+        provider.resetUploadProgress(at);
+      }
       if (widget.showUploadResultDialog) {
         await dialog.showError(
           title: uploadErrorTitle,

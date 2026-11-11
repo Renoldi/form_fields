@@ -1,21 +1,29 @@
-import 'package:dio/dio.dart';
 import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
-/// Callback type invoked when a payload is queued because of auth expiry
-/// or network failure. The boolean flag is `true` when the queueing was
-/// due to authentication (401) and `false` for network/DNS errors.
-typedef UploadQueuedCallback = void Function(
-    DirectUploadPayload payload, bool authExpired);
+/// Callback type invoked when a payload is queued for a later retry. The
+/// boolean flag is `true` when the queueing was due to authentication (401)
+/// and `false` for network failures and retryable server errors.
+typedef UploadQueuedCallback =
+    void Function(DirectUploadPayload payload, bool authExpired);
 
 /// Result of an upload operation.
 class UploadOutcome {
   final bool success;
   final Response? response;
+
+  /// True only when the payload was queued because authentication expired
+  /// (HTTP 401). Use [queued] to check for any kind of queueing.
   final bool authExpiredQueued;
+
+  /// Payload without credentials, ready to persist and retry. Null unless the
+  /// upload was queued.
   final DirectUploadPayload? sanitizedPayload;
 
   UploadOutcome({
@@ -24,23 +32,34 @@ class UploadOutcome {
     this.authExpiredQueued = false,
     this.sanitizedPayload,
   });
+
+  /// True when the payload was queued for a later retry.
+  bool get queued => sanitizedPayload != null;
 }
 
-/// High-level upload service that wraps `DioUtil.uploadFile` and handles
-/// a single 401 refresh+retry, plus returning a sanitized payload when
-/// auth is expired so callers can persist/queue it.
+/// High-level upload service that wraps `DioUtil.uploadFile`.
+///
+/// Failures are classified as follows:
+/// - Network failure (no HTTP response), HTTP 401 and retryable server errors
+///   (408, 429, 5xx) produce a sanitized payload that the caller can persist
+///   and retry later.
+/// - Other 4xx responses are permanent. They are returned as failures and are
+///   not queued, because retrying the same request cannot succeed.
 class UploadService {
   UploadService._();
   static final UploadService instance = UploadService._();
 
   /// Uploads a typed [DirectUploadPayload].
   ///
-  /// - `uploadTokenRefresher`: optional callback to obtain a fresh token on
-  ///   401. If provided, the service will call it once and retry the upload
-  ///   with the returned token.
-  /// - `onUploadAuthExpired`: optional notification callback invoked when
-  ///   authentication appears to be expired and the sanitized payload is
-  ///   produced for queuing.
+  /// - `uploadTokenRefresher`: optional callback that returns a fresh
+  ///   `Authorization` header value (including the scheme, for example
+  ///   `Bearer <token>`). When the server answers 401, it is called once and
+  ///   the upload is retried with the new value. Returning null, or an error
+  ///   from the callback, skips the retry.
+  /// - `onUploadAuthExpired`: notification invoked when the upload is queued
+  ///   because authentication expired.
+  /// - `onUploadQueued`: invoked with the sanitized payload whenever the upload
+  ///   is queued for a later retry.
   Future<UploadOutcome> uploadDirectPayload(
     DirectUploadPayload payload, {
     Future<String?> Function()? uploadTokenRefresher,
@@ -49,165 +68,155 @@ class UploadService {
     UploadQueuedCallback? onUploadQueued,
   }) async {
     final headers = Map<String, String>.from(payload.headers);
-    final fieldsList = payload.fields.entries
-        .map((e) => MapEntry(e.key.toString(), e.value.toString()))
-        .toList();
 
-    Response? response = await DioUtil.uploadFile(
+    var response = await _send(payload, headers, onProgress);
+
+    if (_isUnauthorized(response) && uploadTokenRefresher != null) {
+      final refreshed = await _refreshAuthorization(uploadTokenRefresher);
+      if (refreshed != null) {
+        headers[HttpHeaders.authorizationHeader] = refreshed;
+        response = await _send(payload, headers, onProgress);
+      }
+    }
+
+    if (DioUtil.isNetworkFailure(response)) {
+      return _queue(
+        payload,
+        headers,
+        response: response,
+        authExpired: false,
+        onQueued: onUploadQueued,
+      );
+    }
+
+    if (_isUnauthorized(response)) {
+      _notify(onUploadAuthExpired);
+      return _queue(
+        payload,
+        headers,
+        response: response,
+        authExpired: true,
+        onQueued: onUploadQueued,
+      );
+    }
+
+    final statusCode = response!.statusCode;
+    if (UploadResponseMapper.isSuccessfulStatus(statusCode)) {
+      return UploadOutcome(success: true, response: response);
+    }
+
+    if (isRetryableStatus(statusCode)) {
+      return _queue(
+        payload,
+        headers,
+        response: response,
+        authExpired: false,
+        onQueued: onUploadQueued,
+      );
+    }
+
+    // Permanent client error (400, 403, 404, 413, 422, ...): retrying the same
+    // request cannot succeed, so it is reported and not queued.
+    return UploadOutcome(success: false, response: response);
+  }
+
+  Future<Response?> _send(
+    DirectUploadPayload payload,
+    Map<String, String> headers,
+    void Function(double progress)? onProgress,
+  ) {
+    return DioUtil.uploadFile(
       url: payload.url,
       filePath: payload.filePath,
       filename: payload.fileName,
       headers: headers.isNotEmpty ? headers : null,
       onProgress: onProgress,
-      fields: fieldsList.isNotEmpty ? fieldsList : null,
+      fields: payload.fields.isNotEmpty
+          ? payload.fields.entries
+                .map((e) => MapEntry(e.key.toString(), e.value.toString()))
+                .toList()
+          : null,
       fileFieldName: payload.fileFieldName,
       includeReqType: payload.includeReqType,
     );
+  }
 
-    // Detect transient network/DNS failures normalized by DioUtil.
-    // DioUtil returns a 500 Response with diagnostic data for these cases.
-    bool looksLikeNetworkError(Response? r) {
-      if (r == null) return true;
-      final d = r.data;
-      if (d is Map) {
-        final e = d['error'] ?? d['errorType'] ?? d['errorMessage'];
-        if (e is String &&
-            (e.contains('no_response') ||
-                e.contains('Failed host lookup') ||
-                e.contains('connection'))) {
-          return true;
-        }
+  static bool _isUnauthorized(Response? response) =>
+      response?.statusCode == 401;
+
+  /// Statuses that may succeed later without any change to the request.
+  /// A missing status (network failure) is treated as retryable.
+  static bool isRetryableStatus(int? statusCode) {
+    if (statusCode == null) return true;
+    return statusCode == 408 || statusCode == 429 || statusCode >= 500;
+  }
+
+  Future<String?> _refreshAuthorization(
+    Future<String?> Function() refresher,
+  ) async {
+    try {
+      final value = await refresher();
+      return (value == null || value.trim().isEmpty) ? null : value;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugLog('UploadService: uploadTokenRefresher threw: $e\n$st');
       }
-      return false;
+      return null;
     }
+  }
 
-    if (looksLikeNetworkError(response)) {
-      // Build sanitized payload without Authorization for persistence/queueing.
-      final headersForPersist = Map<String, String>.from(headers);
-      headersForPersist.remove(HttpHeaders.authorizationHeader);
-      final sanitized = DirectUploadPayload(
-        url: payload.url,
-        filePath: payload.filePath,
-        fileName: payload.fileName,
-        base64: payload.base64,
-        headers: headersForPersist,
-        fields: payload.fields,
-        fileFieldName: payload.fileFieldName,
-        includeReqType: payload.includeReqType,
-        uploadCorrelationId: payload.uploadCorrelationId,
+  void _notify(VoidCallback? callback) {
+    try {
+      callback?.call();
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugLog('UploadService: callback threw: $e\n$st');
+      }
+    }
+  }
+
+  /// Builds the sanitized payload (without Authorization) and notifies the
+  /// caller so the app can persist it and retry later.
+  UploadOutcome _queue(
+    DirectUploadPayload payload,
+    Map<String, String> headers, {
+    required Response? response,
+    required bool authExpired,
+    UploadQueuedCallback? onQueued,
+  }) {
+    final headersForPersist = Map<String, String>.from(headers)
+      ..remove(HttpHeaders.authorizationHeader);
+    final sanitized = DirectUploadPayload(
+      url: payload.url,
+      filePath: payload.filePath,
+      fileName: payload.fileName,
+      base64: payload.base64,
+      headers: headersForPersist,
+      fields: payload.fields,
+      fileFieldName: payload.fileFieldName,
+      includeReqType: payload.includeReqType,
+      uploadCorrelationId: payload.uploadCorrelationId,
+    );
+
+    if (kDebugMode) {
+      debugLog(
+        'UploadService: queueing payload (authExpired=$authExpired, '
+        'status=${response?.statusCode}, correlation=${sanitized.uploadCorrelationId})',
       );
-      try {
-        if (kDebugMode) {
-          debugPrint('UploadService: queueing payload (network error)');
-          try {
-            debugPrint(
-                'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
-          } catch (_) {}
-        }
-        onUploadQueued?.call(sanitized, false);
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('UploadService: onUploadQueued threw: $e\n$st');
-        }
-      }
-      return UploadOutcome(
-          success: false,
-          response: response,
-          authExpiredQueued: true,
-          sanitizedPayload: sanitized);
     }
-
-    // Handle 401: do NOT attempt an automatic token refresh+retry.
-    // Instead create a sanitized payload (without Authorization) and
-    // notify the caller so the app-level handler (`onUploadQueued`/
-    // `onUploadAuthExpired`) can persist and retry as needed.
-    if (response != null && response.statusCode == 401) {
-      // Build sanitized payload without Authorization for persistence.
-      final headersForPersist = Map<String, String>.from(headers);
-      headersForPersist.remove(HttpHeaders.authorizationHeader);
-      final sanitized = DirectUploadPayload(
-        url: payload.url,
-        filePath: payload.filePath,
-        fileName: payload.fileName,
-        base64: payload.base64,
-        headers: headersForPersist,
-        fields: payload.fields,
-        fileFieldName: payload.fileFieldName,
-        includeReqType: payload.includeReqType,
-        uploadCorrelationId: payload.uploadCorrelationId,
-      );
-      try {
-        if (kDebugMode) {
-          debugPrint('UploadService: auth expired -> queueing payload (auth)');
-          try {
-            debugPrint(
-                'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
-          } catch (_) {}
-        }
-        onUploadAuthExpired?.call();
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('UploadService: onUploadAuthExpired threw: $e\n$st');
-        }
-      }
-      try {
-        onUploadQueued?.call(sanitized, true);
-      } catch (e, st) {
-        if (kDebugMode) {
-          debugPrint('UploadService: onUploadQueued threw: $e\n$st');
-        }
-      }
-      return UploadOutcome(
-          success: false,
-          response: response,
-          authExpiredQueued: true,
-          sanitizedPayload: sanitized);
-    }
-
-    // For other server/client errors (4xx/5xx) treat similarly: do not
-    // attempt automatic retry here, instead produce a sanitized payload
-    // and notify caller so application-level code can decide to retry.
-    if (response != null && response.statusCode != null) {
-      final sc = response.statusCode!;
-      if (sc >= 400 && sc < 600 && sc != 401) {
-        final headersForPersist = Map<String, String>.from(headers);
-        headersForPersist.remove(HttpHeaders.authorizationHeader);
-        final sanitized = DirectUploadPayload(
-          url: payload.url,
-          filePath: payload.filePath,
-          fileName: payload.fileName,
-          base64: payload.base64,
-          headers: headersForPersist,
-          fields: payload.fields,
-          fileFieldName: payload.fileFieldName,
-          includeReqType: payload.includeReqType,
-          uploadCorrelationId: payload.uploadCorrelationId,
-        );
-        try {
-          if (kDebugMode) {
-            debugPrint(
-                'UploadService: server error $sc -> queueing payload (server)');
-            try {
-              debugPrint(
-                  'UploadService: sanitized.correlation=${sanitized.uploadCorrelationId} file=${sanitized.fileName} path=${sanitized.filePath}');
-            } catch (_) {}
-          }
-          onUploadQueued?.call(sanitized, false);
-        } catch (e, st) {
-          if (kDebugMode) {
-            debugPrint('UploadService: onUploadQueued threw: $e\n$st');
-          }
-        }
-        return UploadOutcome(
-            success: false,
-            response: response,
-            authExpiredQueued: false,
-            sanitizedPayload: sanitized);
+    try {
+      onQueued?.call(sanitized, authExpired);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugLog('UploadService: onUploadQueued threw: $e\n$st');
       }
     }
 
-    final ok = response != null &&
-        UploadResponseMapper.isSuccessfulStatus(response.statusCode);
-    return UploadOutcome(success: ok, response: response);
+    return UploadOutcome(
+      success: false,
+      response: response,
+      authExpiredQueued: authExpired,
+      sanitizedPayload: sanitized,
+    );
   }
 }
