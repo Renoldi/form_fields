@@ -102,6 +102,7 @@ class FormFieldsLocalizations {
   String get cancel => get('cancel');
   String get searchHint => get('searchHint');
   String get showMore => get('showMore');
+  String get sort => get('sort');
   String get refresh => get('refresh');
   String get selectPrefix => get('selectPrefix');
   String get enterPrefix => get('enterPrefix');

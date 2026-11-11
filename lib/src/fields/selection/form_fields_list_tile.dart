@@ -114,21 +114,29 @@ class FormFieldsListTile extends StatelessWidget {
         if (borderType == BorderType.none) return child;
 
         final borderColor = Theme.of(context).dividerColor;
-        final decoration = borderType == BorderType.outlineInputBorder
-            ? BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderColor),
-              )
-            : BoxDecoration(
-                border: Border(bottom: BorderSide(color: borderColor)),
-              );
+
+        if (borderType == BorderType.outlineInputBorder) {
+          // The white background is painted by a Material, not by the
+          // Container's decoration. A colored DecoratedBox around a ListTile
+          // hides its ink splash and triggers a Flutter warning.
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: borderColor),
+            ),
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(padding: const EdgeInsets.all(6), child: child),
+            ),
+          );
+        }
 
         return Container(
-          padding: borderType == BorderType.outlineInputBorder
-              ? const EdgeInsets.all(6)
-              : EdgeInsets.zero,
-          decoration: decoration,
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: borderColor)),
+          ),
           child: child,
         );
       },

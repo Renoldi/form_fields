@@ -12,8 +12,8 @@ class View extends PresenterState {
     final filtered = (search == null || search.trim().isEmpty)
         ? all
         : all
-            .where((e) => e.toLowerCase().contains(search.toLowerCase()))
-            .toList();
+              .where((e) => e.toLowerCase().contains(search.toLowerCase()))
+              .toList();
     const pageSize = 10;
     final start = offset;
     if (start >= filtered.length) return <String>[];
@@ -21,6 +21,19 @@ class View extends PresenterState {
         ? filtered.length
         : start + pageSize;
     return filtered.sublist(start, end);
+  }
+
+  /// Example date for an item. It is derived from the item number, so the
+  /// same item always gets the same date and the sample data needs no model.
+  static DateTime? _dateOf(String value) {
+    final n = int.tryParse(value.split(' ').last);
+    if (n == null) return null;
+    return DateTime(2026, 1, 1).add(Duration(days: (n * 37) % 365));
+  }
+
+  static String _formatDate(DateTime d) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 
   Widget _itemBuilder(BuildContext context, String? value, int index) {
@@ -32,11 +45,17 @@ class View extends PresenterState {
       );
     }
     final detailTemplate = context.tr('detailFor');
-    final detail = detailTemplate.replaceFirst('{value}', value);
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      color: Colors.white,
+    final date = _dateOf(value);
+    final detail =
+        detailTemplate.replaceFirst('{value}', value) +
+        (date == null ? '' : ' · ${_formatDate(date)}');
+    // The white background is set on the ListTile itself (tileColor). A
+    // ColoredBox around the ListTile hides its ink splash and triggers a
+    // Flutter warning.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
+        tileColor: Colors.white,
         leading: CircleAvatar(child: Text(value.split(' ').last)),
         title: Text(value),
         subtitle: Text(detail),
@@ -90,7 +109,9 @@ class View extends PresenterState {
                   builder: (context, value, _) {
                     final tpl = context.tr('loadedItems');
                     final text = tpl.replaceFirst(
-                        '{count}', value.data.length.toString());
+                      '{count}',
+                      value.data.length.toString(),
+                    );
                     return Text(text);
                   },
                 ),
@@ -102,6 +123,23 @@ class View extends PresenterState {
                     dataSource: _dataSource,
                     onDataReceived: (datas, search) => vm.updateSearch(search),
                     itemBuilder: (v, i) => _itemBuilder(context, v, i),
+                    sortFields: [
+                      // ListDataSortField<String>(
+                      //   key: 'name',
+                      //   label: context.tr('sortByName'),
+                      //   valueOf: (v) => v.toLowerCase(),
+                      // ),
+                      // ListDataSortField<String>(
+                      //   key: 'number',
+                      //   label: context.tr('sortByNumber'),
+                      //   valueOf: (v) => int.tryParse(v.split(' ').last),
+                      // ),
+                      ListDataSortField<String>(
+                        key: 'date',
+                        label: context.tr('sortByDate'),
+                        valueOf: _dateOf,
+                      ),
+                    ],
                     showSearchBox: true,
                     loaderCount: 3,
                     enableGetMore: true,

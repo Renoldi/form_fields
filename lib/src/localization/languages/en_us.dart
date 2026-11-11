@@ -41,6 +41,7 @@ const Map<String, String> enUSStrings = {
   'itemCount': '{value} items selected',
   // ListData / general UI
   'showMore': 'Show More',
+  'sort': 'Sort',
   'refresh': 'Refresh',
 
   // Checkbox

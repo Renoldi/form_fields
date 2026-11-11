@@ -28,6 +28,45 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the sort menu is shown only when sortFields are given', (
+    tester,
+  ) async {
+    Future<List<String>> source(int offset, String? search) async => ['b', 'a'];
+    final sortable = ListDataSortField<String>(
+      key: 'name',
+      label: 'Name',
+      valueOf: (item) => item,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListDataComponent<String>(
+            dataSource: source,
+            itemBuilder: (item, index) => Text(item ?? '', key: ValueKey(item)),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListDataComponent<String>(
+            dataSource: source,
+            sortFields: [sortable],
+            itemBuilder: (item, index) => Text(item ?? '', key: ValueKey(item)),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a data source given on a later build is the one used', (
     tester,
   ) async {
