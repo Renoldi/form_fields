@@ -60,6 +60,7 @@ class ViewModel extends ChangeNotifier {
       'payload': post.toJson(),
       'status': 'pending',
     });
+    WorkmanagerService.instance.notifyPendingAdded();
     await loadPending();
     post = Post();
     commit();

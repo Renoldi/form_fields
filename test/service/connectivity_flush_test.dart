@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:form_fields/src/service/db_service.dart';
 import 'package:form_fields/src/service/init_service.dart';
@@ -108,6 +109,62 @@ void main() {
     _emit(const ['none']);
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(runs, 0);
+  });
+
+  test('returning to the foreground runs the flush when online', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+    _current = const ['wifi'];
+
+    final binding = TestWidgetsFlutterBinding.instance;
+    // Flutter returns from the background via `inactive` before `resumed`.
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(runs, 1);
+  });
+
+  test('returning to the foreground while offline does not flush', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+    _current = const ['none'];
+
+    final binding = TestWidgetsFlutterBinding.instance;
+    // Flutter returns from the background via `inactive` before `resumed`.
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(runs, 0, reason: 'offline resume must not spend retry attempts');
+  });
+
+  test('adding a pending row while online runs the flush', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+    _current = const ['wifi'];
+
+    WorkmanagerService.instance.notifyPendingAdded();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(runs, 1);
+  });
+
+  test('adding a pending row while offline does not flush', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+    _current = const ['none'];
+
+    WorkmanagerService.instance.notifyPendingAdded();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(runs, 0);
+  });
+
+  test('notifyPendingChanged alone never starts a flush', () async {
+    var runs = 0;
+    await start(flush: () async => runs++);
+    _current = const ['wifi'];
+
+    WorkmanagerService.instance.notifyPendingChanged();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(runs, 0, reason: 'post-send notifications must not loop');
   });
 
   test('starting twice keeps a single listener', () async {
