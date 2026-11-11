@@ -87,7 +87,7 @@ Future<void> main() async {
 
     // Workmanager initialization and worker registration happen inside
     // `FormFieldsInitializer.initAll(...)` below (see `workerRegistrations`).
-    // Note: `enableWorkmanager` is false in this example, so no worker runs.
+    // Note: `enableWorkmanager` is true in this example, so workers run.
 
     if (kDebugMode) {
       try {
@@ -102,7 +102,8 @@ Future<void> main() async {
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
-      enableWorkmanager: false, // TEMP: test without workers
+      // Verified on Android (emulator) and iOS (simulator): workers register and run.
+      enableWorkmanager: true,
       registerPeriodic: false,
       // Example: register one or more background workers.
       workerRegistrations: [

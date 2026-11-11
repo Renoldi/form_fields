@@ -123,6 +123,9 @@ Future<void> sendCurrentLocationForeground() async {
     });
     if (id > 0) {
       _sendLocationLogger.i('Foreground inserted pending location id=$id');
+      try {
+        WorkmanagerService.instance.notifyPendingAdded();
+      } catch (_) {}
     }
   } catch (e, st) {
     _sendLocationLogger.w('Foreground handler threw: $e\n$st');

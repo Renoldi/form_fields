@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 // Flush state relocated into WorkmanagerService as `isFlushing`.
@@ -54,6 +55,7 @@ class WorkmanagerService {
   Timer? _countdownTimer;
 
   StreamSubscription<dynamic>? _connectivitySub;
+  AppLifecycleListener? _lifecycleListener;
 
   /// Host-provided top-level background handler resolver (optional).
   static BackgroundTaskHandler? _backgroundHandler;
@@ -399,35 +401,55 @@ class WorkmanagerService {
     final sub = _connectivitySub;
     _connectivitySub = null;
     await sub?.cancel();
+    _lifecycleListener?.dispose();
+    _lifecycleListener = null;
   }
 
   /// Whether the connectivity listener is running. Tests only.
   @visibleForTesting
   bool get isConnectivityFlushActive => _connectivitySub != null;
 
-  /// Runs [foregroundFlushHandler] whenever the device reports a network
-  /// connection again. Only the running app can react, so this does not
-  /// replace background workers for when the app is closed. Safe to call
-  /// repeatedly; it listens once.
+  /// Runs [foregroundFlushHandler] when the device has a network connection
+  /// again, and when the app returns to the foreground. Only the running app
+  /// can react, so this does not replace background workers for when the app
+  /// is closed. Safe to call repeatedly; it starts listening once.
   void startConnectivityFlush() {
-    if (_connectivitySub != null) return;
-    try {
-      _connectivitySub = Connectivity().onConnectivityChanged.listen((_) async {
-        try {
-          final current = await Connectivity().checkConnectivity();
-          final hasNetwork = !current.toString().toLowerCase().contains('none');
-          if (!hasNetwork) return;
-          _addLog('connectivity: $current -> attempting flush');
-          try {
-            await foregroundFlushHandler?.call();
-          } catch (e) {
-            _addLog('flush handler error: $e');
-          }
-        } catch (_) {}
-      });
-    } catch (e) {
-      _addLog('connectivity listener failed: $e');
+    if (_connectivitySub == null) {
+      try {
+        _connectivitySub = Connectivity().onConnectivityChanged.listen(
+          (_) => _flushIfOnline('connectivity'),
+        );
+      } catch (e) {
+        _addLog('connectivity listener failed: $e');
+      }
     }
+    if (_lifecycleListener == null) {
+      try {
+        // Timers and connectivity events do not run while the app is in the
+        // background, so a resume re-checks pending work as well.
+        _lifecycleListener = AppLifecycleListener(
+          onResume: () => _flushIfOnline('app resumed'),
+        );
+      } catch (e) {
+        _addLog('lifecycle listener unavailable: $e');
+      }
+    }
+  }
+
+  /// Flushes only when a connection exists. Flushing while offline would
+  /// spend retry attempts that cannot succeed.
+  Future<void> _flushIfOnline(String reason) async {
+    try {
+      final current = await Connectivity().checkConnectivity();
+      final hasNetwork = !current.toString().toLowerCase().contains('none');
+      if (!hasNetwork) return;
+      _addLog('$reason: $current -> attempting flush');
+      try {
+        await foregroundFlushHandler?.call();
+      } catch (e) {
+        _addLog('flush handler error: $e');
+      }
+    } catch (_) {}
   }
 
   void setHandler(BackgroundTaskHandler handler) {
@@ -1062,6 +1084,17 @@ class WorkmanagerService {
     try {
       pendingChangedListenable.value = pendingChangedListenable.value + 1;
     } catch (_) {}
+  }
+
+  /// Call after inserting a new pending submission. Notifies listeners and, if
+  /// the device is online, runs the foreground flush right away so a row added
+  /// while online is not left waiting for the next network event.
+  ///
+  /// Do not use this after a successful send: it would start another flush.
+  /// Use [notifyPendingChanged] for that.
+  void notifyPendingAdded() {
+    notifyPendingChanged();
+    unawaited(_flushIfOnline('pending added'));
   }
 
   List<String> get recentLogs => List.unmodifiable(_logs);

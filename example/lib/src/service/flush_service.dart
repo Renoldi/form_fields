@@ -24,6 +24,11 @@ const String _kPayloadsDir = 'payloads';
 const String _kRetryTable = 'pending_submission_retries';
 const SubmissionRetryPolicy _kRetryPolicy = SubmissionRetryPolicy();
 
+/// A row being sent is marked `sending:<epoch-ms>` so no other flush (in this
+/// isolate or a WorkManager isolate) sends it at the same time.
+const String _kClaimPrefix = 'sending:';
+const Duration _kClaimTimeout = Duration(minutes: 5);
+
 @pragma('vm:entry-point')
 Future<void> workmanagerFlushPendingHandler() async {
   if (kDebugMode) {
@@ -131,6 +136,7 @@ Future<bool> flushPendingSubmissions({
   }
 
   try {
+    await _releaseStaleClaims();
     final rows = await _fetchPendingRows();
     if (rows.isEmpty) {
       _logger.i('flushPendingSubmissions: no pending rows');
@@ -175,20 +181,29 @@ Future<bool> flushPendingSubmissionById(
       whereArgs: [id, _kStatusPending],
     );
     if (rows.isEmpty) return false;
+    if (!await _claimRow(id)) return false;
 
-    final row = rows.first;
-    final payload = await _decodePayload(row['payload']);
-    if (payload.isEmpty) return false;
+    try {
+      final payload = await _decodePayload(rows.first['payload']);
+      if (payload.isEmpty) {
+        await _releaseRow(id);
+        return false;
+      }
 
-    final handler = submitHandler ?? defaultSubmitHandler;
-    final success = await _invokeHandler(handler, payload, id);
-    if (!success) {
-      await _recordFailure(id, 'submit returned false');
-      return false;
+      final handler = submitHandler ?? defaultSubmitHandler;
+      final success = await _invokeHandler(handler, payload, id);
+      if (!success) {
+        await _releaseRow(id);
+        await _recordFailure(id, 'submit returned false');
+        return false;
+      }
+
+      await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
+      await _clearRetry(id);
+    } catch (_) {
+      await _releaseRow(id);
+      rethrow;
     }
-
-    await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
-    await _clearRetry(id);
     try {
       WorkmanagerService.instance.notifyPendingChanged();
     } catch (_) {}
@@ -280,27 +295,79 @@ Future<void> _clearRetry(int? id) async {
   await DBService.instance.delete(_kRetryTable, 'id = ?', [id]);
 }
 
+/// Atomically marks a pending row as being sent. Returns false when another
+/// flush already holds it, so the row is skipped instead of sent twice.
+Future<bool> _claimRow(int id) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  final changed = await DBService.instance.update(
+    _kPendingTable,
+    {'status': '$_kClaimPrefix$now'},
+    'id = ? AND status = ?',
+    [id, _kStatusPending],
+  );
+  return changed == 1;
+}
+
+/// Returns a row to `pending` after a failed or interrupted send.
+Future<void> _releaseRow(int id) async {
+  await DBService.instance.update(
+    _kPendingTable,
+    {'status': _kStatusPending},
+    'id = ?',
+    [id],
+  );
+}
+
+/// Releases claims older than [_kClaimTimeout]: their flush was killed mid-send.
+Future<void> _releaseStaleClaims() async {
+  final claimed = await DBService.instance.selectFrom(
+    _kPendingTable,
+    columns: ['id', 'status'],
+    where: 'status LIKE ?',
+    whereArgs: ['$_kClaimPrefix%'],
+  );
+  final cutoff = DateTime.now().subtract(_kClaimTimeout).millisecondsSinceEpoch;
+  for (final row in claimed) {
+    final stamp =
+        int.tryParse(
+          (row['status'] as String).substring(_kClaimPrefix.length),
+        ) ??
+        0;
+    if (stamp < cutoff) await _releaseRow(row['id'] as int);
+  }
+}
+
 Future<bool> _processPendingRow(
   Map<String, dynamic> row,
   SubmitHandler handler,
 ) async {
   final id = row['id'] as int?;
-  final payload = await _decodePayload(row['payload']);
-  if (payload.isEmpty) return false;
+  if (id == null || !await _claimRow(id)) return false;
 
-  final success = await _invokeHandler(handler, payload, id);
-  if (!success) {
-    await _recordFailure(id, 'submit returned false');
-    return false;
-  }
+  try {
+    final payload = await _decodePayload(row['payload']);
+    if (payload.isEmpty) {
+      await _releaseRow(id);
+      return false;
+    }
 
-  if (id != null) {
+    final success = await _invokeHandler(handler, payload, id);
+    if (!success) {
+      await _releaseRow(id);
+      await _recordFailure(id, 'submit returned false');
+      return false;
+    }
+
     await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
     await _clearRetry(id);
-    try {
-      WorkmanagerService.instance.notifyPendingChanged();
-    } catch (_) {}
+  } catch (_) {
+    await _releaseRow(id);
+    rethrow;
   }
+
+  try {
+    WorkmanagerService.instance.notifyPendingChanged();
+  } catch (_) {}
   return true;
 }
 
