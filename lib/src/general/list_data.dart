@@ -67,6 +67,18 @@ class ListDataComponent<T> extends StatefulWidget {
   /// shown and the data keeps the order returned by [dataSource].
   final List<ListDataSortField<T>> sortFields;
 
+  /// Shows the sort menu above the list when true. Defaults to false. The list
+  /// can still be sorted with [initialSortKey] or `controller.sortBy`.
+  final bool showSortMenu;
+
+  /// Key of the field the list starts sorted by. It is used only the first
+  /// time the component is created. Ignored when [sortFields] has no field
+  /// with this key.
+  final String? initialSortKey;
+
+  /// Direction of the initial sort. Used together with [initialSortKey].
+  final bool initialSortAscending;
+
   const ListDataComponent({
     super.key,
     this.controller,
@@ -108,6 +120,9 @@ class ListDataComponent<T> extends StatefulWidget {
     this.onUpdated,
     this.refreshIntructionText,
     this.sortFields = const [],
+    this.showSortMenu = false,
+    this.initialSortKey,
+    this.initialSortAscending = true,
   });
 
   @override
@@ -147,6 +162,10 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
   @override
   void initState() {
     _syncCallbacks();
+    if (widget.initialSortKey != null) {
+      _controller.value.sortKey = widget.initialSortKey;
+      _controller.value.sortAscending = widget.initialSortAscending;
+    }
     super.initState();
 
     // Listen to search controller text changes to update the clear button state
@@ -222,7 +241,9 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               widget.showSearchBox
                   ? searchBoxWithFormFields()
                   : const SizedBox(),
-              widget.sortFields.isNotEmpty ? sortBar() : const SizedBox(),
+              widget.showSortMenu && widget.sortFields.isNotEmpty
+                  ? sortBar()
+                  : const SizedBox(),
               Container(
                 // color: Colors.blue,
                 height: 8,
