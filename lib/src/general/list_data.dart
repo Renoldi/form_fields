@@ -63,6 +63,10 @@ class ListDataComponent<T> extends StatefulWidget {
   final bool enableAutoRefreshOnTop;
   final double autoRefreshTopThreshold;
 
+  /// Fields the loaded result can be sorted by. When empty, no sort menu is
+  /// shown and the data keeps the order returned by [dataSource].
+  final List<ListDataSortField<T>> sortFields;
+
   const ListDataComponent({
     super.key,
     this.controller,
@@ -103,6 +107,7 @@ class ListDataComponent<T> extends StatefulWidget {
     this.emptyDataTextStyle,
     this.onUpdated,
     this.refreshIntructionText,
+    this.sortFields = const [],
   });
 
   @override
@@ -136,6 +141,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     value.onDataReceived = widget.onDataReceived;
     value.onSelected = widget.onSelected;
     value.onUpdated = widget.onUpdated;
+    value.sortFields = widget.sortFields;
   }
 
   @override
@@ -216,6 +222,7 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
               widget.showSearchBox
                   ? searchBoxWithFormFields()
                   : const SizedBox(),
+              widget.sortFields.isNotEmpty ? sortBar() : const SizedBox(),
               Container(
                 // color: Colors.blue,
                 height: 8,
@@ -237,6 +244,126 @@ class _ListDataComponentState<T> extends State<ListDataComponent<T>> {
     try {
       await _controller.refresh();
     } catch (_) {}
+  }
+
+  /// Sort menu shown above the list. Picking a field sorts by it ascending;
+  /// picking the active field again flips the direction.
+  Widget sortBar() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final value = _controller.value;
+    final active = _controller.activeSortField;
+    final label = FormFieldsLocalizations.of(context).sort;
+    final arrow = value.sortAscending
+        ? Icons.arrow_upward_rounded
+        : Icons.arrow_downward_rounded;
+    final isActive = active != null;
+    final accent = isActive ? scheme.primary : scheme.onSurfaceVariant;
+    final radius = BorderRadius.circular(20);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 4, 18, 4),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: PopupMenuButton<String>(
+          tooltip: label,
+          position: PopupMenuPosition.under,
+          offset: const Offset(0, 6),
+          elevation: 3,
+          shadowColor: scheme.shadow.withValues(alpha: 0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          borderRadius: radius,
+          onSelected: (key) {
+            final current = _controller.value;
+            // Picking the active field again flips the direction.
+            final ascending = key == current.sortKey
+                ? !current.sortAscending
+                : true;
+            _controller.sortBy(key, ascending: ascending);
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem<String>(
+              enabled: false,
+              height: 36,
+              child: Text(
+                label,
+                style: textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+            const PopupMenuDivider(height: 1),
+            for (final field in value.sortFields)
+              PopupMenuItem<String>(
+                value: field.key,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      child: field.key == value.sortKey
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: scheme.primary,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        field.label,
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: field.key == value.sortKey
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    if (field.key == value.sortKey)
+                      Icon(arrow, size: 16, color: scheme.primary),
+                  ],
+                ),
+              ),
+          ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? scheme.primary.withValues(alpha: 0.08)
+                  : scheme.surface,
+              borderRadius: radius,
+              border: Border.all(
+                color: isActive
+                    ? scheme.primary.withValues(alpha: 0.35)
+                    : scheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.swap_vert_rounded, size: 16, color: accent),
+                const SizedBox(width: 6),
+                Text(
+                  active?.label ?? label,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (isActive) ...[
+                  const SizedBox(width: 4),
+                  Icon(arrow, size: 14, color: accent),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget searchBoxWithFormFields() {
@@ -908,7 +1035,57 @@ class ListDataComponentController<T>
 
   void addAll(List<T> datas) {
     value.data.addAll(datas);
+    _applySort();
     commit();
+  }
+
+  /// The sort field in use, or `null` when the data is not sorted.
+  ListDataSortField<T>? get activeSortField {
+    final key = value.sortKey;
+    if (key == null) return null;
+    for (final field in value.sortFields) {
+      if (field.key == key) return field;
+    }
+    return null;
+  }
+
+  /// Sorts the loaded data by the field with [key] (one of the component's
+  /// `sortFields`). Pass `null` to stop sorting; the current order is kept
+  /// until the next load. Loaded pages are sorted together, and the sort
+  /// carries over to pages loaded later.
+  void sortBy(String? key, {bool? ascending}) {
+    value.sortKey = key;
+    if (ascending != null) value.sortAscending = ascending;
+    _applySort();
+    commit();
+  }
+
+  void _applySort() {
+    final field = activeSortField;
+    if (field == null) return;
+    value.data.sort(_comparatorFor(field));
+  }
+
+  /// Returns [items] sorted by the active field as a new list. Returns [items]
+  /// unchanged when no field is active.
+  List<T> _sortedCopy(List<T> items) {
+    final field = activeSortField;
+    if (field == null) return items;
+    return List<T>.of(items)..sort(_comparatorFor(field));
+  }
+
+  /// Items without a value for the field go last in both directions.
+  Comparator<T> _comparatorFor(ListDataSortField<T> field) {
+    final ascending = value.sortAscending;
+    return (a, b) {
+      final va = field.valueOf(a);
+      final vb = field.valueOf(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      final result = va.compareTo(vb);
+      return ascending ? result : -result;
+    };
   }
 
   Future<void> refresh({int? refreshDelayed}) {
@@ -933,7 +1110,7 @@ class ListDataComponentController<T>
         debugLog(
           'ListDataComponentController.refresh: got ${datas.length} items',
         );
-        value.data = (datas);
+        value.data = _sortedCopy(datas);
         if (value.onDataReceived != null) {
           value.onDataReceived!(datas, value.searchController.text);
         }
@@ -992,6 +1169,7 @@ class ListDataComponentController<T>
         'ListDataComponentController.getOther: got ${datas.length} items',
       );
       value.data.addAll(List.from(datas));
+      _applySort();
       if (value.onDataReceived != null) {
         value.onDataReceived!(datas, value.searchController.text);
       }
@@ -1099,6 +1277,28 @@ class ListDataComponentValue<T> {
   bool updateWhenEmpty = true;
   String? errorMessage;
   int refreshDelayed = 0;
+  List<ListDataSortField<T>> sortFields = [];
+  String? sortKey;
+  bool sortAscending = true;
+}
+
+/// A field the list result can be sorted by. [valueOf] returns the value
+/// compared for an item; `null` means the item has no value and sorts last.
+class ListDataSortField<T> {
+  const ListDataSortField({
+    required this.key,
+    required this.label,
+    required this.valueOf,
+  });
+
+  /// Unique id within the component's `sortFields`.
+  final String key;
+
+  /// Text shown in the sort menu.
+  final String label;
+
+  /// Value compared for an item, e.g. `(item) => item.name.toLowerCase()`.
+  final Comparable<dynamic>? Function(T item) valueOf;
 }
 
 enum ListDataComponentState { firstLoad, loading, loaded, errorLoaded }

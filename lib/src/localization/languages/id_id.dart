@@ -99,6 +99,7 @@ const Map<String, String> idIDStrings = {
 
   // ListData / general UI
   'showMore': 'Lihat lebih banyak',
+  'sort': 'Urutkan',
   'refresh': 'Muat Ulang',
 
   // Upload Result

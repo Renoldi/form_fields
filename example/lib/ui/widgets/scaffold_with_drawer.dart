@@ -582,14 +582,18 @@ class AppDrawerView extends AppDrawerPresenterState {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? color : Colors.transparent,
           width: 2,
         ),
       ),
+      // The background is set on the ListTile (tileColor), not on this
+      // Container. A colored box around a ListTile hides its ink and triggers
+      // a Flutter warning.
       child: ListTile(
+        tileColor: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
