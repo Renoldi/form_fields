@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/controllers/form_fields_my_image_controller.dart';
@@ -7,572 +5,495 @@ import 'package:form_fields/src/providers/form_fields_my_image_provider.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utilities/enums.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+import 'dart:convert';
+import 'dart:io';
 
-/// Simple manager that keeps registered `FormFieldsMyImageController` instances
-/// and updates matching images when a persisted/offline upload succeeds.
+import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
+
+import 'pending_upload_store.dart';
+
+final _log = Logger('OfflineUploadManager');
+
+/// Keeps registered `FormFieldsMyImageController` / `FormFieldsMyImageProvider`
+/// instances and marks matching images as uploaded when a persisted (offline)
+/// upload succeeds. Successes that cannot be matched yet are buffered and
+/// re-applied when a matching controller or provider registers or changes.
 class OfflineUploadManager {
   OfflineUploadManager._();
 
   static final OfflineUploadManager instance = OfflineUploadManager._();
 
-  final Set<FormFieldsMyImageController> _controllers =
-      <FormFieldsMyImageController>{};
-  final Map<FormFieldsMyImageController, VoidCallback> _listeners =
-      <FormFieldsMyImageController, VoidCallback>{};
+  /// Pending successes older than this are discarded.
+  static const Duration _pendingTtl = Duration(hours: 24);
 
-  final List<_PendingSuccess> _pending = <_PendingSuccess>[];
-  final Set<FormFieldsMyImageProvider> _providers =
-      <FormFieldsMyImageProvider>{};
-  final Map<FormFieldsMyImageProvider, VoidCallback> _providerListeners =
-      <FormFieldsMyImageProvider, VoidCallback>{};
-  final Map<String, _ImageLocation> _locations = <String, _ImageLocation>{};
+  /// Upper bound for buffered successes; the oldest entry is dropped first.
+  static const int _maxPending = 100;
 
-  static const _pendingTtlHours = 24;
+  final Map<FormFieldsMyImageController, VoidCallback> _controllers = {};
+  final Map<FormFieldsMyImageProvider, VoidCallback> _providers = {};
+  final Map<String, _ImageLocation> _locations = {};
+  final List<_PendingSuccess> _pending = [];
+
+  /// Durable copy of [_pending]. Null until [restorePending] is called, in
+  /// which case the buffer lives in memory only.
+  PendingUploadStore? _store;
+
+  /// Re-entrancy guard: `setImages` notifies listeners synchronously, which
+  /// calls back into [_drainPending]. Without this guard the same pending
+  /// entry would be re-applied recursively.
+  bool _draining = false;
+
+  /// Loads the pending buffer saved by a previous session from [file] and
+  /// keeps it in sync with that file from now on. Entries are applied as
+  /// soon as a matching image registers or changes. Call once at startup.
+  Future<void> restorePending(File file) async {
+    final store = PendingUploadStore(file);
+    _store = store;
+
+    final records = await store.read();
+    var restored = 0;
+    for (final record in records) {
+      final entry = _PendingSuccess.fromJson(record);
+      if (entry == null) continue;
+      _insertPending(entry);
+      restored++;
+    }
+    _trimPending();
+    // Only rewrite when there is something to keep or clean up.
+    if (records.isNotEmpty) await _persistPending();
+    _log.info('restored $restored pending upload(s) from ${file.path}');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Registration
+  // ---------------------------------------------------------------------------
 
   void registerController(FormFieldsMyImageController controller) {
-    _controllers.add(controller);
-    // add change listener so we can try to apply pending successes when
-    // controller images change (e.g., widgets finished mounting).
-    void listener() {
-      _tryApplyPendingToController(controller);
-    }
-
+    if (_controllers.containsKey(controller)) return;
+    void listener() => _tryApplyPendingToController(controller);
     controller.addListener(listener);
-    _listeners[controller] = listener;
-
-    debugPrint(
-        'OfflineUploadManager: registerController total=${_controllers.length}');
-
-    // Immediately try to apply any pending successes to the newly
-    // registered controller.
+    _controllers[controller] = listener;
+    _log.fine('registerController total=${_controllers.length}');
+    // Apply any buffered successes to the newly registered controller.
     _tryApplyPendingToController(controller);
   }
 
-  void registerProvider(FormFieldsMyImageProvider provider) {
-    if (_providers.contains(provider)) return;
-    _providers.add(provider);
-    void listener() {
-      _tryApplyPendingToProvider(provider);
-    }
+  void unregisterController(FormFieldsMyImageController controller) {
+    final listener = _controllers.remove(controller);
+    if (listener != null) controller.removeListener(listener);
+    _log.fine('unregisterController total=${_controllers.length}');
+  }
 
+  void registerProvider(FormFieldsMyImageProvider provider) {
+    if (_providers.containsKey(provider)) return;
+    void listener() => _tryApplyPendingToProvider(provider);
     provider.addListener(listener);
-    _providerListeners[provider] = listener;
-    debugPrint(
-        'OfflineUploadManager: registerProvider total=${_providers.length}');
+    _providers[provider] = listener;
+    _log.fine('registerProvider total=${_providers.length}');
     _tryApplyPendingToProvider(provider);
-    // Update registry for quick correlation-id based matching.
     updateProviderLocations(provider, provider.images);
   }
 
-  void unregisterController(FormFieldsMyImageController controller) {
-    final l = _listeners.remove(controller);
-    if (l != null) controller.removeListener(l);
-    _controllers.remove(controller);
-    debugPrint(
-        'OfflineUploadManager: unregisterController total=${_controllers.length}');
-  }
-
   void unregisterProvider(FormFieldsMyImageProvider provider) {
-    final l = _providerListeners.remove(provider);
-    if (l != null) provider.removeListener(l);
-    _providers.remove(provider);
-    debugPrint(
-        'OfflineUploadManager: unregisterProvider total=${_providers.length}');
-    // Clean up any registry entries for this provider
+    final listener = _providers.remove(provider);
+    if (listener != null) provider.removeListener(listener);
     _locations.removeWhere((_, loc) => loc.provider == provider);
-  }
-
-  /// Called when an upload for a persisted payload succeeded. The manager
-  /// will try to find any registered controller that contains an image
-  /// matching the persisted payload (match by `file.path`, `file.base64` or
-  /// filename) and update that image to `MyImageStatus.uploaded` (and fill
-  /// link/id when available) so UI indicators update automatically.
-  void notifyUploadSuccess(Map<String, dynamic> persisted, Response resp) {
-    try {
-      final link = UploadResponseMapper.extractUploadedLink(resp.data,
-          keys: persisted['uploadFileUrlKey'] ?? 'fileUrl');
-      final imageId = UploadResponseMapper.extractImageId(resp.data,
-          keys: persisted['uploadImageIdKey'] ?? 'imageId');
-
-      debugPrint(
-          'OfflineUploadManager: notifyUploadSuccess link=$link imageId=$imageId controllers=${_controllers.length}');
-
-      var anyMatched = false;
-
-      // Quick path: if persisted payload carries a correlation id and we
-      // know a provider+index mapping for it, update that location directly.
-      final persistedCorr = persisted['uploadCorrelationId']?.toString();
-      if (persistedCorr != null && _locations.containsKey(persistedCorr)) {
-        final loc = _locations[persistedCorr]!;
-        try {
-          final provImages = loc.provider.images.toList();
-          if (loc.index >= 0 && loc.index < provImages.length) {
-            final img = provImages[loc.index];
-            provImages[loc.index] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            loc.provider.setImages(provImages);
-            _locations.remove(persistedCorr);
-            anyMatched = true;
-            debugPrint(
-                'OfflineUploadManager: applied success via registry for correlation=$persistedCorr');
-          }
-        } catch (_) {}
-      }
-
-      for (final controller in _controllers) {
-        final images = controller.images.toList();
-        var updated = false;
-
-        debugPrint(
-            'OfflineUploadManager: checking controller with images=${images.length}');
-
-        // Pre-extract persisted file info once per controller
-        final fileMap = persisted['file'] is Map
-            ? Map<String, dynamic>.from(persisted['file'] as Map)
-            : <String, dynamic>{};
-        final pPath = fileMap['path'] is String &&
-                (fileMap['path'] as String).trim().isNotEmpty
-            ? fileMap['path'] as String
-            : null;
-        final pBase64 = fileMap['base64'] is String &&
-                (fileMap['base64'] as String).trim().isNotEmpty
-            ? fileMap['base64'] as String
-            : null;
-        final pFileName = fileMap['fileName'] is String &&
-                (fileMap['fileName'] as String).trim().isNotEmpty
-            ? fileMap['fileName'] as String
-            : (pPath?.split(Platform.pathSeparator).last);
-        final pCorr = persisted['uploadCorrelationId']?.toString();
-
-        String stripDataPrefix(String s) {
-          if (s.startsWith('data:')) {
-            final comma = s.indexOf(',');
-            if (comma >= 0) return s.substring(comma + 1);
-          }
-          return s;
-        }
-
-        for (var i = 0; i < images.length; i++) {
-          final img = images[i];
-          // If both persisted payload and controller image carry a
-          // correlation id, match by it first — it's the most reliable
-          // method to identify the same logical upload.
-          final imgCorr = img.payload['uploadCorrelationId']?.toString();
-          if (pCorr != null && imgCorr != null && pCorr == imgCorr) {
-            debugPrint(
-                'OfflineUploadManager: matched controller image idx=$i by correlationId=$pCorr');
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-            continue;
-          }
-          final imgPath = img.path.isNotEmpty ? img.path : null;
-          final imgBase64 = img.base64.isNotEmpty ? img.base64 : null;
-          final imgFileName = imgPath != null
-              ? imgPath.split(Platform.pathSeparator).last
-              : (img.payload['file'] is Map
-                  ? (img.payload['file']['fileName'] is String
-                      ? img.payload['file']['fileName'] as String
-                      : null)
-                  : null);
-
-          final matchesPath =
-              (pPath != null && imgPath != null && pPath == imgPath);
-          final matchesBase64 = (pBase64 != null &&
-              imgBase64 != null &&
-              stripDataPrefix(pBase64) == stripDataPrefix(imgBase64));
-          final matchesFileName = (pFileName != null &&
-              imgFileName != null &&
-              pFileName == imgFileName);
-
-          if (matchesPath || matchesBase64 || matchesFileName) {
-            debugPrint(
-                'OfflineUploadManager: matched controller image idx=$i path=${img.path} imageId=${img.imageId} (by ${matchesPath ? 'path' : matchesBase64 ? 'base64' : 'fileName'})');
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-          }
-        }
-
-        if (updated) {
-          anyMatched = true;
-          debugPrint(
-              'OfflineUploadManager: updating controller with ${images.length} images');
-          controller.setImages(images);
-        }
-      }
-      // If no currently-registered controller matched this persisted
-      // payload, try providers; if still no match, keep it in a small
-      // pending buffer and try again when controllers/providers change.
-      if (!anyMatched) {
-        // attempt to match providers immediately
-        for (final provider in _providers) {
-          final provImages = provider.images.toList();
-          var provUpdated = false;
-
-          // Pre-extract persisted file info once per provider
-          final fileMap = persisted['file'] is Map
-              ? Map<String, dynamic>.from(persisted['file'] as Map)
-              : <String, dynamic>{};
-          final pPath = fileMap['path'] is String &&
-                  (fileMap['path'] as String).trim().isNotEmpty
-              ? fileMap['path'] as String
-              : null;
-          final pBase64 = fileMap['base64'] is String &&
-                  (fileMap['base64'] as String).trim().isNotEmpty
-              ? fileMap['base64'] as String
-              : null;
-          final pFileName = fileMap['fileName'] is String &&
-                  (fileMap['fileName'] as String).trim().isNotEmpty
-              ? fileMap['fileName'] as String
-              : (pPath?.split(Platform.pathSeparator).last);
-          final pCorr = persisted['uploadCorrelationId']?.toString();
-
-          String stripDataPrefix(String s) {
-            if (s.startsWith('data:')) {
-              final comma = s.indexOf(',');
-              if (comma >= 0) return s.substring(comma + 1);
-            }
-            return s;
-          }
-
-          for (var i = 0; i < provImages.length; i++) {
-            final img = provImages[i];
-            final imgCorr = img.payload['uploadCorrelationId']?.toString();
-            if (pCorr != null && imgCorr != null && pCorr == imgCorr) {
-              provImages[i] = MyImageResult(
-                link: link ?? img.link,
-                base64: img.base64,
-                path: img.path,
-                imageId: imageId ?? img.imageId,
-                description: img.description,
-                payload: img.payload,
-                status: MyImageStatus.uploaded,
-              );
-              provUpdated = true;
-              continue;
-            }
-            final imgPath = img.path.isNotEmpty ? img.path : null;
-            final imgBase64 = img.base64.isNotEmpty ? img.base64 : null;
-            final imgFileName = imgPath != null
-                ? imgPath.split(Platform.pathSeparator).last
-                : (img.payload['file'] is Map
-                    ? (img.payload['file']['fileName'] is String
-                        ? img.payload['file']['fileName'] as String
-                        : null)
-                    : null);
-
-            final matchesPath =
-                (pPath != null && imgPath != null && pPath == imgPath);
-            final matchesBase64 = (pBase64 != null &&
-                imgBase64 != null &&
-                stripDataPrefix(pBase64) == stripDataPrefix(imgBase64));
-            final matchesFileName = (pFileName != null &&
-                imgFileName != null &&
-                pFileName == imgFileName);
-
-            if (matchesPath || matchesBase64 || matchesFileName) {
-              provImages[i] = MyImageResult(
-                link: link ?? img.link,
-                base64: img.base64,
-                path: img.path,
-                imageId: imageId ?? img.imageId,
-                description: img.description,
-                payload: img.payload,
-                status: MyImageStatus.uploaded,
-              );
-              provUpdated = true;
-            }
-          }
-
-          if (provUpdated) {
-            anyMatched = true;
-            debugPrint(
-                'OfflineUploadManager: updating provider with ${provImages.length} images');
-            provider.setImages(provImages);
-          }
-        }
-      }
-
-      if (!anyMatched) {
-        _pending.add(_PendingSuccess(persisted, resp, DateTime.now()));
-        _prunePending();
-        debugPrint(
-            'OfflineUploadManager: queued pending success (${_pending.length})');
-      }
-    } catch (e, st) {
-      debugPrint('OfflineUploadManager: notifyUploadSuccess error: $e\n$st');
-      // best-effort: ignore errors
-    }
-  }
-
-  void _tryApplyPendingToController(FormFieldsMyImageController controller) {
-    if (_pending.isEmpty) return;
-    try {
-      // Iterate over a copy because we may remove matched entries.
-      final copy = List<_PendingSuccess>.from(_pending);
-      for (final p in copy) {
-        final persisted = p.persisted;
-        final resp = p.resp;
-        final link = UploadResponseMapper.extractUploadedLink(resp.data,
-            keys: persisted['uploadFileUrlKey'] ?? 'fileUrl');
-        final imageId = UploadResponseMapper.extractImageId(resp.data,
-            keys: persisted['uploadImageIdKey'] ?? 'imageId');
-
-        final images = controller.images.toList();
-        var updated = false;
-
-        // Pre-extract persisted file info once per controller
-        final fileMap = persisted['file'] is Map
-            ? Map<String, dynamic>.from(persisted['file'] as Map)
-            : <String, dynamic>{};
-        final pPath = fileMap['path'] is String &&
-                (fileMap['path'] as String).trim().isNotEmpty
-            ? fileMap['path'] as String
-            : null;
-        final pBase64 = fileMap['base64'] is String &&
-                (fileMap['base64'] as String).trim().isNotEmpty
-            ? fileMap['base64'] as String
-            : null;
-        final pFileName = fileMap['fileName'] is String &&
-                (fileMap['fileName'] as String).trim().isNotEmpty
-            ? fileMap['fileName'] as String
-            : (pPath?.split(Platform.pathSeparator).last);
-        final pCorr = persisted['uploadCorrelationId']?.toString();
-
-        String stripDataPrefix(String s) {
-          if (s.startsWith('data:')) {
-            final comma = s.indexOf(',');
-            if (comma >= 0) return s.substring(comma + 1);
-          }
-          return s;
-        }
-
-        for (var i = 0; i < images.length; i++) {
-          final img = images[i];
-          final imgCorr = img.payload['uploadCorrelationId']?.toString();
-          if (pCorr != null && imgCorr != null && pCorr == imgCorr) {
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-            continue;
-          }
-
-          final imgPath = img.path.isNotEmpty ? img.path : null;
-          final imgBase64 = img.base64.isNotEmpty ? img.base64 : null;
-          final imgFileName = imgPath != null
-              ? imgPath.split(Platform.pathSeparator).last
-              : (img.payload['file'] is Map
-                  ? (img.payload['file']['fileName'] is String
-                      ? img.payload['file']['fileName'] as String
-                      : null)
-                  : null);
-
-          final matchesPath =
-              (pPath != null && imgPath != null && pPath == imgPath);
-          final matchesBase64 = (pBase64 != null &&
-              imgBase64 != null &&
-              stripDataPrefix(pBase64) == stripDataPrefix(imgBase64));
-          final matchesFileName = (pFileName != null &&
-              imgFileName != null &&
-              pFileName == imgFileName);
-
-          if (matchesPath || matchesBase64 || matchesFileName) {
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-          }
-        }
-
-        if (updated) {
-          controller.setImages(images);
-          _pending.remove(p);
-          debugPrint(
-              'OfflineUploadManager: applied pending success to controller; remaining=${_pending.length}');
-        }
-      }
-    } catch (e, st) {
-      debugPrint(
-          'OfflineUploadManager: _tryApplyPendingToController error: $e\n$st');
-    }
-  }
-
-  void _tryApplyPendingToProvider(FormFieldsMyImageProvider provider) {
-    if (_pending.isEmpty) return;
-    try {
-      final copy = List<_PendingSuccess>.from(_pending);
-      for (final p in copy) {
-        final persisted = p.persisted;
-        final resp = p.resp;
-        final link = UploadResponseMapper.extractUploadedLink(resp.data,
-            keys: persisted['uploadFileUrlKey'] ?? 'fileUrl');
-        final imageId = UploadResponseMapper.extractImageId(resp.data,
-            keys: persisted['uploadImageIdKey'] ?? 'imageId');
-
-        final images = provider.images.toList();
-        var updated = false;
-
-        // Pre-extract persisted file info once per provider
-        final fileMap = persisted['file'] is Map
-            ? Map<String, dynamic>.from(persisted['file'] as Map)
-            : <String, dynamic>{};
-        final pPath = fileMap['path'] is String &&
-                (fileMap['path'] as String).trim().isNotEmpty
-            ? fileMap['path'] as String
-            : null;
-        final pBase64 = fileMap['base64'] is String &&
-                (fileMap['base64'] as String).trim().isNotEmpty
-            ? fileMap['base64'] as String
-            : null;
-        final pFileName = fileMap['fileName'] is String &&
-                (fileMap['fileName'] as String).trim().isNotEmpty
-            ? fileMap['fileName'] as String
-            : (pPath?.split(Platform.pathSeparator).last);
-        final pCorr = persisted['uploadCorrelationId']?.toString();
-
-        String stripDataPrefix(String s) {
-          if (s.startsWith('data:')) {
-            final comma = s.indexOf(',');
-            if (comma >= 0) return s.substring(comma + 1);
-          }
-          return s;
-        }
-
-        for (var i = 0; i < images.length; i++) {
-          final img = images[i];
-          final imgCorr = img.payload['uploadCorrelationId']?.toString();
-          if (pCorr != null && imgCorr != null && pCorr == imgCorr) {
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-            continue;
-          }
-
-          final imgPath = img.path.isNotEmpty ? img.path : null;
-          final imgBase64 = img.base64.isNotEmpty ? img.base64 : null;
-          final imgFileName = imgPath != null
-              ? imgPath.split(Platform.pathSeparator).last
-              : (img.payload['file'] is Map
-                  ? (img.payload['file']['fileName'] is String
-                      ? img.payload['file']['fileName'] as String
-                      : null)
-                  : null);
-
-          final matchesPath =
-              (pPath != null && imgPath != null && pPath == imgPath);
-          final matchesBase64 = (pBase64 != null &&
-              imgBase64 != null &&
-              stripDataPrefix(pBase64) == stripDataPrefix(imgBase64));
-          final matchesFileName = (pFileName != null &&
-              imgFileName != null &&
-              pFileName == imgFileName);
-
-          if (matchesPath || matchesBase64 || matchesFileName) {
-            images[i] = MyImageResult(
-              link: link ?? img.link,
-              base64: img.base64,
-              path: img.path,
-              imageId: imageId ?? img.imageId,
-              description: img.description,
-              payload: img.payload,
-              status: MyImageStatus.uploaded,
-            );
-            updated = true;
-          }
-        }
-
-        if (updated) {
-          provider.setImages(images);
-          _pending.remove(p);
-          debugPrint(
-              'OfflineUploadManager: applied pending success to provider; remaining=${_pending.length}');
-          // remove any registry entries for this persisted payload
-          final corr = p.persisted['uploadCorrelationId']?.toString();
-          if (corr != null) _locations.remove(corr);
-        }
-      }
-    } catch (e, st) {
-      debugPrint(
-          'OfflineUploadManager: _tryApplyPendingToProvider error: $e\n$st');
-    }
-  }
-
-  void _prunePending() {
-    final now = DateTime.now();
-    _pending.removeWhere(
-        (p) => now.difference(p.createdAt).inHours >= _pendingTtlHours);
+    _log.fine('unregisterProvider total=${_providers.length}');
   }
 
   /// Update registry of correlation id -> provider+index locations.
   void updateProviderLocations(
-      FormFieldsMyImageProvider provider, List<MyImageResult> images) {
-    // Remove existing entries for this provider
+    FormFieldsMyImageProvider provider,
+    List<MyImageResult> images,
+  ) {
     _locations.removeWhere((_, loc) => loc.provider == provider);
     for (var i = 0; i < images.length; i++) {
-      try {
-        final p = images[i].payload;
-        if (p['uploadCorrelationId'] != null) {
-          final corr = p['uploadCorrelationId'].toString();
-          _locations[corr] = _ImageLocation(provider, i);
-        }
-      } catch (_) {}
+      final corr = images[i].payload['uploadCorrelationId']?.toString();
+      if (corr != null) _locations[corr] = _ImageLocation(provider, i);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Upload success
+  // ---------------------------------------------------------------------------
+
+  /// Called when an upload for a persisted payload succeeded. Marks the
+  /// matching image as `MyImageStatus.uploaded` (and fills link/id when
+  /// available) in a registered controller or provider. Unmatched successes
+  /// are buffered until a matching target registers or changes.
+  void notifyUploadSuccess(Map<String, dynamic> persisted, Response resp) {
+    try {
+      final ref = _PersistedRef.from(persisted);
+      final result = _UploadResult.from(persisted, resp);
+      _log.fine(
+        'notifyUploadSuccess link=${result.link} '
+        'imageId=${result.imageId} controllers=${_controllers.length}',
+      );
+
+      var matched = _applyViaRegistry(ref, result);
+
+      // Controllers are always attempted so every visible widget updates.
+      for (final controller in _controllers.keys.toList()) {
+        final hit = _applyToController(controller, ref, result);
+        matched = hit || matched;
+      }
+
+      // Providers are only consulted when no controller matched.
+      if (!matched) {
+        for (final provider in _providers.keys.toList()) {
+          final hit = _applyToProvider(provider, ref, result);
+          matched = hit || matched;
+        }
+      }
+
+      if (!matched) {
+        _insertPending(
+          _PendingSuccess(
+            persisted: persisted,
+            result: result,
+            createdAt: DateTime.now(),
+          ),
+        );
+        _trimPending();
+        _persistPending();
+        _log.fine('queued pending success (${_pending.length})');
+      }
+    } catch (e, st) {
+      _log.warning('notifyUploadSuccess failed', e, st);
+    }
+  }
+
+  /// Quick path: if the persisted payload carries a correlation id that maps
+  /// to a known provider index, update that slot directly.
+  bool _applyViaRegistry(_PersistedRef ref, _UploadResult result) {
+    final corr = ref.correlationId;
+    if (corr == null) return false;
+    final loc = _locations[corr];
+    if (loc == null) return false;
+
+    final images = loc.provider.images.toList();
+    if (loc.index < 0 || loc.index >= images.length) return false;
+
+    images[loc.index] = _markUploaded(images[loc.index], result);
+    loc.provider.setImages(images);
+    _locations.remove(corr);
+    _log.fine('applied success via registry for correlation=$corr');
+    return true;
+  }
+
+  bool _applyToController(
+    FormFieldsMyImageController controller,
+    _PersistedRef ref,
+    _UploadResult result,
+  ) {
+    final images = controller.images.toList();
+    if (!_applySuccess(images, ref, result)) return false;
+    controller.setImages(images);
+    return true;
+  }
+
+  bool _applyToProvider(
+    FormFieldsMyImageProvider provider,
+    _PersistedRef ref,
+    _UploadResult result,
+  ) {
+    final images = provider.images.toList();
+    if (!_applySuccess(images, ref, result)) return false;
+    provider.setImages(images);
+    return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pending buffer
+  // ---------------------------------------------------------------------------
+
+  void _tryApplyPendingToController(FormFieldsMyImageController controller) {
+    _drainPending(
+      (pending) => _applyToController(controller, pending.ref, pending.result),
+    );
+  }
+
+  void _tryApplyPendingToProvider(FormFieldsMyImageProvider provider) {
+    _drainPending((pending) {
+      final applied = _applyToProvider(provider, pending.ref, pending.result);
+      if (applied) {
+        final corr = pending.ref.correlationId;
+        if (corr != null) _locations.remove(corr);
+      }
+      return applied;
+    });
+  }
+
+  /// Tries [tryApply] on every buffered success and drops the ones it applied.
+  void _drainPending(bool Function(_PendingSuccess) tryApply) {
+    if (_pending.isEmpty || _draining) return;
+    _draining = true;
+    var changed = false;
+    try {
+      changed = _prunePending() > 0;
+      // Iterate over a snapshot: applying may notify listeners.
+      for (final pending in List<_PendingSuccess>.of(_pending)) {
+        if (tryApply(pending)) {
+          _pending.remove(pending);
+          changed = true;
+          _log.fine('applied pending success; remaining=${_pending.length}');
+        }
+      }
+    } catch (e, st) {
+      _log.warning('applying pending success failed', e, st);
+    } finally {
+      _draining = false;
+      if (changed) _persistPending();
+    }
+  }
+
+  /// Number of successes waiting for a matching image. Intended for tests and
+  /// diagnostics.
+  @visibleForTesting
+  int get pendingCount => _pending.length;
+
+  /// Completes once every persisted write queued so far has finished. Tests
+  /// only.
+  @visibleForTesting
+  Future<void> get pendingWritesFlushed =>
+      _store?.flushed ?? Future<void>.value();
+
+  /// Clears all buffered state and detaches the durable store. Tests only.
+  @visibleForTesting
+  void resetForTesting() {
+    _pending.clear();
+    _locations.clear();
+    _store = null;
+  }
+
+  /// Adds [entry]. A retried upload with the same correlation id supersedes
+  /// the older entry instead of accumulating duplicates.
+  void _insertPending(_PendingSuccess entry) {
+    final corr = entry.ref.correlationId;
+    if (corr != null) {
+      _pending.removeWhere((e) => e.ref.correlationId == corr);
+    }
+    _pending.add(entry);
+  }
+
+  /// Drops entries older than [_pendingTtl]. Returns the number removed.
+  int _prunePending() {
+    final now = DateTime.now();
+    final before = _pending.length;
+    _pending.removeWhere((e) => now.difference(e.createdAt) >= _pendingTtl);
+    final removed = before - _pending.length;
+    if (removed > 0) {
+      _log.info('discarded $removed expired pending success(es)');
+    }
+    return removed;
+  }
+
+  /// Keeps at most [_maxPending] entries, dropping the oldest first.
+  void _trimPending() {
+    _prunePending();
+    final overflow = _pending.length - _maxPending;
+    if (overflow > 0) {
+      _pending.removeRange(0, overflow);
+      _log.warning('pending buffer full; dropped $overflow oldest success(es)');
+    }
+  }
+
+  /// Writes the buffer to the durable store, when one is configured.
+  Future<void> _persistPending() {
+    final store = _store;
+    if (store == null) return Future<void>.value();
+    final records = <Map<String, dynamic>>[
+      for (final entry in _pending) ?entry.toJson(),
+    ];
+    return store.write(records);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Matching helpers (shared by every apply path)
+  // ---------------------------------------------------------------------------
+
+  /// Marks every image in [images] that matches [ref] as uploaded. Returns
+  /// true when at least one image was changed.
+  bool _applySuccess(
+    List<MyImageResult> images,
+    _PersistedRef ref,
+    _UploadResult result,
+  ) {
+    var updated = false;
+    for (var i = 0; i < images.length; i++) {
+      if (!ref.matches(images[i])) continue;
+      images[i] = _markUploaded(images[i], result);
+      updated = true;
+    }
+    return updated;
+  }
+
+  static MyImageResult _markUploaded(MyImageResult img, _UploadResult result) {
+    return MyImageResult(
+      link: result.link ?? img.link,
+      base64: img.base64,
+      path: img.path,
+      imageId: result.imageId ?? img.imageId,
+      description: img.description,
+      payload: img.payload,
+      status: MyImageStatus.uploaded,
+    );
+  }
+}
+
+/// Values extracted once from the server response of a successful upload.
+class _UploadResult {
+  const _UploadResult({this.link, this.imageId});
+
+  factory _UploadResult.from(Map<String, dynamic> persisted, Response resp) {
+    return _UploadResult(
+      link: UploadResponseMapper.extractUploadedLink(
+        resp.data,
+        keys: persisted['uploadFileUrlKey']?.toString() ?? 'fileUrl',
+      ),
+      imageId: UploadResponseMapper.extractImageId(
+        resp.data,
+        keys: persisted['uploadImageIdKey']?.toString() ?? 'imageId',
+      ),
+    );
+  }
+
+  final String? link;
+  final String? imageId;
+}
+
+/// Identifying data of a persisted upload, used to find the matching image.
+class _PersistedRef {
+  const _PersistedRef({
+    this.correlationId,
+    this.path,
+    this.base64,
+    this.fileName,
+  });
+
+  factory _PersistedRef.from(Map<String, dynamic> persisted) {
+    final file = persisted['file'];
+    final fileMap = file is Map
+        ? Map<String, dynamic>.from(file)
+        : const <String, dynamic>{};
+    final path = _nonEmpty(fileMap['path']);
+    final base64 = _nonEmpty(fileMap['base64']);
+    return _PersistedRef(
+      correlationId: persisted['uploadCorrelationId']?.toString(),
+      path: path,
+      base64: base64 == null ? null : _stripDataPrefix(base64),
+      fileName:
+          _nonEmpty(fileMap['fileName']) ??
+          (path == null ? null : p.basename(path)),
+    );
+  }
+
+  final String? correlationId;
+  final String? path;
+  final String? base64;
+  final String? fileName;
+
+  /// An image matches when it shares the correlation id, or else the same
+  /// file path, base64 content or file name.
+  bool matches(MyImageResult img) {
+    final imgCorr = img.payload['uploadCorrelationId']?.toString();
+    if (correlationId != null && imgCorr != null && correlationId == imgCorr) {
+      return true;
+    }
+
+    final imgPath = _nonEmpty(img.path);
+    if (path != null && imgPath != null && path == imgPath) return true;
+
+    final imgBase64 = _nonEmpty(img.base64);
+    if (base64 != null &&
+        imgBase64 != null &&
+        base64 == _stripDataPrefix(imgBase64)) {
+      return true;
+    }
+
+    final imgFileName = imgPath != null
+        ? p.basename(imgPath)
+        : _nonEmpty(_fileMapOf(img)?['fileName']);
+    return fileName != null && imgFileName != null && fileName == imgFileName;
+  }
+
+  static Map<String, dynamic>? _fileMapOf(MyImageResult img) {
+    final file = img.payload['file'];
+    return file is Map ? Map<String, dynamic>.from(file) : null;
   }
 }
 
 class _PendingSuccess {
-  final Map<String, dynamic> persisted;
-  final Response resp;
-  final DateTime createdAt;
+  _PendingSuccess({
+    required this.persisted,
+    required this.result,
+    required this.createdAt,
+  }) : ref = _PersistedRef.from(persisted);
 
-  _PendingSuccess(this.persisted, this.resp, this.createdAt);
+  /// Restores an entry from [toJson] output. Returns null for malformed data.
+  static _PendingSuccess? fromJson(Map<String, dynamic> json) {
+    try {
+      final persisted = json['persisted'];
+      final createdAt = DateTime.tryParse(json['createdAt'] as String? ?? '');
+      if (persisted is! Map || createdAt == null) return null;
+      return _PendingSuccess(
+        persisted: Map<String, dynamic>.from(persisted),
+        result: _UploadResult(
+          link: json['link'] as String?,
+          imageId: json['imageId'] as String?,
+        ),
+        createdAt: createdAt,
+      );
+    } catch (e, st) {
+      _log.warning('Skipping malformed pending upload record', e, st);
+      return null;
+    }
+  }
+
+  /// JSON form of this entry, or null when [persisted] cannot be encoded
+  /// (such an entry stays in memory only).
+  Map<String, dynamic>? toJson() => _json;
+
+  /// Encoded once: the whole buffer is re-persisted on every change, and
+  /// [persisted] can hold large base64 payloads.
+  late final Map<String, dynamic>? _json = _encodeOnce();
+
+  Map<String, dynamic>? _encodeOnce() {
+    try {
+      jsonEncode(persisted);
+    } catch (_) {
+      return null;
+    }
+    return {
+      'persisted': persisted,
+      'link': result.link,
+      'imageId': result.imageId,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  final Map<String, dynamic> persisted;
+  final _PersistedRef ref;
+  final _UploadResult result;
+  final DateTime createdAt;
 }
 
 class _ImageLocation {
+  const _ImageLocation(this.provider, this.index);
+
   final FormFieldsMyImageProvider provider;
   final int index;
+}
 
-  _ImageLocation(this.provider, this.index);
+String? _nonEmpty(Object? value) {
+  if (value is! String) return null;
+  return value.trim().isEmpty ? null : value;
+}
+
+/// Removes a leading `data:<mime>;base64,` prefix, if present.
+String _stripDataPrefix(String s) {
+  if (!s.startsWith('data:')) return s;
+  final comma = s.indexOf(',');
+  return comma >= 0 ? s.substring(comma + 1) : s;
 }

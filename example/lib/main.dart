@@ -15,9 +15,8 @@ import 'package:provider/provider.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_fcm/form_fields_fcm.dart';
 // Workmanager is initialized by `FormFieldsInitializer.initAll(...)` when
-// requested. The package will initialize the plugin and wire background
-// handlers for you when you pass `workmanagerHandler` to `initAll` or
-// register a handler via `WorkmanagerService.setBackgroundTaskHandler()`.
+// `enableWorkmanager: true`. Background workers are declared with
+// `workerRegistrations` (one `WorkerRegistration` per task).
 import 'package:logger/logger.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,13 +39,12 @@ final logger = Logger();
 // MAIN ENTRY POINT
 // ============================================================================
 
-// Background dispatching: the package can initialize Workmanager and wire
-// background handlers when `enableWorkmanager: true` is passed to
-// `FormFieldsInitializer.initAll(...)`. Register a top-level handler via
-// the `workmanagerHandler` argument to `initAll`, or call
-// `WorkmanagerService.setBackgroundTaskHandler(myHandler)` before
-// scheduling tasks. Handlers must be top-level/static so they can be
-// resolved from background isolates.
+// Background dispatching: pass `enableWorkmanager: true` and one
+// `WorkerRegistration` per task to `FormFieldsInitializer.initAll(...)`.
+// Handlers must be top-level/static and annotated with
+// `@pragma('vm:entry-point')` so they can be resolved from background isolates.
+// On iOS, every `taskName` must also be listed in Info.plist under
+// `BGTaskSchedulerPermittedIdentifiers`.
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,23 +85,9 @@ Future<void> main() async {
     //   }
     // }
 
-    // Workmanager initialization and handler registration is performed by
-    // `FormFieldsInitializer.initAll(...)` when `enableWorkmanager: true`.
-    // Example: register a top-level background handler (choose one):
-    //
-    // 1) Register the handler on the service before init:
-    //    WorkmanagerService.setBackgroundTaskHandler(myHandler);
-    //    await FormFieldsInitializer.initAll(..., enableWorkmanager: true);
-    //
-    // 2) Or pass the handler into initAll directly:
-    //    await FormFieldsInitializer.initAll(
-    //      ...,
-    //      enableWorkmanager: true,
-    //      workmanagerHandler: myHandler,
-    //    );
-    //
-    // Note: `myHandler` must be a top-level/static function so it can be
-    // resolved from background isolates.
+    // Workmanager initialization and worker registration happen inside
+    // `FormFieldsInitializer.initAll(...)` below (see `workerRegistrations`).
+    // Note: `enableWorkmanager` is false in this example, so no worker runs.
 
     if (kDebugMode) {
       try {
@@ -118,15 +102,16 @@ Future<void> main() async {
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
-      enableWorkmanager: false,
+      // Verified on Android (emulator) and iOS (simulator): workers register and run.
+      enableWorkmanager: true,
       registerPeriodic: false,
       // Example: register one or more background workers.
       workerRegistrations: [
         WorkerRegistration(
           taskName: 'form_fields_flush',
-          // Use a platform-appropriate minimum (15 minutes) to avoid
-          // overwhelming background isolate launches during development.
-          frequency: Duration(seconds: 30),
+          // Android runs periodic work at most every 15 minutes; shorter
+          // values are raised by the OS, so request the real interval.
+          frequency: Duration(minutes: 15),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -136,7 +121,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(seconds: 20),
+          frequency: Duration(minutes: 15),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -146,7 +131,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_random_event',
-          frequency: Duration(seconds: 70),
+          frequency: Duration(minutes: 15),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,

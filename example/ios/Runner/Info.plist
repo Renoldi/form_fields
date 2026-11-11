@@ -80,5 +80,21 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Background work (Workmanager). iOS only runs BGTask identifiers that are
+	     listed here; registering any other identifier crashes the app. Keep this
+	     list in sync with the worker names passed in WorkerRegistration.taskName.
+	     "fetch" backs BGAppRefreshTask (periodic), "processing" backs
+	     BGProcessingTask (one-off). -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>form_fields_flush</string>
+		<string>send_current_location</string>
+		<string>send_random_event</string>
+	</array>
 </dict>
 </plist>

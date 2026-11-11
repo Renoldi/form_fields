@@ -11,6 +11,10 @@ import 'package:workmanager/workmanager.dart';
 /// testable surface for the example app. Includes per-task scheduling
 /// metadata and a `perTaskCountdownListenable` so the UI can show
 /// countdowns for each registered worker.
+/// Shortest periodic interval Android WorkManager honours. Shorter requests
+/// are silently raised to this value by the OS.
+const Duration kAndroidMinPeriodicInterval = Duration(minutes: 15);
+
 class WorkmanagerService {
   WorkmanagerService._internal() {
     _attachLastLogListener();
@@ -478,10 +482,9 @@ class WorkmanagerService {
         // (typically 15 minutes). Use the effective interval for UI
         // countdowns so the app reflects what the platform will schedule.
         Duration? effectiveFreq = frequency;
-        const Duration kAndroidMinPeriodic = Duration(minutes: 15);
         try {
-          if (frequency != null && frequency < kAndroidMinPeriodic) {
-            effectiveFreq = kAndroidMinPeriodic;
+          if (frequency != null && frequency < kAndroidMinPeriodicInterval) {
+            effectiveFreq = kAndroidMinPeriodicInterval;
             _addLog(
               'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
             );
