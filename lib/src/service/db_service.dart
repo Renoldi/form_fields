@@ -13,8 +13,8 @@ import 'package:sqflite/sqflite.dart';
 
 final _log = Logger('DBService');
 
-// Mutable default database name. `init(dbName: ...)` will update this
-// when a non-empty value is provided so other APIs can fall back to it.
+// Mutable default database name. `init(dbName: ...)` updates this when a
+// non-empty value is provided so other APIs can fall back to it.
 String _defaultDbName = 'form_fields.db';
 
 String _effectiveDbName(String? dbName) {
@@ -22,35 +22,213 @@ String _effectiveDbName(String? dbName) {
   return dbName;
 }
 
-class DBService {
-  DBService._() {
-    // Register default file-backed handler for any `payload` column.
-    // registerColumnHandler(
-    //     '*', 'payload', FileBackedColumnHandler(prefix: 'payload'));
-    // Register table-specific prefixes for common tables to produce nicer filenames.
-    // registerColumnHandler(
-    //     'asset', 'payload', FileBackedColumnHandler(prefix: 'asset'));
-    // registerColumnHandler('master_inspection_forms', 'payload',
-    //     FileBackedColumnHandler(prefix: 'master_inspection_forms'));
-    // registerColumnHandler('master_inspections', 'payload',
-    //     FileBackedColumnHandler(prefix: 'master_inspections'));
-    // registerColumnHandler('pending_inspections', 'payload',
-    //     FileBackedColumnHandler(prefix: 'pending_inspections'));
-  }
-  static final DBService instance = DBService._();
+final _lineCommentRe = RegExp(r'^\s*--.*$', multiLine: true);
+final _schemaStatementRe = RegExp(
+  r'^(CREATE|PRAGMA|DROP|ALTER)\b',
+  caseSensitive: false,
+);
+final _downgradeNameRe = RegExp(r'down|downgrade', caseSensitive: false);
+final _migrationVersionRe = RegExp(r'v?(\d+)');
 
-  // Per-call flags control automatic payload handling; global toggle removed.
+/// Extracts the schema version from a migration asset name such as `v2.sql`
+/// or `migration_3.sql`. Returns null when the file name has no digits.
+int? parseMigrationVersion(String assetPath) {
+  final m = _migrationVersionRe.firstMatch(p.basename(assetPath));
+  return m == null ? null : int.tryParse(m.group(1)!);
+}
+
+bool _isTransactionControl(String stmt) {
+  final up = stmt.toUpperCase();
+  return up == 'BEGIN' ||
+      up.startsWith('BEGIN TRANSACTION') ||
+      up == 'COMMIT' ||
+      up.startsWith('COMMIT');
+}
+
+/// Splits a SQL script into statements. Line comments and transaction-control
+/// keywords are dropped; the caller runs the statements in its own transaction.
+Iterable<String> _sqlStatements(String script) sync* {
+  for (final raw in script.split(';')) {
+    final cleaned = raw.replaceAll(_lineCommentRe, '').trim();
+    if (cleaned.isEmpty || _isTransactionControl(cleaned)) continue;
+    yield cleaned;
+  }
+}
+
+/// Executes every statement of [script] on [executor]. A failing statement is
+/// logged and skipped so one bad statement does not abort the whole script.
+/// With [schemaOnly] only CREATE / PRAGMA / DROP / ALTER statements run.
+Future<void> _executeScript(
+  DatabaseExecutor executor,
+  String script, {
+  required String source,
+  bool schemaOnly = false,
+}) async {
+  for (final stmt in _sqlStatements(script)) {
+    if (schemaOnly && !_schemaStatementRe.hasMatch(stmt)) {
+      _log.fine('Skipping non-schema statement in $source');
+      continue;
+    }
+    try {
+      await executor.execute(stmt);
+    } catch (e, st) {
+      _log.warning(
+        'Failed to execute statement from $source: $stmt\n$e',
+        e,
+        st,
+      );
+    }
+  }
+}
+
+/// Migration assets indexed by version. `up` holds forward migrations and
+/// `down` holds assets whose name contains `down` / `downgrade`.
+class _MigrationAssets {
+  _MigrationAssets._(this.up, this.down);
+
+  factory _MigrationAssets.index(List<String>? paths) {
+    final up = <int, String>{};
+    final down = <int, String>{};
+    var fallbackIndex = 1;
+    for (final asset in paths ?? const <String>[]) {
+      // Assets without a parseable version get incremental versions in the
+      // order they were provided.
+      final ver = parseMigrationVersion(asset) ?? fallbackIndex++;
+      (_downgradeNameRe.hasMatch(p.basename(asset)) ? down : up)[ver] = asset;
+    }
+    return _MigrationAssets._(up, down);
+  }
+
+  final Map<int, String> up;
+  final Map<int, String> down;
+
+  List<int> get upVersions => up.keys.toList()..sort();
+  List<int> get downVersionsDesc => down.keys.toList()..sort((a, b) => b - a);
+}
+
+/// Splits [s] on commas that are outside quotes and parentheses.
+List<String> _splitTopLevel(String s) {
+  final out = <String>[];
+  var buf = StringBuffer();
+  var inSingle = false;
+  var inDouble = false;
+  var depth = 0;
+  for (var i = 0; i < s.length; i++) {
+    final ch = s[i];
+    if (ch == "'" && !inDouble) {
+      // An doubled quote inside a single-quoted literal is an escaped quote.
+      final next = (i + 1 < s.length) ? s[i + 1] : null;
+      if (inSingle && next == "'") {
+        buf.write("'");
+        i++;
+        continue;
+      }
+      inSingle = !inSingle;
+      buf.write(ch);
+      continue;
+    }
+    if (ch == '"' && !inSingle) {
+      inDouble = !inDouble;
+      buf.write(ch);
+      continue;
+    }
+    if (!inSingle && !inDouble) {
+      if (ch == '(') {
+        depth++;
+      } else if (ch == ')') {
+        depth--;
+      } else if (ch == ',' && depth == 0) {
+        out.add(buf.toString().trim());
+        buf = StringBuffer();
+        continue;
+      }
+    }
+    buf.write(ch);
+  }
+  final last = buf.toString().trim();
+  if (last.isNotEmpty) out.add(last);
+  return out;
+}
+
+/// A single SQL literal: NULL, 'text' (with '' escapes), "text", or a number.
+final _sqlLiteralRe = RegExp(
+  r'''^(?:(NULL)|'((?:[^']|'')*)'|"((?:[^"]|"")*)"|([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?))$''',
+  caseSensitive: false,
+);
+
+/// Parses [token] as exactly one literal. Returns null for anything else
+/// (expressions, function calls, parameters, several values), so callers can
+/// fall back to running the statement as raw SQL.
+({Object? value})? _literalOf(String token) {
+  final m = _sqlLiteralRe.firstMatch(token.trim());
+  if (m == null) return null;
+  if (m.group(1) != null) return (value: null);
+  if (m.group(2) != null) return (value: m.group(2)!.replaceAll("''", "'"));
+  if (m.group(3) != null) return (value: m.group(3)!.replaceAll('""', '"'));
+  final number = m.group(4)!;
+  return (value: int.tryParse(number) ?? double.parse(number));
+}
+
+const _identifier = r'[A-Za-z_][A-Za-z0-9_]*';
+
+/// Statement shapes the typed rewrite accepts. Anchored, so the table name
+/// must directly follow the keyword (`UPDATE OR REPLACE` does not match).
+final _insertRe = RegExp(
+  '^INSERT\\s+INTO\\s+["`]?($_identifier)["`]?\\s*\\(([^)]*)\\)\\s*VALUES\\s*\\((.*)\\)\\s*;?\\s*\$',
+  caseSensitive: false,
+  dotAll: true,
+);
+final _updateRe = RegExp(
+  '^UPDATE\\s+["`]?($_identifier)["`]?\\s+SET\\s+(.*?)\\s+WHERE\\s+(.*?)\\s*;?\\s*\$',
+  caseSensitive: false,
+  dotAll: true,
+);
+final _deleteRe = RegExp(
+  '^DELETE\\s+FROM\\s+["`]?($_identifier)["`]?\\s+WHERE\\s+(.*?)\\s*;?\\s*\$',
+  caseSensitive: false,
+  dotAll: true,
+);
+
+/// `column = literal`, with an optionally quoted column name.
+final _equalityRe = RegExp(
+  '^\\s*["`]?($_identifier)["`]?\\s*=\\s*(.+?)\\s*\$',
+  dotAll: true,
+);
+
+/// `col = literal` as a typed pair, or null when the value is not a literal.
+({String column, Object? value})? _equalityOf(String text) {
+  final m = _equalityRe.firstMatch(text);
+  if (m == null) return null;
+  final literal = _literalOf(m.group(2)!);
+  if (literal == null) return null;
+  return (column: m.group(1)!, value: literal.value);
+}
+
+String _unquote(String s) => s.trim().replaceAll('"', '').replaceAll('`', '');
+
+class DBService {
+  DBService._();
+
+  static final DBService instance = DBService._();
 
   Database? _db;
   Completer<Database>? _initCompleter;
 
   // Column handlers registry: table -> column -> handler.
   final Map<String, Map<String, ColumnHandler>> _columnHandlers = {};
-  // Cache of table -> set of column names to avoid repeated PRAGMA queries.
+  // Cache of table -> column names, so PRAGMA table_info runs once per table.
   final Map<String, Set<String>> _tableColumnsCache = {};
 
+  /// Returns the open connection, opening it first when necessary.
+  Future<Database> get _database async {
+    final db = _db;
+    if (db != null && db.isOpen) return db;
+    return init();
+  }
+
+  void _invalidateSchemaCache() => _tableColumnsCache.clear();
+
   /// Returns true when the given [table] has a column named [column].
-  /// Uses an in-memory cache populated from `PRAGMA table_info(table)`.
   Future<bool> _tableHasColumn(Database db, String table, String column) async {
     var cols = _tableColumnsCache[table];
     if (cols == null) {
@@ -61,21 +239,22 @@ class DBService {
             .where((s) => s.isNotEmpty)
             .toSet();
         _tableColumnsCache[table] = cols;
-      } catch (e) {
+      } catch (_) {
         return false;
       }
     }
     return cols.contains(column);
   }
 
-  /// Ensure `created_at`/`updated_at` keys are present in [values] when the
-  /// target table actually has those columns. `setCreated` controls whether
-  /// to attempt setting `created_at` (useful for inserts), and `setUpdated`
-  /// controls `updated_at` (useful for updates). The function is tolerant
-  /// of PRAGMA failures and will silently ignore errors.
+  /// Sets `created_at` / `updated_at` in [values] when the table has those
+  /// columns. Failures are ignored: timestamps are best-effort.
   Future<void> _ensureTimestamps(
-      Database db, String table, Map<String, dynamic> values,
-      {bool setCreated = false, bool setUpdated = true}) async {
+    Database db,
+    String table,
+    Map<String, dynamic> values, {
+    bool setCreated = false,
+    bool setUpdated = true,
+  }) async {
     try {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (setCreated && await _tableHasColumn(db, table, 'created_at')) {
@@ -92,9 +271,11 @@ class DBService {
   /// Register a handler for a specific `table` and `column`.
   /// Use table = '*' to register for all tables.
   void registerColumnHandler(
-      String table, String column, ColumnHandler handler) {
-    final map = _columnHandlers.putIfAbsent(table, () => {});
-    map[column] = handler;
+    String table,
+    String column,
+    ColumnHandler handler,
+  ) {
+    _columnHandlers.putIfAbsent(table, () => {})[column] = handler;
   }
 
   /// Unregister handler.
@@ -103,15 +284,14 @@ class DBService {
   }
 
   ColumnHandler? _getHandler(String table, String column) {
-    // Exact table match
-    final byTable = _columnHandlers[table];
-    if (byTable != null && byTable.containsKey(column)) return byTable[column];
-    // Wildcard table
-    final wildcard = _columnHandlers['*'];
-    if (wildcard != null && wildcard.containsKey(column)) {
-      return wildcard[column];
-    }
-    return null;
+    final byTable = _columnHandlers[table]?[column];
+    if (byTable != null) return byTable;
+    return _columnHandlers['*']?[column];
+  }
+
+  /// Columns of [table] with a handler, including wildcard (`*`) handlers.
+  Set<String> _handledColumnsFor(String table) {
+    return {...?_columnHandlers[table]?.keys, ...?_columnHandlers['*']?.keys};
   }
 
   /// Public check whether a handler is registered for [table].[column].
@@ -120,13 +300,10 @@ class DBService {
   }
 
   /// Returns true when a column should be treated as file-backed even when
-  /// no explicit ColumnHandler was registered. This covers common names
-  /// like `payload` or columns ending with `_payload` to provide a sensible
-  /// default without requiring manual registration.
+  /// no explicit ColumnHandler was registered (`payload` or `*_payload`).
   bool isColumnFileBacked(String table, String column) {
     if (_getHandler(table, column) != null) return true;
-    if (column == 'payload' || column.endsWith('_payload')) return true;
-    return false;
+    return column == 'payload' || column.endsWith('_payload');
   }
 
   bool _looksLikeJsonString(dynamic v) {
@@ -135,503 +312,454 @@ class DBService {
     return s.startsWith('{') || s.startsWith('[');
   }
 
-  /// Internal helper to process payload-like columns consistently across
-  /// `insert`, `insertOrUpdate`, and `update`. Returns a copy of `values`
-  /// with payloads converted (via handlers) and timestamps ensured.
+  bool _isPayloadCandidate(String col, Object? value) {
+    return col == 'payload' ||
+        col.endsWith('_payload') ||
+        value is Map ||
+        value is List ||
+        _looksLikeJsonString(value);
+  }
+
+  /// Returns a copy of [values] with payload-like columns converted by their
+  /// handlers, plus timestamps when the table supports them.
   Future<Map<String, dynamic>> _processPayloadColumns(
-      Database db, String table, Map<String, dynamic> values,
-      {bool setCreated = false, bool setUpdated = true}) async {
+    Database db,
+    String table,
+    Map<String, dynamic> values, {
+    bool setCreated = false,
+    bool setUpdated = true,
+  }) async {
     if (values.isEmpty) return values;
-    var result = Map<String, dynamic>.from(values);
-    final keys = values.keys.toList();
-    for (final col in keys) {
-      var handler = _getHandler(table, col);
-      final originalVal = values[col];
-
-      if (!(col == 'payload' ||
-          col.endsWith('_payload') ||
-          originalVal is Map ||
-          originalVal is List ||
-          _looksLikeJsonString(originalVal))) {
-        continue;
-      }
-
-      handler ??= payload_handler.FileBackedColumnHandler(prefix: table);
+    final result = Map<String, dynamic>.from(values);
+    for (final entry in values.entries) {
+      final col = entry.key;
+      if (!_isPayloadCandidate(col, entry.value)) continue;
+      final handler =
+          _getHandler(table, col) ??
+          payload_handler.FileBackedColumnHandler(prefix: table);
       try {
-        final newVal = await handler.onWrite(table, col, originalVal);
-        result = Map<String, dynamic>.from(result);
-        result[col] = newVal;
-        await _ensureTimestamps(db, table, result,
-            setCreated: setCreated, setUpdated: setUpdated);
+        result[col] = await handler.onWrite(table, col, entry.value);
       } catch (e, st) {
         _log.warning('Handler onWrite failed for $table.$col: $e', e, st);
       }
     }
+    // Timestamps apply to every write, not only writes with payload columns.
+    await _ensureTimestamps(
+      db,
+      table,
+      result,
+      setCreated: setCreated,
+      setUpdated: setUpdated,
+    );
     return result;
   }
 
-  Future<Database> init(
-      {String? dbName,
-      List<String>? migrationAssetPaths,
-      int dbVersion = 0,
-      OnDatabaseConfigureFn? onConfigure,
-      OnDatabaseCreateFn? onCreate,
-      OnDatabaseVersionChangeFn? onUpgrade,
-      OnDatabaseVersionChangeFn? onDowngrade,
-      OnDatabaseOpenFn? onOpen}) async {
-    // Ensure only one init runs at a time; concurrent callers await the same
-    // initialization to avoid racing open/close operations on `_db`.
-    if (_initCompleter != null) return await _initCompleter!.future;
-    _initCompleter = Completer<Database>();
+  Future<int> _readUserVersion(DatabaseExecutor db) async {
+    final rows = await db.rawQuery('PRAGMA user_version;');
+    if (rows.isEmpty) return 0;
+    final first = rows.first.values.first;
+    return first is int ? first : int.tryParse(first.toString()) ?? 0;
+  }
 
+  Future<void> _writeUserVersion(DatabaseExecutor db, int version) async {
     try {
-      // Resolve effective DB name and update global default if caller
-      // provided a non-empty name.
-      final effectiveDb = _effectiveDbName(dbName);
-      _defaultDbName = effectiveDb;
+      await db.execute('PRAGMA user_version = $version');
+    } catch (_) {
+      // Best-effort: a failed version write must not abort the open.
+    }
+  }
 
-      // Build migration maps from provided assets. The maps contain "up"
-      // migration assets keyed by target version and optional "down" assets
-      // for downgrades if present in filenames (containing 'down' or
-      // 'downgrade'). If no parseable version is found, assets are assigned
-      // incremental versions starting at 1 in the provided order.
-      final migrationAssets = <int, String>{};
-      final downgradeAssets = <int, String>{};
-      if (migrationAssetPaths != null && migrationAssetPaths.isNotEmpty) {
-        int fallbackIndex = 1;
-        for (final asset in migrationAssetPaths) {
-          final basename = p.basename(asset);
-          final verMatch = RegExp(r'v?(\d+)').firstMatch(basename);
-          int ver;
-          if (verMatch != null) {
-            ver = int.parse(verMatch.group(1)!);
-          } else {
-            ver = fallbackIndex++;
-          }
-          final isDown = RegExp(r'down|downgrade', caseSensitive: false)
-              .hasMatch(basename);
-          if (isDown) {
-            downgradeAssets[ver] = asset;
-          } else {
-            migrationAssets[ver] = asset;
-          }
-        }
-      }
-
-      Future<void> applyMigrationForVersion(Database db, int version,
-          {bool applyDml = false}) async {
-        final asset = migrationAssets[version];
-        if (asset == null) {
-          _log.info('No migration asset for version $version');
-          return;
-        }
-        _log.info('Applying migration for version $version from $asset');
-        try {
-          final content = await rootBundle.loadString(asset);
-          final statements = content.split(';');
-          await db.transaction((txn) async {
-            for (var stmt in statements) {
-              stmt = stmt.trim();
-              if (stmt.isEmpty) {
-                continue;
-              }
-              if (stmt.toUpperCase().contains('CREATE TABLE')) {
-                final createRe = RegExp(r'CREATE\s+TABLE[\s\S]*?\)\s*;?',
-                    caseSensitive: false);
-                final matches = createRe.allMatches(stmt);
-                for (final m in matches) {
-                  final createStmt = m.group(0)!.trim();
-                  try {
-                    _log.fine(
-                        'Executing extracted CREATE stmt: ${createStmt.length > 200 ? "${createStmt.substring(0, 200)}..." : createStmt}');
-                    await txn.execute(createStmt);
-                  } catch (e, st) {
-                    _log.warning(
-                        'Failed to execute extracted CREATE stmt: $createStmt\n$e',
-                        e,
-                        st);
-                  }
-                }
-                continue;
-              }
-              // Remove any leading single-line SQL comments so we can detect the
-              // actual statement token (e.g. CREATE, PRAGMA). Comments like
-              // "-- V1: ..." often precede CREATE and would otherwise prevent
-              // schema detection when multiple statements are bundled together.
-              final cleaned = stmt
-                  .replaceAll(RegExp(r'^\s*--.*\r?\n', multiLine: true), '')
-                  .trim();
-              if (cleaned.isEmpty) continue;
-              final up = cleaned.toUpperCase();
-              if (up == 'BEGIN' ||
-                  up.startsWith('BEGIN TRANSACTION') ||
-                  up == 'COMMIT' ||
-                  up.startsWith('COMMIT')) {
-                continue;
-              }
-              if (!applyDml) {
-                final upclean = cleaned.toUpperCase();
-                if (!(upclean.contains('CREATE') ||
-                    upclean.contains('PRAGMA') ||
-                    upclean.contains('DROP') ||
-                    upclean.contains('ALTER'))) {
-                  _log.fine('Skipping non-schema statement in $asset: $stmt');
-                  continue;
-                }
-              }
-              try {
-                _log.fine(
-                    'Executing migration stmt: ${cleaned.length > 200 ? "${cleaned.substring(0, 200)}..." : cleaned}');
-                await txn.execute(cleaned);
-              } catch (e, st) {
-                _log.warning(
-                    'Failed to execute migration stmt: $cleaned\n$e', e, st);
-              }
-            }
-          });
-          _log.info('Applied migration asset for version $version');
-          // Schema changed; clear cached table column info so subsequent
-          // `_tableHasColumn` queries reflect the updated schema.
-          try {
-            _tableColumnsCache.clear();
-            _log.fine('Cleared table columns cache after migration v$version');
-          } catch (_) {}
-        } catch (e, st) {
-          _log.warning('Failed to apply migration asset $asset: $e', e, st);
-          rethrow;
-        }
-      }
-
-      Future<void> applyDowngradeForVersion(Database db, int version) async {
-        final asset = downgradeAssets[version];
-        if (asset == null) {
-          _log.warning(
-              'No downgrade asset found for version $version; skipping');
-          return;
-        }
-        _log.info('Applying downgrade for version $version from $asset');
-        try {
-          final content = await rootBundle.loadString(asset);
-          final statements = content.split(';');
-          await db.transaction((txn) async {
-            for (var stmt in statements) {
-              stmt = stmt.trim();
-              if (stmt.isEmpty) {
-                continue;
-              }
-              final cleaned = stmt
-                  .replaceAll(RegExp(r'^\s*--.*\r?\n', multiLine: true), '')
-                  .trim();
-              if (cleaned.isEmpty) continue;
-              final up = cleaned.toUpperCase();
-              if (up == 'BEGIN' ||
-                  up.startsWith('BEGIN TRANSACTION') ||
-                  up == 'COMMIT' ||
-                  up.startsWith('COMMIT')) {
-                continue;
-              }
-              try {
-                _log.fine(
-                    'Executing downgrade stmt: ${cleaned.length > 200 ? "${cleaned.substring(0, 200)}..." : cleaned}');
-                await txn.execute(cleaned);
-              } catch (e, st) {
-                _log.warning(
-                    'Failed to execute downgrade stmt: $cleaned\n$e', e, st);
-              }
-            }
-          });
-          _log.info('Applied downgrade asset for version $version');
-          // Schema changed due to downgrade; clear cache so PRAGMA info is refreshed.
-          try {
-            _tableColumnsCache.clear();
-            _log.fine('Cleared table columns cache after downgrade v$version');
-          } catch (_) {}
-        } catch (e, st) {
-          _log.warning('Failed to apply downgrade asset $asset: $e', e, st);
-          rethrow;
-        }
-      }
-
-      if (_db != null) {
-        try {
-          final pragma = await _db!.rawQuery('PRAGMA user_version;');
-          var curVersion = 0;
-          if (pragma.isNotEmpty) {
-            final first = pragma.first.values.first;
-            if (first is int) {
-              curVersion = first;
-            } else {
-              curVersion = int.tryParse(first.toString()) ?? 0;
-            }
-          }
-          if (curVersion == dbVersion) return _db!;
-          // If caller did not request a target version (dbVersion <= 0),
-          // treat this as a no-op: do not attempt upgrades or downgrades.
-          if (dbVersion <= 0) {
-            _log.info(
-                'No target dbVersion requested (dbVersion=$dbVersion); leaving open DB at $curVersion');
-            return _db!;
-          }
-          if (dbVersion > curVersion) {
-            _log.info(
-                'Detected open DB version $curVersion, upgrading to $dbVersion');
-            final versions = migrationAssets.keys.toList()..sort();
-            for (final ver in versions) {
-              if (ver > curVersion && ver <= dbVersion) {
-                await applyMigrationForVersion(_db!, ver, applyDml: false);
-              }
-            }
-            try {
-              await _db!.execute('PRAGMA user_version = $dbVersion');
-            } catch (_) {}
-            try {
-              if (onUpgrade != null) onUpgrade(_db!, curVersion, dbVersion);
-            } catch (e, st) {
-              _log.warning('onUpgrade callback threw: $e', e, st);
-            }
-            return _db!;
-          }
-          _log.info(
-              'Detected open DB version $curVersion, downgrading to $dbVersion');
-          final versionsDown = downgradeAssets.keys.toList()
-            ..sort((a, b) => b - a);
-          for (final ver in versionsDown) {
-            if (ver <= curVersion && ver > dbVersion) {
-              await applyDowngradeForVersion(_db!, ver);
-            }
-          }
-          try {
-            await _db!.execute('PRAGMA user_version = $dbVersion');
-          } catch (_) {}
-          try {
-            if (onDowngrade != null) onDowngrade(_db!, curVersion, dbVersion);
-          } catch (e, st) {
-            _log.warning('onDowngrade callback threw: $e', e, st);
-          }
-          return _db!;
-        } catch (e, st) {
-          _log.warning('Failed to reconcile open DB version: $e', e, st);
-          try {
-            await _db!.close();
-          } catch (_) {}
-          _db = null;
-        }
-      }
-
-      final documents = await getApplicationDocumentsDirectory();
-      final path = p.join(documents.path, effectiveDb);
-      _log.info('Opening database at $path');
-
-      _db = await openDatabase(
-        path,
-        version: dbVersion > 0 ? dbVersion : null,
-        onConfigure: onConfigure,
-        onCreate: dbVersion > 0
-            ? (Database db, int v) async {
-                _log.info('onCreate: creating DB up to version $v');
-                try {
-                  try {
-                    final base =
-                        await rootBundle.loadString('migrations/migration.sql');
-                    if (base.trim().isNotEmpty) {
-                      final statements = base.split(';');
-                      final allowedRe = RegExp(r'^(CREATE|PRAGMA|DROP|ALTER)',
-                          caseSensitive: false);
-                      for (var stmt in statements) {
-                        stmt = stmt.trim();
-                        if (stmt.isEmpty) {
-                          continue;
-                        }
-                        final up = stmt.toUpperCase();
-                        if (up == 'BEGIN' ||
-                            up.startsWith('BEGIN TRANSACTION') ||
-                            up == 'COMMIT' ||
-                            up.startsWith('COMMIT')) {
-                          continue;
-                        }
-                        if (!allowedRe.hasMatch(stmt)) {
-                          continue;
-                        }
-                        try {
-                          await db.execute(stmt);
-                        } catch (e) {
-                          _log.warning('Failed to execute init statement: $e');
-                        }
-                      }
-                      _log.info(
-                          'Database initialized from migrations/migration.sql');
-                    }
-                  } catch (_) {}
-
-                  final versions = migrationAssets.keys.toList()..sort();
-                  for (final ver in versions) {
-                    if (ver <= v) {
-                      await applyMigrationForVersion(db, ver, applyDml: false);
-                    }
-                  }
-                  try {
-                    if (onCreate != null) onCreate(db, v);
-                  } catch (e, st) {
-                    _log.warning('onCreate callback threw: $e', e, st);
-                  }
-                } catch (e, st) {
-                  _log.warning('Failed during onCreate migrations: $e', e, st);
-                }
-              }
-            : null,
-        onUpgrade: dbVersion > 0
-            ? (Database db, int oldV, int newV) async {
-                _log.info('onUpgrade: $oldV -> $newV');
-                final versions = migrationAssets.keys.toList()..sort();
-                for (final ver in versions) {
-                  if (ver > oldV && ver <= newV) {
-                    await applyMigrationForVersion(db, ver, applyDml: false);
-                  }
-                }
-                try {
-                  if (onUpgrade != null) onUpgrade(db, oldV, newV);
-                } catch (e, st) {
-                  _log.warning('onUpgrade callback threw: $e', e, st);
-                }
-              }
-            : null,
-        onDowngrade: dbVersion > 0
-            ? (Database db, int oldV, int newV) async {
-                _log.info('onDowngrade: $oldV -> $newV');
-                final versions = downgradeAssets.keys.toList()
-                  ..sort((a, b) => b - a);
-                for (final ver in versions) {
-                  if (ver <= oldV && ver > newV) {
-                    await applyDowngradeForVersion(db, ver);
-                  }
-                }
-                try {
-                  if (onDowngrade != null) onDowngrade(db, oldV, newV);
-                } catch (e, st) {
-                  _log.warning('onDowngrade callback threw: $e', e, st);
-                }
-              }
-            : null,
-        onOpen: (db) async {
-          try {
-            if (onOpen != null) await onOpen(db);
-          } catch (e, st) {
-            _log.warning('onOpen callback threw: $e', e, st);
-          }
-        },
+  /// Runs the schema statements of one migration asset in a transaction.
+  /// With [schemaOnly] false, DML statements run too (used for downgrades).
+  Future<void> _runAssetInTransaction(
+    Database db,
+    String asset, {
+    required bool schemaOnly,
+  }) async {
+    try {
+      final content = await rootBundle.loadString(asset);
+      await db.transaction(
+        (txn) =>
+            _executeScript(txn, content, source: asset, schemaOnly: schemaOnly),
       );
-      return _db!;
-    } catch (e) {
-      // Propagate error to any waiters
-      if (!_initCompleter!.isCompleted) _initCompleter!.completeError(e);
+      _invalidateSchemaCache();
+    } catch (e, st) {
+      _log.warning('Failed to apply migration asset $asset: $e', e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> _applyUpMigration(
+    Database db,
+    _MigrationAssets assets,
+    int version,
+  ) async {
+    final asset = assets.up[version];
+    if (asset == null) {
+      _log.info('No migration asset for version $version');
+      return;
+    }
+    _log.info('Applying migration for version $version from $asset');
+    await _runAssetInTransaction(db, asset, schemaOnly: true);
+    _log.info('Applied migration asset for version $version');
+  }
+
+  Future<void> _applyDownMigration(
+    Database db,
+    _MigrationAssets assets,
+    int version,
+  ) async {
+    final asset = assets.down[version];
+    if (asset == null) {
+      _log.warning('No downgrade asset found for version $version; skipping');
+      return;
+    }
+    _log.info('Applying downgrade for version $version from $asset');
+    await _runAssetInTransaction(db, asset, schemaOnly: false);
+    _log.info('Applied downgrade asset for version $version');
+  }
+
+  /// Applies every up migration with `from < version <= to`, in order.
+  Future<void> _applyUpgrades(
+    Database db,
+    _MigrationAssets assets, {
+    required int from,
+    required int to,
+  }) async {
+    for (final ver in assets.upVersions) {
+      if (ver > from && ver <= to) {
+        await _applyUpMigration(db, assets, ver);
+      }
+    }
+  }
+
+  /// Applies every down migration with `to < version <= from`, newest first.
+  Future<void> _applyDowngrades(
+    Database db,
+    _MigrationAssets assets, {
+    required int from,
+    required int to,
+  }) async {
+    for (final ver in assets.downVersionsDesc) {
+      if (ver <= from && ver > to) {
+        await _applyDownMigration(db, assets, ver);
+      }
+    }
+  }
+
+  /// Runs a host callback and logs (instead of throwing) when it fails.
+  Future<void> _safeCallback(
+    String name,
+    Future<void> Function() callback,
+  ) async {
+    try {
+      await callback();
+    } catch (e, st) {
+      _log.warning('$name callback threw: $e', e, st);
+    }
+  }
+
+  Future<void> _closeConnection() async {
+    final db = _db;
+    _db = null;
+    // Cached column lists belong to the file that was open.
+    _invalidateSchemaCache();
+    if (db == null) return;
+    try {
+      await db.close();
+    } catch (_) {}
+  }
+
+  /// Initializes (or migrates) the database and makes it the shared
+  /// connection. Concurrent callers share one in-flight initialization.
+  Future<Database> init({
+    String? dbName,
+    List<String>? migrationAssetPaths,
+    int dbVersion = 0,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseVersionChangeFn? onDowngrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async {
+    final inFlight = _initCompleter;
+    if (inFlight != null) return inFlight.future;
+
+    final completer = Completer<Database>()..future.ignore();
+    _initCompleter = completer;
+    try {
+      final db = await _openOrReconcile(
+        dbName: dbName,
+        migrationAssetPaths: migrationAssetPaths,
+        dbVersion: dbVersion,
+        onConfigure: onConfigure,
+        onCreate: onCreate,
+        onUpgrade: onUpgrade,
+        onDowngrade: onDowngrade,
+        onOpen: onOpen,
+      );
+      completer.complete(db);
+      return db;
+    } catch (e, st) {
+      completer.completeError(e, st);
       rethrow;
     } finally {
-      if (_initCompleter != null && !_initCompleter!.isCompleted) {
-        _initCompleter!.complete(_db!);
-      }
       _initCompleter = null;
     }
   }
 
-  Future<void> close() async => await _db?.close();
+  Future<Database> _openOrReconcile({
+    String? dbName,
+    List<String>? migrationAssetPaths,
+    required int dbVersion,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseVersionChangeFn? onDowngrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async {
+    final effectiveDb = _effectiveDbName(dbName);
+    // A different file was requested: close the current connection so the
+    // requested file is opened instead of silently reusing the old one.
+    if (_db != null && effectiveDb != _defaultDbName) {
+      await _closeConnection();
+    }
+    _defaultDbName = effectiveDb;
+
+    final assets = _MigrationAssets.index(migrationAssetPaths);
+
+    final open = _db;
+    if (open != null && open.isOpen) {
+      if (dbVersion <= 0) return open;
+      final reconciled = await _reconcileOpenDb(
+        open,
+        assets,
+        dbVersion,
+        onUpgrade,
+        onDowngrade,
+      );
+      if (reconciled != null) return reconciled;
+    }
+
+    final documents = await getApplicationDocumentsDirectory();
+    final path = p.join(documents.path, effectiveDb);
+    _log.info('Opening database at $path');
+
+    final versioned = dbVersion > 0;
+    final db = await openDatabase(
+      path,
+      version: versioned ? dbVersion : null,
+      onConfigure: onConfigure,
+      onCreate: versioned
+          ? (db, v) => _onCreate(db, v, assets, onCreate)
+          : null,
+      onUpgrade: versioned
+          ? (db, oldV, newV) => _onUpgrade(db, oldV, newV, assets, onUpgrade)
+          : null,
+      onDowngrade: versioned
+          ? (db, oldV, newV) =>
+                _onDowngrade(db, oldV, newV, assets, onDowngrade)
+          : null,
+      onOpen: (db) => _safeCallback('onOpen', () async {
+        await onOpen?.call(db);
+      }),
+    );
+    _db = db;
+    _invalidateSchemaCache();
+    return db;
+  }
+
+  /// Brings an already-open connection to [dbVersion]. Returns null when the
+  /// reconciliation failed; the connection is then closed and reopened.
+  Future<Database?> _reconcileOpenDb(
+    Database db,
+    _MigrationAssets assets,
+    int dbVersion,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseVersionChangeFn? onDowngrade,
+  ) async {
+    try {
+      final curVersion = await _readUserVersion(db);
+      if (curVersion == dbVersion) return db;
+
+      if (dbVersion > curVersion) {
+        _log.info(
+          'Detected open DB version $curVersion, upgrading to $dbVersion',
+        );
+        await _applyUpgrades(db, assets, from: curVersion, to: dbVersion);
+        await _writeUserVersion(db, dbVersion);
+        await _safeCallback('onUpgrade', () async {
+          await onUpgrade?.call(db, curVersion, dbVersion);
+        });
+        return db;
+      }
+
+      _log.info(
+        'Detected open DB version $curVersion, downgrading to $dbVersion',
+      );
+      await _applyDowngrades(db, assets, from: curVersion, to: dbVersion);
+      await _writeUserVersion(db, dbVersion);
+      await _safeCallback('onDowngrade', () async {
+        await onDowngrade?.call(db, curVersion, dbVersion);
+      });
+      return db;
+    } catch (e, st) {
+      _log.warning('Failed to reconcile open DB version: $e', e, st);
+      await _closeConnection();
+      return null;
+    }
+  }
+
+  Future<void> _onCreate(
+    Database db,
+    int version,
+    _MigrationAssets assets,
+    OnDatabaseCreateFn? hook,
+  ) async {
+    _log.info('onCreate: creating DB up to version $version');
+    try {
+      await _runBaseSchema(db);
+      for (final ver in assets.upVersions) {
+        if (ver <= version) await _applyUpMigration(db, assets, ver);
+      }
+      await _safeCallback('onCreate', () async {
+        await hook?.call(db, version);
+      });
+    } catch (e, st) {
+      _log.warning('Failed during onCreate migrations: $e', e, st);
+    }
+  }
+
+  Future<void> _onUpgrade(
+    Database db,
+    int oldV,
+    int newV,
+    _MigrationAssets assets,
+    OnDatabaseVersionChangeFn? hook,
+  ) async {
+    _log.info('onUpgrade: $oldV -> $newV');
+    await _applyUpgrades(db, assets, from: oldV, to: newV);
+    await _safeCallback('onUpgrade', () async {
+      await hook?.call(db, oldV, newV);
+    });
+  }
+
+  Future<void> _onDowngrade(
+    Database db,
+    int oldV,
+    int newV,
+    _MigrationAssets assets,
+    OnDatabaseVersionChangeFn? hook,
+  ) async {
+    _log.info('onDowngrade: $oldV -> $newV');
+    await _applyDowngrades(db, assets, from: oldV, to: newV);
+    await _safeCallback('onDowngrade', () async {
+      await hook?.call(db, oldV, newV);
+    });
+  }
+
+  /// Creates the base schema from `migrations/migration.sql` when bundled.
+  Future<void> _runBaseSchema(Database db) async {
+    try {
+      final base = await rootBundle.loadString('migrations/migration.sql');
+      if (base.trim().isEmpty) return;
+      await _executeScript(
+        db,
+        base,
+        source: 'migrations/migration.sql',
+        schemaOnly: true,
+      );
+      _log.info('Database initialized from migrations/migration.sql');
+    } catch (_) {
+      // The base schema is optional.
+    }
+  }
+
+  Future<void> close() => _closeConnection();
 
   /// Delete the on-disk database file and optionally the `migrations` folder.
-  /// This will also close any open DB connection and clear the cached instance.
-  Future<void> deleteDatabaseFile(
-      {String? dbName,
-      bool removeMigrationsDir = false,
-      bool removePayloadsDir = false}) async {
-    try {
-      await close();
-    } catch (_) {}
-    _db = null;
+  /// This also closes any open connection and clears the cached instance.
+  Future<void> deleteDatabaseFile({
+    String? dbName,
+    bool removeMigrationsDir = false,
+    bool removePayloadsDir = false,
+  }) async {
+    await close();
     try {
       final documents = await getApplicationDocumentsDirectory();
       final effective = _effectiveDbName(dbName);
       final dbPath = p.join(documents.path, effective);
-      // Prefer using sqflite's deleteDatabase to properly remove any internal
-      // state before deleting files.
       try {
         await deleteDatabase(dbPath);
-      } catch (e) {
-        // ignore - fallback to manual deletion below
+      } catch (_) {
+        // fall back to manual deletion below
       }
-      final dbFile = File(dbPath);
-      if (await dbFile.exists()) await dbFile.delete();
-      // Also remove SQLite companion files that may hold WAL/SHM journal data.
-      final wal = File(p.join(documents.path, '$effective-wal'));
-      final shm = File(p.join(documents.path, '$effective-shm'));
-      final journal = File(p.join(documents.path, '$effective-journal'));
-      if (await wal.exists()) await wal.delete();
-      if (await shm.exists()) await shm.delete();
-      if (await journal.exists()) await journal.delete();
+      for (final suffix in const ['', '-wal', '-shm', '-journal']) {
+        final file = File('$dbPath$suffix');
+        if (await file.exists()) await file.delete();
+      }
       if (removeMigrationsDir) {
         final dir = Directory(p.join(documents.path, 'migrations'));
         if (await dir.exists()) await dir.delete(recursive: true);
       }
       if (removePayloadsDir) {
-        final dir =
-            Directory(p.join(documents.path, payload_handler.payloadDirName));
+        final dir = Directory(
+          p.join(documents.path, payload_handler.payloadDirName),
+        );
         if (await dir.exists()) await dir.delete(recursive: true);
       }
-      Directory(p.join(documents.path, payload_handler.payloadDirName));
     } catch (e, st) {
       _log.warning('Failed to delete DB file: $e', e, st);
     }
   }
 
   /// Reset the database by deleting the file and optionally re-initializing
-  /// it from bundled assets. Returns once the DB is recreated if `reinit`
-  /// is true.
-
-  Future<void> resetDatabase(
-      {String? dbName,
-      bool removeMigrationsDir = false,
-      bool removePayloadsDir = false,
-      bool reinit = true}) async {
+  /// it from bundled assets.
+  Future<void> resetDatabase({
+    String? dbName,
+    bool removeMigrationsDir = false,
+    bool removePayloadsDir = false,
+    bool reinit = true,
+  }) async {
     await deleteDatabaseFile(
-        dbName: dbName,
-        removeMigrationsDir: removeMigrationsDir,
-        removePayloadsDir: removePayloadsDir);
+      dbName: dbName,
+      removeMigrationsDir: removeMigrationsDir,
+      removePayloadsDir: removePayloadsDir,
+    );
     if (reinit) {
       await init(dbName: dbName);
     }
   }
 
-  /// Set SQLite `user_version` PRAGMA. Ensures DB is open before setting.
+  /// Set SQLite `user_version`. Uses the open connection when it points at
+  /// the same file; otherwise opens a short-lived connection. The shared
+  /// connection is never closed here.
   Future<void> setUserVersion(int version, {String? dbName}) async {
-    // Open a transient connection to the DB file to set PRAGMA directly.
+    final effective = _effectiveDbName(dbName);
     try {
-      final documents = await getApplicationDocumentsDirectory();
-      final effective = _effectiveDbName(dbName);
-      final path = p.join(documents.path, effective);
-      final transient = await openDatabase(path);
-      try {
-        await transient.execute('PRAGMA user_version = $version');
-        _log.info('Set PRAGMA user_version = $version (transient)');
-      } finally {
+      final open = _db;
+      if (open != null && open.isOpen && effective == _defaultDbName) {
+        await open.execute('PRAGMA user_version = $version');
+      } else {
+        final documents = await getApplicationDocumentsDirectory();
+        final transient = await openDatabase(p.join(documents.path, effective));
         try {
-          await transient.close();
-        } catch (_) {}
+          await transient.execute('PRAGMA user_version = $version');
+        } finally {
+          try {
+            await transient.close();
+          } catch (_) {}
+        }
       }
-
-      // Clear cached connection so future operations reopen a fresh one.
-      try {
-        await close();
-      } catch (_) {}
-      _db = null;
-      return;
+      _log.info('Set PRAGMA user_version = $version');
     } catch (e, st) {
       _log.warning('Failed to set PRAGMA user_version = $version: $e', e, st);
       rethrow;
     }
   }
 
-  /// Migrate the open (or on-disk) database to [targetVersion]. This is a
-  /// convenience wrapper around `init` that forwards migration assets and
-  /// lifecycle callbacks. If the DB is already open it will attempt to
-  /// reconcile the current version with [targetVersion] (running upgrades or
-  /// downgrades as needed).
+  /// Migrate the open (or on-disk) database to [targetVersion]. Convenience
+  /// wrapper around `init` that forwards migration assets and callbacks.
   Future<Database> migrateTo({
     String? dbName,
     required int targetVersion,
@@ -655,76 +783,82 @@ class DBService {
   }
 
   /// Convenience wrapper to migrate up to [targetVersion].
-  Future<Database> upgradeTo(int targetVersion,
-          {String? dbName,
-          List<String>? migrationAssetPaths,
-          OnDatabaseConfigureFn? onConfigure,
-          OnDatabaseCreateFn? onCreate,
-          OnDatabaseVersionChangeFn? onUpgrade,
-          OnDatabaseOpenFn? onOpen}) async =>
-      await migrateTo(
-          dbName: dbName,
-          targetVersion: targetVersion,
-          migrationAssetPaths: migrationAssetPaths,
-          onConfigure: onConfigure,
-          onCreate: onCreate,
-          onUpgrade: onUpgrade,
-          onOpen: onOpen);
+  Future<Database> upgradeTo(
+    int targetVersion, {
+    String? dbName,
+    List<String>? migrationAssetPaths,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async => await migrateTo(
+    dbName: dbName,
+    targetVersion: targetVersion,
+    migrationAssetPaths: migrationAssetPaths,
+    onConfigure: onConfigure,
+    onCreate: onCreate,
+    onUpgrade: onUpgrade,
+    onOpen: onOpen,
+  );
 
   /// Convenience wrapper to migrate down to [targetVersion].
-  Future<Database> downgradeTo(int targetVersion,
-          {String? dbName,
-          List<String>? migrationAssetPaths,
-          OnDatabaseConfigureFn? onConfigure,
-          OnDatabaseCreateFn? onCreate,
-          OnDatabaseVersionChangeFn? onDowngrade,
-          OnDatabaseOpenFn? onOpen}) async =>
-      await migrateTo(
-          dbName: dbName,
-          targetVersion: targetVersion,
-          migrationAssetPaths: migrationAssetPaths,
-          onConfigure: onConfigure,
-          onCreate: onCreate,
-          onDowngrade: onDowngrade,
-          onOpen: onOpen);
+  Future<Database> downgradeTo(
+    int targetVersion, {
+    String? dbName,
+    List<String>? migrationAssetPaths,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onDowngrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async => await migrateTo(
+    dbName: dbName,
+    targetVersion: targetVersion,
+    migrationAssetPaths: migrationAssetPaths,
+    onConfigure: onConfigure,
+    onCreate: onCreate,
+    onDowngrade: onDowngrade,
+    onOpen: onOpen,
+  );
 
-  /// Structured SELECT helper for a single table. This is a more
-  /// professional/typed alternative to `select(sql, params: ...)` and
-  /// leverages sqflite's `query` API. When [inlinePayloads] is true any
-  /// columns with registered handlers will attempt to inline JSON payloads
-  /// from payload files or decode inline JSON strings.
-  Future<List<Map<String, dynamic>>> selectFrom(String table,
-      {bool? distinct,
-      List<String>? columns,
-      String? where,
-      List<Object?>? whereArgs,
-      String? groupBy,
-      String? having,
-      String? orderBy,
-      int? limit,
-      int? offset,
-      bool inlinePayloads = true}) async {
-    final db = _db ?? await init();
+  /// Structured SELECT helper for a single table. When [inlinePayloads] is
+  /// true, columns with handlers inline their JSON payloads.
+  Future<List<Map<String, dynamic>>> selectFrom(
+    String table, {
+    bool? distinct,
+    List<String>? columns,
+    String? where,
+    List<Object?>? whereArgs,
+    String? groupBy,
+    String? having,
+    String? orderBy,
+    int? limit,
+    int? offset,
+    bool inlinePayloads = true,
+  }) async {
+    final db = await _database;
     try {
-      final rows = (await db.query(table,
-              distinct: distinct ?? false,
-              columns: columns,
-              where: where,
-              whereArgs: whereArgs,
-              groupBy: groupBy,
-              having: having,
-              orderBy: orderBy,
-              limit: limit,
-              offset: offset))
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      final rows = (await db.query(
+        table,
+        distinct: distinct ?? false,
+        columns: columns,
+        where: where,
+        whereArgs: whereArgs,
+        groupBy: groupBy,
+        having: having,
+        orderBy: orderBy,
+        limit: limit,
+        offset: offset,
+      )).map((e) => Map<String, dynamic>.from(e)).toList();
 
-      await PayloadUtils.inlinePayloadsForRows(table, rows,
-          inlinePayloads: inlinePayloads,
-          payloadDecoder: null,
-          getHandler: (t, c) => _getHandler(t, c),
-          isColumnFileBacked: (t, c) => isColumnFileBacked(t, c),
-          readPayloadJson: (fn) => readPayloadJson(fn));
+      await PayloadUtils.inlinePayloadsForRows(
+        table,
+        rows,
+        inlinePayloads: inlinePayloads,
+        payloadDecoder: null,
+        getHandler: (t, c) => _getHandler(t, c),
+        isColumnFileBacked: (t, c) => isColumnFileBacked(t, c),
+        readPayloadJson: (fn) => readPayloadJson(fn),
+      );
 
       return rows;
     } catch (e, st) {
@@ -735,64 +869,61 @@ class DBService {
 
   /// Select a single row from [table] using the same options as `selectFrom`.
   /// Returns `null` when no row matches.
-  Future<Map<String, dynamic>?> selectOneFrom(String table,
-      {bool? distinct,
-      List<String>? columns,
-      String? where,
-      List<Object?>? whereArgs,
-      String? groupBy,
-      String? having,
-      String? orderBy,
-      int? offset,
-      bool inlinePayloads = true}) async {
-    final rows = await selectFrom(table,
-        distinct: distinct,
-        columns: columns,
-        where: where,
-        whereArgs: whereArgs,
-        groupBy: groupBy,
-        having: having,
-        orderBy: orderBy,
-        limit: 1,
-        offset: offset,
-        inlinePayloads: inlinePayloads);
-    if (rows.isEmpty) return null;
-    return rows.first;
+  Future<Map<String, dynamic>?> selectOneFrom(
+    String table, {
+    bool? distinct,
+    List<String>? columns,
+    String? where,
+    List<Object?>? whereArgs,
+    String? groupBy,
+    String? having,
+    String? orderBy,
+    int? offset,
+    bool inlinePayloads = true,
+  }) async {
+    final rows = await selectFrom(
+      table,
+      distinct: distinct,
+      columns: columns,
+      where: where,
+      whereArgs: whereArgs,
+      groupBy: groupBy,
+      having: having,
+      orderBy: orderBy,
+      limit: 1,
+      offset: offset,
+      inlinePayloads: inlinePayloads,
+    );
+    return rows.isEmpty ? null : rows.first;
   }
 
-  /// Return rows from `sqlite_master` (database schema table).
-  ///
-  /// When [includeInternal] is false (default) rows whose `name` starts
-  /// with `sqlite_` are excluded to avoid returning internal SQLite objects.
-  Future<List<Map<String, dynamic>>> selectSqliteMaster(
-      {bool includeInternal = false}) async {
-    final db = _db ?? await init();
+  /// Return rows from `sqlite_master`. When [includeInternal] is false
+  /// (default), internal `sqlite_*` objects are excluded.
+  Future<List<Map<String, dynamic>>> selectSqliteMaster({
+    bool includeInternal = false,
+  }) async {
+    final db = await _database;
     try {
       final q = includeInternal
           ? "SELECT * FROM sqlite_master"
           : "SELECT * FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name";
-      final rows = (await db.rawQuery(q))
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-      return rows;
+      return (await db.rawQuery(
+        q,
+      )).map((e) => Map<String, dynamic>.from(e)).toList();
     } catch (e, st) {
       _log.warning('selectSqliteMaster failed: $e', e, st);
       rethrow;
     }
   }
 
-  /// Read the database `user_version` PRAGMA and return it as an `int`.
-  /// Returns `null` when the PRAGMA cannot be read.
+  /// Read the database `user_version` and return it as an `int`.
   Future<int?> selectDbVersion() async {
-    final db = _db ?? await init();
+    final db = await _database;
     try {
       final pragma = await db.rawQuery('PRAGMA user_version;');
-      if (pragma.isNotEmpty) {
-        final first = pragma.first.values.first;
-        if (first is int) return first;
-        return int.tryParse(first.toString());
-      }
-      return null;
+      if (pragma.isEmpty) return null;
+      final first = pragma.first.values.first;
+      return first is int ? first : int.tryParse(first.toString());
     } catch (e, st) {
       _log.warning('selectDbVersion failed: $e', e, st);
       rethrow;
@@ -800,415 +931,205 @@ class DBService {
   }
 
   /// Return the full filesystem path to the database file stored in the
-  /// application's documents directory. This is useful for diagnostics
-  /// or when an external tool needs to access the DB file directly.
+  /// application's documents directory.
   Future<String> getDbPath({String? dbName}) async {
     final documents = await getApplicationDocumentsDirectory();
     return p.join(documents.path, _effectiveDbName(dbName));
   }
 
-  Future<int> insert(String table, Map<String, dynamic> values,
-      {bool autoHandlePayload = true}) async {
-    final db = _db ?? await init();
-
-    // If per-call handlers are enabled, run registered `onWrite` handlers for each
-    // column present in `values`.
+  Future<int> insert(
+    String table,
+    Map<String, dynamic> values, {
+    bool autoHandlePayload = true,
+  }) async {
+    final db = await _database;
     final prepared = autoHandlePayload
-        ? await _processPayloadColumns(db, table, values,
-            setCreated: true, setUpdated: false)
+        ? await _processPayloadColumns(
+            db,
+            table,
+            values,
+            setCreated: true,
+            setUpdated: false,
+          )
         : values;
-
     return await db.insert(table, prepared);
   }
 
-  /// Insert or update (upsert) a row into [table]. This mirrors `insert`
-  /// payload handling behavior, but uses SQLite conflict resolution to
-  /// replace an existing row when a unique/primary key conflict occurs.
-  ///
-  /// Returns the row id of the inserted row.
-  Future<int> insertOrUpdate(String table, Map<String, dynamic> values,
-      {bool autoHandlePayload = true,
-      ConflictAlgorithm conflictAlgorithm = ConflictAlgorithm.replace}) async {
-    final db = _db ?? await init();
-
+  /// Insert or update (upsert) a row into [table]. Uses SQLite conflict
+  /// resolution to replace an existing row on a unique/primary key conflict.
+  Future<int> insertOrUpdate(
+    String table,
+    Map<String, dynamic> values, {
+    bool autoHandlePayload = true,
+    ConflictAlgorithm conflictAlgorithm = ConflictAlgorithm.replace,
+  }) async {
+    final db = await _database;
     final prepared = autoHandlePayload
-        ? await _processPayloadColumns(db, table, values,
-            setCreated: true, setUpdated: true)
+        ? await _processPayloadColumns(
+            db,
+            table,
+            values,
+            setCreated: true,
+            setUpdated: true,
+          )
         : values;
-
-    return await db.insert(table, prepared,
-        conflictAlgorithm: conflictAlgorithm);
+    return await db.insert(
+      table,
+      prepared,
+      conflictAlgorithm: conflictAlgorithm,
+    );
   }
 
-  Future<int> update(String table, Map<String, dynamic> values, String where,
-      List<dynamic> whereArgs,
-      {bool autoHandlePayload = true}) async {
-    final db = _db ?? await init();
-
-    // Table-agnostic handling: if `payload` is Map/List, write file and replace
-    // payload with filename before updating. Honor the per-call `autoHandlePayload` flag.
+  Future<int> update(
+    String table,
+    Map<String, dynamic> values,
+    String where,
+    List<dynamic> whereArgs, {
+    bool autoHandlePayload = true,
+  }) async {
+    final db = await _database;
     final prepared = autoHandlePayload
-        ? await _processPayloadColumns(db, table, values,
-            setCreated: false, setUpdated: true)
+        ? await _processPayloadColumns(
+            db,
+            table,
+            values,
+            setCreated: false,
+            setUpdated: true,
+          )
         : values;
-
     return await db.update(table, prepared, where: where, whereArgs: whereArgs);
   }
 
-  Future<int> delete(String table, String where, List<dynamic> whereArgs,
-      {bool autoCleanupOnDelete = true}) async {
-    final db = _db ?? await init();
-
-    // Only perform cleanup if caller requested it via `autoCleanupOnDelete`.
-    if (autoCleanupOnDelete) {
-      try {
-        final rows = await db.query(table, where: where, whereArgs: whereArgs);
-        if (rows.isNotEmpty) {
-          // Determine columns that have handlers for this table (including wildcard)
-          final cols = <String>{};
-          final byTable = _columnHandlers[table];
-          if (byTable != null) cols.addAll(byTable.keys);
-          final wildcard = _columnHandlers['*'];
-          if (wildcard != null) cols.addAll(wildcard.keys);
-
-          for (final r in rows) {
-            for (final col in cols) {
-              if (!r.containsKey(col)) continue;
-              final handler = _getHandler(table, col);
-              if (handler == null) continue;
-              try {
-                await handler.onDelete(table, col, r);
-              } catch (e, st) {
-                _log.warning(
-                    'Handler onDelete failed for $table.$col: $e', e, st);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        _log.warning('Failed to cleanup column handlers before delete: $e');
-      }
+  Future<int> delete(
+    String table,
+    String where,
+    List<dynamic> whereArgs, {
+    bool autoCleanupOnDelete = true,
+  }) async {
+    final db = await _database;
+    // Only look up the rows when a handler could clean something up.
+    final handled = autoCleanupOnDelete
+        ? _handledColumnsFor(table)
+        : const <String>{};
+    if (handled.isNotEmpty) {
+      await _runDeleteHandlers(db, table, where, whereArgs, handled);
     }
-
     return await db.delete(table, where: where, whereArgs: whereArgs);
   }
 
-  /// Execute a raw SQL statement (INSERT / UPDATE / DELETE / others).
+  Future<void> _runDeleteHandlers(
+    Database db,
+    String table,
+    String where,
+    List<dynamic> whereArgs,
+    Set<String> handled,
+  ) async {
+    try {
+      final rows = await db.query(table, where: where, whereArgs: whereArgs);
+      for (final row in rows) {
+        for (final col in handled) {
+          if (!row.containsKey(col)) continue;
+          final handler = _getHandler(table, col);
+          if (handler == null) continue;
+          try {
+            await handler.onDelete(table, col, row);
+          } catch (e, st) {
+            _log.warning('Handler onDelete failed for $table.$col: $e', e, st);
+          }
+        }
+      }
+    } catch (e) {
+      _log.warning('Failed to cleanup column handlers before delete: $e');
+    }
+  }
+
+  /// Execute a SQL statement. Simple single-table `INSERT` / `UPDATE` /
+  /// `DELETE` statements are routed through the typed helpers so column
+  /// handlers and timestamps still apply; anything else runs as raw SQL.
   ///
   /// Returns:
-  /// - for `INSERT`: the inserted row id (as returned by `rawInsert`)
-  /// - for `UPDATE`/`DELETE`: the number of affected rows
+  /// - for `INSERT`: the inserted row id
+  /// - for `UPDATE` / `DELETE`: the number of affected rows
   /// - for other statements: 0
   Future<int> executeSqlInsUpDel(String sql) async {
-    final db = _db ?? await init();
+    final db = await _database;
     final stmt = sql.trim();
     try {
       final up = stmt.toUpperCase();
+      // A null result means "not a simple literal statement": run it raw.
+      // Errors from the typed path propagate and are never replayed.
       if (up.startsWith('INSERT')) {
-        // Try to parse a simple single-row INSERT statement and route it
-        // through the high-level `insert` helper so ColumnHandlers run.
-        try {
-          // Find table name
-          final tableRe = RegExp(
-              r'INSERT\s+INTO\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
-              caseSensitive: false);
-          final tableMatch = tableRe.firstMatch(stmt);
-          if (tableMatch == null) return await db.rawInsert(sql);
-          final table = tableMatch.group(1)!;
-
-          // Helper to find matching parenthesis starting at idx
-          int findMatching(String s, int start) {
-            var depth = 0;
-            for (var i = start; i < s.length; i++) {
-              final ch = s[i];
-              if (ch == '(') depth++;
-              if (ch == ')') {
-                depth--;
-                if (depth == 0) return i;
-              }
-            }
-            return -1;
-          }
-
-          // Parse optional columns list after table name
-          int pos = tableMatch.end;
-          while (pos < stmt.length && stmt[pos].trim().isEmpty) {
-            pos++;
-          }
-          List<String>? columns;
-          if (pos < stmt.length && stmt[pos] == '(') {
-            final end = findMatching(stmt, pos);
-            if (end > pos) {
-              final colsRaw = stmt.substring(pos + 1, end);
-              columns = colsRaw
-                  .split(',')
-                  .map((s) => s.trim().replaceAll('"', '').replaceAll('`', ''))
-                  .where((s) => s.isNotEmpty)
-                  .toList();
-            }
-          }
-
-          // Find VALUES keyword
-          final valuesRe = RegExp(r"\bVALUES\b", caseSensitive: false);
-          final valuesMatch = valuesRe.firstMatch(stmt);
-          if (valuesMatch == null) return await db.rawInsert(sql);
-          var vpos = valuesMatch.end;
-          while (vpos < stmt.length && stmt[vpos].trim().isEmpty) {
-            vpos++;
-          }
-          if (vpos >= stmt.length || stmt[vpos] != '(') {
-            return await db.rawInsert(sql);
-          }
-          final vend = findMatching(stmt, vpos);
-          if (vend < 0) return await db.rawInsert(sql);
-          final valsRaw = stmt.substring(vpos + 1, vend);
-
-          // Split values at top-level commas (respect quotes/parentheses)
-          List<String> splitValues(String s) {
-            final out = <String>[];
-            var buf = StringBuffer();
-            var inSingle = false;
-            var inDouble = false;
-            var depth = 0;
-            for (var i = 0; i < s.length; i++) {
-              final ch = s[i];
-              if (ch == "'" && !inDouble) {
-                // handle escaped '' inside single quotes
-                final next = (i + 1 < s.length) ? s[i + 1] : null;
-                if (inSingle && next == "'") {
-                  buf.write("'");
-                  i++; // skip escaped quote
-                  continue;
-                }
-                inSingle = !inSingle;
-                buf.write(ch);
-                continue;
-              }
-              if (ch == '"' && !inSingle) {
-                inDouble = !inDouble;
-                buf.write(ch);
-                continue;
-              }
-              if (!inSingle && !inDouble) {
-                if (ch == '(') {
-                  depth++;
-                } else if (ch == ')') {
-                  depth--;
-                } else if (ch == ',' && depth == 0) {
-                  out.add(buf.toString().trim());
-                  buf = StringBuffer();
-                  continue;
-                }
-              }
-              buf.write(ch);
-            }
-            final last = buf.toString().trim();
-            if (last.isNotEmpty) out.add(last);
-            return out;
-          }
-
-          final vals = splitValues(valsRaw);
-          // If columns are present but counts mismatch, fall back
-          if (columns != null && columns.length != vals.length) {
-            return await db.rawInsert(sql);
-          }
-
-          dynamic parseValueToken(String t) {
-            final s = t.trim();
-            if (s.startsWith("'") && s.endsWith("'")) {
-              // unquote single-quoted SQL string and unescape doubled quotes
-              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
-              return inner;
-            }
-            // try int
-            final intVal = int.tryParse(s);
-            if (intVal != null) return intVal;
-            // try double
-            final dbl = double.tryParse(s);
-            if (dbl != null) return dbl;
-            // fallback to raw string
-            return s;
-          }
-
-          final valuesMap = <String, dynamic>{};
-          if (columns != null) {
-            for (var i = 0; i < columns.length; i++) {
-              valuesMap[columns[i]] = parseValueToken(vals[i]);
-            }
-            await _ensureTimestamps(db, table, valuesMap,
-                setCreated: true, setUpdated: true);
-            // call high-level insert to trigger handlers
-            return await insert(table, valuesMap);
-          } else {
-            // No columns specified; cannot safely map to insert helper.
-            return await db.rawInsert(sql);
-          }
-        } catch (e) {
-          // Parsing failed; fall back to rawInsert
-          return await db.rawInsert(sql);
-        }
+        return await _rewriteInsert(db, stmt) ?? await db.rawInsert(sql);
       } else if (up.startsWith('UPDATE')) {
-        // Try to parse simple UPDATE ... SET ... WHERE col = literal
-        try {
-          final tableRe = RegExp(r'UPDATE\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
-              caseSensitive: false);
-          final tableMatch = tableRe.firstMatch(stmt);
-          if (tableMatch == null) return await db.rawUpdate(sql);
-          final table = tableMatch.group(1)!;
-
-          // find SET and optional WHERE
-          final setRe = RegExp(r'\bSET\b', caseSensitive: false);
-          final setMatch = setRe.firstMatch(stmt);
-          if (setMatch == null) return await db.rawUpdate(sql);
-          final setStart = setMatch.end;
-          final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
-          final whereMatch = whereRe.firstMatch(stmt);
-          final setRaw = whereMatch != null
-              ? stmt.substring(setStart, whereMatch.start)
-              : stmt.substring(setStart);
-          final whereRaw =
-              whereMatch != null ? stmt.substring(whereMatch.end).trim() : null;
-
-          // split assignments (respect quotes/parentheses)
-          List<String> splitAssignments(String s) {
-            final out = <String>[];
-            var buf = StringBuffer();
-            var inSingle = false;
-            var inDouble = false;
-            var depth = 0;
-            for (var i = 0; i < s.length; i++) {
-              final ch = s[i];
-              if (ch == "'" && !inDouble) {
-                final next = (i + 1 < s.length) ? s[i + 1] : null;
-                if (inSingle && next == "'") {
-                  buf.write("'");
-                  i++;
-                  continue;
-                }
-                inSingle = !inSingle;
-                buf.write(ch);
-                continue;
-              }
-              if (ch == '"' && !inSingle) {
-                inDouble = !inDouble;
-                buf.write(ch);
-                continue;
-              }
-              if (!inSingle && !inDouble) {
-                if (ch == '(') {
-                  depth++;
-                } else if (ch == ')') {
-                  depth--;
-                } else if (ch == ',' && depth == 0) {
-                  out.add(buf.toString().trim());
-                  buf = StringBuffer();
-                  continue;
-                }
-              }
-              buf.write(ch);
-            }
-            final last = buf.toString().trim();
-            if (last.isNotEmpty) out.add(last);
-            return out;
-          }
-
-          dynamic parseValueToken(String t) {
-            final s = t.trim();
-            if (s.startsWith("'") && s.endsWith("'")) {
-              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
-              return inner;
-            }
-            final intVal = int.tryParse(s);
-            if (intVal != null) return intVal;
-            final dbl = double.tryParse(s);
-            if (dbl != null) return dbl;
-            return s;
-          }
-
-          final assigns = splitAssignments(setRaw);
-          final valuesMap = <String, dynamic>{};
-          for (final a in assigns) {
-            final idx = a.indexOf('=');
-            if (idx <= 0) return await db.rawUpdate(sql);
-            final col = a
-                .substring(0, idx)
-                .trim()
-                .replaceAll('"', '')
-                .replaceAll('`', '');
-            final valToken = a.substring(idx + 1).trim();
-            valuesMap[col] = parseValueToken(valToken);
-          }
-
-          if (whereRaw == null) {
-            // No WHERE -> unsafe to map; fallback
-            return await db.rawUpdate(sql);
-          }
-
-          // support simple equality WHERE: col = literal
-          final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
-              caseSensitive: false);
-          final eqMatch = eqRe.firstMatch(whereRaw);
-          if (eqMatch == null) return await db.rawUpdate(sql);
-          final wcol = eqMatch.group(1)!;
-          final wvalToken = eqMatch.group(2)!.trim();
-          if (wvalToken == '?') return await db.rawUpdate(sql);
-          final wval = parseValueToken(wvalToken);
-          final whereClause = '$wcol = ?';
-          await _ensureTimestamps(db, table, valuesMap,
-              setCreated: false, setUpdated: true);
-          return await update(table, valuesMap, whereClause, [wval]);
-        } catch (e) {
-          return await db.rawUpdate(sql);
-        }
+        return await _rewriteUpdate(db, stmt) ?? await db.rawUpdate(sql);
       } else if (up.startsWith('DELETE')) {
-        // Try to parse DELETE FROM table WHERE col = literal
-        try {
-          final tableRe = RegExp(
-              r'DELETE\s+FROM\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
-              caseSensitive: false);
-          final tableMatch = tableRe.firstMatch(stmt);
-          if (tableMatch == null) return await db.rawDelete(sql);
-          final table = tableMatch.group(1)!;
-          final whereRe = RegExp(r'\bWHERE\b', caseSensitive: false);
-          final whereMatch = whereRe.firstMatch(stmt);
-          if (whereMatch == null) return await db.rawDelete(sql);
-          final whereRaw = stmt.substring(whereMatch.end).trim();
-
-          final eqRe = RegExp(r'^(?:["`]?([A-Za-z0-9_]+)["`]?)\s*=\s*(.+)\$',
-              caseSensitive: false);
-          final eqMatch = eqRe.firstMatch(whereRaw);
-          if (eqMatch == null) return await db.rawDelete(sql);
-          final wcol = eqMatch.group(1)!;
-          final wvalToken = eqMatch.group(2)!.trim();
-          if (wvalToken == '?') return await db.rawDelete(sql);
-
-          dynamic parseValueToken(String t) {
-            final s = t.trim();
-            if (s.startsWith("'") && s.endsWith("'")) {
-              final inner = s.substring(1, s.length - 1).replaceAll("''", "'");
-              return inner;
-            }
-            final intVal = int.tryParse(s);
-            if (intVal != null) return intVal;
-            final dbl = double.tryParse(s);
-            if (dbl != null) return dbl;
-            return s;
-          }
-
-          final wval = parseValueToken(wvalToken);
-          final whereClause = '$wcol = ?';
-          return await delete(table, whereClause, [wval]);
-        } catch (e) {
-          return await db.rawDelete(sql);
-        }
+        return await _rewriteDelete(stmt) ?? await db.rawDelete(sql);
       } else {
         await db.execute(sql);
+        _invalidateSchemaCache(); // DDL can change the column layout
         return 0;
       }
     } catch (e, st) {
       _log.warning('Failed to execute SQL: $e', e, st);
       rethrow;
     }
+  }
+
+  /// Routes `INSERT INTO t (cols) VALUES (literals)` through [insert]. Returns
+  /// null when the statement is not a plain literal insert.
+  Future<int?> _rewriteInsert(Database db, String stmt) async {
+    final m = _insertRe.firstMatch(stmt);
+    if (m == null) return null;
+    final table = m.group(1)!;
+    final columns = m.group(2)!.split(',').map(_unquote).toList();
+    final values = _splitTopLevel(m.group(3)!);
+    if (columns.length != values.length || columns.any((c) => c.isEmpty)) {
+      return null;
+    }
+    final row = <String, dynamic>{};
+    for (var i = 0; i < columns.length; i++) {
+      final literal = _literalOf(values[i]);
+      if (literal == null) return null;
+      row[columns[i]] = literal.value;
+    }
+    await _ensureTimestamps(db, table, row, setCreated: true, setUpdated: true);
+    return insert(table, row);
+  }
+
+  /// Routes `UPDATE t SET col = literal[, ...] WHERE col = literal` through
+  /// [update]. Returns null for anything else (expressions, compound WHERE,
+  /// no WHERE clause).
+  Future<int?> _rewriteUpdate(Database db, String stmt) async {
+    final m = _updateRe.firstMatch(stmt);
+    if (m == null) return null;
+    final table = m.group(1)!;
+    final values = <String, dynamic>{};
+    for (final assignment in _splitTopLevel(m.group(2)!)) {
+      final a = _equalityOf(assignment);
+      if (a == null) return null;
+      values[a.column] = a.value;
+    }
+    if (values.isEmpty) return null;
+    final where = _equalityOf(m.group(3)!);
+    if (where == null) return null;
+    await _ensureTimestamps(
+      db,
+      table,
+      values,
+      setCreated: false,
+      setUpdated: true,
+    );
+    return update(table, values, '${where.column} = ?', [where.value]);
+  }
+
+  /// Routes `DELETE FROM t WHERE col = literal` through [delete]. Returns null
+  /// for anything else.
+  Future<int?> _rewriteDelete(String stmt) async {
+    final m = _deleteRe.firstMatch(stmt);
+    if (m == null) return null;
+    final where = _equalityOf(m.group(2)!);
+    if (where == null) return null;
+    return delete(m.group(1)!, '${where.column} = ?', [where.value]);
   }
 
   /// Read payload file content as string. Returns null if file does not exist.
@@ -1221,8 +1142,11 @@ class DBService {
     return await payload_handler.readPayloadJson(filename);
   }
 
-  Future<void> exportToSqlFile(String destPath,
-      {String? dbName, bool inlinePayloads = true}) async {
+  Future<void> exportToSqlFile(
+    String destPath, {
+    String? dbName,
+    bool inlinePayloads = true,
+  }) async {
     final effective = _effectiveDbName(dbName);
 
     Database db;
@@ -1231,8 +1155,7 @@ class DBService {
       // Open a transient connection to the requested DB file.
       transient = true;
       final documents = await getApplicationDocumentsDirectory();
-      final path = p.join(documents.path, effective);
-      db = await openDatabase(path);
+      db = await openDatabase(p.join(documents.path, effective));
     } else {
       db = _db!;
     }
@@ -1241,31 +1164,25 @@ class DBService {
       final sb = StringBuffer();
 
       final tables = await db.rawQuery(
-          "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';");
+        "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
+      );
 
       for (final row in tables) {
         final name = row['name'] as String?;
         final createSql = row['sql'] as String?;
-        if (name == null || createSql == null) {
-          continue;
-        }
+        if (name == null || createSql == null) continue;
         sb.writeln('$createSql;');
 
         if (inlinePayloads) {
           final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
           for (final r in rows) {
-            // For columns that have handlers (eg. payload), inline file content
-            final outRow = Map<String, dynamic>.from(r);
-            // remove rowid from columns list when generating INSERT
-            outRow.remove('rowid');
-
+            final outRow = Map<String, dynamic>.from(r)..remove('rowid');
             final cols = outRow.keys.toList();
             final vals = <String>[];
             for (final c in cols) {
-              final handler = _getHandler(name, c);
               final v = outRow[c];
-              if (handler != null && v is String) {
-                // If this looks like a filename in our payloads dir, read it
+              if (_getHandler(name, c) != null && v is String) {
+                // Columns with handlers hold a payload file name: inline it.
                 final payload = await readPayloadString(v);
                 if (payload != null) {
                   vals.add(_valueToSqlLiteral(payload));
@@ -1275,15 +1192,17 @@ class DBService {
               vals.add(_valueToSqlLiteral(v));
             }
             final columns = cols.map((c) => '"$c"').join(', ');
-            final values = vals.join(', ');
-            sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
+            sb.writeln(
+              'INSERT INTO "$name" ($columns) VALUES (${vals.join(', ')});',
+            );
           }
         } else {
           final rows = await db.query(name);
           for (final r in rows) {
             final columns = r.keys.map((c) => '"$c"').join(', ');
-            final values =
-                r.values.map((v) => _valueToSqlLiteral(v)).join(', ');
+            final values = r.values
+                .map((v) => _valueToSqlLiteral(v))
+                .join(', ');
             sb.writeln('INSERT INTO "$name" ($columns) VALUES ($values);');
           }
         }
@@ -1303,229 +1222,178 @@ class DBService {
     }
   }
 
-  Future<void> importFromSqlFile(String filePath,
-      {bool convertInlinePayloads = true}) async {
-    final db = _db ?? await init();
+  Future<void> importFromSqlFile(
+    String filePath, {
+    bool convertInlinePayloads = true,
+  }) async {
+    final db = await _database;
     final content = await File(filePath).readAsString();
-    final statements = content.split(';');
+    final insertRe = RegExp(
+      r'^\s*INSERT\s+INTO\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
+      caseSensitive: false,
+    );
+
     await db.transaction((txn) async {
-      final insertRe = RegExp(
-          r'^\s*INSERT\s+INTO\s+(?:["`])?([A-Za-z0-9_]+)(?:["`])?',
-          caseSensitive: false);
-      for (var stmt in statements) {
-        stmt = stmt.trim();
-        if (stmt.isEmpty) continue;
+      // Table existence is checked once per table, not once per statement.
+      final existing = <String, bool>{};
+      for (final stmt in content.split(';')) {
+        final trimmed = stmt.trim();
+        if (trimmed.isEmpty) continue;
         try {
-          // If this is an INSERT, ensure the target table exists before executing
-          final m = insertRe.firstMatch(stmt);
+          final m = insertRe.firstMatch(trimmed);
           if (m != null) {
-            final tableName = m.group(1);
-            if (tableName != null) {
-              final exists = await txn.rawQuery(
-                  "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
-                  [tableName]);
-              if (exists.isEmpty) {
-                _log.info('Skipping INSERT into missing table `$tableName`.');
-                continue;
-              }
+            final tableName = m.group(1)!;
+            final known = existing[tableName] ??= (await txn.rawQuery(
+              "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+              [tableName],
+            )).isNotEmpty;
+            if (!known) {
+              _log.info('Skipping INSERT into missing table `$tableName`.');
+              continue;
             }
           }
-          await txn.execute(stmt);
+          await txn.execute(trimmed);
         } catch (e) {
-          _log.warning('Failed to execute statement: $stmt\n$e');
+          _log.warning('Failed to execute statement: $trimmed\n$e');
         }
       }
     });
-    // Optionally post-process imported rows: for any table columns that have
-    // registered handlers and contain inline JSON (string starting with '{' or
-    // '['), write the JSON to a payload file and update the DB row to store
-    // the filename instead.
+
     if (convertInlinePayloads) {
       try {
-        final tables = await db.rawQuery(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';");
-        for (final t in tables) {
-          final name = t['name'] as String?;
-          if (name == null) continue;
-          // No need to require pre-registered handlers here — we want to
-          // convert inline JSON in any column during import. Proceed to
-          // inspect all columns and use registered handlers when available,
-          // otherwise fall back to `FileBackedColumnHandler`.
-
-          // select rowid and columns
-          final rows = await db.rawQuery('SELECT rowid, * FROM "$name"');
-
-          // Determine best identifier to update rows: prefer a declared
-          // PRIMARY KEY column (if any), otherwise fall back to rowid.
-          String pkName = 'rowid';
-          try {
-            final pragma = await db.rawQuery('PRAGMA table_info("$name")');
-            for (final col in pragma) {
-              final pk = col['pk'];
-              if (pk is int && pk > 0) {
-                final n = col['name'] as String?;
-                if (n != null && n.isNotEmpty) {
-                  pkName = n;
-                  break;
-                }
-              }
-            }
-          } catch (_) {}
-
-          for (final r in rows) {
-            final idValue = r.containsKey(pkName) ? r[pkName] : r['rowid'];
-            if (idValue == null) continue;
-            final updates = <String, dynamic>{};
-
-            // Inspect every column in the row; if the value looks like
-            // inline JSON (string starting with '{' or '[') or is already
-            // a Map/List, write it out via a handler (registered or fallback)
-            for (final entry in r.entries) {
-              final c = entry.key;
-              if (c == 'rowid') continue;
-              final val = entry.value;
-
-              dynamic toWrite;
-              if (val is String) {
-                final s = val.trim();
-                if (s.startsWith('{') || s.startsWith('[')) {
-                  try {
-                    toWrite = json.decode(s);
-                  } catch (_) {
-                    continue; // not valid JSON
-                  }
-                } else {
-                  continue;
-                }
-              } else if (val is Map || val is List) {
-                toWrite = val;
-              } else {
-                continue;
-              }
-
-              var handler = _getHandler(name, c);
-              handler ??= payload_handler.FileBackedColumnHandler(prefix: name);
-
-              try {
-                final newVal = await handler.onWrite(name, c, toWrite);
-                updates[c] = newVal;
-              } catch (e) {
-                _log.warning(
-                    'Failed to write imported payload for $name.$c: $e');
-              }
-            }
-
-            if (updates.isNotEmpty) {
-              final whereClause =
-                  pkName == 'rowid' ? 'rowid = ?' : '"$pkName" = ?';
-              await db.update(name, updates,
-                  where: whereClause, whereArgs: [idValue]);
-            }
-          }
-        }
+        await _convertInlineJsonPayloads(db);
       } catch (e, st) {
         _log.warning('Post-processing imported payloads failed: $e', e, st);
       }
     }
 
+    _invalidateSchemaCache();
     _log.info('Imported SQL from $filePath');
+  }
+
+  /// Moves inline JSON text (`{...}` / `[...]`) out of table columns into
+  /// payload files and stores the file name instead. Only rows that contain
+  /// such text are read, and each table's updates share one transaction.
+  Future<void> _convertInlineJsonPayloads(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
+    );
+    for (final t in tables) {
+      final name = t['name'] as String?;
+      if (name == null) continue;
+      try {
+        final info = await db.rawQuery('PRAGMA table_info("$name")');
+        if (info.isEmpty) continue;
+        final candidates = info
+            .map((c) => c['name'] as String)
+            .map((c) => 'TRIM("$c") LIKE \'{%\' OR TRIM("$c") LIKE \'[%\'')
+            .join(' OR ');
+
+        final rows = await db.rawQuery(
+          'SELECT rowid AS __rowid__, * FROM "$name" WHERE $candidates',
+        );
+        if (rows.isEmpty) continue;
+
+        await db.transaction((txn) async {
+          for (final row in rows) {
+            final updates = <String, Object?>{};
+            for (final entry in row.entries) {
+              final col = entry.key;
+              final value = entry.value;
+              if (col == '__rowid__' || value is! String) continue;
+              final s = value.trim();
+              if (!(s.startsWith('{') || s.startsWith('['))) continue;
+
+              final Object? decoded;
+              try {
+                decoded = json.decode(s);
+              } catch (_) {
+                continue; // not valid JSON
+              }
+              final handler =
+                  _getHandler(name, col) ??
+                  payload_handler.FileBackedColumnHandler(prefix: name);
+              try {
+                updates[col] = await handler.onWrite(name, col, decoded);
+              } catch (e) {
+                _log.warning(
+                  'Failed to write imported payload for $name.$col: $e',
+                );
+              }
+            }
+            if (updates.isNotEmpty) {
+              await txn.update(
+                name,
+                updates,
+                where: 'rowid = ?',
+                whereArgs: [row['__rowid__']],
+              );
+            }
+          }
+        });
+      } catch (e, st) {
+        // e.g. WITHOUT ROWID tables have no rowid; skip just this table.
+        _log.warning('Skipping payload conversion for $name: $e', e, st);
+      }
+    }
   }
 
   /// Import sample/demo inserts packaged as an asset. Returns the temporary
   /// file path used for import on success, or null on failure.
-  Future<String?> importSampleInserts(
-      {String assetPath = 'migrations/sample_inserts.sql',
-      bool convertInlinePayloads = true}) async {
+  Future<String?> importSampleInserts({
+    String assetPath = 'migrations/sample_inserts.sql',
+    bool convertInlinePayloads = true,
+  }) async {
     try {
       final content = await rootBundle.loadString(assetPath);
       if (content.trim().isEmpty) return null;
       final tmpDir = await getTemporaryDirectory();
-      final tmpPath = p.join(tmpDir.path,
-          'sample_inserts_${DateTime.now().millisecondsSinceEpoch}.sql');
+      final tmpPath = p.join(
+        tmpDir.path,
+        'sample_inserts_${DateTime.now().millisecondsSinceEpoch}.sql',
+      );
       final f = File(tmpPath);
       await f.create(recursive: true);
       await f.writeAsString(content);
-      await importFromSqlFile(tmpPath,
-          convertInlinePayloads: convertInlinePayloads);
+      await importFromSqlFile(
+        tmpPath,
+        convertInlinePayloads: convertInlinePayloads,
+      );
       _log.info('Imported sample inserts from $assetPath');
       return tmpPath;
     } catch (e, st) {
       _log.warning(
-          'Failed to import sample inserts asset $assetPath: $e', e, st);
+        'Failed to import sample inserts asset $assetPath: $e',
+        e,
+        st,
+      );
       return null;
     }
   }
 
   /// Run a migration SQL asset. By default only schema statements (CREATE,
-  /// ALTER, DROP, PRAGMA) are applied to avoid importing sample data. Set
-  /// [applyDml] to true to also execute DML statements (INSERT/UPDATE/DELETE)
-  /// from the asset.
-  Future<void> runMigrationAsset(String assetPath,
-      {bool applyDml = false}) async {
+  /// ALTER, DROP, PRAGMA) are applied so sample data is not imported. Set
+  /// [applyDml] to true to also run DML (INSERT/UPDATE/DELETE).
+  Future<void> runMigrationAsset(
+    String assetPath, {
+    bool applyDml = false,
+  }) async {
     try {
       final content = await rootBundle.loadString(assetPath);
       if (content.trim().isEmpty) {
         _log.info('Migration asset $assetPath is empty');
         return;
       }
-
-      final db = _db ?? await init();
-      final statements = content.split(';');
-      final allowedRe =
-          RegExp(r'^(CREATE|PRAGMA|DROP|ALTER)\b', caseSensitive: false);
-
-      await db.transaction((txn) async {
-        for (var stmt in statements) {
-          stmt = stmt.trim();
-          if (stmt.isEmpty) {
-            continue;
-          }
-          // If the chunk contains CREATE TABLE blocks mixed with comments,
-          // extract and execute each CREATE statement individually. This
-          // handles bundled migration files where comments precede CREATEs
-          // in the same semicolon-delimited chunk.
-          if (!applyDml && stmt.toUpperCase().contains('CREATE TABLE')) {
-            final createRe =
-                RegExp(r'CREATE\s+TABLE[\s\S]*?\)\s*;?', caseSensitive: false);
-            final matches = createRe.allMatches(stmt);
-            for (final m in matches) {
-              final createStmt = m.group(0)!.trim();
-              try {
-                _log.fine(
-                    'Executing extracted CREATE stmt: ${createStmt.length > 200 ? "${createStmt.substring(0, 200)}..." : createStmt}');
-                await txn.execute(createStmt);
-              } catch (e, st) {
-                _log.warning(
-                    'Failed to execute extracted CREATE stmt: $createStmt\n$e',
-                    e,
-                    st);
-              }
-            }
-            continue;
-          }
-          final up = stmt.toUpperCase();
-          if (up == 'BEGIN' ||
-              up.startsWith('BEGIN TRANSACTION') ||
-              up == 'COMMIT' ||
-              up.startsWith('COMMIT')) {
-            continue;
-          }
-          // If DML not allowed, only run schema statements.
-          if (!applyDml && !allowedRe.hasMatch(stmt)) {
-            _log.fine(
-                'Skipping non-schema statement in $assetPath: ${stmt.length > 80 ? stmt.substring(0, 80) : stmt}');
-            continue;
-          }
-          try {
-            await txn.execute(stmt);
-          } catch (e, st) {
-            _log.warning(
-                'Failed to execute migration statement from $assetPath: $stmt\n$e',
-                e,
-                st);
-          }
-        }
-      });
+      final db = await _database;
+      await db.transaction(
+        (txn) => _executeScript(
+          txn,
+          content,
+          source: assetPath,
+          schemaOnly: !applyDml,
+        ),
+      );
+      _invalidateSchemaCache();
       _log.info('Applied migration asset: $assetPath (applyDml=$applyDml)');
     } catch (e, st) {
       _log.warning('Failed to apply migration asset $assetPath: $e', e, st);

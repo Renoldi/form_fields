@@ -59,27 +59,57 @@ This package includes example tooling to schedule and run background flushes (pr
   }
   ```
 
-- **Initialize / register handlers**: you can either let the package initialize Workmanager for you via `FormFieldsInitializer.initAll(...)` or initialize it manually and register handlers. Example (from the example app):
+- **Initialize / register workers**: pass one `WorkerRegistration` per background task to `FormFieldsInitializer.initAll(...)`. The package initializes Workmanager, schedules each worker, and wires the handlers. Workers are only scheduled when `enableWorkmanager` is `true` (a warning is logged otherwise).
 
   ```dart
-  // manual initialize (example/main.dart)
-  await Workmanager().initialize(workmanagerCallbackDispatcher);
-  WorkmanagerService.setBackgroundTaskHandler(backgroundFlushHandler);
-
-  // ensure a foreground flush handler is set so UI can call it immediately
-  WorkmanagerService.instance.foregroundFlushHandler = () async {
-    await processPendingSubmissions();
-  };
-
-  // or let initAll register handlers for you:
   await FormFieldsInitializer.initAll(
     enableWorkmanager: true,
-    workmanagerHandler: backgroundFlushHandler,
-    workmanagerFlushPendingHandler: () async => await processPendingSubmissions(),
+    workerRegistrations: [
+      WorkerRegistration(
+        taskName: 'form_fields_flush',
+        frequency: Duration(minutes: 15), // Android enforces a 15-minute minimum
+        initialDelay: kWorkmanagerInitialDelayDefault,
+        backgroundHandler: backgroundFlushHandler,
+        foregroundHandler: () async => await processPendingSubmissions(),
+      ),
+    ],
   );
   ```
 
-- **Constants and scheduling**: `FormFieldsInitializer` exposes `workmanagerInitialDelay` (default `kWorkmanagerInitialDelayDefault = Duration(minutes:15)`) and `workmanagerFrequency` when starting periodic tasks. Pass `initialDelay` to `WorkmanagerService.start(...)` if you need a custom delay before the first run.
+  Identical registrations (same handler and period) are scheduled once; the later duplicate is skipped and logged as a warning.
+
+- **Scheduling**: `WorkerRegistration.initialDelay` defaults to `kWorkmanagerInitialDelayDefault` (15 minutes). Pass `WorkmanagerService.instance.start(initialDelay: ...)` only when you schedule outside `initAll`.
+
+- **iOS setup (required when `enableWorkmanager: true`)**: iOS only runs background tasks whose identifiers are declared in `Info.plist`. Registering an undeclared identifier crashes the app at launch, and the crash cannot be caught in Dart. Add the modes and every `taskName` you register:
+
+  ```xml
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>fetch</string>       <!-- periodic tasks (BGAppRefreshTask) -->
+    <string>processing</string>  <!-- one-off tasks (BGProcessingTask) -->
+  </array>
+  <key>BGTaskSchedulerPermittedIdentifiers</key>
+  <array>
+    <string>form_fields_flush</string>
+  </array>
+  ```
+
+  Also register each identifier in `AppDelegate` before launch finishes. Without this, iOS terminates the app when the first task is scheduled:
+
+  ```swift
+  import workmanager_apple
+
+  override func application(_ application: UIApplication,
+                            didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    for identifier in ["form_fields_flush"] {
+      WorkmanagerPlugin.registerPeriodicTask(withIdentifier: identifier)
+      WorkmanagerPlugin.registerBGProcessingTask(withIdentifier: identifier)
+    }
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+  ```
+
+  `test/config/ios_background_config_test.dart` checks that the example's worker names appear in both `Info.plist` and `AppDelegate.swift`.
 
 - **Triggering a one-off run from UI**: use `WorkmanagerService.instance.runOnceNowDetailed()` to register a one-off task immediately. Note that the background one-off will run via the OS scheduling; to process immediately in the foreground, call `WorkmanagerService.instance.foregroundFlushHandler?.call()` (if set) or invoke your flush helper directly.
 

@@ -55,6 +55,8 @@ dev_dependencies:
     sdk: flutter
   json_serializable: any
   mockito: any
+  sqflite_common_ffi: ^2.4.6
+  workmanager_platform_interface: ^0.10.5
 
 flutter:
   uses-material-design: true

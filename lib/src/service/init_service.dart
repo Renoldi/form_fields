@@ -1,14 +1,22 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'db_service.dart';
+import 'offline_upload_manager.dart';
 import 'workmanager_service.dart';
 import 'package:workmanager/workmanager.dart';
 import 'flush_types.dart';
+
+/// File (inside the app documents directory) that keeps upload successes which
+/// are still waiting for their image to appear.
+const String kPendingUploadsFileName = 'form_fields_pending_uploads.json';
 
 final _log = Logger('FormFieldsInitializer');
 
@@ -60,35 +68,75 @@ class WorkerRegistration {
 class FormFieldsInitializer {
   FormFieldsInitializer._();
 
+  static StreamSubscription<LogRecord>? _logSubscription;
+
+  /// Loads upload successes that were still pending when the app last closed,
+  /// so they can be applied once their images reappear. Failures are logged;
+  /// they must not block startup.
+  static Future<void> _restorePendingUploads() async {
+    try {
+      final documents = await getApplicationDocumentsDirectory();
+      await OfflineUploadManager.instance.restorePending(
+        File(p.join(documents.path, kPendingUploadsFileName)),
+      );
+    } catch (e, st) {
+      _log.warning('Failed to restore pending uploads: $e', e, st);
+    }
+  }
+
   /// Apply migration assets when the DB is opened without a numeric version.
   /// Receives the already-opened [db] instance to invoke host callbacks.
-  static Future<void> _applyMigrationAssetsIfNeeded(
-      {required Database db,
-      required int dbVersion,
-      required List<String>? migrationAssetPaths,
-      required bool invokeOnUpgradeWhenDbVersionZero,
-      OnDatabaseVersionChangeFn? onUpgrade,
-      OnDatabaseCreateFn? onCreate}) async {
+  static Future<void> _applyMigrationAssetsIfNeeded({
+    required Database db,
+    required int dbVersion,
+    required List<String>? migrationAssetPaths,
+    required bool invokeOnUpgradeWhenDbVersionZero,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseCreateFn? onCreate,
+  }) async {
     if (dbVersion != 0 ||
         migrationAssetPaths == null ||
         migrationAssetPaths.isEmpty) {
       return;
     }
 
-    int maxVer = 0;
+    // Highest version declared by the assets (0 when they are unversioned).
+    final maxVer = migrationAssetPaths
+        .map(parseMigrationVersion)
+        .whereType<int>()
+        .fold<int>(0, (a, b) => b > a ? b : a);
+
+    // Versioned assets are applied once: skip them when the DB is already
+    // at (or beyond) the highest declared version. Unversioned assets keep
+    // running on every start, as before.
+    if (maxVer > 0) {
+      final current =
+          await DBService.instance.selectDbVersion().catchError((_) => null) ??
+          0;
+      if (current >= maxVer) {
+        _log.fine('DB already at version $current; migration assets skipped');
+        return;
+      }
+    }
+
+    var failed = false;
     for (final asset in migrationAssetPaths) {
       try {
         _log.info('Applying migration asset via initAll: $asset');
         await DBService.instance.runMigrationAsset(asset);
-        final basename = p.basename(asset);
-        final m = RegExp(r'v?(\d+)').firstMatch(basename);
-        if (m != null) {
-          final v = int.tryParse(m.group(1) ?? '0') ?? 0;
-          if (v > maxVer) maxVer = v;
-        }
       } catch (e, st) {
+        failed = true;
         _log.warning('Failed to apply migration asset $asset: $e', e, st);
       }
+    }
+
+    // Recording the version after a failure would skip the failed asset on
+    // every later start. Leave the version unchanged so the next start retries.
+    if (failed) {
+      _log.warning(
+        'Migration incomplete; user_version not recorded, will retry on next start',
+      );
+      return;
     }
 
     if (maxVer > 0) {
@@ -106,7 +154,10 @@ class FormFieldsInitializer {
         }
       } catch (e, st) {
         _log.warning(
-            'onUpgrade callback threw during manual invocation: $e', e, st);
+          'onUpgrade callback threw during manual invocation: $e',
+          e,
+          st,
+        );
       }
     }
 
@@ -115,201 +166,79 @@ class FormFieldsInitializer {
         await onCreate(db, maxVer);
       } catch (e, st) {
         _log.warning(
-            'onCreate callback threw during manual invocation: $e', e, st);
+          'onCreate callback threw during manual invocation: $e',
+          e,
+          st,
+        );
       }
     }
   }
 
-  /// Registers each provided [WorkerRegistration]. Returns the first
-  /// non-null `BackgroundTaskHandler` encountered so the caller may
-  /// register a package-level background handler. This helper centralizes
-  /// logging and error handling for worker registration.
-  static Future<BackgroundTaskHandler?> _registerWorkers(
-      List<WorkerRegistration> regs,
-      {bool triggerOnStart = false,
-      bool deferStartupHandlersOnIos = true}) async {
-    BackgroundTaskHandler? firstHandler;
+  /// Delay before startup handlers run on iOS, so platform APIs are not called
+  /// before the app has finished launching.
+  static const Duration _iosStartupDelay = Duration(seconds: 2);
 
-    // Track seen handler+period combinations so we only register one
-    // callback per period. Key format: <handlerId>|<freqSeconds>|<periodic>
-    final Set<String> seenHandlerPeriod = <String>{};
+  /// Registers each provided [WorkerRegistration]. Returns the first
+  /// non-null `BackgroundTaskHandler` so the caller can register a
+  /// package-level background handler. A failing registration is logged and
+  /// does not stop the remaining ones.
+  static Future<BackgroundTaskHandler?> _registerWorkers(
+    List<WorkerRegistration> regs, {
+    bool triggerOnStart = false,
+    bool deferStartupHandlersOnIos = true,
+  }) async {
+    BackgroundTaskHandler? firstHandler;
+    // One registration per handler + period. Key: <handlerKey>|<freq>|<periodic>
+    final seen = <String>{};
+    final deferOnIos =
+        deferStartupHandlersOnIos &&
+        defaultTargetPlatform == TargetPlatform.iOS;
 
     for (final reg in regs) {
-      if (reg.backgroundHandler != null && firstHandler == null) {
-        firstHandler = reg.backgroundHandler;
-      }
-
+      firstHandler ??= reg.backgroundHandler;
       if (reg.foregroundHandler != null) {
         _safeSetForegroundFlushHandler(reg.foregroundHandler);
       }
-
       if (!reg.register) continue;
-
-      // Build a dedupe key based on available callback handle or fallback
-      // to runtime identity. Prefer background handler identity when
-      // available, otherwise use foreground handler identity.
-      String? handlerId;
-      try {
-        if (reg.backgroundHandler != null) {
-          final handle =
-              PluginUtilities.getCallbackHandle(reg.backgroundHandler!);
-          if (handle != null) {
-            handlerId = 'cb:${handle.toRawHandle()}';
-          } else {
-            handlerId = 'bg_hash:${reg.backgroundHandler.hashCode}';
-          }
-        } else if (reg.foregroundHandler != null) {
-          // Foreground handlers are typically closures and not top-level
-          // callbacks, so avoid calling PluginUtilities.getCallbackHandle
-          // (incompatible type) and use a hash-based identity instead.
-          handlerId = 'fg_hash:${reg.foregroundHandler.hashCode}';
-        }
-      } catch (_) {
-        // If PluginUtilities throws, fall back to hash-based id
-        if (handlerId == null) {
-          if (reg.backgroundHandler != null) {
-            handlerId = 'bg_hash:${reg.backgroundHandler.hashCode}';
-          } else if (reg.foregroundHandler != null) {
-            handlerId = 'fg_hash:${reg.foregroundHandler.hashCode}';
-          }
-        }
+      if (reg.periodic &&
+          defaultTargetPlatform == TargetPlatform.android &&
+          reg.frequency < kAndroidMinPeriodicInterval) {
+        _log.warning(
+          'Worker ${reg.taskName} requests ${reg.frequency.inSeconds}s, but '
+          'Android runs periodic work at most every '
+          '${kAndroidMinPeriodicInterval.inMinutes} minutes. '
+          'Use a frequency of at least ${kAndroidMinPeriodicInterval.inMinutes} minutes.',
+        );
       }
 
-      final key = handlerId == null
+      final handlerKey = _registrationKey(reg);
+      final dedupeKey = handlerKey == null
           ? null
-          : '$handlerId|${reg.frequency.inSeconds}|${reg.periodic}';
-
-      if (key != null && seenHandlerPeriod.contains(key)) {
-        _log.fine(
-            'Skipping duplicate worker registration for ${reg.taskName} (same handler+period)');
+          : '$handlerKey|${reg.frequency.inSeconds}|${reg.periodic}';
+      if (dedupeKey != null && seen.contains(dedupeKey)) {
+        // A skipped worker never runs, so this must be visible in the logs.
+        _log.warning(
+          'Worker ${reg.taskName} not registered: its handler and period '
+          'match an earlier registration (inputData of this worker is ignored)',
+        );
         continue;
       }
 
       try {
-        // Merge reg.inputData and embed a callback handle for the
-        // registration's own handler (if provided). This ensures that
-        // each worker can resolve its specific top-level handler when
-        // executed in a background isolate.
-        Map<String, dynamic>? inputDataForReg;
-        try {
-          final base = reg.inputData != null
-              ? Map<String, dynamic>.from(reg.inputData!)
-              : <String, dynamic>{};
-          if (reg.backgroundHandler != null) {
-            try {
-              final handle =
-                  PluginUtilities.getCallbackHandle(reg.backgroundHandler!);
-              if (kDebugMode) {
-                // ignore: avoid_print
-                print('getCallbackHandle for reg.handler -> $handle');
-              }
-              if (handle != null) {
-                base['callback_handle'] = handle.toRawHandle();
-              }
-            } catch (_) {}
-          }
-          inputDataForReg = base.isEmpty ? null : base;
-        } catch (_) {
-          inputDataForReg = reg.inputData;
-        }
-
+        final inputData = _inputDataFor(reg);
         await WorkmanagerService.instance.start(
           taskName: reg.taskName,
           frequency: reg.frequency,
           periodic: reg.periodic,
-          inputData: inputDataForReg,
+          inputData: inputData,
           initialDelay: reg.initialDelay,
         );
 
-        // Optionally trigger handlers immediately at startup so hosts can
-        // run initial work (foreground/background) without waiting for the
-        // scheduled interval to elapse. This is opt-in via
-        // `triggerOnStart` passed from `initAll`.
         if (triggerOnStart) {
-          // Optionally defer startup handler invocation on iOS to avoid
-          // calling platform-dependent APIs before the app is ready.
-          final bool deferOnIos = deferStartupHandlersOnIos &&
-              defaultTargetPlatform == TargetPlatform.iOS;
-
-          try {
-            if (reg.foregroundHandler != null) {
-              if (deferOnIos) {
-                _log.fine(
-                    'Deferring foregroundHandler for ${reg.taskName} on iOS');
-                Future.delayed(const Duration(seconds: 2), () async {
-                  try {
-                    await reg.foregroundHandler!();
-                    _log.fine(
-                        'Deferred foregroundHandler executed for ${reg.taskName}');
-                  } catch (e, st) {
-                    _log.warning('Deferred foregroundHandler threw: $e', e, st);
-                  }
-                });
-              } else {
-                await reg.foregroundHandler!();
-                _log.fine(
-                    'Invoked foregroundHandler for ${reg.taskName} on start');
-              }
-            }
-          } catch (e, st) {
-            _log.warning(
-                'foregroundHandler threw during start invocation: $e', e, st);
-          }
-
-          try {
-            if (reg.backgroundHandler != null) {
-              if (deferOnIos) {
-                _log.fine(
-                    'Deferring backgroundHandler runOnceNow for ${reg.taskName} on iOS');
-                Future.delayed(const Duration(seconds: 2), () async {
-                  try {
-                    await WorkmanagerService.instance.runOnceNowDetailed(
-                      taskName: reg.taskName,
-                      inputData: inputDataForReg,
-                    );
-                    _log.fine(
-                        'Deferred runOnceNow executed for ${reg.taskName}');
-                  } catch (e, st) {
-                    _log.warning('Deferred runOnceNow threw: $e', e, st);
-                  }
-                });
-              } else {
-                await WorkmanagerService.instance.runOnceNowDetailed(
-                  taskName: reg.taskName,
-                  inputData: inputDataForReg,
-                );
-                _log.fine(
-                    'Requested runOnceNow for backgroundHandler ${reg.taskName}');
-              }
-            }
-          } catch (e, st) {
-            _log.warning(
-                'Failed to trigger backgroundHandler at start: $e', e, st);
-          }
+          await _triggerAtStartup(reg, inputData, defer: deferOnIos);
         }
-
-        // Mark this handler+period as registered so subsequent identical
-        // registrations are skipped. Use the key we computed earlier.
-        if (key != null) seenHandlerPeriod.add(key);
-
-        try {
-          WorkmanagerService.instance.lastLogListenable.value =
-              'registered_from_init: ${reg.taskName} freq_s=${reg.frequency.inSeconds}';
-        } catch (_) {}
-        // Register per-task foreground handler so countdown triggers can
-        // invoke task-specific foreground logic (e.g. `sendRandomForeground`).
-        try {
-          if (reg.taskName != null && reg.foregroundHandler != null) {
-            WorkmanagerService.instance.setForegroundHandlerForTask(
-                reg.taskName!, reg.foregroundHandler);
-          }
-        } catch (_) {}
-        try {
-          if (reg.taskName != null && reg.backgroundHandler != null) {
-            WorkmanagerService.instance.setBackgroundHandlerForTask(
-                reg.taskName!, reg.backgroundHandler);
-          }
-        } catch (_) {}
+        if (dedupeKey != null) seen.add(dedupeKey);
+        _registerTaskHandlers(reg);
         _log.fine('Registered worker: ${reg.taskName}');
       } catch (e, st) {
         _log.warning('Failed to register worker ${reg.taskName}: $e', e, st);
@@ -317,6 +246,111 @@ class FormFieldsInitializer {
     }
 
     return firstHandler;
+  }
+
+  /// Identity of a registration's handler, used for de-duplication. Prefers
+  /// the background handler's callback handle (stable across isolates), then
+  /// falls back to object identity. Returns null when there is no handler.
+  static String? _registrationKey(WorkerRegistration reg) {
+    final bg = reg.backgroundHandler;
+    if (bg != null) {
+      final handle = _callbackHandleOf(bg);
+      return handle != null ? 'cb:$handle' : 'bg_hash:${bg.hashCode}';
+    }
+    final fg = reg.foregroundHandler;
+    // Foreground handlers are usually closures, which have no callback handle.
+    return fg != null ? 'fg_hash:${fg.hashCode}' : null;
+  }
+
+  /// Raw callback handle for a top-level or static [fn], or null when the
+  /// function has none (for example, a closure).
+  static int? _callbackHandleOf(Function fn) {
+    try {
+      return PluginUtilities.getCallbackHandle(fn)?.toRawHandle();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Input data for a worker, with the background handler's callback handle
+  /// embedded so the background isolate can resolve it. Null when empty.
+  static Map<String, dynamic>? _inputDataFor(WorkerRegistration reg) {
+    final data = <String, dynamic>{...?reg.inputData};
+    final bg = reg.backgroundHandler;
+    if (bg != null) {
+      final handle = _callbackHandleOf(bg);
+      if (handle != null) data['callback_handle'] = handle;
+    }
+    return data.isEmpty ? null : data;
+  }
+
+  /// Runs the registration's handlers once at startup. Opt-in via
+  /// `triggerWorkerHandlersOnStart`.
+  static Future<void> _triggerAtStartup(
+    WorkerRegistration reg,
+    Map<String, dynamic>? inputData, {
+    required bool defer,
+  }) async {
+    final fg = reg.foregroundHandler;
+    if (fg != null) {
+      await _invokeAtStartup(
+        label: 'foregroundHandler for ${reg.taskName}',
+        defer: defer,
+        action: fg,
+      );
+    }
+    if (reg.backgroundHandler != null) {
+      await _invokeAtStartup(
+        label: 'runOnceNow for ${reg.taskName}',
+        defer: defer,
+        action: () async {
+          await WorkmanagerService.instance.runOnceNowDetailed(
+            taskName: reg.taskName,
+            inputData: inputData,
+          );
+        },
+      );
+    }
+  }
+
+  /// Runs [action] now, or after [_iosStartupDelay] when [defer] is true.
+  /// Failures are logged and never thrown to the caller.
+  static Future<void> _invokeAtStartup({
+    required String label,
+    required bool defer,
+    required Future<void> Function() action,
+  }) async {
+    Future<void> guarded() async {
+      try {
+        await action();
+        _log.fine('Invoked $label on start');
+      } catch (e, st) {
+        _log.warning('$label threw during start invocation: $e', e, st);
+      }
+    }
+
+    if (defer) {
+      _log.fine('Deferring $label on iOS');
+      unawaited(Future<void>.delayed(_iosStartupDelay, guarded));
+    } else {
+      await guarded();
+    }
+  }
+
+  /// Registers the per-task foreground/background handlers so countdown
+  /// triggers can run task-specific logic (e.g. `sendRandomForeground`).
+  static void _registerTaskHandlers(WorkerRegistration reg) {
+    final service = WorkmanagerService.instance;
+    service.lastLogListenable.value =
+        'registered_from_init: ${reg.taskName} freq_s=${reg.frequency.inSeconds}';
+    final name = reg.taskName;
+    if (name == null) return;
+    if (reg.foregroundHandler != null) {
+      service.setForegroundHandlerForTask(name, reg.foregroundHandler);
+    }
+    if (reg.backgroundHandler != null) {
+      service.setBackgroundHandlerForTask(name, reg.backgroundHandler);
+    }
   }
 
   static void _safeSetForegroundFlushHandler(Future<void> Function()? handler) {
@@ -349,13 +383,29 @@ class FormFieldsInitializer {
     required bool useConnectivity,
     required bool deferStartupHandlersOnIos,
   }) async {
+    // Registrations are only honored when Workmanager actually runs. Warn
+    // instead of silently ignoring them.
+    if (workerRegistrations != null && workerRegistrations.isNotEmpty) {
+      if (!enableWorkmanager) {
+        _log.warning(
+          'workerRegistrations (${workerRegistrations.length}) ignored: '
+          'enableWorkmanager is false',
+        );
+      } else if (kIsWeb) {
+        _log.warning(
+          'workerRegistrations ignored: Workmanager is not '
+          'supported on web',
+        );
+      }
+    }
     if (!enableWorkmanager || kIsWeb) return;
 
     _log.info('Initializing WorkmanagerService');
 
     await WorkmanagerService.instance.initialize(
-        callbackDispatcher: workmanagerCallbackDispatcher,
-        useConnectivity: useConnectivity);
+      callbackDispatcher: workmanagerCallbackDispatcher,
+      useConnectivity: useConnectivity,
+    );
 
     // If host provided registration metadata, expose it to the
     // WorkmanagerService so the example UI can read the host-provided
@@ -377,9 +427,10 @@ class FormFieldsInitializer {
       // and reusable. The helper returns the first provided background handler
       // (if any) so we can register it at the package level.
       final BackgroundTaskHandler? firstHandler = await _registerWorkers(
-          workerRegistrations,
-          triggerOnStart: triggerWorkerHandlersOnStart,
-          deferStartupHandlersOnIos: deferStartupHandlersOnIos);
+        workerRegistrations,
+        triggerOnStart: triggerWorkerHandlersOnStart,
+        deferStartupHandlersOnIos: deferStartupHandlersOnIos,
+      );
 
       if (firstHandler != null) {
         try {
@@ -467,10 +518,13 @@ class FormFieldsInitializer {
     FlushAllHandler? flushAll,
     FlushOneHandler? flushOne,
   }) async {
-    // Setup logging
+    // Setup logging. Cancel the previous listener so repeated calls (hot
+    // restart, tests) do not print every record more than once.
     Logger.root.level = logLevel;
-    Logger.root.onRecord.listen((rec) {
-      final raw = '${rec.level.name}: ${rec.time.toIso8601String()} '
+    await _logSubscription?.cancel();
+    _logSubscription = Logger.root.onRecord.listen((rec) {
+      final raw =
+          '${rec.level.name}: ${rec.time.toIso8601String()} '
           '${rec.loggerName} - ${rec.message}';
       final msg = _stripAnsi(raw);
       // ignore: avoid_print
@@ -490,15 +544,19 @@ class FormFieldsInitializer {
     if (workerRegistrations != null) {
       for (final reg in workerRegistrations) {
         if (reg.frequency <= Duration.zero) {
-          throw ArgumentError.value(reg.frequency, 'workerRegistrations',
-              'frequency must be > Duration.zero for ${reg.taskName}');
+          throw ArgumentError.value(
+            reg.frequency,
+            'workerRegistrations',
+            'frequency must be > Duration.zero for ${reg.taskName}',
+          );
         }
       }
     }
 
     if (dbVersion == 0 && onDowngrade != null) {
       _log.warning(
-          'onDowngrade provided but will be ignored when dbVersion == 0');
+        'onDowngrade provided but will be ignored when dbVersion == 0',
+      );
     }
 
     final db = await DBService.instance.init(
@@ -520,6 +578,8 @@ class FormFieldsInitializer {
       onUpgrade: onUpgrade,
       onCreate: onCreate,
     );
+
+    await _restorePendingUploads();
 
     // No host-provided flush handlers are registered automatically anymore.
     // Hosts should register any FlushApi handlers explicitly when needed.
@@ -545,14 +605,16 @@ class FormFieldsInitializer {
   /// flow. This will open/reconcile the DB and run upgrades/downgrades as
   /// needed. If `migrationAssetPaths` are provided they will be used to
   /// locate migration assets.
-  static Future<Database> changeDbVersion(int targetVersion,
-      {String dbName = 'form_fields.db',
-      List<String>? migrationAssetPaths,
-      OnDatabaseConfigureFn? onConfigure,
-      OnDatabaseCreateFn? onCreate,
-      OnDatabaseVersionChangeFn? onUpgrade,
-      OnDatabaseVersionChangeFn? onDowngrade,
-      OnDatabaseOpenFn? onOpen}) async {
+  static Future<Database> changeDbVersion(
+    int targetVersion, {
+    String dbName = 'form_fields.db',
+    List<String>? migrationAssetPaths,
+    OnDatabaseConfigureFn? onConfigure,
+    OnDatabaseCreateFn? onCreate,
+    OnDatabaseVersionChangeFn? onUpgrade,
+    OnDatabaseVersionChangeFn? onDowngrade,
+    OnDatabaseOpenFn? onOpen,
+  }) async {
     return await DBService.instance.migrateTo(
       dbName: dbName,
       targetVersion: targetVersion,
