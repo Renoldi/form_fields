@@ -19,7 +19,8 @@ class UploadHelper {
   /// - `includeReqType` (bool)
   /// - `tempFileCreated` (bool) — true when a temp file was written from base64
   static Future<Map<String, dynamic>?> buildUploadPayloadFromMap(
-      Map<String, dynamic> persisted) async {
+    Map<String, dynamic> persisted,
+  ) async {
     if (persisted.isEmpty) return null;
 
     final url = (persisted['url'] ?? '').toString();
@@ -74,8 +75,9 @@ class UploadHelper {
     }
 
     String filePath = '';
-    String? fileName =
-        fileMap['fileName'] is String ? fileMap['fileName'] as String : null;
+    String? fileName = fileMap['fileName'] is String
+        ? fileMap['fileName'] as String
+        : null;
 
     if (fileMap['path'] is String &&
         (fileMap['path'] as String).trim().isNotEmpty) {
@@ -92,8 +94,9 @@ class UploadHelper {
 
     var tempFileCreated = false;
     if (filePath.isEmpty) {
-      final b64 =
-          fileMap['base64'] is String ? fileMap['base64'] as String : null;
+      final b64 = fileMap['base64'] is String
+          ? fileMap['base64'] as String
+          : null;
       if (b64 != null && b64.trim().isNotEmpty) {
         try {
           var rawB64 = b64;
@@ -102,9 +105,12 @@ class UploadHelper {
             if (comma >= 0) rawB64 = rawB64.substring(comma + 1);
           }
           final bytes = base64Decode(rawB64);
-          final resolvedFileName = fileName ?? 'file';
+          // The name comes from persisted data, so keep only its base name.
+          // Otherwise a value such as "../../x" would write outside temp.
+          final safeName = _tempSafeName(fileName ?? 'file');
           final tmp = File(
-              '${Directory.systemTemp.path}/${DateTime.now().millisecondsSinceEpoch}_$resolvedFileName');
+            '${Directory.systemTemp.path}/${DateTime.now().microsecondsSinceEpoch}_$safeName',
+          );
           await tmp.writeAsBytes(bytes);
           filePath = tmp.path;
           tempFileCreated = true;
@@ -114,7 +120,8 @@ class UploadHelper {
       }
     }
 
-    final resolvedFileName = fileName ??
+    final resolvedFileName =
+        fileName ??
         (filePath.isNotEmpty
             ? filePath.split(Platform.pathSeparator).last
             : 'file');
@@ -133,10 +140,12 @@ class UploadHelper {
 
   /// Convenience wrapper to build payload from a `MyImageResult` instance.
   static Future<Map<String, dynamic>?> buildUploadPayloadFromImage(
-      MyImageResult image) async {
+    MyImageResult image,
+  ) async {
     if (image.payload.isNotEmpty) {
       return buildUploadPayloadFromMap(
-          Map<String, dynamic>.from(image.payload));
+        Map<String, dynamic>.from(image.payload),
+      );
     }
 
     // If there's no persisted payload map attached to the image, attempt to
@@ -153,7 +162,8 @@ class UploadHelper {
       if (image.base64.trim().isNotEmpty) file['base64'] = image.base64;
     } catch (_) {}
     if (file.isNotEmpty) {
-      file['fileName'] = file['fileName'] ??
+      file['fileName'] =
+          file['fileName'] ??
           (file['path'] is String
               ? (file['path'] as String).split(Platform.pathSeparator).last
               : 'image');
@@ -166,10 +176,11 @@ class UploadHelper {
   /// Build a typed `DirectUploadPayload` from a `MyImageResult`.
   /// Returns `null` when no usable file information is available.
   static Future<DirectUploadPayload?> buildDirectUploadPayloadFromImage(
-      MyImageResult image,
-      {String? defaultUrl,
-      String fileFieldName = 'file',
-      bool includeReqType = false}) async {
+    MyImageResult image, {
+    String? defaultUrl,
+    String fileFieldName = 'file',
+    bool includeReqType = false,
+  }) async {
     // Support images that may not have a persisted `payload` map by
     // constructing a minimal persisted map from the image fields.
     final Map<String, dynamic> persisted = image.payload.isNotEmpty
@@ -191,7 +202,8 @@ class UploadHelper {
         if (image.base64.trim().isNotEmpty) fm['base64'] = image.base64;
       } catch (_) {}
       if (fm.isNotEmpty) {
-        fm['fileName'] = fm['fileName'] ??
+        fm['fileName'] =
+            fm['fileName'] ??
             (fm['path'] is String
                 ? (fm['path'] as String).split(Platform.pathSeparator).last
                 : 'image');
@@ -236,29 +248,41 @@ class UploadHelper {
 
   /// Build typed `DirectUploadPayload` objects for a list of images.
   static Future<List<DirectUploadPayload>> buildDirectUploadPayloadsFromImages(
-      List<MyImageResult> images,
-      {String? defaultUrl,
-      String fileFieldName = 'file',
-      bool includeReqType = false}) async {
+    List<MyImageResult> images, {
+    String? defaultUrl,
+    String fileFieldName = 'file',
+    bool includeReqType = false,
+  }) async {
     final out = <DirectUploadPayload>[];
     for (final img in images) {
       try {
-        final d = await buildDirectUploadPayloadFromImage(img,
-            defaultUrl: defaultUrl,
-            fileFieldName: fileFieldName,
-            includeReqType: includeReqType);
+        final d = await buildDirectUploadPayloadFromImage(
+          img,
+          defaultUrl: defaultUrl,
+          fileFieldName: fileFieldName,
+          includeReqType: includeReqType,
+        );
         if (d != null) out.add(d);
       } catch (_) {}
     }
     return out;
   }
 
+  /// Reduces [name] to a single safe path segment for a temp file.
+  static String _tempSafeName(String name) {
+    final base = name.replaceAll('\\', '/').split('/').last;
+    final cleaned = base.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    if (cleaned.isEmpty || cleaned == '.' || cleaned == '..') return 'file';
+    return cleaned.length > 120 ? cleaned.substring(0, 120) : cleaned;
+  }
+
   /// Upload a persisted payload (the same shape produced by the field's
   /// queued payload). The helper will decode base64 into a temp file when
   /// necessary and will remove any temp file after the upload completes.
   static Future<MyImageResult?> uploadPersistedPayload(
-      Map<String, dynamic> persisted,
-      {void Function(double progress)? onProgress}) async {
+    Map<String, dynamic> persisted, {
+    void Function(double progress)? onProgress,
+  }) async {
     final p = await buildUploadPayloadFromMap(persisted);
     if (p == null) return null;
 
@@ -307,20 +331,31 @@ class UploadHelper {
       try {
         if (outcome.response != null &&
             UploadResponseMapper.isSuccessfulStatus(
-                outcome.response!.statusCode)) {
-          OfflineUploadManager.instance
-              .notifyUploadSuccess(persisted, outcome.response!);
+              outcome.response!.statusCode,
+            )) {
+          OfflineUploadManager.instance.notifyUploadSuccess(
+            persisted,
+            outcome.response!,
+          );
           // Map successful response into a MyImageResult so callers can
           // conveniently consume normalized upload metadata.
           final data = outcome.response!.data;
-          final uploadedLink = UploadResponseMapper.extractUploadedLink(data,
-              keys: persisted['uploadFileUrlKey'] ?? 'fileUrl');
-          final imageId = UploadResponseMapper.extractImageId(data,
-              keys: persisted['uploadImageIdKey'] ?? 'imageId');
-          final filePath = UploadResponseMapper.extractFilePath(data,
-              keys: persisted['uploadFilePathKey'] ?? 'filePath');
-          final description = UploadResponseMapper.extractDescription(data,
-              keys: persisted['uploadDescriptionKey'] ?? 'description');
+          final uploadedLink = UploadResponseMapper.extractUploadedLink(
+            data,
+            keys: persisted['uploadFileUrlKey'] ?? 'fileUrl',
+          );
+          final imageId = UploadResponseMapper.extractImageId(
+            data,
+            keys: persisted['uploadImageIdKey'] ?? 'imageId',
+          );
+          final filePath = UploadResponseMapper.extractFilePath(
+            data,
+            keys: persisted['uploadFilePathKey'] ?? 'filePath',
+          );
+          final description = UploadResponseMapper.extractDescription(
+            data,
+            keys: persisted['uploadDescriptionKey'] ?? 'description',
+          );
 
           return MyImageResult(
             link: uploadedLink ?? '',

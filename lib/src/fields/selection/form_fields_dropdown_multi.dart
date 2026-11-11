@@ -134,9 +134,9 @@ class _FormFieldsDropdownMultiState<T>
                           final label = widget.itemLabelBuilder != null
                               ? widget.itemLabelBuilder!(item)
                               : item.toString().toBegin;
-                          return label
-                              .toLowerCase()
-                              .contains(filterState[0].toLowerCase());
+                          return label.toLowerCase().contains(
+                            filterState[0].toLowerCase(),
+                          );
                         }).toList()
                       : widget.items;
 
@@ -155,15 +155,19 @@ class _FormFieldsDropdownMultiState<T>
                                   builder: (formFieldState) {
                                     return TextFormField(
                                       decoration: InputDecoration(
-                                        hintText: widget.filterHintText ??
+                                        hintText:
+                                            widget.filterHintText ??
                                             dialogL10n.searchHint,
-                                        prefixIcon: Icon(Icons.search,
-                                            color: Theme.of(context)
-                                                .iconTheme
-                                                .color),
+                                        prefixIcon: Icon(
+                                          Icons.search,
+                                          color: Theme.of(
+                                            context,
+                                          ).iconTheme.color,
+                                        ),
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                       ),
                                       onChanged: (value) {
@@ -185,10 +189,12 @@ class _FormFieldsDropdownMultiState<T>
                                 final item = filteredItems[index];
                                 final isSelected = tempSelected.contains(item);
 
-                                final txt = widget.selectedItemTextColor ??
+                                final txt =
+                                    widget.selectedItemTextColor ??
                                     widget.textStyle?.color ??
                                     Theme.of(context).colorScheme.primary;
-                                final bg = widget.selectedItemBackgroundColor ??
+                                final bg =
+                                    widget.selectedItemBackgroundColor ??
                                     (txt.withValues(alpha: 0.12));
                                 Widget titleContent;
                                 if (widget.itemBuilder != null) {
@@ -196,15 +202,19 @@ class _FormFieldsDropdownMultiState<T>
                                     style: TextStyle(
                                       color: isSelected
                                           ? (widget.selectedItemTextColor ??
-                                              resolveTextColor(context))
-                                          : resolveTextColor(context,
-                                              muted: true),
+                                                resolveTextColor(context))
+                                          : resolveTextColor(
+                                              context,
+                                              muted: true,
+                                            ),
                                       fontWeight: isSelected
                                           ? FontWeight.w600
                                           : FontWeight.w500,
                                     ),
-                                    child:
-                                        widget.itemBuilder!(item, isSelected),
+                                    child: widget.itemBuilder!(
+                                      item,
+                                      isSelected,
+                                    ),
                                   );
                                 } else {
                                   titleContent = Text(
@@ -280,31 +290,39 @@ class _FormFieldsDropdownMultiState<T>
           );
         }
 
-        final border =
-            _buildBorder(context, widget.borderType, isError: state.hasError);
+        final border = _buildBorder(
+          context,
+          widget.borderType,
+          isError: state.hasError,
+        );
 
         final baseDecoration = InputDecoration(
           hintText: widget.hintText ?? l10n.select(widget.label.toTitleCases),
           errorText: (state.errorText != null && state.errorText!.isNotEmpty)
               ? state.errorText
               : (state.hasError
-                  ? l10n.selectAtLeastOne(widget.label.toTitleCases)
-                  : null),
+                    ? l10n.selectAtLeastOne(widget.label.toTitleCases)
+                    : null),
           border: border,
           enabledBorder: border,
-          focusedBorder:
-              _buildBorder(context, widget.borderType, isFocused: true),
+          focusedBorder: _buildBorder(
+            context,
+            widget.borderType,
+            isFocused: true,
+          ),
         ).applyDefaults(Theme.of(context).inputDecorationTheme);
 
-        final fillColor = widget.backgroundColor ??
+        final fillColor =
+            widget.backgroundColor ??
             Theme.of(context).colorScheme.surfaceContainerHighest;
 
         final field = InkWell(
           onTap: widget.readOnly ? null : () => openDialog(state.context),
           child: InputDecorator(
             decoration: baseDecoration.copyWith(
-                filled: widget.filled,
-                fillColor: widget.filled ? fillColor : null),
+              filled: widget.filled,
+              fillColor: widget.filled ? fillColor : null,
+            ),
             child: selectedItems.isEmpty
                 ? Text(
                     widget.hintText ?? l10n.select(widget.label.toTitleCases),
@@ -324,17 +342,20 @@ class _FormFieldsDropdownMultiState<T>
                               ? widget.itemLabelBuilder!(item)
                               : item.toString().toBegin,
                           style: TextStyle(
-                            color: widget.chipTextColor ??
+                            color:
+                                widget.chipTextColor ??
                                 (widget.textStyle?.color ??
                                     Theme.of(context).colorScheme.onPrimary),
                             fontSize: 12,
                           ),
                         ),
-                        backgroundColor: widget.chipBackgroundColor ??
+                        backgroundColor:
+                            widget.chipBackgroundColor ??
                             (widget.chipBackgroundColor ??
                                 (widget.textStyle?.color ??
                                     resolveActiveColor(context, null))),
-                        deleteIconColor: widget.chipDeleteIconColor ??
+                        deleteIconColor:
+                            widget.chipDeleteIconColor ??
                             Theme.of(context).colorScheme.onPrimary,
                         onDeleted: () {
                           final updated = List<T>.from(selectedItems)
@@ -424,10 +445,7 @@ class _FormFieldsDropdownMultiState<T>
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        field,
-                        itemCountWidget,
-                      ],
+                      children: [field, itemCountWidget],
                     ),
                   ),
                 ],
@@ -442,10 +460,7 @@ class _FormFieldsDropdownMultiState<T>
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        field,
-                        itemCountWidget,
-                      ],
+                      children: [field, itemCountWidget],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -468,8 +483,12 @@ class _FormFieldsDropdownMultiState<T>
     );
   }
 
-  InputBorder _buildBorder(BuildContext context, BorderType type,
-      {bool isError = false, bool isFocused = false}) {
+  InputBorder _buildBorder(
+    BuildContext context,
+    BorderType type, {
+    bool isError = false,
+    bool isFocused = false,
+  }) {
     final theme = Theme.of(context);
     final normalColor = theme.dividerColor;
     final focusColor = theme.colorScheme.primary;
@@ -481,9 +500,7 @@ class _FormFieldsDropdownMultiState<T>
       case BorderType.none:
         return InputBorder.none;
       case BorderType.underlineInputBorder:
-        return UnderlineInputBorder(
-          borderSide: BorderSide(color: color),
-        );
+        return UnderlineInputBorder(borderSide: BorderSide(color: color));
       case BorderType.outlineInputBorder:
         return OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),

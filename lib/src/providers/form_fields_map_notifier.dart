@@ -4,6 +4,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
+
+final _mapLog = Logger('FormFieldsMapNotifier');
 
 class FormFieldsMapNotifier extends ChangeNotifier {
   FormFieldsMapNotifier({
@@ -14,15 +18,17 @@ class FormFieldsMapNotifier extends ChangeNotifier {
     Map<String, Polygon>? polygonsMap,
     Map<String, Polyline>? polylinesMap,
     Map<String, CircleMarker>? circlesMap,
-  })  : _polygonMap = polygonsMap ?? {},
-        _polylineMap = polylinesMap ?? {},
-        _circleMap = circlesMap ?? {} {
+  }) : _polygonMap = polygonsMap ?? {},
+       _polylineMap = polylinesMap ?? {},
+       _circleMap = circlesMap ?? {} {
     // If a MapController is provided, register this notifier with it so
     // consumers can opt-in to automatic registry wiring.
     if (controller != null) {
       try {
         controller.registerWithNotifier(this);
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
     }
     if (polygons != null) {
       for (var i = 0; i < polygons.length; i++) {
@@ -61,13 +67,17 @@ class FormFieldsMapNotifier extends ChangeNotifier {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
             notifyListeners();
-          } catch (_) {}
+          } catch (e, st) {
+            _mapLog.fine('Ignored map update error', e, st);
+          }
         });
       }
     } catch (_) {
       try {
         notifyListeners();
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
     }
   }
 
@@ -93,15 +103,19 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void attachController(String? id) {
     _controllerId = id;
     try {
-      debugPrint(
-          '[FormFieldsMapNotifier] attachController id=$_controllerId hash=$hashCode');
-    } catch (_) {}
+      debugLog(
+        '[FormFieldsMapNotifier] attachController id=$_controllerId hash=$hashCode',
+      );
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
   }
 
   void _ensureControlled() {
     if (_controllerId == null) {
       throw StateError(
-          'FormFieldsMapNotifier is read-only — mutate via FormFieldsMapController');
+        'FormFieldsMapNotifier is read-only — mutate via FormFieldsMapController',
+      );
     }
   }
 
@@ -129,8 +143,10 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   /// will skip constructing `Marker` widget entries in `_markerMap` which
   /// is significantly faster for very large point sets when rendering is
   /// done via a canvas painter rather than per-marker widgets.
-  void appendRawMarkers(List<dynamic> coords,
-      {bool createMarkerWidgets = true}) {
+  void appendRawMarkers(
+    List<dynamic> coords, {
+    bool createMarkerWidgets = true,
+  }) {
     _ensureControlled();
     // Fast path: update the raw cache once, and register all ShapeMeta
     // entries into the concrete layer maps in batch to avoid repeated
@@ -218,7 +234,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
         // Keep previous _markersCache to avoid invalidating marker widgets
         // when the caller chooses canvas-only rendering.
       }
-    } catch (_) {}
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
 
     _scheduleNotify();
   }
@@ -230,8 +248,10 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   /// entry (and its derived concrete map entries) in-place. Entries without
   /// an `id` are appended. Caches are rebuilt once and listeners are
   /// notified via the normal debounced path.
-  void batchUpdateRawMarkers(List<dynamic> updates,
-      {bool createMarkerWidgets = true}) {
+  void batchUpdateRawMarkers(
+    List<dynamic> updates, {
+    bool createMarkerWidgets = true,
+  }) {
     _ensureControlled();
     if (updates.isEmpty) return;
 
@@ -281,16 +301,24 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       for (final id in replacements.keys) {
         try {
           _polygonMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _polylineMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _circleMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _markerMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
       }
 
       // Re-register concrete entries for all updated/added items. This
@@ -389,14 +417,17 @@ class FormFieldsMapNotifier extends ChangeNotifier {
                   height: 40,
                   child: const SizedBox.shrink(),
                 );
-                final id = (r['id'] as String?) ??
+                final id =
+                    (r['id'] as String?) ??
                     'm\$${DateTime.now().microsecondsSinceEpoch}';
                 r['id'] ??= id;
                 if (createMarkerWidgets) _markerMap[id] = marker;
               }
             }
           }
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
       }
 
       // Rebuild caches once.
@@ -406,7 +437,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       if (createMarkerWidgets) {
         _markersCache = _markerMap.values.toList(growable: false);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
 
     _scheduleNotify();
   }
@@ -417,8 +450,11 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   /// concrete map and cache to avoid a full rebuild.
   ///
   /// If the entry does not exist, it will be appended as a new `ShapeMeta`.
-  void upsertCoordinates(String id, List<PointMeta> newPointMetas,
-      {bool createMarkerWidgets = true}) {
+  void upsertCoordinates(
+    String id,
+    List<PointMeta> newPointMetas, {
+    bool createMarkerWidgets = true,
+  }) {
     _ensureControlled();
 
     // Find existing raw marker index
@@ -445,9 +481,12 @@ class FormFieldsMapNotifier extends ChangeNotifier {
         // replace raw cache entry with updated ShapeMeta
         _rawMarkersCache[foundIndex] = sm;
       } else if (existing is Map) {
-        // Update map-style entry if possible
-        existing['lat'] = newPointMetas.first.lat;
-        existing['lon'] = newPointMetas.first.lon;
+        // Map-style entries keep a single coordinate. An empty point list
+        // leaves the coordinate as it is.
+        if (newPointMetas.isNotEmpty) {
+          existing['lat'] = newPointMetas.first.lat;
+          existing['lon'] = newPointMetas.first.lon;
+        }
         _rawMarkersCache[foundIndex] = existing;
         shapeType = (existing['shapeType'] as String?)?.toLowerCase();
       }
@@ -463,16 +502,24 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       // Remove existing concrete maps for this id
       try {
         _polygonMap.remove(id);
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
       try {
         _polylineMap.remove(id);
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
       try {
         _circleMap.remove(id);
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
       try {
         _markerMap.remove(id);
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
 
       // Recreate only the concrete entry for this id based on shapeType
       if (sm != null && sm.pointMetas != null && sm.pointMetas!.isNotEmpty) {
@@ -532,7 +579,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       } else if (shapeType != null && shapeType == ShapeTypes.marker) {
         // Map-style marker update already handled via map entry mutation
       }
-    } catch (_) {}
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
 
     _scheduleNotify();
   }
@@ -542,8 +591,11 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   /// `lat`/`lon`) or `lat`/`lon` for single-point markers. This method will
   /// update rawMarkers in-place and refresh only the affected concrete
   /// entries once, then schedule a single debounced notify.
-  void batchUpdateCoordinates(List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) {
+  void batchUpdateCoordinates(
+    List<Map<String, dynamic>> updates, {
+    bool createMarkerWidgets = true,
+    bool useInPlaceMutation = true,
+  }) {
     _ensureControlled();
     if (updates.isEmpty) return;
 
@@ -569,9 +621,12 @@ class FormFieldsMapNotifier extends ChangeNotifier {
           // No id -> append minimal entry
           if (u.containsKey('pointMetas') && u['pointMetas'] is List) {
             final pms = (u['pointMetas'] as List)
-                .map((pm) => PointMeta(
+                .map(
+                  (pm) => PointMeta(
                     lat: (pm['lat'] as num).toDouble(),
-                    lon: (pm['lon'] as num).toDouble()))
+                    lon: (pm['lon'] as num).toDouble(),
+                  ),
+                )
                 .toList(growable: false);
             final newSm = ShapeMeta(pointMetas: pms);
             _rawMarkersCache = List<dynamic>.from(_rawMarkersCache)..add(newSm);
@@ -616,7 +671,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
                   continue;
                 }
               }
-            } catch (_) {}
+            } catch (e, st) {
+              _mapLog.fine('Ignored map update error', e, st);
+            }
             // If we couldn't apply delta in-place, fall through to other
             // handling below (replacement or append).
           }
@@ -624,18 +681,23 @@ class FormFieldsMapNotifier extends ChangeNotifier {
           if (existing is ShapeMeta) {
             if (u['pointMetas'] is List) {
               final pms = (u['pointMetas'] as List)
-                  .map((pm) => PointMeta(
+                  .map(
+                    (pm) => PointMeta(
                       lat: (pm['lat'] as num).toDouble(),
-                      lon: (pm['lon'] as num).toDouble()))
+                      lon: (pm['lon'] as num).toDouble(),
+                    ),
+                  )
                   .toList(growable: false);
               existing.pointMetas = pms;
               _rawMarkersCache[idx] = existing;
               updatedIds.add(id);
             }
           } else if (existing is Map) {
-            if (u['pointMetas'] is List) {
-              final p0 =
-                  (u['pointMetas'] as List).first as Map<String, dynamic>;
+            final pointMetas = u['pointMetas'];
+            // An empty list has no first point. Fall through to lat/lon so the
+            // update is not dropped.
+            if (pointMetas is List && pointMetas.isNotEmpty) {
+              final p0 = pointMetas.first as Map<String, dynamic>;
               existing['lat'] = (p0['lat'] as num).toDouble();
               existing['lon'] = (p0['lon'] as num).toDouble();
               _rawMarkersCache[idx] = existing;
@@ -651,9 +713,12 @@ class FormFieldsMapNotifier extends ChangeNotifier {
           // Not found -> append as ShapeMeta when pointMetas provided.
           if (u['pointMetas'] is List) {
             final pms = (u['pointMetas'] as List)
-                .map((pm) => PointMeta(
+                .map(
+                  (pm) => PointMeta(
                     lat: (pm['lat'] as num).toDouble(),
-                    lon: (pm['lon'] as num).toDouble()))
+                    lon: (pm['lon'] as num).toDouble(),
+                  ),
+                )
                 .toList(growable: false);
             final newSm = ShapeMeta(pointMetas: pms, id: id);
             _rawMarkersCache = List<dynamic>.from(_rawMarkersCache)..add(newSm);
@@ -664,7 +729,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
             _rawMarkersCache = List<dynamic>.from(_rawMarkersCache)..add(copy);
           }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        _mapLog.fine('Ignored map update error', e, st);
+      }
     }
 
     if (updatedIds.isEmpty) {
@@ -677,16 +744,24 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       for (final id in updatedIds) {
         try {
           _polygonMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _polylineMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _circleMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
         try {
           _markerMap.remove(id);
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
       }
 
       // Recreate concrete entries for updated ids by scanning rawMarkers
@@ -792,14 +867,17 @@ class FormFieldsMapNotifier extends ChangeNotifier {
                   height: 40,
                   child: const SizedBox.shrink(),
                 );
-                final rid = (raw['id'] as String?) ??
+                final rid =
+                    (raw['id'] as String?) ??
                     'm\$${DateTime.now().microsecondsSinceEpoch}';
                 raw['id'] ??= rid;
                 if (createMarkerWidgets) _markerMap[rid] = marker;
               }
             }
           }
-        } catch (_) {}
+        } catch (e, st) {
+          _mapLog.fine('Ignored map update error', e, st);
+        }
       }
 
       // Rebuild caches once.
@@ -809,7 +887,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
       if (createMarkerWidgets) {
         _markersCache = _markerMap.values.toList(growable: false);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
 
     _scheduleNotify();
   }
@@ -823,11 +903,13 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   bool removeRawMarker(String id) {
     _ensureControlled();
     final before = _rawMarkersCache.length;
-    _rawMarkersCache = _rawMarkersCache.where((m) {
-      if (m is ShapeMeta) return m.id != id;
-      if (m is Map) return m['id'] != id;
-      return true;
-    }).toList(growable: false);
+    _rawMarkersCache = _rawMarkersCache
+        .where((m) {
+          if (m is ShapeMeta) return m.id != id;
+          if (m is Map) return m['id'] != id;
+          return true;
+        })
+        .toList(growable: false);
     final removed = _rawMarkersCache.length != before;
     if (removed) _scheduleNotify();
     return removed;
@@ -1033,7 +1115,9 @@ class FormFieldsMapNotifier extends ChangeNotifier {
   void dispose() {
     try {
       _notifyTimer?.cancel();
-    } catch (_) {}
+    } catch (e, st) {
+      _mapLog.fine('Ignored map update error', e, st);
+    }
     super.dispose();
   }
 }

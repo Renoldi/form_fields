@@ -1,28 +1,71 @@
-import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
-
-import 'crypto_utils.dart';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
 import 'column_handler.dart';
+import 'crypto_utils.dart';
 
 final _phLog = Logger('PayloadHandler');
 
 const String payloadDirName = 'payloads';
 
-/// Read payload file content as string. Returns null if file does not exist.
-Future<String?> readPayloadString(String filename) async {
+/// Accepted payload file names: letters, digits, dot, underscore and hyphen.
+final RegExp _safeFileNamePattern = RegExp(r'^[A-Za-z0-9._-]+$');
+
+/// Returns [name] reduced to a plain file name inside the payload folder, or
+/// null when it cannot be used safely. Stored names come from the database,
+/// so anything with a path separator or a dot-segment is rejected.
+String? _safePayloadName(String name) {
+  final base = p.basename(name);
+  if (base != name) return null;
+  if (base == '.' || base == '..') return null;
+  return _safeFileNamePattern.hasMatch(base) ? base : null;
+}
+
+Future<Directory> _payloadDir() async {
+  final documents = await getApplicationDocumentsDirectory();
+  return Directory(p.join(documents.path, payloadDirName));
+}
+
+/// Writes [content] to [target] through a temporary file in the same folder.
+/// `rename` replaces the target atomically on POSIX platforms, so the old
+/// content stays readable until the new content is fully written. Only
+/// platforms where rename cannot overwrite fall back to copy.
+Future<void> _writeAtomic(File target, String content) async {
+  final rand = Random.secure().nextInt(1 << 32).toRadixString(16);
+  final tmp = File('${target.path}.tmp.$rand');
   try {
-    final documents = await getApplicationDocumentsDirectory();
-    final file = File(p.join(documents.path, payloadDirName, filename));
+    await tmp.writeAsString(content, flush: true);
+    try {
+      await tmp.rename(target.path);
+    } on FileSystemException {
+      await tmp.copy(target.path);
+    }
+  } finally {
+    if (await tmp.exists()) {
+      await tmp.delete();
+    }
+  }
+}
+
+/// Read payload file content as string. Returns null if the file does not
+/// exist or the name is not a valid payload file name.
+Future<String?> readPayloadString(String filename) async {
+  final name = _safePayloadName(filename);
+  if (name == null) {
+    _phLog.warning('Rejected unsafe payload file name: $filename');
+    return null;
+  }
+  try {
+    final file = File(p.join((await _payloadDir()).path, name));
     if (!await file.exists()) return null;
     return await file.readAsString();
   } catch (e) {
-    _phLog.warning('Failed to read payload file $filename: $e');
+    _phLog.warning('Failed to read payload file $name: $e');
     return null;
   }
 }
@@ -45,170 +88,89 @@ Future<dynamic> readPayloadJson(String filename) async {
 class FileBackedColumnHandler implements ColumnHandler {
   final String prefix;
   final bool overwriteOnDedupe;
-  FileBackedColumnHandler(
-      {required this.prefix, this.overwriteOnDedupe = true});
+  FileBackedColumnHandler({
+    required this.prefix,
+    this.overwriteOnDedupe = true,
+  });
 
   @override
   Future<void> onDelete(
-      String table, String column, Map<String, dynamic> row) async {
+    String table,
+    String column,
+    Map<String, dynamic> row,
+  ) async {
     final val = row[column];
-    if (val is String && val.isNotEmpty) {
-      try {
-        final documents = await getApplicationDocumentsDirectory();
-        final file = File(p.join(documents.path, payloadDirName, val));
-        if (await file.exists()) await file.delete();
-      } catch (e) {
-        _phLog.warning('FileBackedColumnHandler:onDelete failed: $e');
-      }
+    if (val is! String || val.isEmpty) return;
+    final name = _safePayloadName(val);
+    if (name == null) {
+      _phLog.warning('Refused to delete unsafe payload name: $val');
+      return;
+    }
+    try {
+      final file = File(p.join((await _payloadDir()).path, name));
+      if (await file.exists()) await file.delete();
+    } catch (e) {
+      _phLog.warning('FileBackedColumnHandler:onDelete failed: $e');
     }
   }
 
   @override
   Future<dynamic> onWrite(String table, String column, dynamic value) async {
-    // If caller passed an existing filename wrapper, overwrite the file.
+    // A wrapper with an existing filename overwrites that payload file.
     if (value is Map &&
         value.containsKey('__existing_filename') &&
         value.containsKey('payload')) {
       final existing = value['__existing_filename'];
-      final payload = value['payload'];
       if (existing is String && existing.isNotEmpty) {
-        try {
-          final safeName = p.basename(existing);
-          final filenameRe = RegExp(r'^[A-Za-z0-9._-]+\$');
-          if (!filenameRe.hasMatch(safeName)) {
-            _phLog.warning('Rejected unsafe existing filename: $existing');
-            throw Exception('unsafe_filename');
-          }
-
-          final documents = await getApplicationDocumentsDirectory();
-          final dir = Directory(p.join(documents.path, payloadDirName));
-          await dir.create(recursive: true);
-          final filePath = p.join(dir.path, safeName);
-          final content = payload is String ? payload : json.encode(payload);
-
-          final tmpPath = p.join(dir.path,
-              '$safeName.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-          final tmpFile = File(tmpPath);
-          await tmpFile.writeAsString(content);
-          final targetFile = File(filePath);
+        final name = _safePayloadName(existing);
+        if (name == null) {
+          _phLog.warning('Rejected unsafe existing filename: $existing');
+        } else {
           try {
-            if (await targetFile.exists()) {
-              await targetFile.delete();
-            }
-            await tmpFile.rename(filePath);
+            final dir = await _payloadDir();
+            await dir.create(recursive: true);
+            final payload = value['payload'];
+            final content = payload is String ? payload : json.encode(payload);
+            await _writeAtomic(File(p.join(dir.path, name)), content);
+            _phLog.info('Overwrote payload file: $name');
+            return name;
           } catch (e) {
-            try {
-              await tmpFile.copy(filePath);
-              await tmpFile.delete();
-            } catch (e2) {
-              _phLog.warning(
-                  'Failed to atomically overwrite $filePath: $e / $e2');
-              rethrow;
-            }
-          }
-          _phLog.info('Overwrote payload file: $safeName');
-          return safeName;
-        } catch (e) {
-          if (e.toString().contains('unsafe_filename')) {
-          } else {
             _phLog.warning('FileBackedColumnHandler:overwrite failed: $e');
           }
         }
       }
     }
 
+    // Plain strings that are not JSON documents are stored as-is.
     if (value is String) {
-      final strim = value.trim();
-      if (!(strim.startsWith('{') || strim.startsWith('['))) {
+      final trimmed = value.trim();
+      if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) {
         return value;
       }
     }
+
     try {
-      final documents = await getApplicationDocumentsDirectory();
-      final dir = Directory(p.join(documents.path, payloadDirName));
+      final dir = await _payloadDir();
       await dir.create(recursive: true);
       final content = value is String ? value : json.encode(value);
 
+      // The name is derived from the content, so identical content always maps
+      // to the same file.
       final hash = CryptoUtils.instance.bytesSha256(utf8.encode(content));
-      final safePrefix = prefix; // caller should manage prefix semantics
-      final name = '${safePrefix}_$hash.json';
-      final filePath = p.join(dir.path, name);
-      final file = File(filePath);
+      final name = '${prefix}_$hash.json';
+      final file = File(p.join(dir.path, name));
 
       if (await file.exists()) {
         if (overwriteOnDedupe) {
-          try {
-            final tmpPath2 = p.join(dir.path,
-                '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-            final tmpFile2 = File(tmpPath2);
-            await tmpFile2.writeAsString(content);
-            try {
-              await file.delete();
-              await tmpFile2.rename(filePath);
-            } catch (e) {
-              try {
-                await tmpFile2.copy(filePath);
-                await tmpFile2.delete();
-              } catch (e2) {
-                _phLog.warning(
-                    'Failed to overwrite existing $filePath: $e / $e2');
-                rethrow;
-              }
-            }
-            _phLog.info('Overwrote payload file (dedupe overwrite): $name');
-            return name;
-          } catch (e) {
-            _phLog.warning('Failed to overwrite existing payload $name: $e');
-            return name;
-          }
+          await _writeAtomic(file, content);
+          _phLog.info('Overwrote payload file (dedupe overwrite): $name');
+        } else {
+          _phLog.info('Payload dedupe: file already exists: $name');
         }
-        _phLog.info('Payload dedupe: file already exists: $name');
         return name;
       }
 
-      final tmpPath = p.join(dir.path,
-          '$name.tmp.${Random.secure().nextInt(1 << 32).toRadixString(16)}');
-      final tmpFile = File(tmpPath);
-      await tmpFile.writeAsString(content);
-      try {
-        if (await file.exists()) {
-          if (overwriteOnDedupe) {
-            try {
-              await file.delete();
-              await tmpFile.rename(filePath);
-              _phLog.info('Overwrote payload file (concurrent writer): $name');
-              return name;
-            } catch (e) {
-              try {
-                if (!await file.exists()) {
-                  await tmpFile.copy(filePath);
-                }
-                await tmpFile.delete();
-                _phLog.info('Wrote payload file after concurrent race: $name');
-                return name;
-              } catch (e2) {
-                _phLog.warning(
-                    'Failed to write payload file $filePath: $e / $e2');
-                rethrow;
-              }
-            }
-          }
-          _phLog.info('Concurrent writer created $name; discarding tmp file');
-          await tmpFile.delete();
-          return name;
-        }
-        await tmpFile.rename(filePath);
-      } catch (e) {
-        try {
-          if (!await file.exists()) {
-            await tmpFile.copy(filePath);
-          }
-          await tmpFile.delete();
-        } catch (e2) {
-          _phLog.warning('Failed to write payload file $filePath: $e / $e2');
-          rethrow;
-        }
-      }
+      await _writeAtomic(file, content);
       _phLog.info('Wrote payload file: $name');
       return name;
     } catch (e) {

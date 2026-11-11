@@ -1,10 +1,16 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utils/safe_notify.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
 class FormFieldsMyImageProvider extends ChangeNotifier {
+  /// Debug-only logging. Release builds must not print file names and paths.
+  static void _log(String message) {
+    if (kDebugMode) debugLog(message);
+  }
+
   List<MyImageResult> _images = [];
   List<MyImageResult> get images => _images;
 
@@ -16,8 +22,15 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
 
   void setImages(List<MyImageResult> images) {
     _images = List<MyImageResult>.from(images);
-    _uploadProgress = List<double>.filled(_images.length, 0.0).toList();
-    debugPrint(
+    // Keep the progress of images that are still there. This runs on every
+    // controller change, and resetting progress here made an upload in
+    // progress jump back to zero.
+    final previous = _uploadProgress;
+    _uploadProgress = List<double>.generate(
+      _images.length,
+      (i) => i < previous.length ? previous[i] : 0.0,
+    );
+    _log(
         'FormFieldsMyImageProvider.setImages -> ${_images.length} images');
     commit();
   }
@@ -28,7 +41,7 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
     final name = image.path.trim().isNotEmpty
         ? image.path.split(Platform.pathSeparator).last
         : (image.link.isNotEmpty ? image.link : '<no-path>');
-    debugPrint(
+    _log(
         'FormFieldsMyImageProvider.addImage -> added: $name (total=${_images.length})');
     commit();
   }
@@ -36,8 +49,8 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
   void removeImage(int index) {
     if (index >= 0 && index < _images.length) {
       _images.removeAt(index);
-      _uploadProgress.removeAt(index);
-      debugPrint(
+      if (index < _uploadProgress.length) _uploadProgress.removeAt(index);
+      _log(
           'FormFieldsMyImageProvider.removeImage -> removed index $index (total=${_images.length})');
       commit();
     }
@@ -49,7 +62,7 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
       final name = image.path.trim().isNotEmpty
           ? image.path.split(Platform.pathSeparator).last
           : (image.link.isNotEmpty ? image.link : '<no-path>');
-      debugPrint(
+      _log(
           'FormFieldsMyImageProvider.updateImage -> index $index updated to: $name');
       commit();
     }
@@ -88,10 +101,10 @@ class FormFieldsMyImageProvider extends ChangeNotifier {
               ? i.path.split(Platform.pathSeparator).last
               : (i.link.isNotEmpty ? i.link : '<no-path>'))
           .join(', ');
-      debugPrint(
+      _log(
           'FormFieldsMyImageProvider.commit -> images=${_images.length}; summary=[$summary]');
     } catch (_) {
-      debugPrint(
+      _log(
           'FormFieldsMyImageProvider.commit -> images=${_images.length}');
     }
     safeNotify(() => notifyListeners());

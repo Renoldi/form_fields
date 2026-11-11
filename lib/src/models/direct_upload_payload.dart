@@ -38,3 +38,27 @@ class DirectUploadPayload {
   String toString() =>
       'DirectUploadPayload(url: $url, filePath: $filePath, fileName: $fileName)';
 }
+
+/// Merges payloads that were already buffered with payloads built later for
+/// the same captures, without queueing a capture twice.
+///
+/// The local file identifies a capture, so payloads are deduped by
+/// [DirectUploadPayload.filePath]. A buffered entry wins over a rebuilt one,
+/// because the buffered entry keeps the correlation id it was queued with.
+List<DirectUploadPayload> mergeQueuedPayloads(
+  Iterable<DirectUploadPayload> buffered,
+  Iterable<DirectUploadPayload> rebuilt,
+) {
+  String keyOf(DirectUploadPayload p) => p.filePath.trim().isNotEmpty
+      ? 'path:${p.filePath}'
+      : 'id:${p.uploadCorrelationId}';
+
+  final byKey = <String, DirectUploadPayload>{};
+  for (final p in buffered) {
+    byKey[keyOf(p)] = p;
+  }
+  for (final p in rebuilt) {
+    byKey.putIfAbsent(keyOf(p), () => p);
+  }
+  return byKey.values.toList(growable: false);
+}

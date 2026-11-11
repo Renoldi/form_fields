@@ -4,7 +4,10 @@ import 'dart:ui';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:logging/logging.dart';
 import 'package:workmanager/workmanager.dart';
+
+final _log = Logger('WorkmanagerService');
 
 // Flush state relocated into WorkmanagerService as `isFlushing`.
 
@@ -84,25 +87,19 @@ class WorkmanagerService {
   static bool acquireFlushGuard({bool skip = false}) {
     if (skip) return false;
     if (isFlushing) {
+      // The guard is never taken over while it is held. Every caller releases
+      // it in `finally`, and a crashed isolate takes its statics with it. A
+      // flush that is still running after a long time (slow network, many
+      // rows) is a live flush, and a second one would upload the same rows
+      // again. A long hold is only reported.
       try {
-        // If the guard appears to be held for an unexpectedly long time
-        // treat it as stale and allow recovery. This helps when an earlier
-        // run acquired the guard but the isolate crashed without
-        // releasing it. The threshold is intentionally generous.
         final setAt = _flushGuardSetAt;
         if (setAt != null) {
           final age = DateTime.now().difference(setAt);
-          const staleThreshold = Duration(minutes: 5);
-          if (age > staleThreshold) {
-            if (kDebugMode) {
-              // ignore: avoid_print
-              print(
-                'acquireFlushGuard: clearing stale guard (age=${age.inMinutes}m)',
-              );
-            }
-            isFlushing = true; // re-acquire
-            _flushGuardSetAt = DateTime.now();
-            return true;
+          if (age > const Duration(minutes: 5)) {
+            _log.warning(
+              'acquireFlushGuard: flush has held the guard for ${age.inMinutes}m',
+            );
           }
         }
       } catch (_) {}
@@ -166,7 +163,12 @@ class WorkmanagerService {
   /// background handler.
   Future<void> startAll({bool triggerNow = true}) async {
     try {
-      final defs = providedWorkerDefinitions;
+      // Only host-provided registrations are scheduled. The demo definitions
+      // are for the example UI and have no handlers in a host app.
+      final defs = _providedWorkerDefinitions ?? const <Map<String, dynamic>>[];
+      if (defs.isEmpty) {
+        _addLog('startAll: no worker registrations were provided');
+      }
       for (final def in defs) {
         final name = def['name'] as String;
         final freq = def['frequency'] as Duration;
@@ -228,7 +230,8 @@ class WorkmanagerService {
   Future<void> startWorkerByName(String name, {bool triggerNow = true}) async {
     try {
       Map<String, dynamic>? def;
-      for (final d in providedWorkerDefinitions) {
+      for (final d
+          in _providedWorkerDefinitions ?? const <Map<String, dynamic>>[]) {
         try {
           if ((d['name'] as String) == name) {
             def = d;
@@ -379,8 +382,9 @@ class WorkmanagerService {
     try {
       final cb = callbackDispatcher ?? workmanagerCallbackDispatcher;
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('Workmanager initialize: callbackDispatcher is ${'provided'}');
+        _log.fine(
+          'Workmanager initialize: callbackDispatcher is ${'provided'}',
+        );
       }
       await Workmanager().initialize(cb);
       _initialized = true;
@@ -389,10 +393,10 @@ class WorkmanagerService {
       // Hosts can disable this with `initialize(..., useConnectivity: false)`.
       if (useConnectivity) startConnectivityFlush();
     } catch (e, st) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('Workmanager initialize failed: $e\n$st');
-      }
+      // Always recorded, release builds included. Without this, a failed
+      // background setup looks like it was never requested.
+      _log.warning('Workmanager initialize failed: $e', e, st);
+      _addLog('initialize_failed: $e');
     }
   }
 
@@ -441,7 +445,9 @@ class WorkmanagerService {
   Future<void> _flushIfOnline(String reason) async {
     try {
       final current = await Connectivity().checkConnectivity();
-      final hasNetwork = !current.toString().toLowerCase().contains('none');
+      // Offline is "no results" or only ConnectivityResult.none. Compare the
+      // enum values directly, not the text of the list.
+      final hasNetwork = current.any((r) => r != ConnectivityResult.none);
       if (!hasNetwork) return;
       _addLog('$reason: $current -> attempting flush');
       try {
@@ -482,8 +488,7 @@ class WorkmanagerService {
         if (_backgroundHandler != null) {
           final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
           if (kDebugMode) {
-            // ignore: avoid_print
-            print('getCallbackHandle for _backgroundHandler -> $handle');
+            _log.fine('getCallbackHandle for _backgroundHandler -> $handle');
           }
           // Only embed the global background handler if the caller did not
           // already provide a `callback_handle` (per-registration handlers
@@ -491,8 +496,7 @@ class WorkmanagerService {
           if (handle != null && data['callback_handle'] == null) {
             data['callback_handle'] = handle.toRawHandle();
             if (kDebugMode) {
-              // ignore: avoid_print
-              print(
+              _log.fine(
                 'embedding callback_handle raw=${handle.toRawHandle()} into inputData',
               );
             }
@@ -527,8 +531,7 @@ class WorkmanagerService {
             );
             try {
               // also print to console to aid debugging via logcat
-              // ignore: avoid_print
-              print(
+              _log.fine(
                 'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
               );
             } catch (_) {}
@@ -548,8 +551,7 @@ class WorkmanagerService {
           try {
             // Print to console so it's visible in adb logcat (helpful when
             // the UI dialog isn't easily copyable).
-            // ignore: avoid_print
-            print(
+            _log.fine(
               'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next',
             );
           } catch (_) {}
@@ -572,8 +574,7 @@ class WorkmanagerService {
       _addLog('registered ${periodic ? 'periodic' : 'one-off'}: $name');
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('Workmanager register task failed: $e');
+        _log.fine('Workmanager register task failed: $e');
       }
       statusListenable.value = 'register_failed';
       _addLog('register_failed: $e');
@@ -595,21 +596,17 @@ class WorkmanagerService {
         if (_backgroundHandler != null) {
           final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
           if (kDebugMode) {
-            // ignore: avoid_print
-            print('getCallbackHandle for runOnceNowDetailed -> $handle');
+            _log.fine('getCallbackHandle for runOnceNowDetailed -> $handle');
           }
           if (handle != null) data['callback_handle'] = handle.toRawHandle();
         }
       } catch (_) {}
 
       await Workmanager().registerOneOffTask(name, name, inputData: data);
-      final now = DateTime.now();
-      _registeredTasks.add(name);
-      _scheduledAtPerTask[name] = now;
-      _scheduledFrequencyPerTask[name] = null;
-      registeredCountListenable.value = _registeredTasks.length;
+      // A one-off run has no schedule and no name to wait for later. Keeping
+      // it in `_registeredTasks` would only grow the registered list and the
+      // countdown loop with every call, so it is not tracked there.
       _addLog('registered one-off (run now): $name');
-      _startCountdownTimer();
       return null;
     } catch (e) {
       _addLog('runOnceNowDetailed failed: $e');
@@ -617,14 +614,16 @@ class WorkmanagerService {
     }
   }
 
-  /// Stop specific task or all tasks.
+  /// Stop a specific task, or all tasks when [taskName] is null.
+  ///
+  /// This cancels only scheduled workers. The connectivity flush and
+  /// [foregroundFlushHandler] are left running (see [stopConnectivityFlush]).
   Future<void> stop({VoidCallback? onStop, String? taskName}) async {
     try {
       onStop?.call();
     } catch (e) {
       if (kDebugMode) {
-        // ignore: avoid_print
-        print('onStop callback threw: $e');
+        _log.fine('onStop callback threw: $e');
       }
     }
 
@@ -637,8 +636,7 @@ class WorkmanagerService {
         _addLog('cancelAll invoked');
       } catch (e) {
         if (kDebugMode) {
-          // ignore: avoid_print
-          print('cancelAll failed: $e');
+          _log.fine('cancelAll failed: $e');
         }
         _addLog('cancelAll_failed: $e');
       }
@@ -662,8 +660,7 @@ class WorkmanagerService {
           _addLog('cancelled: $name');
         } catch (e) {
           if (kDebugMode) {
-            // ignore: avoid_print
-            print('cancelByUniqueName failed for $name: $e');
+            _log.fine('cancelByUniqueName failed for $name: $e');
           }
           _addLog('cancel_failed: $name -> $e');
         }
@@ -678,19 +675,9 @@ class WorkmanagerService {
       _stopCountdownTimer();
     }
 
-    try {
-      await _connectivitySub?.cancel();
-      _connectivitySub = null;
-      foregroundFlushHandler = null;
-      _addLog(
-        'stopped: connectivity listener cancelled and flush handler cleared',
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('failed to cancel connectivity subscription: $e');
-      }
-    }
+    // The connectivity and lifecycle flush is a separate feature from the
+    // workers. It stays active here, so pending rows still go out when the
+    // network returns. Use [stopConnectivityFlush] to turn it off.
   }
 
   void _startCountdownTimer() {
@@ -702,8 +689,7 @@ class WorkmanagerService {
           'countdown: starting timer; registered=${_registeredTasks.length}',
         );
         if (kDebugMode) {
-          // ignore: avoid_print
-          print(
+          _log.fine(
             'countdown: starting timer; registered=${_registeredTasks.length}',
           );
         }
@@ -766,8 +752,7 @@ class WorkmanagerService {
             final msg = 'countdown-tick: $entries';
             _addLog(msg);
             if (kDebugMode) {
-              // ignore: avoid_print
-              print(msg);
+              _log.fine(msg);
             }
           } catch (_) {}
           if (minRem == null) {
@@ -798,8 +783,7 @@ class WorkmanagerService {
             } catch (_) {}
             try {
               if (kDebugMode) {
-                // ignore: avoid_print
-                print(
+                _log.fine(
                   'countdown-trigger: invoking handlers for ${toTrigger.join(',')}',
                 );
               }
@@ -814,8 +798,7 @@ class WorkmanagerService {
                     'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
                   );
                   if (kDebugMode) {
-                    // ignore: avoid_print
-                    print(
+                    _log.fine(
                       'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
                     );
                   }
@@ -1001,8 +984,7 @@ class WorkmanagerService {
                   'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
                 );
                 if (kDebugMode) {
-                  // ignore: avoid_print
-                  print(
+                  _log.fine(
                     'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
                   );
                 }
@@ -1121,8 +1103,7 @@ class WorkmanagerService {
           _addLog('provided_def: $name freq_s=$freq');
           try {
             // Also print to console so adb logcat captures it.
-            // ignore: avoid_print
-            print('provided_def: $name freq_s=$freq');
+            _log.fine('provided_def: $name freq_s=$freq');
           } catch (_) {}
         }
       } catch (_) {}
@@ -1191,43 +1172,52 @@ class WorkmanagerService {
 
     Workmanager().executeTask((task, inputData) async {
       if (kDebugMode) {
-        // ignore: avoid_print
         print('Workmanager executeTask: $task, inputData: $inputData');
       }
 
       try {
         if (inputData != null && inputData['callback_handle'] != null) {
+          // Resolving the handle may fail. Running the handler may fail too.
+          // Only a failed resolution falls through to the global handler. A
+          // handler that ran and threw reports failure. Falling through would
+          // run the same work a second time.
+          BackgroundTaskHandler? handler;
           try {
             final raw = inputData['callback_handle'];
             final rawHandle = raw is int ? raw : int.parse(raw.toString());
             final cbHandle = CallbackHandle.fromRawHandle(rawHandle);
             if (kDebugMode) {
-              // ignore: avoid_print
               print('Attempting to resolve callback handle: $rawHandle');
             }
             final cb = PluginUtilities.getCallbackFromHandle(cbHandle);
             if (kDebugMode) {
-              // ignore: avoid_print
               print('Resolved callback: $cb');
             }
             if (cb is BackgroundTaskHandler) {
-              final res = await cb(task, inputData as Map<String, dynamic>?);
-              return await Future.value(res);
+              handler = cb;
             } else {
               if (kDebugMode) {
-                // ignore: avoid_print
                 print(
                   'Callback resolved but is not BackgroundTaskHandler: $cb',
                 );
               }
-              // If we could not resolve a usable callback, bail out with
-              // `false` so Workmanager does not treat the task as succeeded.
-              return await Future.value(false);
+              // A usable callback was not found, so the task is not done.
+              return false;
             }
           } catch (e) {
             if (kDebugMode) {
-              // ignore: avoid_print
               print('failed to resolve callback_handle: $e');
+            }
+          }
+          if (handler != null) {
+            try {
+              final res = await handler(task, inputData);
+              return res;
+            } catch (e) {
+              if (kDebugMode) {
+                print('per-task background handler threw: $e');
+              }
+              return false;
             }
           }
         }
@@ -1235,7 +1225,6 @@ class WorkmanagerService {
         if (_backgroundHandler != null) {
           try {
             if (kDebugMode) {
-              // ignore: avoid_print
               print(
                 'Using static _backgroundHandler fallback: $_backgroundHandler',
               );
@@ -1244,7 +1233,6 @@ class WorkmanagerService {
             return await Future.value(res);
           } catch (e) {
             if (kDebugMode) {
-              // ignore: avoid_print
               print('background handler threw: $e');
             }
             return await Future.value(false);
@@ -1252,7 +1240,14 @@ class WorkmanagerService {
         }
       } catch (_) {}
 
-      return Future.value(true);
+      // No handler could run. Report failure instead of success, so the task
+      // is not recorded as done when no work was performed.
+      if (kDebugMode) {
+        print(
+          'Workmanager executeTask: no handler for $task; reporting failure',
+        );
+      }
+      return Future.value(false);
     });
   }
 }

@@ -98,12 +98,14 @@ class _FormFieldsCheckboxListTileState
         final title = widget.title != null
             ? DefaultTextStyle.merge(
                 style: widget.textStyle ?? DefaultTextStyle.of(context).style,
-                child: widget.title!)
+                child: widget.title!,
+              )
             : null;
         final subtitle = widget.subtitle != null
             ? DefaultTextStyle.merge(
                 style: widget.textStyle ?? DefaultTextStyle.of(context).style,
-                child: widget.subtitle!)
+                child: widget.subtitle!,
+              )
             : null;
         final child = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,12 +127,18 @@ class _FormFieldsCheckboxListTileState
             ),
             if (state.errorText != null)
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
-                child: Text(state.errorText!,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12)),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: 8.0,
+                ),
+                child: Text(
+                  state.errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
               ),
           ],
         );

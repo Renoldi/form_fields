@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/utils/debug_log.dart';
 
 /// A persistent controller provider for `MapController` instances.
 /// Controllers are keyed by an `id` so they are not recreated on widget rebuilds.
@@ -101,7 +102,9 @@ class FormFieldsMapController {
   /// controller and notifier are registered under the same stable id that
   /// `FormFieldsMap` widgets use.
   static String registerControllerAndNotifier(
-      MapController controller, FormFieldsMapNotifier? notifier) {
+    MapController controller,
+    FormFieldsMapNotifier? notifier,
+  ) {
     final id = 'ff_controller_${controller.hashCode}';
     registerController(id, controller);
     if (notifier != null) {
@@ -144,8 +147,9 @@ class FormFieldsMapController {
       notifier.attachController(id);
     } catch (_) {}
     try {
-      debugPrint(
-          '[FormFieldsMapController] registerNotifier id=$id notifier=${notifier.hashCode}');
+      debugLog(
+        '[FormFieldsMapController] registerNotifier id=$id notifier=${notifier.hashCode}',
+      );
     } catch (_) {}
   }
 
@@ -159,8 +163,9 @@ class FormFieldsMapController {
         n.attachController(null);
       } catch (_) {}
       try {
-        debugPrint(
-            '[FormFieldsMapController] removeNotifier id=$id notifier=${n.hashCode}');
+        debugLog(
+          '[FormFieldsMapController] removeNotifier id=$id notifier=${n.hashCode}',
+        );
       } catch (_) {}
     }
   }
@@ -219,8 +224,9 @@ class FormFieldsMapController {
         'auto_${DateTime.now().microsecondsSinceEpoch}_${_controllers.length}';
     _controllers[id] = controller;
     try {
-      debugPrint(
-          '[FormFieldsMapController] getIdForController created id=$id controller=${controller.hashCode}');
+      debugLog(
+        '[FormFieldsMapController] getIdForController created id=$id controller=${controller.hashCode}',
+      );
     } catch (_) {}
     return id;
   }
@@ -234,8 +240,10 @@ class FormFieldsMapController {
 
   /// Convenience setter to change the loading value for [id].
   static void setLoading(String id, bool value) {
-    final notifier =
-        _loadingNotifiers.putIfAbsent(id, () => ValueNotifier<bool>(false));
+    final notifier = _loadingNotifiers.putIfAbsent(
+      id,
+      () => ValueNotifier<bool>(false),
+    );
     try {
       final phase = SchedulerBinding.instance.schedulerPhase;
       if (phase == SchedulerPhase.idle) {
@@ -260,14 +268,18 @@ class FormFieldsMapController {
   /// overlay). Notifier is created on demand.
   static ValueListenable<bool> getBlockingLoadingListenable(String id) {
     return _blockingLoadingNotifiers.putIfAbsent(
-        id, () => ValueNotifier<bool>(false));
+      id,
+      () => ValueNotifier<bool>(false),
+    );
   }
 
   /// Setter for blocking loading state for [id]. Use this when you need
   /// to present a full-screen blocking overlay (e.g., while fetching data).
   static void setBlockingLoading(String id, bool value) {
     final notifier = _blockingLoadingNotifiers.putIfAbsent(
-        id, () => ValueNotifier<bool>(false));
+      id,
+      () => ValueNotifier<bool>(false),
+    );
     try {
       final phase = SchedulerBinding.instance.schedulerPhase;
       if (phase == SchedulerPhase.idle) {
@@ -389,8 +401,11 @@ class FormFieldsMapController {
     } catch (_) {}
   }
 
-  static Future<bool> appendRawMarkers(String id, List<dynamic> coords,
-      {bool createMarkerWidgets = true}) async {
+  static Future<bool> appendRawMarkers(
+    String id,
+    List<dynamic> coords, {
+    bool createMarkerWidgets = true,
+  }) async {
     var n = _getNotifier(id);
     // Ensure a notifier exists so UI widgets can observe updates even when
     // callers only hold a `MapController` reference.
@@ -413,8 +428,9 @@ class FormFieldsMapController {
       if (attempts > _maxAppendRetries) {
         try {
           if (enableBatchLogging) {
-            debugPrint(
-                '[FormFieldsMapController] appendRawMarkers id=$id aborted after $attempts attempts (map not ready)');
+            debugLog(
+              '[FormFieldsMapController] appendRawMarkers id=$id aborted after $attempts attempts (map not ready)',
+            );
           }
         } catch (_) {}
         _appendRetryCounts.remove(id);
@@ -422,7 +438,13 @@ class FormFieldsMapController {
       }
       _appendRetryCounts[id] = attempts;
       await Future.delayed(const Duration(milliseconds: 100));
-      return await appendRawMarkers(id, coords);
+      // Pass the caller's options through. Dropping them made a retry use the
+      // default, even when the caller had asked for something else.
+      return await appendRawMarkers(
+        id,
+        coords,
+        createMarkerWidgets: createMarkerWidgets,
+      );
     }
 
     // Reset retry count on success path.
@@ -477,8 +499,9 @@ class FormFieldsMapController {
       } catch (_) {}
       try {
         if (enableBatchLogging) {
-          debugPrint(
-              '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}');
+          debugLog(
+            '[FormFieldsMapController] appendRawMarkers id=$id notifier=${n.hashCode} appended=${coords.length} total=${n.rawMarkers.length}',
+          );
         }
       } catch (_) {}
       return true;
@@ -491,13 +514,15 @@ class FormFieldsMapController {
           _blockingClearTimers[id]?.cancel();
         } catch (_) {}
         try {
-          _blockingClearTimers[id] =
-              Timer(const Duration(milliseconds: 200), () {
-            try {
-              setBlockingLoading(id, false);
-            } catch (_) {}
-            _blockingClearTimers.remove(id);
-          });
+          _blockingClearTimers[id] = Timer(
+            const Duration(milliseconds: 200),
+            () {
+              try {
+                setBlockingLoading(id, false);
+              } catch (_) {}
+              _blockingClearTimers.remove(id);
+            },
+          );
         } catch (_) {}
       }
     }
@@ -563,8 +588,11 @@ class FormFieldsMapController {
   /// should be a Map with `id` and `pointMetas` (serializable List of maps)
   /// or `lat`/`lon` for single-point markers. Returns true when applied.
   static bool batchUpdateCoordinates(
-      String id, List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) {
+    String id,
+    List<Map<String, dynamic>> updates, {
+    bool createMarkerWidgets = true,
+    bool useInPlaceMutation = true,
+  }) {
     var n = _getNotifier(id);
     if (n == null) {
       try {
@@ -591,9 +619,11 @@ class FormFieldsMapController {
       }
 
       try {
-        n.batchUpdateCoordinates(updates,
-            createMarkerWidgets: createMarkerWidgets,
-            useInPlaceMutation: useInPlaceMutation);
+        n.batchUpdateCoordinates(
+          updates,
+          createMarkerWidgets: createMarkerWidgets,
+          useInPlaceMutation: useInPlaceMutation,
+        );
       } catch (_) {
         // Fallback: apply per-item via updateRawMarkerCoordinates or upsert
         for (final u in updates) {
@@ -602,19 +632,27 @@ class FormFieldsMapController {
             if (idv.isEmpty) continue;
             if (u['pointMetas'] is List) {
               final pms = (u['pointMetas'] as List)
-                  .map((pm) => PointMeta(
+                  .map(
+                    (pm) => PointMeta(
                       lat: (pm['lat'] as num).toDouble(),
-                      lon: (pm['lon'] as num).toDouble()))
+                      lon: (pm['lon'] as num).toDouble(),
+                    ),
+                  )
                   .toList(growable: false);
-              n.upsertCoordinates(idv, pms,
-                  createMarkerWidgets: createMarkerWidgets);
+              n.upsertCoordinates(
+                idv,
+                pms,
+                createMarkerWidgets: createMarkerWidgets,
+              );
             } else if (u.containsKey('lat') && u.containsKey('lon')) {
               // convert to single-point ShapeMeta and upsert
               final p = PointMeta(
-                  lat: (u['lat'] as num).toDouble(),
-                  lon: (u['lon'] as num).toDouble());
-              n.upsertCoordinates(idv, [p],
-                  createMarkerWidgets: createMarkerWidgets);
+                lat: (u['lat'] as num).toDouble(),
+                lon: (u['lon'] as num).toDouble(),
+              );
+              n.upsertCoordinates(idv, [
+                p,
+              ], createMarkerWidgets: createMarkerWidgets);
             }
           } catch (_) {}
         }
@@ -627,13 +665,15 @@ class FormFieldsMapController {
           _blockingClearTimers[id]?.cancel();
         } catch (_) {}
         try {
-          _blockingClearTimers[id] =
-              Timer(const Duration(milliseconds: 200), () {
-            try {
-              setBlockingLoading(id, false);
-            } catch (_) {}
-            _blockingClearTimers.remove(id);
-          });
+          _blockingClearTimers[id] = Timer(
+            const Duration(milliseconds: 200),
+            () {
+              try {
+                setBlockingLoading(id, false);
+              } catch (_) {}
+              _blockingClearTimers.remove(id);
+            },
+          );
         } catch (_) {}
       }
     }
@@ -644,8 +684,12 @@ class FormFieldsMapController {
   /// `ShapeMeta` objects and the controller will decide whether to append
   /// new entries or patch existing ones (using `batchUpdateCoordinates`).
   /// Returns true when the operation was attempted.
-  static Future<bool> processShapeMetaList(String id, List<ShapeMeta> shapes,
-      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
+  static Future<bool> processShapeMetaList(
+    String id,
+    List<ShapeMeta> shapes, {
+    bool createMarkerWidgets = true,
+    bool useInPlaceMutation = true,
+  }) async {
     if (shapes.isEmpty) return true;
 
     // Snapshot existing ids for this controller so we can partition
@@ -669,8 +713,9 @@ class FormFieldsMapController {
           // Prepare update payload: include full pointMetas when present
           final map = <String, dynamic>{'id': sid};
           if (s.pointMetas != null) {
-            map['pointMetas'] =
-                s.pointMetas!.map((pm) => pm.toMap()).toList(growable: false);
+            map['pointMetas'] = s.pointMetas!
+                .map((pm) => pm.toMap())
+                .toList(growable: false);
           }
           updates.add(map);
         } else {
@@ -685,23 +730,38 @@ class FormFieldsMapController {
       if (updates.isNotEmpty) {
         // Use static batchUpdateCoordinates which will forward to
         // the notifier and respect useInPlaceMutation flag.
-        batchUpdateCoordinates(id, updates,
-            createMarkerWidgets: createMarkerWidgets,
-            useInPlaceMutation: useInPlaceMutation);
+        batchUpdateCoordinates(
+          id,
+          updates,
+          createMarkerWidgets: createMarkerWidgets,
+          useInPlaceMutation: useInPlaceMutation,
+        );
       }
     } catch (_) {}
 
     // Append new entries if any
     if (toAppend.isNotEmpty) {
+      var appended = false;
       try {
-        await appendRawMarkers(id, List<dynamic>.from(toAppend),
-            createMarkerWidgets: createMarkerWidgets);
+        // Returns false when the map never became ready. That is not an
+        // exception, so the result has to be checked here.
+        appended = await appendRawMarkers(
+          id,
+          List<dynamic>.from(toAppend),
+          createMarkerWidgets: createMarkerWidgets,
+        );
       } catch (_) {
+        appended = false;
+      }
+      if (!appended) {
         try {
-          // Fallback: setRawMarkers to include appended entries
-          final merged = List<dynamic>.from(getRawMarkers(id))
-            ..addAll(toAppend);
-          setRawMarkers(id, merged);
+          // Fallback: store the entries in rawMarkers directly. Do not call
+          // setRawMarkers here. It clears every polygon, polyline, circle and
+          // marker first, and that would wipe the other shapes.
+          final n = _getNotifier(id);
+          if (n != null) {
+            n.rawMarkers = List<dynamic>.from(n.rawMarkers)..addAll(toAppend);
+          }
         } catch (_) {}
       }
     }
@@ -711,8 +771,11 @@ class FormFieldsMapController {
 
   /// Efficiently apply many raw-marker updates for [id] in a single batch.
   /// Returns true when the notifier exists and the operation was applied.
-  static Future<bool> batchUpdateRawMarkers(String id, List<dynamic> updates,
-      {bool createMarkerWidgets = true}) async {
+  static Future<bool> batchUpdateRawMarkers(
+    String id,
+    List<dynamic> updates, {
+    bool createMarkerWidgets = true,
+  }) async {
     var n = _getNotifier(id);
     if (n == null) {
       try {
@@ -741,8 +804,10 @@ class FormFieldsMapController {
       // Delegate to notifier batch implementation which rebuilds caches
       // once and schedules a debounced notify.
       try {
-        n.batchUpdateRawMarkers(updates,
-            createMarkerWidgets: createMarkerWidgets);
+        n.batchUpdateRawMarkers(
+          updates,
+          createMarkerWidgets: createMarkerWidgets,
+        );
       } catch (_) {
         try {
           // Fallback: apply per-item updateRawMarker
@@ -753,8 +818,9 @@ class FormFieldsMapController {
             if (idv != null) {
               updateRawMarker(id, idv, u);
             } else {
-              await appendRawMarkers(id, [u],
-                  createMarkerWidgets: createMarkerWidgets);
+              await appendRawMarkers(id, [
+                u,
+              ], createMarkerWidgets: createMarkerWidgets);
             }
           }
         } catch (_) {}
@@ -762,8 +828,9 @@ class FormFieldsMapController {
 
       try {
         if (enableBatchLogging) {
-          debugPrint(
-              '[FormFieldsMapController] batchUpdateRawMarkers id=$id updates=${updates.length} total=${n.rawMarkers.length}');
+          debugLog(
+            '[FormFieldsMapController] batchUpdateRawMarkers id=$id updates=${updates.length} total=${n.rawMarkers.length}',
+          );
         }
       } catch (_) {}
       return true;
@@ -773,13 +840,15 @@ class FormFieldsMapController {
           _blockingClearTimers[id]?.cancel();
         } catch (_) {}
         try {
-          _blockingClearTimers[id] =
-              Timer(const Duration(milliseconds: 200), () {
-            try {
-              setBlockingLoading(id, false);
-            } catch (_) {}
-            _blockingClearTimers.remove(id);
-          });
+          _blockingClearTimers[id] = Timer(
+            const Duration(milliseconds: 200),
+            () {
+              try {
+                setBlockingLoading(id, false);
+              } catch (_) {}
+              _blockingClearTimers.remove(id);
+            },
+          );
         } catch (_) {}
       }
     }
@@ -788,8 +857,12 @@ class FormFieldsMapController {
   /// Upsert a single raw marker: update if an entry with [markerId] exists,
   /// otherwise insert it. Returns true when the notifier exists and the
   /// operation was applied.
-  static Future<bool> upsertRawMarker(String id, String markerId, dynamic entry,
-      {bool createMarkerWidgets = true}) async {
+  static Future<bool> upsertRawMarker(
+    String id,
+    String markerId,
+    dynamic entry, {
+    bool createMarkerWidgets = true,
+  }) async {
     // Ensure the entry carries the id so batch logic treats it as a
     // replacement when possible.
     try {
@@ -799,21 +872,28 @@ class FormFieldsMapController {
         entry['id'] = markerId;
       }
     } catch (_) {}
-    return await batchUpdateRawMarkers(id, [entry],
-        createMarkerWidgets: createMarkerWidgets);
+    return await batchUpdateRawMarkers(id, [
+      entry,
+    ], createMarkerWidgets: createMarkerWidgets);
   }
 
   /// Update only coordinates of an existing raw marker or append if missing.
   /// This fast-path delegates to the notifier to avoid full derived-map
   /// rebuilds and returns true when applied.
   static bool updateRawMarkerCoordinates(
-      String id, String markerId, List<PointMeta> newPointMetas,
-      {bool createMarkerWidgets = true}) {
+    String id,
+    String markerId,
+    List<PointMeta> newPointMetas, {
+    bool createMarkerWidgets = true,
+  }) {
     final n = _getNotifier(id);
     if (n == null) return false;
     try {
-      n.upsertCoordinates(markerId, newPointMetas,
-          createMarkerWidgets: createMarkerWidgets);
+      n.upsertCoordinates(
+        markerId,
+        newPointMetas,
+        createMarkerWidgets: createMarkerWidgets,
+      );
       return true;
     } catch (_) {
       return false;
@@ -1019,9 +1099,23 @@ class FormFieldsMapController {
     }
   }
 
-  /// Optionally remove a controller (e.g., on dispose of a long-lived form)
+  /// Removes a controller and every per-id entry kept for it. Called when the
+  /// map widget that owns the controller is disposed. Without this, each map
+  /// instance left its notifiers, flags and timers in the static maps for good.
   static void remove(String id) {
     _controllers.remove(id);
+    _appendRetryCounts.remove(id);
+    final clearTimer = _blockingClearTimers.remove(id);
+    clearTimer?.cancel();
+    _loadingNotifiers.remove(id);
+    _blockingLoadingNotifiers.remove(id);
+    _onMarkerTapHandlers.remove(id);
+    _lastInvokeAt.remove(id);
+    _playbackHandlers.remove(id);
+    _playbackAutoStart.remove(id);
+    _notifyCenterDuringPlayback.remove(id);
+    _playbackPlayingNotifiers.remove(id);
+    _requestedPlaying.remove(id);
   }
 
   // Playback handler registry for polyline playback control.
@@ -1059,21 +1153,50 @@ class FormFieldsMapController {
   /// active for controller [id]. The notifier is created on demand.
   static ValueListenable<bool> getPlaybackPlayingListenable(String id) {
     return _playbackPlayingNotifiers.putIfAbsent(
-        id, () => ValueNotifier<bool>(false));
+      id,
+      () => ValueNotifier<bool>(false),
+    );
   }
 
   /// Set the authoritative playback playing state for [id]. This will
   /// create the notifier if necessary and update its value.
   static void setPlaybackPlaying(String id, bool value) {
-    _playbackPlayingNotifiers
-        .putIfAbsent(id, () => ValueNotifier<bool>(false))
-        .value = value;
+    final notifier = _playbackPlayingNotifiers.putIfAbsent(
+      id,
+      () => ValueNotifier<bool>(false),
+    );
+    // Playback can start from inside a build (for example when markers are
+    // appended while the map is building). Notifying listeners right then
+    // would mark widgets dirty during build, so the write is deferred. The
+    // deferred write uses the latest requested value, so a later direct write
+    // is not overwritten when the deferred one runs.
+    _requestedPlaying[id] = value;
+    try {
+      final phase = SchedulerBinding.instance.schedulerPhase;
+      if (phase == SchedulerPhase.idle) {
+        notifier.value = value;
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            notifier.value = _requestedPlaying[id] ?? value;
+          } catch (_) {}
+        });
+      }
+    } catch (_) {
+      try {
+        notifier.value = value;
+      } catch (_) {}
+    }
   }
+
+  static final Map<String, bool> _requestedPlaying = {};
 
   /// Register a playback handler for a given controller id. Pass `null`
   /// to unregister.
   static void registerPlaybackHandler(
-      String id, FormFieldsMapPlaybackHandler? handler) {
+    String id,
+    FormFieldsMapPlaybackHandler? handler,
+  ) {
     if (handler == null) {
       _playbackHandlers.remove(id);
     } else {
@@ -1202,8 +1325,10 @@ class FormFieldsMapPlaybackHandler {
 /// `mapController.setBlockingLoading(true)` instead of resolving a string id.
 extension FormFieldsMapControllerMapControllerExt on MapController {
   String registerWithNotifier([FormFieldsMapNotifier? notifier]) {
-    final id =
-        FormFieldsMapController.registerControllerAndNotifier(this, null);
+    final id = FormFieldsMapController.registerControllerAndNotifier(
+      this,
+      null,
+    );
     if (notifier == null) {
       // Create and register a fresh notifier for this controller id.
       final n = FormFieldsMapNotifier();
@@ -1239,20 +1364,32 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
     return await FormFieldsMapController.batchUpdateRawMarkers(id, updates);
   }
 
-  Future<bool> batchUpdateCoordinates(List<Map<String, dynamic>> updates,
-      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
+  Future<bool> batchUpdateCoordinates(
+    List<Map<String, dynamic>> updates, {
+    bool createMarkerWidgets = true,
+    bool useInPlaceMutation = true,
+  }) async {
     final id = FormFieldsMapController.getIdForController(this);
-    return FormFieldsMapController.batchUpdateCoordinates(id, updates,
-        createMarkerWidgets: createMarkerWidgets,
-        useInPlaceMutation: useInPlaceMutation);
+    return FormFieldsMapController.batchUpdateCoordinates(
+      id,
+      updates,
+      createMarkerWidgets: createMarkerWidgets,
+      useInPlaceMutation: useInPlaceMutation,
+    );
   }
 
-  Future<bool> processShapeMetaList(List<ShapeMeta> shapes,
-      {bool createMarkerWidgets = true, bool useInPlaceMutation = true}) async {
+  Future<bool> processShapeMetaList(
+    List<ShapeMeta> shapes, {
+    bool createMarkerWidgets = true,
+    bool useInPlaceMutation = true,
+  }) async {
     final id = FormFieldsMapController.getIdForController(this);
-    return await FormFieldsMapController.processShapeMetaList(id, shapes,
-        createMarkerWidgets: createMarkerWidgets,
-        useInPlaceMutation: useInPlaceMutation);
+    return await FormFieldsMapController.processShapeMetaList(
+      id,
+      shapes,
+      createMarkerWidgets: createMarkerWidgets,
+      useInPlaceMutation: useInPlaceMutation,
+    );
   }
 
   Future<bool> upsertRawMarker(String markerId, dynamic entry) async {
@@ -1261,10 +1398,15 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   }
 
   bool updateRawMarkerCoordinates(
-      String markerId, List<PointMeta> newPointMetas) {
+    String markerId,
+    List<PointMeta> newPointMetas,
+  ) {
     final id = FormFieldsMapController.getIdForController(this);
     return FormFieldsMapController.updateRawMarkerCoordinates(
-        id, markerId, newPointMetas);
+      id,
+      markerId,
+      newPointMetas,
+    );
   }
 
   void clearRawMarkers() {
@@ -1351,9 +1493,12 @@ extension FormFieldsMapControllerMapControllerExt on MapController {
   /// This helper performs a simple per-frame interpolation and calls
   /// `move` repeatedly. It is intentionally conservative and will
   /// catch errors thrown by the underlying controller.
-  Future<void> animateCameraTo(LatLng target, double targetZoom,
-      {Duration duration = const Duration(milliseconds: 400),
-      Curve curve = Curves.easeInOut}) async {
+  Future<void> animateCameraTo(
+    LatLng target,
+    double targetZoom, {
+    Duration duration = const Duration(milliseconds: 400),
+    Curve curve = Curves.easeInOut,
+  }) async {
     LatLng start;
     try {
       start = camera.center;

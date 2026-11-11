@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -45,10 +46,96 @@ bool _isTransactionControl(String stmt) {
       up.startsWith('COMMIT');
 }
 
+final _triggerStartRe = RegExp(
+  r'^\s*CREATE\s+(TEMP\s+|TEMPORARY\s+)?TRIGGER\b',
+  caseSensitive: false,
+);
+final _endsWithEndRe = RegExp(r'\bEND\s*$', caseSensitive: false);
+
+/// Splits a SQL script at `;` that ends a statement. A `;` inside a string
+/// literal, a quoted identifier or a comment does not split, so text values
+/// such as `'a; b'` survive. A `CREATE TRIGGER` keeps its body whole, since the
+/// body's own `;` separators sit between `BEGIN` and `END`.
+List<String> _splitSqlScript(String script) {
+  final out = <String>[];
+  var buf = StringBuffer();
+  var quote = ''; // '', "'", '"' or '`' while inside a quoted run
+  var inLineComment = false;
+  var inBlockComment = false;
+
+  for (var i = 0; i < script.length; i++) {
+    final ch = script[i];
+    final next = i + 1 < script.length ? script[i + 1] : '';
+
+    if (inLineComment) {
+      buf.write(ch);
+      if (ch == '\n') inLineComment = false;
+      continue;
+    }
+    if (inBlockComment) {
+      buf.write(ch);
+      if (ch == '*' && next == '/') {
+        buf.write(next);
+        i++;
+        inBlockComment = false;
+      }
+      continue;
+    }
+    if (quote.isNotEmpty) {
+      buf.write(ch);
+      if (ch == quote) {
+        if (next == quote) {
+          // A doubled quote inside a literal is an escaped quote.
+          buf.write(next);
+          i++;
+        } else {
+          quote = '';
+        }
+      }
+      continue;
+    }
+
+    if (ch == '-' && next == '-') {
+      inLineComment = true;
+      buf.write('--');
+      i++;
+      continue;
+    }
+    if (ch == '/' && next == '*') {
+      inBlockComment = true;
+      buf.write('/*');
+      i++;
+      continue;
+    }
+    if (ch == "'" || ch == '"' || ch == '`') {
+      quote = ch;
+      buf.write(ch);
+      continue;
+    }
+    if (ch == ';') {
+      final text = buf.toString();
+      final inTriggerBody =
+          _triggerStartRe.hasMatch(text) &&
+          !_endsWithEndRe.hasMatch(text.trimRight());
+      if (inTriggerBody) {
+        buf.write(ch);
+        continue;
+      }
+      out.add(text);
+      buf = StringBuffer();
+      continue;
+    }
+    buf.write(ch);
+  }
+  final rest = buf.toString();
+  if (rest.trim().isNotEmpty) out.add(rest);
+  return out;
+}
+
 /// Splits a SQL script into statements. Line comments and transaction-control
 /// keywords are dropped; the caller runs the statements in its own transaction.
 Iterable<String> _sqlStatements(String script) sync* {
-  for (final raw in script.split(';')) {
+  for (final raw in _splitSqlScript(script)) {
     final cleaned = raw.replaceAll(_lineCommentRe, '').trim();
     if (cleaned.isEmpty || _isTransactionControl(cleaned)) continue;
     yield cleaned;
@@ -364,8 +451,10 @@ class DBService {
   Future<void> _writeUserVersion(DatabaseExecutor db, int version) async {
     try {
       await db.execute('PRAGMA user_version = $version');
-    } catch (_) {
-      // Best-effort: a failed version write must not abort the open.
+    } catch (e, st) {
+      // Not fatal for the open, but a version that was not recorded means the
+      // migrations run again on the next start. That must be visible in logs.
+      _log.warning('Failed to record user_version $version: $e', e, st);
     }
   }
 
@@ -973,11 +1062,28 @@ class DBService {
             setUpdated: true,
           )
         : values;
-    return await db.insert(
-      table,
-      prepared,
-      conflictAlgorithm: conflictAlgorithm,
-    );
+    final handled = autoHandlePayload
+        ? _handledColumnsFor(table).where(values.containsKey).toSet()
+        : const <String>{};
+    // A replaced row takes its payload files with it: release them when no
+    // other row still refers to them.
+    if (handled.isEmpty || conflictAlgorithm != ConflictAlgorithm.replace) {
+      return await db.insert(
+        table,
+        prepared,
+        conflictAlgorithm: conflictAlgorithm,
+      );
+    }
+    return await db.transaction((txn) async {
+      final replaced = await _rowsWithSamePrimaryKey(txn, table, values);
+      final id = await txn.insert(
+        table,
+        prepared,
+        conflictAlgorithm: conflictAlgorithm,
+      );
+      await _releaseUnreferencedPayloads(txn, table, replaced, handled);
+      return id;
+    });
   }
 
   Future<int> update(
@@ -997,7 +1103,30 @@ class DBService {
             setUpdated: true,
           )
         : values;
-    return await db.update(table, prepared, where: where, whereArgs: whereArgs);
+    // Payload files that the updated rows stop using are released, unless
+    // another row still refers to them.
+    final handled = autoHandlePayload
+        ? _handledColumnsFor(table).where(values.containsKey).toSet()
+        : const <String>{};
+    if (handled.isEmpty) {
+      return await db.update(
+        table,
+        prepared,
+        where: where,
+        whereArgs: whereArgs,
+      );
+    }
+    return await db.transaction((txn) async {
+      final before = await txn.query(table, where: where, whereArgs: whereArgs);
+      final count = await txn.update(
+        table,
+        prepared,
+        where: where,
+        whereArgs: whereArgs,
+      );
+      await _releaseUnreferencedPayloads(txn, table, before, handled);
+      return count;
+    });
   }
 
   Future<int> delete(
@@ -1011,36 +1140,86 @@ class DBService {
     final handled = autoCleanupOnDelete
         ? _handledColumnsFor(table)
         : const <String>{};
-    if (handled.isNotEmpty) {
-      await _runDeleteHandlers(db, table, where, whereArgs, handled);
+    if (handled.isEmpty) {
+      return await db.delete(table, where: where, whereArgs: whereArgs);
     }
-    return await db.delete(table, where: where, whereArgs: whereArgs);
+    return await db.transaction((txn) async {
+      final doomed = await txn.query(table, where: where, whereArgs: whereArgs);
+      final count = await txn.delete(table, where: where, whereArgs: whereArgs);
+      await _releaseUnreferencedPayloads(txn, table, doomed, handled);
+      return count;
+    });
   }
 
-  Future<void> _runDeleteHandlers(
-    Database db,
+  /// Deletes the payload files of [rows] for [columns] that no row still
+  /// refers to. Payload files are named by content, so one file can back
+  /// several rows; deleting it for one row would break the others.
+  Future<void> _releaseUnreferencedPayloads(
+    DatabaseExecutor db,
     String table,
-    String where,
-    List<dynamic> whereArgs,
-    Set<String> handled,
+    List<Map<String, Object?>> rows,
+    Set<String> columns,
   ) async {
-    try {
-      final rows = await db.query(table, where: where, whereArgs: whereArgs);
-      for (final row in rows) {
-        for (final col in handled) {
-          if (!row.containsKey(col)) continue;
-          final handler = _getHandler(table, col);
-          if (handler == null) continue;
-          try {
-            await handler.onDelete(table, col, row);
-          } catch (e, st) {
-            _log.warning('Handler onDelete failed for $table.$col: $e', e, st);
-          }
+    for (final row in rows) {
+      for (final col in columns) {
+        final value = row[col];
+        if (value is! String || value.isEmpty) continue;
+        final handler = _getHandler(table, col);
+        if (handler == null) continue;
+        try {
+          if (await _isPayloadReferenced(db, value)) continue;
+          await handler.onDelete(table, col, {col: value});
+        } catch (e, st) {
+          _log.warning('Releasing payload for $table.$col failed: $e', e, st);
         }
       }
-    } catch (e) {
-      _log.warning('Failed to cleanup column handlers before delete: $e');
     }
+  }
+
+  /// True when any file-backed column of any table still stores [fileName].
+  Future<bool> _isPayloadReferenced(
+    DatabaseExecutor db,
+    String fileName,
+  ) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+    );
+    for (final t in tables) {
+      final table = t['name'] as String;
+      final info = await db.rawQuery('PRAGMA table_info("$table")');
+      for (final c in info) {
+        final column = c['name'] as String;
+        if (!isColumnFileBacked(table, column)) continue;
+        final hit = await db.rawQuery(
+          'SELECT 1 FROM "$table" WHERE "$column" = ? LIMIT 1',
+          [fileName],
+        );
+        if (hit.isNotEmpty) return true;
+      }
+    }
+    return false;
+  }
+
+  /// The rows that share the primary key of [values]. Returns an empty list
+  /// when the table has no primary key or [values] does not carry all of it.
+  Future<List<Map<String, Object?>>> _rowsWithSamePrimaryKey(
+    DatabaseExecutor db,
+    String table,
+    Map<String, dynamic> values,
+  ) async {
+    final info = await db.rawQuery('PRAGMA table_info("$table")');
+    final pk = info
+        .where((c) => ((c['pk'] as num?) ?? 0) > 0)
+        .map((c) => c['name'] as String)
+        .toList();
+    if (pk.isEmpty || pk.any((c) => !values.containsKey(c))) {
+      return const [];
+    }
+    return db.query(
+      table,
+      where: pk.map((c) => '"$c" = ?').join(' AND '),
+      whereArgs: [for (final c in pk) values[c]],
+    );
   }
 
   /// Execute a SQL statement. Simple single-table `INSERT` / `UPDATE` /
@@ -1236,7 +1415,7 @@ class DBService {
     await db.transaction((txn) async {
       // Table existence is checked once per table, not once per statement.
       final existing = <String, bool>{};
-      for (final stmt in content.split(';')) {
+      for (final stmt in _splitSqlScript(content)) {
         final trimmed = stmt.trim();
         if (trimmed.isEmpty) continue;
         try {
@@ -1415,6 +1594,10 @@ class DBService {
     if (value == null) return 'NULL';
     if (value is num) return value.toString();
     if (value is bool) return value ? '1' : '0';
+    if (value is Uint8List) {
+      final hex = value.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+      return "X'$hex'";
+    }
     final s = value.toString().replaceAll("'", "''");
     return "'$s'";
   }

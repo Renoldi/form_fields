@@ -25,7 +25,7 @@ import 'package:form_fields/src/utilities/signature_pad_export_result.dart';
 /// ### Pre-seeding with an existing signature
 /// ```dart
 /// final controller = FormFieldsSignaturePadController.fromSignature(
-///   MyimageResult.network('https://example.com/existing-signature.png'),
+///   MyImageResult.network('https://example.com/existing-signature.png'),
 /// );
 /// ```
 class FormFieldsSignaturePadController extends ChangeNotifier {
@@ -36,16 +36,16 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   /// When attached to [FormFieldsSignaturePad], the pad will immediately render
   /// this image in preview mode (same as if the user had just exported it).
   FormFieldsSignaturePadController.fromSignature(MyImageResult signature)
-      : _exportResult = SignaturePadExportResult(
-          signature: signature,
-          liveCapture: MyImageResult(),
-        );
+    : _exportResult = SignaturePadExportResult(
+        signature: signature,
+        liveCapture: MyImageResult(),
+      );
 
   /// Named constructor — pre-seeds with a full [SignaturePadExportResult]
   /// (signature + optional live-capture).
   FormFieldsSignaturePadController.fromExportResult(
-      SignaturePadExportResult result)
-      : _exportResult = result;
+    SignaturePadExportResult result,
+  ) : _exportResult = result;
 
   SignaturePadExportResult? _exportResult;
 

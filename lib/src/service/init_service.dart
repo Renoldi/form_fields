@@ -106,21 +106,26 @@ class FormFieldsInitializer {
         .whereType<int>()
         .fold<int>(0, (a, b) => b > a ? b : a);
 
-    // Versioned assets are applied once: skip them when the DB is already
-    // at (or beyond) the highest declared version. Unversioned assets keep
-    // running on every start, as before.
-    if (maxVer > 0) {
-      final current =
-          await DBService.instance.selectDbVersion().catchError((_) => null) ??
-          0;
-      if (current >= maxVer) {
-        _log.fine('DB already at version $current; migration assets skipped');
-        return;
-      }
+    // Versioned assets run only when they are newer than the DB. Re-running an
+    // older one (for example CREATE TABLE) fails and blocks the newer assets
+    // from ever being recorded. Unversioned assets run on every start, as before.
+    final current = maxVer > 0
+        ? (await DBService.instance.selectDbVersion().catchError((_) => null) ??
+              0)
+        : 0;
+    final toRun = [
+      for (final asset in migrationAssetPaths)
+        if ((parseMigrationVersion(asset) ?? 0) == 0 ||
+            parseMigrationVersion(asset)! > current)
+          asset,
+    ];
+    if (toRun.isEmpty) {
+      _log.fine('DB already at version $current; migration assets skipped');
+      return;
     }
 
     var failed = false;
-    for (final asset in migrationAssetPaths) {
+    for (final asset in toRun) {
       try {
         _log.info('Applying migration asset via initAll: $asset');
         await DBService.instance.runMigrationAsset(asset);
@@ -149,7 +154,9 @@ class FormFieldsInitializer {
 
     if (invokeOnUpgradeWhenDbVersionZero && onUpgrade != null && maxVer > 0) {
       try {
-        for (var v = 1; v <= maxVer; v++) {
+        // Only the steps that were just applied. Steps at or below [current]
+        // were already in place, so their hooks must not run again.
+        for (var v = current + 1; v <= maxVer; v++) {
           await onUpgrade(db, v - 1, v);
         }
       } catch (e, st) {
@@ -528,6 +535,10 @@ class FormFieldsInitializer {
     Logger.root.level = logLevel;
     await _logSubscription?.cancel();
     _logSubscription = Logger.root.onRecord.listen((rec) {
+      // Console output is for debug builds. Release builds print nothing from
+      // here, so records with file paths or payload details stay out of the
+      // device log. Host apps can still attach their own `Logger.root` listener.
+      if (!kDebugMode) return;
       final raw =
           '${rec.level.name}: ${rec.time.toIso8601String()} '
           '${rec.loggerName} - ${rec.message}';

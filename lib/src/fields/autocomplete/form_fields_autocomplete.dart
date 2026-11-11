@@ -13,6 +13,10 @@ import '../../utilities/extensions.dart';
 /// - Use with FormFields and LabelPosition, BorderType (see #sym:LabelPosition, #sym:BorderType)
 class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
   static final Logger _logger = Logger();
+
+  /// One client shared by every search. A new `Dio()` per keystroke kept its
+  /// own connection pool, and those pools were never closed.
+  static final Dio _httpClient = Dio();
   final String fieldLabel;
   final String apiUrl;
   final String? apiToken;
@@ -83,9 +87,8 @@ class FormFieldsAutocomplete<T extends Object> extends StatelessWidget {
             : apiToken;
       }
       _logger.i('Fetching options from: $apiUrl with query: $query');
-      final dio = Dio();
       final response = await DioUtil.safeRequest<Response>(
-        () => dio.get(
+        () => _httpClient.get(
           apiUrl,
           queryParameters: {searchKey: query},
           options: headers.isNotEmpty ? Options(headers: headers) : null,

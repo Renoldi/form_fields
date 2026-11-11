@@ -68,12 +68,14 @@ class FormFieldsListTile extends StatelessWidget {
         final titleWidget = title != null
             ? DefaultTextStyle.merge(
                 style: textStyle ?? DefaultTextStyle.of(context).style,
-                child: title!)
+                child: title!,
+              )
             : null;
         final subtitleWidget = subtitle != null
             ? DefaultTextStyle.merge(
                 style: textStyle ?? DefaultTextStyle.of(context).style,
-                child: subtitle!)
+                child: subtitle!,
+              )
             : null;
         final child = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,12 +95,18 @@ class FormFieldsListTile extends StatelessWidget {
             ),
             if (state.errorText != null)
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
-                child: Text(state.errorText!,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12)),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: 8.0,
+                ),
+                child: Text(
+                  state.errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
               ),
           ],
         );

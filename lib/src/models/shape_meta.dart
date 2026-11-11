@@ -133,8 +133,12 @@ class ShapeMeta {
     // Parse optional per-point metadata or single point into pointMetas.
     List<PointMeta>? parsedPointMetas;
     if (m['pointMetas'] is List) {
-      parsedPointMetas =
-          (m['pointMetas'] as List).map((e) => PointMeta.fromMap(e)).toList();
+      // Entries that are not a point (null, text, numbers) are skipped, so one
+      // bad entry does not discard the whole shape.
+      parsedPointMetas = [
+        for (final e in m['pointMetas'] as List)
+          if (e is Map || e is LatLng || e is PointMeta) PointMeta.fromMap(e),
+      ];
     } else if (m['point'] != null || m['lat'] != null || m['lon'] != null) {
       // Create a single PointMeta from `point` or legacy `lat`/`lon`.
       dynamic src = m['point'] ?? m;
@@ -162,7 +166,12 @@ class ShapeMeta {
     if (v is int) return Color(v);
     if (v is String) {
       var s = v.trim();
-      if (s.startsWith('#')) s = s.replaceFirst('#', '0x');
+      if (s.startsWith('#')) {
+        final hex = s.substring(1);
+        // "#RRGGBB" has no alpha. Without the FF prefix it would read as
+        // 0x00RRGGBB, which is fully transparent.
+        s = hex.length == 6 ? '0xFF$hex' : '0x$hex';
+      }
       if (s.startsWith('0x')) {
         try {
           final parsed = int.parse(s);
