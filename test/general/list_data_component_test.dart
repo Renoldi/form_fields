@@ -28,7 +28,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the sort menu is shown only when sortFields are given', (
+  testWidgets('the sort menu is shown only when showSortMenu is true', (
     tester,
   ) async {
     Future<List<String>> source(int offset, String? search) async => ['b', 'a'];
@@ -57,6 +57,7 @@ void main() {
           body: ListDataComponent<String>(
             dataSource: source,
             sortFields: [sortable],
+            showSortMenu: true,
             itemBuilder: (item, index) => Text(item ?? '', key: ValueKey(item)),
           ),
         ),
@@ -64,6 +65,43 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('showSortMenu false hides the menu but keeps the initial sort', (
+    tester,
+  ) async {
+    final controller = ListDataComponentController<String>();
+    addTearDown(controller.dispose);
+    Future<List<String>> source(int offset, String? search) async => [
+      'b',
+      'a',
+      'c',
+    ];
+    final byName = ListDataSortField<String>(
+      key: 'name',
+      label: 'Name',
+      valueOf: (item) => item,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListDataComponent<String>(
+            controller: controller,
+            dataSource: source,
+            sortFields: [byName],
+            showSortMenu: false,
+            initialSortKey: 'name',
+            itemBuilder: (item, index) => Text(item ?? ''),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
+    expect(controller.value.data, ['a', 'b', 'c']);
     expect(tester.takeException(), isNull);
   });
 

@@ -124,22 +124,26 @@ class View extends PresenterState {
                     onDataReceived: (datas, search) => vm.updateSearch(search),
                     itemBuilder: (v, i) => _itemBuilder(context, v, i),
                     sortFields: [
-                      // ListDataSortField<String>(
-                      //   key: 'name',
-                      //   label: context.tr('sortByName'),
-                      //   valueOf: (v) => v.toLowerCase(),
-                      // ),
-                      // ListDataSortField<String>(
-                      //   key: 'number',
-                      //   label: context.tr('sortByNumber'),
-                      //   valueOf: (v) => int.tryParse(v.split(' ').last),
-                      // ),
+                      ListDataSortField<String>(
+                        key: 'name',
+                        label: context.tr('sortByName'),
+                        valueOf: (v) => v.toLowerCase(),
+                      ),
+                      ListDataSortField<String>(
+                        key: 'number',
+                        label: context.tr('sortByNumber'),
+                        valueOf: (v) => int.tryParse(v.split(' ').last),
+                      ),
                       ListDataSortField<String>(
                         key: 'date',
                         label: context.tr('sortByDate'),
                         valueOf: _dateOf,
                       ),
                     ],
+                    // The list starts sorted by date. The sort menu is hidden;
+                    // set showSortMenu: true to show it.
+                    showSortMenu: true,
+                    initialSortKey: 'date',
                     showSearchBox: true,
                     loaderCount: 3,
                     enableGetMore: true,
