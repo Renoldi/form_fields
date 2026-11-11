@@ -102,8 +102,7 @@ Future<void> main() async {
     await FormFieldsInitializer.initAll(
       dbName: 'form_fields.db',
       // Let `initAll` initialize Workmanager and register handlers.
-      // Verified on Android (emulator) and iOS (simulator): workers register and run.
-      enableWorkmanager: true,
+      enableWorkmanager: false, // TEMP: test without workers
       registerPeriodic: false,
       // Example: register one or more background workers.
       workerRegistrations: [
@@ -148,6 +147,10 @@ Future<void> main() async {
         // 'migrations/v2_down.sql',
       ],
       dbVersion: 0,
+      // Flush pending submissions when the network returns (app running).
+      foregroundFlushHandler: () async {
+        await processPendingSubmissions();
+      },
       // Invoke each registration's handlers immediately at startup.
       // Explicitly show startup trigger and iOS deferral options.
       triggerWorkerHandlersOnStart: true,

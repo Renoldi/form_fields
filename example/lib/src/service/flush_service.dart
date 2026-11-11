@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/form_fields.dart';
@@ -7,6 +9,7 @@ import 'package:form_fields_example/data/models/post.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'submission_retry_policy.dart';
 export 'send_current_location.dart';
 export 'send_random_event.dart';
 
@@ -18,6 +21,8 @@ final Logger _logger = Logger();
 const String _kPendingTable = 'pending_submissions';
 const String _kStatusPending = 'pending';
 const String _kPayloadsDir = 'payloads';
+const String _kRetryTable = 'pending_submission_retries';
+const SubmissionRetryPolicy _kRetryPolicy = SubmissionRetryPolicy();
 
 @pragma('vm:entry-point')
 Future<void> workmanagerFlushPendingHandler() async {
@@ -30,7 +35,9 @@ Future<void> workmanagerFlushPendingHandler() async {
 
 @pragma('vm:entry-point')
 Future<bool> workmanagerFlushBackgroundHandler(
-    String task, Map<String, dynamic>? inputData) async {
+  String task,
+  Map<String, dynamic>? inputData,
+) async {
   try {
     if (kDebugMode) {
       // ignore: avoid_print
@@ -52,10 +59,36 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
     _logger.i('processPendingSubmissions: invoking flush');
     final ok = await flushPendingSubmissions(submitHandler: handler);
     _logger.i('processPendingSubmissions -> ${ok ? 'success' : 'failure'}');
+    await _scheduleNextRetry(submitHandler);
     return ok;
   } catch (e, st) {
     _logger.w('processPendingSubmissions threw: $e\n$st');
     return false;
+  }
+}
+
+/// In-app timer for the next backoff retry. Without workers nothing else
+/// wakes the app up when a failed submission becomes due, so a flush that
+/// leaves rows in backoff schedules itself for the earliest due time.
+Timer? _retryTimer;
+
+Future<void> _scheduleNextRetry(SubmitHandler? submitHandler) async {
+  _retryTimer?.cancel();
+  _retryTimer = null;
+  try {
+    final due = (await _nextAttemptById()).values;
+    if (due.isEmpty) return;
+    final earliest = due.reduce(math.min);
+    final wait = earliest - DateTime.now().millisecondsSinceEpoch;
+    final delay =
+        Duration(milliseconds: math.max(0, wait)) + const Duration(seconds: 1);
+    _logger.i('next retry in $delay');
+    _retryTimer = Timer(
+      delay,
+      () => processPendingSubmissions(submitHandler: submitHandler),
+    );
+  } catch (e, st) {
+    _logger.w('scheduling retry failed: $e\n$st');
   }
 }
 
@@ -84,11 +117,13 @@ Future<bool> flushPendingSubmissions({
   bool skipGuard = false,
   bool skipFlushStateGuard = false,
 }) async {
-  final skip = skipGuard ||
+  final skip =
+      skipGuard ||
       skipFlushStateGuard ||
       WorkmanagerService.isInCountdownInvocation;
   _logger.i(
-      'flushPendingSubmissions: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
+    'flushPendingSubmissions: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}',
+  );
   final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
   if (!skip && !acquiredHere) {
     _logger.i('flushPendingSubmissions: another flush in progress — skipping');
@@ -111,6 +146,7 @@ Future<bool> flushPendingSubmissions({
         }
       } catch (e, st) {
         _logger.w('error processing row id=${row['id']}: $e\n$st');
+        await _recordFailure(row['id'] as int?, e);
         // continue processing remaining rows — best-effort
       }
     }
@@ -125,13 +161,19 @@ Future<bool> flushPendingSubmissions({
 }
 
 @pragma('vm:entry-point')
-Future<bool> flushPendingSubmissionById(int id,
-    {SubmitHandler? submitHandler, bool skipGuard = false}) async {
+Future<bool> flushPendingSubmissionById(
+  int id, {
+  SubmitHandler? submitHandler,
+  bool skipGuard = false,
+}) async {
   final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skipGuard);
   if (!skipGuard && !acquiredHere) return false;
   try {
-    final rows = await DBService.instance.selectFrom(_kPendingTable,
-        where: 'id = ? AND status = ?', whereArgs: [id, _kStatusPending]);
+    final rows = await DBService.instance.selectFrom(
+      _kPendingTable,
+      where: 'id = ? AND status = ?',
+      whereArgs: [id, _kStatusPending],
+    );
     if (rows.isEmpty) return false;
 
     final row = rows.first;
@@ -140,9 +182,13 @@ Future<bool> flushPendingSubmissionById(int id,
 
     final handler = submitHandler ?? defaultSubmitHandler;
     final success = await _invokeHandler(handler, payload, id);
-    if (!success) return false;
+    if (!success) {
+      await _recordFailure(id, 'submit returned false');
+      return false;
+    }
 
     await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
+    await _clearRetry(id);
     try {
       WorkmanagerService.instance.notifyPendingChanged();
     } catch (_) {}
@@ -163,11 +209,75 @@ Future<List<Map<String, dynamic>>> _fetchPendingRows() async {
       whereArgs: [_kStatusPending],
       orderBy: 'created_at ASC',
     );
-    return rows.cast<Map<String, dynamic>>();
+    final nextAttempt = await _nextAttemptById();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return rows.cast<Map<String, dynamic>>().where((row) {
+      final next = nextAttempt[row['id']];
+      return next == null || next <= now;
+    }).toList();
   } catch (e, st) {
     _logger.w('Failed to fetch pending rows: $e\n$st');
     return <Map<String, dynamic>>[];
   }
+}
+
+Future<void> _ensureRetryTable() async {
+  await DBService.instance.executeSqlInsUpDel(
+    'CREATE TABLE IF NOT EXISTS $_kRetryTable ('
+    'id INTEGER PRIMARY KEY, attempts INTEGER NOT NULL, '
+    'next_attempt_at INTEGER NOT NULL, last_error TEXT)',
+  );
+}
+
+/// id -> epoch millis of the next allowed attempt, for rows that have failed.
+Future<Map<dynamic, int>> _nextAttemptById() async {
+  await _ensureRetryTable();
+  final rows = await DBService.instance.selectFrom(
+    _kRetryTable,
+    columns: ['id', 'next_attempt_at'],
+  );
+  return {for (final r in rows) r['id']: (r['next_attempt_at'] as num).toInt()};
+}
+
+/// Counts a failed attempt. Schedules the next try with exponential backoff,
+/// or marks the submission as failed once the attempts are used up.
+Future<void> _recordFailure(int? id, Object? error) async {
+  if (id == null) return;
+  await _ensureRetryTable();
+  final existing = await DBService.instance.selectFrom(
+    _kRetryTable,
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+  final attempts =
+      (existing.isEmpty ? 0 : (existing.first['attempts'] as num).toInt()) + 1;
+
+  if (_kRetryPolicy.isExhausted(attempts)) {
+    await DBService.instance.update(
+      _kPendingTable,
+      {'status': 'failed'},
+      'id = ?',
+      [id],
+    );
+    await _clearRetry(id);
+    _logger.w('pending id=$id marked failed after $attempts attempts: $error');
+    return;
+  }
+
+  final delay = _kRetryPolicy.delayAfter(attempts);
+  await DBService.instance.insertOrUpdate(_kRetryTable, {
+    'id': id,
+    'attempts': attempts,
+    'next_attempt_at': DateTime.now().add(delay).millisecondsSinceEpoch,
+    'last_error': '$error',
+  }, autoHandlePayload: false);
+  _logger.i('pending id=$id attempt $attempts failed; retry in $delay');
+}
+
+Future<void> _clearRetry(int? id) async {
+  if (id == null) return;
+  await _ensureRetryTable();
+  await DBService.instance.delete(_kRetryTable, 'id = ?', [id]);
 }
 
 Future<bool> _processPendingRow(
@@ -179,10 +289,14 @@ Future<bool> _processPendingRow(
   if (payload.isEmpty) return false;
 
   final success = await _invokeHandler(handler, payload, id);
-  if (!success) return false;
+  if (!success) {
+    await _recordFailure(id, 'submit returned false');
+    return false;
+  }
 
   if (id != null) {
     await DBService.instance.delete(_kPendingTable, 'id = ?', [id]);
+    await _clearRetry(id);
     try {
       WorkmanagerService.instance.notifyPendingChanged();
     } catch (_) {}
