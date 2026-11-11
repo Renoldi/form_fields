@@ -383,35 +383,50 @@ class WorkmanagerService {
       await Workmanager().initialize(cb);
       _initialized = true;
 
-      // Optionally listen for connectivity changes and invoke foreground
-      // flush when online. Hosts can disable this behavior by calling
-      // `initialize(..., useConnectivity: false)`.
-      if (useConnectivity) {
-        try {
-          _connectivitySub = Connectivity().onConnectivityChanged.listen((
-            _,
-          ) async {
-            try {
-              final current = await Connectivity().checkConnectivity();
-              final curStr = current.toString().toLowerCase();
-              final hasNetwork = !curStr.contains('none');
-              if (hasNetwork) {
-                _addLog('connectivity: $current -> attempting flush');
-                try {
-                  await foregroundFlushHandler?.call();
-                } catch (e) {
-                  _addLog('flush handler error: $e');
-                }
-              }
-            } catch (_) {}
-          });
-        } catch (_) {}
-      }
+      // Optionally run the foreground flush when connectivity returns.
+      // Hosts can disable this with `initialize(..., useConnectivity: false)`.
+      if (useConnectivity) startConnectivityFlush();
     } catch (e, st) {
       if (kDebugMode) {
         // ignore: avoid_print
         print('Workmanager initialize failed: $e\n$st');
       }
+    }
+  }
+
+  /// Stops the connectivity listener started by [startConnectivityFlush].
+  Future<void> stopConnectivityFlush() async {
+    final sub = _connectivitySub;
+    _connectivitySub = null;
+    await sub?.cancel();
+  }
+
+  /// Whether the connectivity listener is running. Tests only.
+  @visibleForTesting
+  bool get isConnectivityFlushActive => _connectivitySub != null;
+
+  /// Runs [foregroundFlushHandler] whenever the device reports a network
+  /// connection again. Only the running app can react, so this does not
+  /// replace background workers for when the app is closed. Safe to call
+  /// repeatedly; it listens once.
+  void startConnectivityFlush() {
+    if (_connectivitySub != null) return;
+    try {
+      _connectivitySub = Connectivity().onConnectivityChanged.listen((_) async {
+        try {
+          final current = await Connectivity().checkConnectivity();
+          final hasNetwork = !current.toString().toLowerCase().contains('none');
+          if (!hasNetwork) return;
+          _addLog('connectivity: $current -> attempting flush');
+          try {
+            await foregroundFlushHandler?.call();
+          } catch (e) {
+            _addLog('flush handler error: $e');
+          }
+        } catch (_) {}
+      });
+    } catch (e) {
+      _addLog('connectivity listener failed: $e');
     }
   }
 

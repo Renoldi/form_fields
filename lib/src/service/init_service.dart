@@ -517,6 +517,11 @@ class FormFieldsInitializer {
     // `FlushApi.flushPendingSubmissions` / `FlushApi.flushPendingSubmissionById`.
     FlushAllHandler? flushAll,
     FlushOneHandler? flushOne,
+
+    /// Runs when the device comes back online while the app is running. Works
+    /// without Workmanager. When set, it takes precedence over the foreground
+    /// handler of any `WorkerRegistration`.
+    Future<void> Function()? foregroundFlushHandler,
   }) async {
     // Setup logging. Cancel the previous listener so repeated calls (hot
     // restart, tests) do not print every record more than once.
@@ -580,6 +585,17 @@ class FormFieldsInitializer {
     );
 
     await _restorePendingUploads();
+
+    // Connectivity-triggered flush does not depend on Workmanager: it only
+    // needs the running app. Start it here so `enableWorkmanager: false` still
+    // flushes when the network returns.
+    if (foregroundFlushHandler != null) {
+      WorkmanagerService.instance.foregroundFlushHandler =
+          foregroundFlushHandler;
+    }
+    if (useConnectivity) {
+      WorkmanagerService.instance.startConnectivityFlush();
+    }
 
     // No host-provided flush handlers are registered automatically anymore.
     // Hosts should register any FlushApi handlers explicitly when needed.

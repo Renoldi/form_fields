@@ -78,6 +78,15 @@ This package includes example tooling to schedule and run background flushes (pr
 
   Identical registrations (same handler and period) are scheduled once; the later duplicate is skipped and logged as a warning.
 
+- **Sending when the network returns**: `initAll` runs `foregroundFlushHandler` whenever the device reports a connection again (`useConnectivity: true`, the default). This works without workers, but only while the app is running. To send while the app is closed, register a background worker. A failed send is retried with exponential backoff (see `SubmissionRetryPolicy` in the example app) and is marked `failed` after the last attempt. Pass `foregroundFlushHandler` to use a flush that is not tied to a worker; it takes precedence over a worker's `foregroundHandler`.
+
+  ```dart
+  await FormFieldsInitializer.initAll(
+    enableWorkmanager: false,
+    foregroundFlushHandler: () async => await processPendingSubmissions(),
+  );
+  ```
+
 - **Scheduling**: `WorkerRegistration.initialDelay` defaults to `kWorkmanagerInitialDelayDefault` (15 minutes). Pass `WorkmanagerService.instance.start(initialDelay: ...)` only when you schedule outside `initAll`.
 
 - **iOS setup (required when `enableWorkmanager: true`)**: iOS only runs background tasks whose identifiers are declared in `Info.plist`. Registering an undeclared identifier crashes the app at launch, and the crash cannot be caught in Dart. Add the modes and every `taskName` you register:
