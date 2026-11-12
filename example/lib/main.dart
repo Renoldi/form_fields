@@ -4,9 +4,13 @@
 
 // Flutter & Material Design
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+// Only GlobalWidgetsLocalizations is still needed from flutter_localizations;
+// the Material and Cupertino delegates come from material_ui / cupertino_ui.
+import 'package:flutter_localizations/flutter_localizations.dart'
+    show GlobalWidgetsLocalizations;
 import 'package:form_fields_example/src/service/flush_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 

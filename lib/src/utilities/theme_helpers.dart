@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Utilities for resolving colors from Theme while allowing per-widget overrides.
 Color resolveActiveColor(BuildContext context, Color? requested) {

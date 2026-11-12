@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/fields/core/form_fields_my_image_description_sheet.dart';
@@ -1065,13 +1065,14 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
     Future<void> doDocScan() async {
       final ok = await ensurePermissionForSource('camera');
       if (!ok) return;
-      final scanned = await CunningDocumentScanner.getPictures(
+      final scanned = await CunningDocumentScanner.scanDocuments(
         scannerSource: ScannerSource.camera,
         noOfPages: 1,
       );
       if (!mounted) return;
-      if (scanned != null && scanned.isNotEmpty) {
-        file = File(scanned.first);
+      final images = scanned?.images;
+      if (images != null && images.isNotEmpty) {
+        file = File(images.first);
       }
     }
 

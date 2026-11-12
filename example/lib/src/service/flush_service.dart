@@ -136,8 +136,8 @@ Future<bool> flushPendingSubmissions({
   }
 
   try {
-    await _releaseStaleClaims();
-    final rows = await _fetchPendingRows();
+    await _withSchemaRetry(_releaseStaleClaims);
+    final rows = await _withSchemaRetry(_fetchPendingRows);
     if (rows.isEmpty) {
       _logger.i('flushPendingSubmissions: no pending rows');
       return true;
@@ -213,6 +213,20 @@ Future<bool> flushPendingSubmissionById(
     return false;
   } finally {
     if (acquiredHere) WorkmanagerService.releaseFlushGuard();
+  }
+}
+
+/// Runs [op]; if the pending table is missing (`no such table`), re-applies the
+/// schema-only migration (`CREATE TABLE IF NOT EXISTS`, safe to repeat) and
+/// retries once. Any other error is rethrown unchanged.
+Future<T> _withSchemaRetry<T>(Future<T> Function() op) async {
+  try {
+    return await op();
+  } catch (e) {
+    if (!e.toString().contains('no such table')) rethrow;
+    _logger.w('Pending schema missing, re-applying migrations: $e');
+    await DBService.instance.runMigrationAsset('migrations/migration.sql');
+    return op();
   }
 }
 

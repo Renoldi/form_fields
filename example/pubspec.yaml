@@ -29,13 +29,15 @@ dependencies:
   permission_handler: any
   camera: any
   google_fonts: any
-  file_picker: ^11.0.2
+  file_picker: ^13.3.3
   workmanager: any
   path_provider: any
   path: any
   geolocator: any
   flutter_map: any
   latlong2: any
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
   # firebase_core, firebase_messaging and flutter_local_notifications
   # are provided by the optional `form_fields_fcm` package.
 

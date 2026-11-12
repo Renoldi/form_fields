@@ -87,13 +87,13 @@ class ImportExportService {
   /// Returns the imported file path on success, or null on failure/cancel.
   Future<String?> pickFileAndImport() async {
     try {
-      final result = await FilePicker.pickFiles(
+      // file_picker 13+ returns the picked files directly (empty when cancelled).
+      final files = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['sql', 'txt'],
-        allowMultiple: false,
       );
-      if (result == null || result.files.isEmpty) return null;
-      final filePath = result.files.single.path;
+      if (files.isEmpty) return null;
+      final filePath = files.single.path;
       if (filePath == null) return null;
       // Copy to temp to ensure read permissions and consistent path
       final tmpDir = await getTemporaryDirectory();

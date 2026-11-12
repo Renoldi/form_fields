@@ -2,7 +2,7 @@
 // It exposes common Scaffold properties while providing flexible SafeArea options
 // for top/left/right/bottom and minimum padding.
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/gestures.dart';
 
 /// A wrapper that places a [SafeArea] as the parent of a [Scaffold].

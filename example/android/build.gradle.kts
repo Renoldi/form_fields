@@ -26,3 +26,12 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// lintVital* tasks crash inside the Android lint analyzer (JavaDocParser
+// NoSuchMethodError) for some plugins, e.g. camera_android_camerax 0.7.x, and
+// fail `flutter build apk --release`. Lint is not needed to produce the APK.
+subprojects {
+    tasks.matching { it.name.startsWith("lintVital") }.configureEach {
+        enabled = false
+    }
+}

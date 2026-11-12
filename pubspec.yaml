@@ -35,12 +35,14 @@ dependencies:
   connectivity_plus: any
   flutter_widget_from_html: any
   skeleton_text: any
-  file_picker: ^11.0.2
+  file_picker: ^13.3.3
   cached_network_image: ^3.2.3
   flutter_map: ^8.3.1
   latlong2: any
   geocoding: ^5.0.0
   geolocator: any
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
   # Firebase deps moved to the optional `form_fields_fcm` package.
   # form_fields_fcm:
   #   git:

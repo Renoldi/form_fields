@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_fields_example/state/app_state_notifier.dart';
 
 class ViewModel extends ChangeNotifier {
