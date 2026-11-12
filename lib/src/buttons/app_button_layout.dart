@@ -1,6 +1,6 @@
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Layout wrapper that keeps action buttons visible above keyboard
 /// while respecting bottom safe areas.

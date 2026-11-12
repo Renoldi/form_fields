@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// This file is generated to include all Material icons from the Icons class.
 /// Do not edit manually. Regenerate using the tool/generate_material_icons.dart script.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:form_fields/src/fields/core/form_fields_signature_pad.dart';
 import 'package:signature/signature.dart';

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/utilities/base64_image.dart';

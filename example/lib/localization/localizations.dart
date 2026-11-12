@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as flutter;
+import 'package:material_ui/material_ui.dart' as flutter;
 import 'languages/en.dart';
 import 'languages/id.dart';
 

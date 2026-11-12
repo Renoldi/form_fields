@@ -1,7 +1,7 @@
 /// String extensions for validation and manipulation
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 /// Local part, then one or more dot-separated labels, then "@" and a domain

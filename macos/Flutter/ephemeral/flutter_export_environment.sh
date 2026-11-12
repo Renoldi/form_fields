@@ -1,8 +1,8 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
 export "FLUTTER_ROOT=/Users/it-07/flutter"
-export "FLUTTER_APPLICATION_PATH=/Users/it-07/Documents/enerren/form_fields_package"
-export "FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH=/Users/it-07/Documents/enerren/form_fields_package/macos/Flutter/ephemeral/Packages/.packages/FlutterFramework"
+export "FLUTTER_APPLICATION_PATH=/Users/it-07/Documents/plugin/form_fields"
+export "FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH=/Users/it-07/Documents/plugin/form_fields/macos/Flutter/ephemeral/Packages/.packages/FlutterFramework"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.1.0"

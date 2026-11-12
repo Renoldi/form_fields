@@ -1,7 +1,7 @@
 /// State management controller for FormFields
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/src/utils/safe_notify.dart';
 import 'package:form_fields/form_fields.dart';
 
