@@ -446,7 +446,7 @@ DateTime? fullDateTime = time.toDateTimeWithDate(eventDate);
 
 ## Need Help?
 
-- **Documentation**: See [README.md](README.md)
+- **Documentation**: See [README.md](../../README.md)
 - **Usage Manual**: See [USAGE.md](USAGE.md)
 - **Example App**: Check `example/lib/main.dart`
 - **Issues**: https://github.com/enerren/form_fields/issues
@@ -635,7 +635,7 @@ Now that you've learned the basics, explore more:
 
 ### 📚 Documentation
 
-- **[README.md](README.md)** — Complete package documentation with all features
+- **[README.md](../../README.md)** — Complete package documentation with all features
 - **[API.md](API.md)** — Full API reference with all properties and methods
 - **[LOCALIZATION.md](LOCALIZATION.md)** — Multi-language support guide
 - **[USAGE.md](USAGE.md)** — Advanced usage patterns and examples
@@ -660,8 +660,8 @@ The package currently supports English and Indonesian. We need translations for:
 ### 💬 Get Help
 
 - Report issues: [GitHub Issues](https://github.com/enerren/form_fields/issues)
-- Read examples: [example/lib](example/lib)
-- Review tests: [test/](test/)
+- Read examples: [example/lib](../../example/lib)
+- Review tests: [test/](../../test/)
 
 ---
 

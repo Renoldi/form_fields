@@ -98,18 +98,18 @@ flowchart LR
 
 ## Package Source Layout
 
-Library source in [lib/src](lib/src) is organized by feature domain:
+Library source in [lib/src](../../lib/src) is organized by feature domain:
 
-- [lib/src/buttons](lib/src/buttons): AppButton family components and enums.
-- [lib/src/fields/core](lib/src/fields/core): Main FormFields widget.
-- [lib/src/fields/autocomplete](lib/src/fields/autocomplete): autocomplete field widget.
-- [lib/src/fields/selection](lib/src/fields/selection): dropdown, multi-select, radio, checkbox, and selection wrapper.
-- [lib/src/feedback](lib/src/feedback): app dialog service, loading indicators, and progress indicators.
-- [lib/src/utilities](lib/src/utilities): shared enums, validators, extensions, and helpers.
-- [lib/src/providers](lib/src/providers): internal notifiers.
-- [lib/src/localization](lib/src/localization): package localization delegate and language maps.
+- [lib/src/buttons](../../lib/src/buttons): AppButton family components and enums.
+- [lib/src/fields/core](../../lib/src/fields/core): Main FormFields widget.
+- [lib/src/fields/autocomplete](../../lib/src/fields/autocomplete): autocomplete field widget.
+- [lib/src/fields/selection](../../lib/src/fields/selection): dropdown, multi-select, radio, checkbox, and selection wrapper.
+- [lib/src/feedback](../../lib/src/feedback): app dialog service, loading indicators, and progress indicators.
+- [lib/src/utilities](../../lib/src/utilities): shared enums, validators, extensions, and helpers.
+- [lib/src/providers](../../lib/src/providers): internal notifiers.
+- [lib/src/localization](../../lib/src/localization): package localization delegate and language maps.
 
-Public API remains centralized via [lib/form_fields.dart](lib/form_fields.dart), so folder refactors do not impact package consumers.
+Public API remains centralized via [lib/form_fields.dart](../../lib/form_fields.dart), so folder refactors do not impact package consumers.
 
 ## MVP Pattern Implementation
 

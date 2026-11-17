@@ -20,4 +20,4 @@ FormFieldsDropdown<String>(
 - `labelPosition`, `borderType`
 - item and border styling parameters
 
-See [API.md](../../API.md) for full details.
+See [API.md](../guides/API.md) for full details.

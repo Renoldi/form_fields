@@ -19,4 +19,4 @@ FormFieldsDropdownMulti<String>(
 - `isRequired`, `validator`
 - style and layout controls
 
-See [API.md](../../API.md) for complete parameters.
+See [API.md](../guides/API.md) for complete parameters.

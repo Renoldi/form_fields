@@ -189,9 +189,9 @@ class ViewModel {
 ## Documentation
 
 - **README.md** - Package overview and showcase
-- **USAGE.md** - Detailed usage guide with examples
-- **API.md** - Complete API reference
-- **QUICKSTART.md** - Quick start guide
-- **LOCALIZATION.md** - Localization implementation guide
+- **docs/guides/USAGE.md** - Detailed usage guide with examples
+- **docs/guides/API.md** - Complete API reference
+- **docs/guides/QUICKSTART.md** - Quick start guide
+- **docs/guides/LOCALIZATION.md** - Localization implementation guide
 - **CONTRIBUTING.md** - Contribution guidelines
 - **CHANGELOG.md** - Version history

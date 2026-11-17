@@ -6,8 +6,8 @@ Reusable Material 3 button component that supports multiple button types, loadin
 
 ## Architecture Links
 
-- [Architecture Diagram](../../ARCHITECTURE.md#architecture-diagram)
-- [AppButton Family Diagram](../../ARCHITECTURE.md#appbutton-family-diagram)
+- [Architecture Diagram](../guides/ARCHITECTURE.md#architecture-diagram)
+- [AppButton Family Diagram](../guides/ARCHITECTURE.md#appbutton-family-diagram)
 
 ## Supported Types
 

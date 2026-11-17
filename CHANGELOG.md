@@ -15,8 +15,17 @@ All notable changes to the FormFields package will be documented in this file.
 - Upload resiliency: `DioUtil.uploadFile` adds short retry/backoff for transient DNS/connection errors and returns diagnostic responses on persistent failures.
 - `UploadService.uploadDirectPayload` returns a sanitized `DirectUploadPayload` when uploads are queued due to auth expiry (401) or network failures; new callback `onUploadQueued(DirectUploadPayload payload, bool authExpired)` notifies callers when a payload is queued (authExpired=true means 401).
 
+### Fixed
+
+- Queued upload payloads no longer keep an `Authorization` header in any letter case. The previous check was case-sensitive, so a token passed as `Authorization` was written to the offline queue.
+- `UploadHelper.uploadPersistedPayload` accepts `uploadTokenRefresher`. Retries from the offline queue now send a fresh token instead of going out without credentials. Stored headers that still hold an old token have it removed.
+- `distanceToSegmentMeters` measures segments that cross the antimeridian the short way.
+- `isNumeric` rejects `NaN` and infinite values.
+- `isValidPhone` ignores surrounding whitespace, as `isValidEmail` already does.
+
 ### Documentation
 
+- Moved the root-level guides (`API`, `USAGE`, `QUICKSTART`, `LOCALIZATION`, `ARCHITECTURE`, `PROJECT_STRUCTURE`, `CROSS_PLATFORM_SETUP`, `API_KEYS_SECURITY`) into `docs/guides/`. Links are updated.
 - Updated all markdown docs for OTP/verification field, resend UI, OtpBorderType, and localization
 - Synced API docs with feedback exports (`AppDialogService`, `AppGlobalDialogService`, `AppLoadingIndicator`, `AppProgressIndicator`)
 - Added usage guide section for feedback/dialog patterns and loading visual options

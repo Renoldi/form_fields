@@ -20,4 +20,4 @@ FormFieldsCheckbox<String>(
 - direction, side-by-side behavior, indicator alignment
 - border, item padding, and active color customization
 
-See [API.md](../../API.md) for complete parameter details.
+See [API.md](../guides/API.md) for complete parameter details.

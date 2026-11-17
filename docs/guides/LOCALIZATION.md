@@ -893,8 +893,8 @@ localizationsDelegates: const [
 
 **A:** Check the package language files:
 
-- [lib/src/localization/languages/en_us.dart](lib/src/localization/languages/en_us.dart) - English (reference)
-- [lib/src/localization/languages/id_id.dart](lib/src/localization/languages/id_id.dart) - Indonesian
+- [lib/src/localization/languages/en_us.dart](../../lib/src/localization/languages/en_us.dart) - English (reference)
+- [lib/src/localization/languages/id_id.dart](../../lib/src/localization/languages/id_id.dart) - Indonesian
 
 Or in your custom language, copy all keys from English.
 
@@ -1277,7 +1277,7 @@ Help us support more languages! Priority translations:
 ## Need Help?
 
 - **Issues?** Create a [GitHub issue](https://github.com/enerren/form_fields/issues)
-- **Examples?** Check [example/lib](example/lib) folder
+- **Examples?** Check [example/lib](../../example/lib) folder
 - **Flutter Docs?** See [Flutter Localization](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
 
 ---

@@ -717,9 +717,9 @@ flutter build web
 
 ## Related Documentation
 
-- [BUILD_CONFIG.md](BUILD_CONFIG.md) - Build configuration system details
+- [BUILD_CONFIG.md](../../BUILD_CONFIG.md) - Build configuration system details
 - [API_KEYS_SECURITY.md](API_KEYS_SECURITY.md) - Security best practices
-- [ENVIRONMENT_CONFIG.md](example/ENVIRONMENT_CONFIG.md) - Environment setup
+- [ENVIRONMENT_CONFIG.md](../../example/ENVIRONMENT_CONFIG.md) - Environment setup
 - [Apple Developer Documentation](https://developer.apple.com/)
 - [Android Developer Documentation](https://developer.android.com/)
 - [Flutter Build Documentation](https://flutter.dev/docs/deployment)

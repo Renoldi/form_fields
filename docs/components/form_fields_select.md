@@ -21,4 +21,4 @@ FormFieldsSelect<Country>(
 - `isRequired`, `validator`
 - label and border customization
 
-See [API.md](../../API.md) for complete API details.
+See [API.md](../guides/API.md) for complete API details.

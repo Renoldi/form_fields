@@ -2,6 +2,12 @@ import 'dart:math';
 
 import 'package:latlong2/latlong.dart';
 
+/// Longitude difference from [from] to [to] in degrees, wrapped to
+/// [-180, 180). Without the wrap, a segment that crosses the antimeridian
+/// (for example 179.9 to -179.9) would look about 360 degrees long.
+double _longitudeDelta(double from, double to) =>
+    ((to - from + 540.0) % 360.0) - 180.0;
+
 /// Shortest distance in meters from [p] to the segment [a]-[b].
 ///
 /// Uses a local flat projection around [a]. That is accurate enough for the
@@ -11,7 +17,11 @@ double distanceToSegmentMeters(LatLng p, LatLng a, LatLng b) {
   final cosLat = cos(a.latitude * pi / 180.0);
 
   double projectX(LatLng q) =>
-      (q.longitude - a.longitude) * pi / 180.0 * cosLat * earthRadius;
+      _longitudeDelta(a.longitude, q.longitude) *
+      pi /
+      180.0 *
+      cosLat *
+      earthRadius;
   double projectY(LatLng q) =>
       (q.latitude - a.latitude) * pi / 180.0 * earthRadius;
 

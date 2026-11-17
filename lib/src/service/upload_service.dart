@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
+import 'package:form_fields/src/utilities/persisted_headers.dart';
 import 'package:form_fields/src/utilities/upload_response_mapper.dart';
 import 'package:form_fields/src/utils/debug_log.dart';
 
@@ -72,7 +73,7 @@ class UploadService {
     var response = await _send(payload, headers, onProgress);
 
     if (_isUnauthorized(response) && uploadTokenRefresher != null) {
-      final refreshed = await _refreshAuthorization(uploadTokenRefresher);
+      final refreshed = await fetchAuthorization(uploadTokenRefresher);
       if (refreshed != null) {
         headers[HttpHeaders.authorizationHeader] = refreshed;
         response = await _send(payload, headers, onProgress);
@@ -151,7 +152,9 @@ class UploadService {
     return statusCode == 408 || statusCode == 429 || statusCode >= 500;
   }
 
-  Future<String?> _refreshAuthorization(
+  /// Runs [refresher] and returns the `Authorization` value it produced, or
+  /// null when it produced nothing usable or threw. Never throws.
+  static Future<String?> fetchAuthorization(
     Future<String?> Function() refresher,
   ) async {
     try {
@@ -184,8 +187,8 @@ class UploadService {
     required bool authExpired,
     UploadQueuedCallback? onQueued,
   }) {
-    final headersForPersist = Map<String, String>.from(headers)
-      ..remove(HttpHeaders.authorizationHeader);
+    // Case-insensitive, so "Authorization" and "authorization" are both removed.
+    final headersForPersist = headersForPersistence(headers);
     final sanitized = DirectUploadPayload(
       url: payload.url,
       filePath: payload.filePath,

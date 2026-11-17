@@ -28,7 +28,7 @@ We welcome translations for all languages. The package currently supports:
 - 🇮🇩 Indonesian
 
 **📖 Complete Step-by-Step Guide:**
-See [LOCALIZATION.md - Contributing Section](LOCALIZATION.md#contributing) for detailed instructions including:
+See [LOCALIZATION.md - Contributing Section](docs/guides/LOCALIZATION.md#contributing) for detailed instructions including:
 
 - Creating language files
 - Registering new languages

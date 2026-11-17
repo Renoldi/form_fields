@@ -3,6 +3,24 @@ import 'package:form_fields/src/utilities/extensions.dart';
 import 'package:form_fields/src/utilities/validators.dart';
 
 void main() {
+  group('isValidPhone and isNumeric', () {
+    test('isValidPhone ignores surrounding whitespace, as isValidEmail does', () {
+      expect('+6281234567890 '.isValidPhone, isTrue);
+      expect(' +6281234567890'.isValidPhone, isTrue);
+    });
+
+    test('isNumeric accepts ordinary numbers', () {
+      expect('2.5'.isNumeric, isTrue);
+      expect('-3'.isNumeric, isTrue);
+    });
+
+    test('isNumeric rejects NaN and infinite values', () {
+      expect('NaN'.isNumeric, isFalse);
+      expect('Infinity'.isNumeric, isFalse);
+      expect('-Infinity'.isNumeric, isFalse);
+    });
+  });
+
   group('isValidEmail', () {
     test('accepts ordinary and dotted addresses', () {
       expect('john@mail.com'.isValidEmail, isTrue);

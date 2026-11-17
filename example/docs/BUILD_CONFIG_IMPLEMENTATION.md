@@ -446,14 +446,14 @@ All code validated:
 
 ### For iOS Developers
 
-1. Review iOS section in [CROSS_PLATFORM_SETUP.md](CROSS_PLATFORM_SETUP.md)
+1. Review iOS section in [CROSS_PLATFORM_SETUP.md](../../docs/guides/CROSS_PLATFORM_SETUP.md)
 2. Update `ios/Podfile` with deployment targets
 3. Configure API keys in `ios/Runner/Info.plist`
 4. Set appropriate permissions
 
 ### For CI/CD
 
-1. Review [API_KEYS_SECURITY.md](API_KEYS_SECURITY.md) CI/CD section
+1. Review [API_KEYS_SECURITY.md](../../docs/guides/API_KEYS_SECURITY.md) CI/CD section
 2. Add secrets to GitHub Actions or GitLab CI
 3. Create API keys file during build
 4. Test builds complete successfully

@@ -216,5 +216,5 @@ The widget also continues to support the legacy `onFailDirectUploadPayload(List<
 - Signature drawing: [`package:signature`](https://pub.dev/packages/signature)
 - Camera: [`package:camera`](https://pub.dev/packages/camera)
 
-See [API.md](../../API.md) for full parameter details.
+See [API.md](../guides/API.md) for full parameter details.
 See [FormFieldsLiveCameraCapture](form_fields_live_camera_capture.md) for standalone camera usage.

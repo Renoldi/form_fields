@@ -15,6 +15,9 @@ final RegExp _emailPattern = RegExp(
 
 final RegExp _integerPattern = RegExp(r'^-?[0-9]+$');
 
+/// Country code (1-3 digits) followed by 7-15 national digits, with a leading "+".
+final RegExp _phonePattern = RegExp(r'^\+\d{1,3}\d{7,15}$');
+
 final RegExp _decimalPattern = RegExp(r'^[+-]?(\d+\.?\d*|\.\d+)$');
 
 /// A trailing UTC offset: "Z", "+07:00", "-0500".
@@ -43,11 +46,11 @@ extension StringExtensions on String? {
     return this!.length >= 6;
   }
 
-  /// Check if phone number is valid in +CCXXXXXXXXXX format (country code + 7-15 digits)
+  /// Check if phone number is valid in +CCXXXXXXXXXX format (country code + 7-15 digits).
+  /// Surrounding whitespace is ignored, as in [isValidEmail].
   bool get isValidPhone {
     if (this == null) return false;
-    final phoneRegExp = RegExp(r'^\+\d{1,3}\d{7,15}$');
-    return phoneRegExp.hasMatch(this!);
+    return _phonePattern.hasMatch(this!.trim());
   }
 
   /// Check if string is a whole number (optional leading minus).
@@ -77,10 +80,12 @@ extension StringExtensions on String? {
         .join(' ');
   }
 
-  /// Check if string is numeric (including decimals)
+  /// Check if string is a finite number (including decimals). `NaN` and
+  /// infinite values are not numeric for form input.
   bool get isNumeric {
     if (this == null) return false;
-    return double.tryParse(this!) != null;
+    final value = double.tryParse(this!);
+    return value != null && value.isFinite;
   }
 
   /// Capitalize first letter

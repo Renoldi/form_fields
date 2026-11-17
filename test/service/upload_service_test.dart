@@ -168,6 +168,24 @@ void main() {
     expect(outcome.queued, isTrue);
   });
 
+  test('a capitalised Authorization header never reaches the queued payload', () async {
+    DioUtil.dio.httpClientAdapter = ScriptedHttpAdapter([
+      DioExceptionType.connectionError,
+    ]);
+
+    final outcome = await UploadService.instance.uploadDirectPayload(
+      DirectUploadPayload(
+        url: 'https://example.test/upload',
+        filePath: photo.path,
+        fileName: 'photo.jpg',
+        headers: {'Authorization': 'Bearer SECRET', 'X-Client': 'app'},
+      ),
+    );
+
+    expect(outcome.sanitizedPayload, isNotNull);
+    expect(outcome.sanitizedPayload!.headers, {'X-Client': 'app'});
+  });
+
   test('a refresh that still gets 401 is queued with the auth flag', () async {
     final adapter = ScriptedHttpAdapter([401, 401]);
 
