@@ -1,4 +1,3 @@
-import lib.session
 from pathlib import Path
 
 p = Path('example/lib/ui/pages/myimage_examples/view.dart')

@@ -213,11 +213,11 @@ FormFields<String>(
 
 ## Localization
 
-All validation and UI text is fully localized (English, Indonesian, and easily extendable). See [LOCALIZATION.md](../../LOCALIZATION.md).
+All validation and UI text is fully localized (English, Indonesian, and easily extendable). See [LOCALIZATION.md](../guides/LOCALIZATION.md).
 
 ## Architecture Links
 
-- [Architecture Diagram](../../ARCHITECTURE.md#architecture-diagram)
-- [FormFields Validation Flow](../../ARCHITECTURE.md#formfields-validation-flow)
+- [Architecture Diagram](../guides/ARCHITECTURE.md#architecture-diagram)
+- [FormFields Validation Flow](../guides/ARCHITECTURE.md#formfields-validation-flow)
 
-For full property details, see [API.md](../../API.md).
+For full property details, see [API.md](../guides/API.md).

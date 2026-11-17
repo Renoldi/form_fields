@@ -303,7 +303,7 @@ MaterialApp(
 )
 ```
 
-See [LOCALIZATION.md](LOCALIZATION.md) for extending or overriding strings.
+See [LOCALIZATION.md](docs/guides/LOCALIZATION.md) for extending or overriding strings.
 
 ---
 
@@ -396,12 +396,12 @@ await FormFieldsInitializer.changeDbVersion(1,
 
 | Document                                     | Description                |
 | -------------------------------------------- | -------------------------- |
-| [API.md](API.md)                             | Full API reference         |
-| [USAGE.md](USAGE.md)                         | Usage patterns and recipes |
-| [LOCALIZATION.md](LOCALIZATION.md)           | Localization guide         |
-| [QUICKSTART.md](QUICKSTART.md)               | Quickstart guide           |
-| [ARCHITECTURE.md](ARCHITECTURE.md)           | Architecture overview      |
-| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Project structure          |
+| [API.md](docs/guides/API.md)                             | Full API reference         |
+| [USAGE.md](docs/guides/USAGE.md)                         | Usage patterns and recipes |
+| [LOCALIZATION.md](docs/guides/LOCALIZATION.md)           | Localization guide         |
+| [QUICKSTART.md](docs/guides/QUICKSTART.md)               | Quickstart guide           |
+| [ARCHITECTURE.md](docs/guides/ARCHITECTURE.md)           | Architecture overview      |
+| [PROJECT_STRUCTURE.md](docs/guides/PROJECT_STRUCTURE.md) | Project structure          |
 | [CONTRIBUTING.md](CONTRIBUTING.md)           | Contribution guidelines    |
 | [CHANGELOG.md](CHANGELOG.md)                 | Changelog                  |
 
@@ -450,7 +450,7 @@ FormFields<String>(
   - Place labels above, below, left, right, inline, or hidden using `labelPosition`.
 - **Multi-Language & Localization:**
   - All validation and UI text is fully localized (English, Indonesian, and easy extension).
-  - See [LOCALIZATION.md](LOCALIZATION.md) for details.
+  - See [LOCALIZATION.md](docs/guides/LOCALIZATION.md) for details.
 
 ## Signature Pad + Live Camera (New)
 
@@ -910,12 +910,12 @@ AppButton<LoginAction>(
 
 ## Additional References
 
-- [API Reference](API.md)
-- [Usage Guide](USAGE.md)
-- [Localization Guide](LOCALIZATION.md)
-- [Quickstart](QUICKSTART.md)
-- [Architecture](ARCHITECTURE.md)
-- [Project Structure](PROJECT_STRUCTURE.md)
+- [API Reference](docs/guides/API.md)
+- [Usage Guide](docs/guides/USAGE.md)
+- [Localization Guide](docs/guides/LOCALIZATION.md)
+- [Quickstart](docs/guides/QUICKSTART.md)
+- [Architecture](docs/guides/ARCHITECTURE.md)
+- [Project Structure](docs/guides/PROJECT_STRUCTURE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 

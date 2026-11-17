@@ -1972,9 +1972,9 @@ FormFields<TimeOfDay>(
 
 ## Related Resources
 
-- [README](README.md) — Package overview and installation
+- [README](../../README.md) — Package overview and installation
 - [USAGE](USAGE.md) — Comprehensive usage manual
 - [QUICKSTART](QUICKSTART.md) — Quick start guide
 - [LOCALIZATION](LOCALIZATION.md) — i18n and locale configuration
-- [CHANGELOG](CHANGELOG.md) — Version history
-- [Example App](example/lib/main.dart) — Runnable example application
+- [CHANGELOG](../../CHANGELOG.md) — Version history
+- [Example App](../../example/lib/main.dart) — Runnable example application

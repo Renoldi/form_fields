@@ -33,6 +33,20 @@ void main() {
     expect(d, closeTo(111.2, 1.0));
   });
 
+  test('a segment that crosses the antimeridian is measured the short way', () {
+    // From 179.9 east to -179.9 is 0.2 degrees across 180, not 359.8 back.
+    final west = LatLng(0, 179.9);
+    final east = LatLng(0, -179.9);
+
+    // Both points lie on the short segment, so the distance is zero.
+    expect(distanceToSegmentMeters(LatLng(0, 179.95), west, east), closeTo(0, 1e-3));
+    expect(distanceToSegmentMeters(LatLng(0, -179.95), west, east), closeTo(0, 1e-3));
+
+    // 0.001 degrees of latitude off the segment is about 111 m.
+    final off = distanceToSegmentMeters(LatLng(0.001, 179.95), west, east);
+    expect(off, closeTo(111.2, 1.0));
+  });
+
   group('bearingDegrees', () {
     final origin = LatLng(0, 0);
 

@@ -1307,7 +1307,7 @@ const AppProgressIndicator(
 )
 ```
 
-For complete API details, see [docs/components/app_dialog_service.md](docs/components/app_dialog_service.md) and [docs/components/loading_progress.md](docs/components/loading_progress.md).
+For complete API details, see [docs/components/app_dialog_service.md](../components/app_dialog_service.md) and [docs/components/loading_progress.md](../components/loading_progress.md).
 
 ## Best Practices
 

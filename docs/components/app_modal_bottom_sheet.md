@@ -25,4 +25,4 @@ await showAppModalBottomSheet(
 - All parameters from Flutter's `showModalBottomSheet`
 - Keyboard-aware and safe by default
 
-See [API.md](../../API.md) for full details.
+See [API.md](../guides/API.md) for full details.

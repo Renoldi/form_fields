@@ -551,7 +551,7 @@ git push --force-with-lease origin main
 
 ## Related Documentation
 
-- [BUILD_CONFIG.md](BUILD_CONFIG.md) - Build configuration system
-- [ENVIRONMENT_CONFIG.md](example/ENVIRONMENT_CONFIG.md) - Environment management
+- [BUILD_CONFIG.md](../../BUILD_CONFIG.md) - Build configuration system
+- [ENVIRONMENT_CONFIG.md](../../example/ENVIRONMENT_CONFIG.md) - Environment management
 - [Google Cloud Security Best Practices](https://cloud.google.com/security/best-practices)
 - [OWASP API Security Top 10](https://owasp.org/www-project-api-security/)

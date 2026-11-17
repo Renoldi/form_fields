@@ -202,4 +202,4 @@ Form(
 
 ---
 
-Lihat [API.md](../../API.md) untuk detail parameter lengkap.
+Lihat [API.md](../guides/API.md) untuk detail parameter lengkap.

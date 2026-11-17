@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:form_fields/form_fields.dart';
+import 'package:form_fields/src/utilities/persisted_headers.dart';
 
 /// Helper utilities for converting persisted/queued payloads into
 /// upload-ready maps and performing the upload via `DioUtil.uploadFile`.
@@ -279,9 +280,15 @@ class UploadHelper {
   /// Upload a persisted payload (the same shape produced by the field's
   /// queued payload). The helper will decode base64 into a temp file when
   /// necessary and will remove any temp file after the upload completes.
+  ///
+  /// Persisted payloads never hold a token, so [uploadTokenRefresher] supplies
+  /// the `Authorization` value. It is called before the first attempt, and
+  /// again if the server answers 401. Without it, the retry is sent without
+  /// credentials.
   static Future<MyImageResult?> uploadPersistedPayload(
     Map<String, dynamic> persisted, {
     void Function(double progress)? onProgress,
+    Future<String?> Function()? uploadTokenRefresher,
   }) async {
     final p = await buildUploadPayloadFromMap(persisted);
     if (p == null) return null;
@@ -301,9 +308,16 @@ class UploadHelper {
         }
       } catch (_) {}
 
+      // Drop any credential saved by an older version before adding a fresh one.
       final headersMap = headers != null
-          ? Map<String, String>.from(headers)
+          ? headersForPersistence(headers)
           : <String, String>{};
+      if (uploadTokenRefresher != null) {
+        final token = await UploadService.fetchAuthorization(
+          uploadTokenRefresher,
+        );
+        if (token != null) headersMap[HttpHeaders.authorizationHeader] = token;
+      }
       final fieldsMap = <String, String>{};
       if (p['fields'] is Map) {
         (p['fields'] as Map).forEach((k, v) {
@@ -326,6 +340,7 @@ class UploadHelper {
       final outcome = await UploadService.instance.uploadDirectPayload(
         direct,
         onProgress: onProgress,
+        uploadTokenRefresher: uploadTokenRefresher,
       );
 
       try {

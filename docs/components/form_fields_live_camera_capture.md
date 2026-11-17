@@ -123,4 +123,4 @@ iOS — add to `ios/Runner/Info.plist`:
 <string>Camera access needed to capture photo</string>
 ```
 
-See [API.md](../../API.md) for full parameter details.
+See [API.md](../guides/API.md) for full parameter details.

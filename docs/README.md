@@ -21,5 +21,5 @@ This folder organizes widget documentation into separate files so each component
 
 ## Notes
 
-- Full API reference remains available in [API.md](../API.md).
+- Full API reference remains available in [API.md](guides/API.md).
 - Main usage and overview remain in [README.md](../README.md).

@@ -18,6 +18,6 @@ FormFieldsAutocomplete<String>(
 - `parseResults`
 - `itemSelectedBuilder`, `itemBuilder`
 - `inputDecoration`, `labelPlacement`, `borderStyle`
-- **Localization:** All UI and error text is localized (see [LOCALIZATION.md](../../LOCALIZATION.md)).
+- **Localization:** All UI and error text is localized (see [LOCALIZATION.md](../guides/LOCALIZATION.md)).
 
-For complete parameters, see [API.md](../../API.md).
+For complete parameters, see [API.md](../guides/API.md).

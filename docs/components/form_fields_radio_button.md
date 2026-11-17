@@ -20,4 +20,4 @@ FormFieldsRadioButton<String>(
 - direction, spacing, and indicator alignment
 - border and active color customization
 
-See [API.md](../../API.md) for full parameter details.
+See [API.md](../guides/API.md) for full parameter details.

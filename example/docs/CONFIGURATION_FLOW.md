@@ -446,7 +446,7 @@ flutter run
 
 - **[HOW_TO_USE.md](HOW_TO_USE.md)** - Complete usage guide
 - **[BUILD_CONFIG_IMPLEMENTATION.md](BUILD_CONFIG_IMPLEMENTATION.md)** - Technical details
-- **[API_KEYS_SECURITY.md](API_KEYS_SECURITY.md)** - Security best practices
+- **[API_KEYS_SECURITY.md](../../docs/guides/API_KEYS_SECURITY.md)** - Security best practices
 
 ---
 
