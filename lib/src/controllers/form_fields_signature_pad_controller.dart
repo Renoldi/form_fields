@@ -1,7 +1,8 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:form_fields/src/utils/safe_notify.dart';
+import 'package:form_fields/src/utilities/safe_notify.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utilities/signature_pad_export_result.dart';
+import 'package:form_fields/src/providers/form_fields_change_notifier.dart';
 
 /// Controller for [FormFieldsSignaturePad].
 ///
@@ -28,7 +29,7 @@ import 'package:form_fields/src/utilities/signature_pad_export_result.dart';
 ///   MyImageResult.network('https://example.com/existing-signature.png'),
 /// );
 /// ```
-class FormFieldsSignaturePadController extends ChangeNotifier {
+class FormFieldsSignaturePadController extends FormFieldsChangeNotifier {
   FormFieldsSignaturePadController();
 
   /// Named constructor — pre-seeds with an existing signature result.
@@ -88,14 +89,11 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
   // ── Internal integration — called only by FormFieldsSignaturePad ──────────
 
   /// @internal — registered by [FormFieldsSignaturePad] on mount.
-  VoidCallback? _clearHandler;
+  final FormFieldsHandlerSlot<VoidCallback> _clear = FormFieldsHandlerSlot();
 
-  // ignore: use_setters_to_change_properties
-  void registerClearHandler(VoidCallback onClear) {
-    _clearHandler = onClear;
-  }
+  void registerClearHandler(VoidCallback onClear) => _clear.register(onClear);
 
-  void unregisterClearHandler() => _clearHandler = null;
+  void unregisterClearHandler() => _clear.unregister();
 
   /// @internal — called by the widget after export.
   void updateFromWidget(SignaturePadExportResult result) {
@@ -111,5 +109,5 @@ class FormFieldsSignaturePadController extends ChangeNotifier {
 
   /// Programmatically clear the attached [FormFieldsSignaturePad] widget,
   /// resetting both the drawing pad and the camera capture.
-  void clearWidget() => _clearHandler?.call();
+  void clearWidget() => _clear.handler?.call();
 }

@@ -4,7 +4,11 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
 import '../utilities/theme_helpers.dart';
-import 'package:form_fields/src/utils/debug_log.dart';
+import 'package:form_fields/src/utilities/debug_log.dart';
+
+part 'app_dialog_service_parts/dialog_flow.dart';
+part 'app_dialog_service_parts/dialog_chrome.dart';
+part 'app_dialog_service_parts/guard.dart';
 
 class AppDialogService {
   /// Example usage in UI or ViewModel:
@@ -81,6 +85,7 @@ class AppDialogService {
   }
 
   final BuildContext context;
+
   /// Shared by every instance. A new `AppDialogService` is created for almost
   /// every call, so a per-instance flag let `hideLoading()` on one instance miss
   /// a loading dialog that another instance had shown, and it stayed on screen.
@@ -156,87 +161,32 @@ class AppDialogService {
     AppDialogSuccessCallback<T>? onSuccess,
     AppDialogErrorCallback? onError,
     void Function(Map<String, List<String>> errors)? onValidationError,
-  }) async {
-    var loadingShown = false;
-
-    // Resolve localized fallbacks before any await to avoid using
-    // `context` across async gaps (prevents use_build_context_synchronously).
-    final resolvedSuccessTitle = successTitle ?? context.formTr('success');
-    final resolvedSuccessMessage =
-        successMessage ?? context.formTr('successMessage');
-
-    try {
-      if (showBlockingLoading) {
-        loadingShown = true;
-        unawaited(
-          showLoading(
-            message: loadingMessage,
-            loadingVisual: loadingVisual,
-            loadingVariant: loadingVariant,
-            progressType: progressType,
-            loadingBackBehavior: loadingBackBehavior,
-            onCancelRequested: onCancelRequested,
-            onCancelled: onCancelled,
-            cancelTitle: cancelTitle,
-            cancelMessage: cancelMessage,
-            stayLabel: stayLabel,
-            cancelLabel: cancelLabel,
-            position: loadingPosition,
-          ),
-        );
-        // Give Flutter one frame to paint the blocking dialog
-        // before starting the long-running task.
-        await WidgetsBinding.instance.endOfFrame;
-      }
-
-      final result = await task();
-      if (showSuccessDialog) {
-        await showSuccess(
-          title: resolvedSuccessTitle,
-          message: resolvedSuccessMessage,
-          position: resultPosition,
-          okLabel: okLabel,
-        );
-      }
-      await onSuccess?.call(result);
-      return result;
-    } catch (error) {
-      _dismissLoadingIfVisible();
-      loadingShown = false;
-
-      final mapped = (mapError ?? AppDialogService.defaultErrorMapper)(error);
-      if (mapped.type == AppDialogType.validation) {
-        Map<String, List<String>>? validationErrors;
-        if (error is ValidationException && error.details != null) {
-          validationErrors = error.details;
-        } else if ((mapped as dynamic).details != null) {
-          validationErrors =
-              (mapped as dynamic).details as Map<String, List<String>>?;
-        }
-        if (validationErrors != null) onValidationError?.call(validationErrors);
-        await showInfo(
-          title: errorTitle,
-          message: mapped.message,
-          position: resultPosition,
-          okLabel: okLabel,
-        );
-      } else {
-        await showError(
-          title: errorTitle,
-          message: mapped.message,
-          dialogType: mapped.type,
-          position: resultPosition,
-          okLabel: okLabel,
-        );
-      }
-      await onError?.call(error, mapped.message, mapped.type);
-      return null;
-    } finally {
-      if (loadingShown) {
-        _dismissLoadingIfVisible();
-      }
-    }
-  }
+  }) => _AppDialogGuard(this).guard(
+    task: task,
+    errorTitle: errorTitle,
+    mapError: mapError,
+    loadingPosition: loadingPosition,
+    resultPosition: resultPosition,
+    okLabel: okLabel,
+    showBlockingLoading: showBlockingLoading,
+    loadingMessage: loadingMessage,
+    loadingVisual: loadingVisual,
+    loadingVariant: loadingVariant,
+    progressType: progressType,
+    loadingBackBehavior: loadingBackBehavior,
+    onCancelRequested: onCancelRequested,
+    onCancelled: onCancelled,
+    cancelTitle: cancelTitle,
+    cancelMessage: cancelMessage,
+    stayLabel: stayLabel,
+    cancelLabel: cancelLabel,
+    showSuccessDialog: showSuccessDialog,
+    successTitle: successTitle,
+    successMessage: successMessage,
+    onSuccess: onSuccess,
+    onError: onError,
+    onValidationError: onValidationError,
+  );
 
   Future<void> showLoading({
     String? message,
@@ -338,51 +288,6 @@ class AppDialogService {
       position: position,
       okLabel: okLabel,
       onComplete: onComplete,
-    );
-  }
-
-  Widget _buildLoadingVisual({
-    required AppDialogLoadingVisual loadingVisual,
-    required AppLoadingVariant loadingVariant,
-    required AppProgressType progressType,
-    double? progressValue,
-    ValueNotifier<double?>? progressNotifier,
-  }) {
-    if (loadingVisual == AppDialogLoadingVisual.progress) {
-      if (progressNotifier != null) {
-        return ValueListenableBuilder<double?>(
-          valueListenable: progressNotifier,
-          builder: (_, value, child) =>
-              _buildProgressWidget(progressType: progressType, value: value),
-        );
-      }
-      return _buildProgressWidget(
-        progressType: progressType,
-        value: progressValue,
-      );
-    }
-
-    return AppLoadingIndicator(variant: loadingVariant, size: 34);
-  }
-
-  Widget _buildProgressWidget({
-    required AppProgressType progressType,
-    double? value,
-  }) {
-    if (progressType == AppProgressType.linear) {
-      return SizedBox(
-        width: 180,
-        child: AppProgressIndicator(
-          type: AppProgressType.linear,
-          value: value,
-          minHeight: 8,
-        ),
-      );
-    }
-    return AppProgressIndicator(
-      type: AppProgressType.circular,
-      value: value,
-      size: 34,
     );
   }
 
@@ -560,236 +465,6 @@ class AppDialogService {
     );
   }
 
-  Future<void> _exitApplication(BuildContext dialogContext) async {
-    Navigator.of(dialogContext, rootNavigator: true).pop();
-
-    if (!context.mounted) return;
-
-    if (kIsWeb) {
-      await Navigator.of(context, rootNavigator: true).maybePop();
-      return;
-    }
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-      case TargetPlatform.fuchsia:
-        await SystemNavigator.pop();
-        return;
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        await Navigator.of(context, rootNavigator: true).maybePop();
-        return;
-    }
-  }
-
-  Future<void> _showProtectedDialog({
-    Alignment? alignment,
-    EdgeInsets? insetPadding,
-    Color? backgroundColor,
-    Future<void> Function()? onBackPressed,
-    required Widget child,
-    bool barrierDismissible = false,
-    bool useSafeArea = true,
-  }) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: barrierDismissible,
-      useSafeArea: useSafeArea,
-      builder: (dialogContext) {
-        return PopScope(
-          canPop: barrierDismissible,
-          onPopInvokedWithResult: (didPop, result) async {
-            if (didPop) return;
-            if (onBackPressed != null) {
-              await onBackPressed();
-              return;
-            }
-            await showExitConfirm();
-          },
-          child: Dialog(
-            alignment: alignment,
-            insetPadding: insetPadding,
-            backgroundColor: backgroundColor,
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _defaultDialogCard(BuildContext context, {required Widget child}) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      constraints: const BoxConstraints(maxWidth: 400),
-      padding: const EdgeInsets.all(24),
-      child: child,
-    );
-  }
-
-  Future<void> _handleLoadingBackPressed({
-    required AppDialogLoadingBackBehavior loadingBackBehavior,
-    required AppDialogCancelRequested? onCancelRequested,
-    required AppDialogCancelled? onCancelled,
-    required String cancelTitle,
-    required String cancelMessage,
-    required String stayLabel,
-    required String cancelLabel,
-  }) async {
-    switch (loadingBackBehavior) {
-      case AppDialogLoadingBackBehavior.block:
-        return;
-      case AppDialogLoadingBackBehavior.allow:
-        final approved = await _resolveCancellation(onCancelRequested);
-        if (!approved) return;
-        _dismissLoadingIfVisible();
-        await _runCancelled(onCancelled);
-        return;
-      case AppDialogLoadingBackBehavior.confirmCancel:
-        final shouldCancel = await _showCancelLoadingConfirm(
-          title: cancelTitle,
-          message: cancelMessage,
-          stayLabel: stayLabel,
-          cancelLabel: cancelLabel,
-        );
-        if (!shouldCancel) return;
-
-        final approved = await _resolveCancellation(onCancelRequested);
-        if (!approved) return;
-
-        _dismissLoadingIfVisible();
-        await _runCancelled(onCancelled);
-        return;
-    }
-  }
-
-  Future<bool> _resolveCancellation(
-    AppDialogCancelRequested? onCancelRequested,
-  ) async {
-    return await onCancelRequested?.call() ?? true;
-  }
-
-  Future<void> _runCancelled(AppDialogCancelled? onCancelled) async {
-    await onCancelled?.call();
-  }
-
-  Future<bool> _showCancelLoadingConfirm({
-    required String title,
-    required String message,
-    required String stayLabel,
-    required String cancelLabel,
-  }) async {
-    if (!context.mounted) return false;
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            SizedBox(
-              width: 92,
-              child: AppButton(
-                type: AppButtonType.outlined,
-                size: AppSize.small,
-                text: stayLabel,
-                useSafeArea: false,
-                onPressed: () =>
-                    Navigator.of(dialogContext, rootNavigator: true).pop(false),
-              ),
-            ),
-            SizedBox(
-              width: 92,
-              child: AppButton(
-                type: AppButtonType.filled,
-                size: AppSize.small,
-                text: cancelLabel,
-                useSafeArea: false,
-                onPressed: () =>
-                    Navigator.of(dialogContext, rootNavigator: true).pop(true),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    return result ?? false;
-  }
-
-  void _dismissLoadingIfVisible() {
-    if (!_isLoadingDialogVisible || !context.mounted) return;
-    Navigator.of(context, rootNavigator: true).pop();
-  }
-
   /// Hides the currently visible loading dialog, if any.
   void hideLoading() => _dismissLoadingIfVisible();
-
-  (IconData, Color) _style(
-    BuildContext context,
-    AppDialogType? type,
-    bool isSuccess,
-  ) {
-    final theme = Theme.of(context);
-    if (isSuccess) {
-      return (Icons.check_circle, theme.colorScheme.primary);
-    }
-
-    if (type == null) {
-      return (Icons.error, theme.colorScheme.error);
-    }
-
-    switch (type) {
-      case AppDialogType.validation:
-        return (Icons.warning_outlined, Colors.orange.shade600);
-      case AppDialogType.network:
-        return (Icons.cloud_off, theme.colorScheme.primary);
-      case AppDialogType.authentication:
-        return (Icons.lock_outline, theme.colorScheme.error);
-      case AppDialogType.server:
-        return (Icons.error_outline, theme.colorScheme.error);
-    }
-  }
-
-  Color _buttonColor(
-    BuildContext context,
-    AppDialogType? type,
-    bool isSuccess,
-  ) {
-    final theme = Theme.of(context);
-    if (isSuccess) return theme.colorScheme.primary;
-    if (type == AppDialogType.validation) return Colors.orange.shade600;
-    if (type == AppDialogType.network) return theme.colorScheme.primary;
-    if (type == AppDialogType.authentication) return theme.colorScheme.error;
-    return theme.colorScheme.error;
-  }
-
-  Alignment _alignment(AppDialogPosition position) {
-    switch (position) {
-      case AppDialogPosition.top:
-        return Alignment.topCenter;
-      case AppDialogPosition.center:
-        return Alignment.center;
-      case AppDialogPosition.bottom:
-        return Alignment.bottomCenter;
-    }
-  }
-
-  EdgeInsets _inset(AppDialogPosition position) {
-    switch (position) {
-      case AppDialogPosition.top:
-        return const EdgeInsets.fromLTRB(16, 80, 16, 0);
-      case AppDialogPosition.center:
-        return const EdgeInsets.symmetric(horizontal: 16);
-      case AppDialogPosition.bottom:
-        return const EdgeInsets.fromLTRB(16, 0, 16, 80);
-    }
-  }
 }

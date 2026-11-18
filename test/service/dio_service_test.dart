@@ -183,4 +183,27 @@ void main() {
       expect(path, isNull);
     });
   });
+
+  group('requestUrlForLog', () {
+    test('an absolute path is logged as it is, without the base URL', () {
+      expect(
+        requestUrlForLog(
+          'https://api.example.com',
+          'https://dummyjson.com/posts/add',
+        ),
+        'https://dummyjson.com/posts/add',
+      );
+    });
+
+    test('a relative path is prefixed with the base URL', () {
+      expect(
+        requestUrlForLog('https://api.example.com', '/posts/add'),
+        'https://api.example.com/posts/add',
+      );
+    });
+
+    test('an empty base URL leaves the path unchanged', () {
+      expect(requestUrlForLog('', '/posts/add'), '/posts/add');
+    });
+  });
 }

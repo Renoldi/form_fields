@@ -38,13 +38,34 @@ class ImportExportService {
     return destPath;
   }
 
-  /// Let the user pick a folder and export the SQL file there. Returns the
-  /// destination path on success, or null if cancelled.
+  /// Let the user choose where to save the SQL export. Returns the destination
+  /// (a file path, or a URI string on Android) on success, or null if cancelled.
+  ///
+  /// On Android the folder picker returns a `content://` URI, which `dart:io`
+  /// cannot write to. The export is therefore written to a temporary file and
+  /// saved through the system save dialog instead. Other platforms get a folder
+  /// from [FilePicker.pickDirectory] and write to a regular file path.
   Future<String?> pickFolderAndExport() async {
     try {
-      final dirPath = await FilePicker.getDirectoryPath();
-      if (dirPath == null) return null;
-      final dest = p.join(dirPath, _exportFileName());
+      final fileName = _exportFileName();
+      if (Platform.isAndroid) {
+        final tmpPath = p.join((await getTemporaryDirectory()).path, fileName);
+        await exportToPath(tmpPath);
+        final bytes = await File(tmpPath).readAsBytes();
+        final saved = await FilePicker.saveFile(
+          fileName: fileName,
+          bytes: bytes,
+          mimeType: 'application/sql',
+        );
+        return saved?.toString();
+      }
+      final dirUri = await FilePicker.pickDirectory();
+      if (dirUri == null) return null;
+      if (dirUri.scheme != 'file') {
+        _log.warning('Unsupported export location: $dirUri');
+        return null;
+      }
+      final dest = p.join(dirUri.toFilePath(), fileName);
       await exportToPath(dest);
       return dest;
     } catch (e, st) {

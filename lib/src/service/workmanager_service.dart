@@ -7,6 +7,12 @@ import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 import 'package:workmanager/workmanager.dart';
 
+part 'workmanager_service_parts/countdown.dart';
+part 'workmanager_service_parts/logging.dart';
+part 'workmanager_service_parts/lifecycle.dart';
+part 'workmanager_service_parts/registration.dart';
+part 'workmanager_service_parts/connectivity.dart';
+
 final _log = Logger('WorkmanagerService');
 
 // Flush state relocated into WorkmanagerService as `isFlushing`.
@@ -161,137 +167,16 @@ class WorkmanagerService {
   /// if `triggerNow` is true, attempt to invoke a foreground handler
   /// or request a one-off background run to trigger the registered
   /// background handler.
-  Future<void> startAll({bool triggerNow = true}) async {
-    try {
-      // Only host-provided registrations are scheduled. The demo definitions
-      // are for the example UI and have no handlers in a host app.
-      final defs = _providedWorkerDefinitions ?? const <Map<String, dynamic>>[];
-      if (defs.isEmpty) {
-        _addLog('startAll: no worker registrations were provided');
-      }
-      for (final def in defs) {
-        final name = def['name'] as String;
-        final freq = def['frequency'] as Duration;
-        final init = def['initialDelay'] as Duration;
-
-        final data = <String, dynamic>{};
-        final bgHandler = _perTaskBackgroundHandlers[name];
-        if (bgHandler != null) {
-          try {
-            final cb = PluginUtilities.getCallbackHandle(bgHandler);
-            if (cb != null) data['callback_handle'] = cb.toRawHandle();
-          } catch (_) {}
-        }
-
-        await start(
-          taskName: name,
-          frequency: freq,
-          periodic: true,
-          inputData: data.isEmpty ? null : data,
-          initialDelay: init,
-        );
-
-        if (!triggerNow) continue;
-
-        // Prefer invoking a per-task foreground handler if registered.
-        try {
-          final fg = _perTaskForegroundHandlers[name];
-          if (fg != null) {
-            await fg();
-          } else {
-            await runOnceNowDetailed(
-              taskName: name,
-              inputData: data.isEmpty ? null : data,
-            );
-          }
-        } catch (e) {
-          try {
-            lastLogListenable.value = 'start all trigger failed for $name: $e';
-          } catch (_) {}
-        }
-      }
-    } catch (e) {
-      try {
-        lastLogListenable.value = 'start all failed: $e';
-      } catch (_) {}
-      rethrow;
-    }
-    // Ensure countdown timer is active after scheduling.
-    try {
-      _startCountdownTimer();
-    } catch (_) {}
-  }
+  Future<void> startAll({bool triggerNow = true}) =>
+      _startAll(triggerNow: triggerNow);
 
   /// Start a single worker by its registered name using the provided
   /// worker definitions. If the worker definition isn't found this will
   /// no-op and log a message. If `triggerNow` is true the method will
   /// attempt to invoke a foreground handler (if registered) or request
   /// a one-off background run to trigger the background handler.
-  Future<void> startWorkerByName(String name, {bool triggerNow = true}) async {
-    try {
-      Map<String, dynamic>? def;
-      for (final d
-          in _providedWorkerDefinitions ?? const <Map<String, dynamic>>[]) {
-        try {
-          if ((d['name'] as String) == name) {
-            def = d;
-            break;
-          }
-        } catch (_) {}
-      }
-      if (def == null) {
-        _addLog('startWorkerByName: definition not found: $name');
-        return;
-      }
-
-      final freq = def['frequency'] as Duration;
-      final init = def['initialDelay'] as Duration;
-
-      final data = <String, dynamic>{};
-      final bgHandler = _perTaskBackgroundHandlers[name];
-      if (bgHandler != null) {
-        try {
-          final cb = PluginUtilities.getCallbackHandle(bgHandler);
-          if (cb != null) data['callback_handle'] = cb.toRawHandle();
-        } catch (_) {}
-      }
-
-      await start(
-        taskName: name,
-        frequency: freq,
-        periodic: true,
-        inputData: data.isEmpty ? null : data,
-        initialDelay: init,
-      );
-
-      if (!triggerNow) return;
-
-      try {
-        final fg = _perTaskForegroundHandlers[name];
-        if (fg != null) {
-          await fg();
-        } else {
-          await runOnceNowDetailed(
-            taskName: name,
-            inputData: data.isEmpty ? null : data,
-          );
-        }
-      } catch (e) {
-        try {
-          lastLogListenable.value = 'start worker trigger failed for $name: $e';
-        } catch (_) {}
-      }
-    } catch (e) {
-      try {
-        lastLogListenable.value = 'start worker failed: $e';
-      } catch (_) {}
-      rethrow;
-    }
-    // Ensure countdown timer is active after scheduling this worker.
-    try {
-      _startCountdownTimer();
-    } catch (_) {}
-  }
+  Future<void> startWorkerByName(String name, {bool triggerNow = true}) =>
+      _startWorkerByName(name, triggerNow: triggerNow);
 
   /// Ensure the countdown timer is running if any tasks are registered.
   void ensureCountdownActive() {
@@ -303,70 +188,15 @@ class WorkmanagerService {
   /// Stop a single worker by its unique name. This calls into the
   /// existing `stop(...)` API with `taskName` set so the same cancellation
   /// logic and bookkeeping is used.
-  Future<void> stopWorkerByName(String name) async {
-    try {
-      await stop(taskName: name);
-      try {
-        lastLogListenable.value = 'stopWorkerByName: stopped $name';
-      } catch (_) {}
-    } catch (e) {
-      try {
-        lastLogListenable.value = 'stop worker failed: $e';
-      } catch (_) {}
-      rethrow;
-    }
-  }
+  Future<void> stopWorkerByName(String name) => _stopWorkerByName(name);
 
   /// Return the countdown display string for a specific task name.
   /// Matches the display format used by the internal countdown timer
   /// (`perTaskCountdownListenable`). Returns `null` when no countdown
   /// is available for the given task (not scheduled or missing metadata).
-  String? getCountdownForTask(String name) {
-    try {
-      final at = _scheduledAtPerTask[name];
-      if (at == null) return null;
-
-      // Prefer the requested frequency when host provided definitions
-      // (so UI shows what the host requested rather than platform-adjusted).
-      Duration? fq;
-      final requested = _scheduledRequestedFrequencyPerTask[name];
-      if (_providedWorkerDefinitions != null && requested != null) {
-        fq = requested;
-      } else {
-        fq = _scheduledFrequencyPerTask[name];
-      }
-      if (fq == null) return null;
-
-      final next = at.add(fq);
-      final rem = next.difference(DateTime.now());
-      if (rem.inMilliseconds <= 0) return '00:00';
-
-      final h = rem.inHours;
-      final m = rem.inMinutes.remainder(60);
-      final s = rem.inSeconds.remainder(60);
-      final display = h > 0
-          ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
-          : '${m.toString()}:${s.toString().padLeft(2, '0')}';
-      return display;
-    } catch (_) {
-      return null;
-    }
-  }
+  String? getCountdownForTask(String name) => _getCountdownForTask(name);
 
   static const String _defaultTaskName = 'form_fields_background_task';
-
-  void _attachLastLogListener() {
-    lastLogListenable.addListener(() {
-      try {
-        if (_suppressListener) return;
-        final v = lastLogListenable.value;
-        if (v != null) {
-          _logs.add(v);
-          if (_logs.length > 50) _logs.removeAt(0);
-        }
-      } catch (_) {}
-    });
-  }
 
   /// Helper for legacy example usage.
   static void setBackgroundTaskHandler(BackgroundTaskHandler handler) {
@@ -377,28 +207,10 @@ class WorkmanagerService {
   Future<void> initialize({
     void Function()? callbackDispatcher,
     bool useConnectivity = true,
-  }) async {
-    if (_initialized) return;
-    try {
-      final cb = callbackDispatcher ?? workmanagerCallbackDispatcher;
-      if (kDebugMode) {
-        _log.fine(
-          'Workmanager initialize: callbackDispatcher is ${'provided'}',
-        );
-      }
-      await Workmanager().initialize(cb);
-      _initialized = true;
-
-      // Optionally run the foreground flush when connectivity returns.
-      // Hosts can disable this with `initialize(..., useConnectivity: false)`.
-      if (useConnectivity) startConnectivityFlush();
-    } catch (e, st) {
-      // Always recorded, release builds included. Without this, a failed
-      // background setup looks like it was never requested.
-      _log.warning('Workmanager initialize failed: $e', e, st);
-      _addLog('initialize_failed: $e');
-    }
-  }
+  }) => _initialize(
+    callbackDispatcher: callbackDispatcher,
+    useConnectivity: useConnectivity,
+  );
 
   /// Stops the connectivity listener started by [startConnectivityFlush].
   Future<void> stopConnectivityFlush() async {
@@ -417,46 +229,7 @@ class WorkmanagerService {
   /// again, and when the app returns to the foreground. Only the running app
   /// can react, so this does not replace background workers for when the app
   /// is closed. Safe to call repeatedly; it starts listening once.
-  void startConnectivityFlush() {
-    if (_connectivitySub == null) {
-      try {
-        _connectivitySub = Connectivity().onConnectivityChanged.listen(
-          (_) => _flushIfOnline('connectivity'),
-        );
-      } catch (e) {
-        _addLog('connectivity listener failed: $e');
-      }
-    }
-    if (_lifecycleListener == null) {
-      try {
-        // Timers and connectivity events do not run while the app is in the
-        // background, so a resume re-checks pending work as well.
-        _lifecycleListener = AppLifecycleListener(
-          onResume: () => _flushIfOnline('app resumed'),
-        );
-      } catch (e) {
-        _addLog('lifecycle listener unavailable: $e');
-      }
-    }
-  }
-
-  /// Flushes only when a connection exists. Flushing while offline would
-  /// spend retry attempts that cannot succeed.
-  Future<void> _flushIfOnline(String reason) async {
-    try {
-      final current = await Connectivity().checkConnectivity();
-      // Offline is "no results" or only ConnectivityResult.none. Compare the
-      // enum values directly, not the text of the list.
-      final hasNetwork = current.any((r) => r != ConnectivityResult.none);
-      if (!hasNetwork) return;
-      _addLog('$reason: $current -> attempting flush');
-      try {
-        await foregroundFlushHandler?.call();
-      } catch (e) {
-        _addLog('flush handler error: $e');
-      }
-    } catch (_) {}
-  }
+  void startConnectivityFlush() => _startConnectivityFlush();
 
   void setHandler(BackgroundTaskHandler handler) {
     // kept for API compatibility; not used by this wrapper.
@@ -469,570 +242,42 @@ class WorkmanagerService {
     bool periodic = true,
     Map<String, dynamic>? inputData,
     Duration? initialDelay,
-  }) async {
-    await initialize();
+  }) => _start(
+    taskName: taskName,
+    frequency: frequency,
+    periodic: periodic,
+    inputData: inputData,
+    initialDelay: initialDelay,
+  );
 
-    final name = taskName ?? _defaultTaskName;
-    // Prevent duplicate registrations for the same unique name. If the
-    // task was already registered we skip re-registering to avoid the
-    // handler being invoked multiple times for a single scheduled run.
-    if (_registeredTasks.contains(name)) {
-      _addLog('already_registered: $name');
-      return;
-    }
-    try {
-      final data = inputData != null
-          ? Map<String, dynamic>.from(inputData)
-          : <String, dynamic>{};
-      try {
-        if (_backgroundHandler != null) {
-          final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
-          if (kDebugMode) {
-            _log.fine('getCallbackHandle for _backgroundHandler -> $handle');
-          }
-          // Only embed the global background handler if the caller did not
-          // already provide a `callback_handle` (per-registration handlers
-          // should take precedence).
-          if (handle != null && data['callback_handle'] == null) {
-            data['callback_handle'] = handle.toRawHandle();
-            if (kDebugMode) {
-              _log.fine(
-                'embedding callback_handle raw=${handle.toRawHandle()} into inputData',
-              );
-            }
-          }
-        }
-      } catch (_) {}
+  /// Schedules a one-off background run that starts after [delay]. Unlike an
+  /// in-app timer, it still runs while the app is in the background. Calling
+  /// it again with the same [uniqueName] replaces the pending run.
+  Future<void> scheduleOneOff({
+    required String uniqueName,
+    Duration delay = Duration.zero,
+    Map<String, dynamic>? inputData,
+  }) => _scheduleOneOff(
+    uniqueName: uniqueName,
+    delay: delay,
+    inputData: inputData,
+  );
 
-      if (periodic) {
-        await Workmanager().registerPeriodicTask(
-          name,
-          name,
-          frequency: frequency,
-          inputData: data,
-          initialDelay: initialDelay,
-        );
-        // record metadata
-        if (frequency != null) configuredFrequency = frequency;
-        _scheduledAtPerTask[name] = DateTime.now();
-        // Store requested frequency separately so UI can display it if the
-        // host provided registrations. We'll compute an effective frequency
-        // next (platform may enforce a minimum).
-        _scheduledRequestedFrequencyPerTask[name] = frequency;
-        // WorkManager on Android enforces a minimum periodic interval
-        // (typically 15 minutes). Use the effective interval for UI
-        // countdowns so the app reflects what the platform will schedule.
-        Duration? effectiveFreq = frequency;
-        try {
-          if (frequency != null && frequency < kAndroidMinPeriodicInterval) {
-            effectiveFreq = kAndroidMinPeriodicInterval;
-            _addLog(
-              'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
-            );
-            try {
-              // also print to console to aid debugging via logcat
-              _log.fine(
-                'effective_interval_adjusted: $name requested_s=${frequency.inSeconds} -> effective_s=${effectiveFreq.inSeconds}',
-              );
-            } catch (_) {}
-          }
-        } catch (_) {}
-        _scheduledFrequencyPerTask[name] = effectiveFreq;
-        _addLog('task_registered: $name freq=${frequency?.inSeconds ?? 0}s');
-        try {
-          final sat = _scheduledAtPerTask[name]?.toIso8601String();
-          final freqS = _scheduledFrequencyPerTask[name]?.inSeconds;
-          final next = _scheduledAtPerTask[name]
-              ?.add(_scheduledFrequencyPerTask[name] ?? Duration.zero)
-              .toIso8601String();
-          _addLog(
-            'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next',
-          );
-          try {
-            // Print to console so it's visible in adb logcat (helpful when
-            // the UI dialog isn't easily copyable).
-            _log.fine(
-              'registered_from_start: $name freq_s=$freqS initialDelay_s=${initialDelay?.inSeconds ?? 0} scheduledAt=$sat nextEst=$next',
-            );
-          } catch (_) {}
-        } catch (_) {}
-        _startCountdownTimer();
-      } else {
-        await Workmanager().registerOneOffTask(name, name, inputData: data);
-        _scheduledAtPerTask[name] = DateTime.now();
-        _scheduledFrequencyPerTask[name] = null;
-        _addLog('task_registered (one-off): $name');
-        // keep timer running for UI if other periodic tasks exist
-        _startCountdownTimer();
-      }
-
-      _registeredTasks.add(name);
-      registeredCountListenable.value = _registeredTasks.length;
-      statusListenable.value = periodic
-          ? 'registered_periodic'
-          : 'registered_once';
-      _addLog('registered ${periodic ? 'periodic' : 'one-off'}: $name');
-    } catch (e) {
-      if (kDebugMode) {
-        _log.fine('Workmanager register task failed: $e');
-      }
-      statusListenable.value = 'register_failed';
-      _addLog('register_failed: $e');
-    }
-  }
+  /// Cancels a run scheduled with [scheduleOneOff].
+  Future<void> cancelOneOff(String uniqueName) => _cancelOneOff(uniqueName);
 
   /// Run a one-off task immediately.
   Future<String?> runOnceNowDetailed({
     String? taskName,
     Map<String, dynamic>? inputData,
-  }) async {
-    final name =
-        taskName ?? 'run_once_${DateTime.now().millisecondsSinceEpoch}';
-    try {
-      final data = inputData != null
-          ? Map<String, dynamic>.from(inputData)
-          : <String, dynamic>{};
-      try {
-        if (_backgroundHandler != null) {
-          final handle = PluginUtilities.getCallbackHandle(_backgroundHandler!);
-          if (kDebugMode) {
-            _log.fine('getCallbackHandle for runOnceNowDetailed -> $handle');
-          }
-          if (handle != null) data['callback_handle'] = handle.toRawHandle();
-        }
-      } catch (_) {}
-
-      await Workmanager().registerOneOffTask(name, name, inputData: data);
-      // A one-off run has no schedule and no name to wait for later. Keeping
-      // it in `_registeredTasks` would only grow the registered list and the
-      // countdown loop with every call, so it is not tracked there.
-      _addLog('registered one-off (run now): $name');
-      return null;
-    } catch (e) {
-      _addLog('runOnceNowDetailed failed: $e');
-      return e.toString();
-    }
-  }
+  }) => _runOnceNowDetailed(taskName: taskName, inputData: inputData);
 
   /// Stop a specific task, or all tasks when [taskName] is null.
   ///
   /// This cancels only scheduled workers. The connectivity flush and
   /// [foregroundFlushHandler] are left running (see [stopConnectivityFlush]).
-  Future<void> stop({VoidCallback? onStop, String? taskName}) async {
-    try {
-      onStop?.call();
-    } catch (e) {
-      if (kDebugMode) {
-        _log.fine('onStop callback threw: $e');
-      }
-    }
-
-    if (taskName == null) {
-      // Stop all: attempt to cancel all scheduled work via Workmanager's
-      // dedicated API, then clear internal registration state so the UI
-      // reflects that no tasks remain registered.
-      try {
-        await Workmanager().cancelAll();
-        _addLog('cancelAll invoked');
-      } catch (e) {
-        if (kDebugMode) {
-          _log.fine('cancelAll failed: $e');
-        }
-        _addLog('cancelAll_failed: $e');
-      }
-
-      // Clear our internal bookkeeping regardless of platform cancel
-      // success so the app state reflects the user's intent to stop all.
-      for (final name in _registeredTasks.toList(growable: false)) {
-        _scheduledAtPerTask.remove(name);
-        _scheduledFrequencyPerTask.remove(name);
-        _addLog('cleared registration: $name');
-      }
-      _registeredTasks.clear();
-    } else {
-      final namesToCancel = <String>[taskName];
-      for (final name in namesToCancel) {
-        try {
-          await Workmanager().cancelByUniqueName(name);
-          _registeredTasks.remove(name);
-          _scheduledAtPerTask.remove(name);
-          _scheduledFrequencyPerTask.remove(name);
-          _addLog('cancelled: $name');
-        } catch (e) {
-          if (kDebugMode) {
-            _log.fine('cancelByUniqueName failed for $name: $e');
-          }
-          _addLog('cancel_failed: $name -> $e');
-        }
-      }
-    }
-
-    registeredCountListenable.value = _registeredTasks.length;
-    if (_registeredTasks.isEmpty) {
-      statusListenable.value = 'stopped';
-      _scheduledAtPerTask.clear();
-      _scheduledFrequencyPerTask.clear();
-      _stopCountdownTimer();
-    }
-
-    // The connectivity and lifecycle flush is a separate feature from the
-    // workers. It stays active here, so pending rows still go out when the
-    // network returns. Use [stopConnectivityFlush] to turn it off.
-  }
-
-  void _startCountdownTimer() {
-    try {
-      _countdownTimer?.cancel();
-      countdownListenable.value = null;
-      try {
-        _addLog(
-          'countdown: starting timer; registered=${_registeredTasks.length}',
-        );
-        if (kDebugMode) {
-          _log.fine(
-            'countdown: starting timer; registered=${_registeredTasks.length}',
-          );
-        }
-      } catch (_) {}
-      if (_registeredTasks.isEmpty) return;
-
-      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) async {
-        try {
-          final now = DateTime.now();
-          Duration? minRem;
-          final Map<String, String?> perMap = {};
-          final List<String> toTrigger = [];
-
-          for (final tName in _registeredTasks) {
-            final at = _scheduledAtPerTask[tName];
-            // Prefer displaying the requested frequency when the host
-            // provided definitions (the user expects the UI to reflect
-            // `workerRegistrations`). Fall back to the effective platform
-            // frequency otherwise.
-            Duration? fq;
-            final requested = _scheduledRequestedFrequencyPerTask[tName];
-            if (_providedWorkerDefinitions != null && requested != null) {
-              fq = requested;
-            } else {
-              fq = _scheduledFrequencyPerTask[tName];
-            }
-            if (at == null || fq == null) {
-              perMap[tName] = null;
-              continue;
-            }
-            final next = at.add(fq);
-            final rem = next.difference(now);
-            if (rem.inMilliseconds <= 0) {
-              toTrigger.add(tName);
-              perMap[tName] = '00:00';
-              minRem = const Duration(seconds: 0);
-            } else {
-              final h = rem.inHours;
-              final m = rem.inMinutes.remainder(60);
-              final s = rem.inSeconds.remainder(60);
-              final display = h > 0
-                  ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
-                  : '${m.toString()}:${s.toString().padLeft(2, '0')}';
-              perMap[tName] = display;
-              if (minRem == null || rem < minRem) minRem = rem;
-            }
-          }
-
-          try {
-            perTaskCountdownListenable.value = perMap;
-          } catch (_) {}
-
-          // countdown tick logging: report per-task remaining times so
-          // it's easy to see each worker's countdown in `recentLogs` or
-          // console output while debugging.
-          try {
-            final entries = perMap.entries
-                .map((e) => '${e.key}=${e.value ?? 'n/a'}')
-                .join(', ');
-            final msg = 'countdown-tick: $entries';
-            _addLog(msg);
-            if (kDebugMode) {
-              _log.fine(msg);
-            }
-          } catch (_) {}
-          if (minRem == null) {
-            try {
-              countdownListenable.value = null;
-            } catch (_) {}
-          } else {
-            final h = minRem.inHours;
-            final m = minRem.inMinutes.remainder(60);
-            final s = minRem.inSeconds.remainder(60);
-            final display = h > 0
-                ? '${h.toString()}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}'
-                : '${m.toString()}:${s.toString().padLeft(2, '0')}';
-            try {
-              countdownListenable.value = display;
-            } catch (_) {}
-          }
-
-          if (toTrigger.isNotEmpty) {
-            try {
-              lastLogListenable.value =
-                  'countdown-trigger: calling registered handlers toTrigger=${toTrigger.join(',')}';
-            } catch (_) {}
-            try {
-              _addLog(
-                'countdown-trigger: invoking handlers for ${toTrigger.join(',')}',
-              );
-            } catch (_) {}
-            try {
-              if (kDebugMode) {
-                _log.fine(
-                  'countdown-trigger: invoking handlers for ${toTrigger.join(',')}',
-                );
-              }
-            } catch (_) {}
-
-            try {
-              for (final n in toTrigger) {
-                try {
-                  final eff = _scheduledFrequencyPerTask[n];
-                  final req = _scheduledRequestedFrequencyPerTask[n];
-                  _addLog(
-                    'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
-                  );
-                  if (kDebugMode) {
-                    _log.fine(
-                      'trigger-info: $n effective_s=${eff?.inSeconds} requested_s=${req?.inSeconds} providedDefs=${_providedWorkerDefinitions != null}',
-                    );
-                  }
-                } catch (_) {}
-              }
-            } catch (_) {}
-
-            // Prevent overlapping flush runs using shared guard. Acquire
-            // the guard centrally; if acquisition fails another flush is
-            // already running and we skip triggering handlers for this tick.
-            final acquired = WorkmanagerService.acquireFlushGuard();
-            if (!acquired) {
-              try {
-                lastLogListenable.value =
-                    'countdown-trigger: flush already in progress; skipping';
-              } catch (_) {}
-            } else {
-              var success = false;
-              try {
-                // Mark that countdown is invoking handlers so foreground
-                // handlers can avoid attempting to re-acquire the guard.
-                try {
-                  _inCountdownInvocation = true;
-                } catch (_) {}
-                try {
-                  lastLogListenable.value =
-                      'countdown-trigger: toTrigger=${toTrigger.join(',')}';
-                } catch (_) {}
-
-                // Deduplicate per-task foreground handlers and invoke them
-                final Set<Future<void> Function()> uniqueFgHandlers = {};
-                for (final n in toTrigger) {
-                  final h = _perTaskForegroundHandlers[n];
-                  if (h != null) uniqueFgHandlers.add(h);
-                }
-
-                if (uniqueFgHandlers.isNotEmpty) {
-                  try {
-                    lastLogListenable.value =
-                        'countdown-trigger: invoking ${uniqueFgHandlers.length} per-task foreground handlers';
-                  } catch (_) {}
-                  for (final h in uniqueFgHandlers) {
-                    try {
-                      await h();
-                      success = true;
-                      try {
-                        lastLogListenable.value = 'task-handler success';
-                      } catch (_) {}
-                    } catch (e) {
-                      try {
-                        lastLogListenable.value = 'task-handler threw: $e';
-                      } catch (_) {}
-                      try {
-                        _addLog('task-handler threw: $e');
-                      } catch (_) {}
-                    }
-                  }
-                } else {
-                  // No foreground handlers. Try per-task background handlers
-                  // and invoke each unique background handler only once.
-                  final Map<BackgroundTaskHandler, String> bgHandlerToTask = {};
-                  for (final n in toTrigger) {
-                    final bh = _perTaskBackgroundHandlers[n];
-                    if (bh != null && !bgHandlerToTask.containsKey(bh)) {
-                      bgHandlerToTask[bh] = n;
-                    }
-                  }
-
-                  if (bgHandlerToTask.isNotEmpty) {
-                    try {
-                      lastLogListenable.value =
-                          'countdown-trigger: invoking ${bgHandlerToTask.length} per-task background handlers';
-                    } catch (_) {}
-                    for (final entry in bgHandlerToTask.entries) {
-                      final bh = entry.key;
-                      final repTask = entry.value;
-                      // Find inputData for representative task if provided
-                      Map<String, dynamic>? inputData;
-                      try {
-                        for (final def in providedWorkerDefinitions) {
-                          try {
-                            if ((def['name'] as String) == repTask &&
-                                def['inputData'] != null) {
-                              inputData = Map<String, dynamic>.from(
-                                def['inputData'] as Map<String, dynamic>,
-                              );
-                              break;
-                            }
-                          } catch (_) {}
-                        }
-                      } catch (_) {}
-
-                      try {
-                        final res = await bh(repTask, inputData);
-                        if (res == true) success = true;
-                        try {
-                          lastLogListenable.value =
-                              'background handler for $repTask -> ${res ? 'success' : 'failure'}';
-                        } catch (_) {}
-                      } catch (e) {
-                        try {
-                          lastLogListenable.value =
-                              'background handler for $repTask threw: $e';
-                        } catch (_) {}
-                      }
-                    }
-                  } else if (foregroundFlushHandler != null) {
-                    try {
-                      lastLogListenable.value =
-                          'countdown-trigger: calling global foregroundFlushHandler';
-                    } catch (_) {}
-                    try {
-                      await foregroundFlushHandler!();
-                      success = true;
-                      try {
-                        lastLogListenable.value =
-                            'foregroundFlushHandler success';
-                      } catch (_) {}
-                    } catch (e) {
-                      try {
-                        lastLogListenable.value =
-                            'foregroundFlushHandler threw: $e';
-                      } catch (_) {}
-                    }
-                  } else if (_backgroundHandler != null) {
-                    // Fallback to a globally-registered background handler
-                    try {
-                      final rep = toTrigger.first;
-                      Map<String, dynamic>? inputData;
-                      try {
-                        for (final def in providedWorkerDefinitions) {
-                          try {
-                            if ((def['name'] as String) == rep &&
-                                def['inputData'] != null) {
-                              inputData = Map<String, dynamic>.from(
-                                def['inputData'] as Map<String, dynamic>,
-                              );
-                              break;
-                            }
-                          } catch (_) {}
-                        }
-                      } catch (_) {}
-                      final res = await _backgroundHandler!(rep, inputData);
-                      if (res == true) success = true;
-                      try {
-                        lastLogListenable.value =
-                            'global background handler for $rep -> ${res ? 'success' : 'failure'}';
-                      } catch (_) {}
-                    } catch (e) {
-                      try {
-                        lastLogListenable.value =
-                            'global background handler threw: $e';
-                      } catch (_) {}
-                    }
-                  } else {
-                    try {
-                      lastLogListenable.value =
-                          'countdown-trigger: no handlers registered for tasks';
-                    } catch (_) {}
-                  }
-                }
-              } catch (e, st) {
-                try {
-                  lastLogListenable.value =
-                      'countdown-triggered handlers threw: $e\n$st';
-                } catch (_) {}
-              } finally {
-                try {
-                  _inCountdownInvocation = false;
-                } catch (_) {}
-                try {
-                  WorkmanagerService.releaseFlushGuard();
-                } catch (_) {}
-              }
-
-              try {
-                lastLogListenable.value =
-                    'countdown-triggered handlers: ${success ? 'success' : 'failure'}';
-              } catch (_) {}
-
-              try {
-                _addLog(
-                  'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
-                );
-                if (kDebugMode) {
-                  _log.fine(
-                    'countdown-triggered handlers result: ${success ? 'success' : 'failure'}',
-                  );
-                }
-              } catch (_) {}
-
-              try {
-                final now2 = DateTime.now();
-                for (final n in toTrigger) {
-                  // Update scheduledAt when we know an effective frequency
-                  // (platform-adjusted) or when the host provided a requested
-                  // frequency via `workerRegistrations`. The countdown logic
-                  // uses the requested frequency when provided, so we must
-                  // update scheduledAt in that case as well to avoid
-                  // immediately retriggering.
-                  if (_scheduledFrequencyPerTask[n] != null) {
-                    _scheduledAtPerTask[n] = now2;
-                    try {
-                      _addLog(
-                        'updated scheduledAt for $n -> ${now2.toIso8601String()} (effective freq)',
-                      );
-                    } catch (_) {}
-                  } else if (_providedWorkerDefinitions != null &&
-                      _scheduledRequestedFrequencyPerTask[n] != null) {
-                    _scheduledAtPerTask[n] = now2;
-                    try {
-                      _addLog(
-                        'updated scheduledAt for $n -> ${now2.toIso8601String()} (requested freq)',
-                      );
-                    } catch (_) {}
-                  }
-                }
-              } catch (_) {}
-            }
-          }
-        } catch (_) {}
-      });
-    } catch (_) {}
-  }
-
-  void _stopCountdownTimer() {
-    try {
-      _countdownTimer?.cancel();
-      _countdownTimer = null;
-    } catch (_) {}
-    try {
-      countdownListenable.value = null;
-    } catch (_) {}
-  }
+  Future<void> stop({VoidCallback? onStop, String? taskName}) =>
+      _stop(onStop: onStop, taskName: taskName);
 
   DateTime? get nextEstimatedRun {
     try {
@@ -1052,31 +297,26 @@ class WorkmanagerService {
     }
   }
 
-  void _addLog(String msg) {
-    try {
-      _logs.add(msg);
-      if (_logs.length > 50) _logs.removeAt(0);
-      _suppressListener = true;
-      lastLogListenable.value = msg;
-      _suppressListener = false;
-    } catch (_) {}
-  }
-
   void notifyPendingChanged() {
     try {
       pendingChangedListenable.value = pendingChangedListenable.value + 1;
     } catch (_) {}
   }
 
-  /// Call after inserting a new pending submission. Notifies listeners and, if
-  /// the device is online, runs the foreground flush right away so a row added
-  /// while online is not left waiting for the next network event.
+  /// When true (the default), [notifyPendingAdded] also runs the foreground
+  /// flush right away if the device is online. Set it to false when pending
+  /// rows must stay local until a worker run or an explicit send.
+  bool flushOnPendingAdded = true;
+
+  /// Call after inserting a new pending submission. Notifies listeners and,
+  /// when [flushOnPendingAdded] is true and the device is online, runs the
+  /// foreground flush right away.
   ///
   /// Do not use this after a successful send: it would start another flush.
   /// Use [notifyPendingChanged] for that.
   void notifyPendingAdded() {
     notifyPendingChanged();
-    unawaited(_flushIfOnline('pending added'));
+    if (flushOnPendingAdded) unawaited(_flushIfOnline('pending added'));
   }
 
   List<String> get recentLogs => List.unmodifiable(_logs);
@@ -1091,24 +331,8 @@ class WorkmanagerService {
   /// Called by hosts (via `FormFieldsInitializer`) to expose the
   /// registration metadata used at startup. The example UI reads
   /// `providedWorkerDefinitions` so it doesn't hardcode demo values.
-  void setProvidedWorkerDefinitions(List<Map<String, dynamic>> defs) {
-    try {
-      _providedWorkerDefinitions = List<Map<String, dynamic>>.from(defs);
-      try {
-        for (final d in _providedWorkerDefinitions ?? []) {
-          final name = d['name'];
-          final freq = d['frequency'] is Duration
-              ? (d['frequency'] as Duration).inSeconds
-              : d['frequency']?.toString();
-          _addLog('provided_def: $name freq_s=$freq');
-          try {
-            // Also print to console so adb logcat captures it.
-            _log.fine('provided_def: $name freq_s=$freq');
-          } catch (_) {}
-        }
-      } catch (_) {}
-    } catch (_) {}
-  }
+  void setProvidedWorkerDefinitions(List<Map<String, dynamic>> defs) =>
+      _setProvidedWorkerDefinitions(defs);
 
   /// Return the host-provided definitions when available, otherwise fall
   /// back to the internal `demoWorkerDefinitions` used by the example.

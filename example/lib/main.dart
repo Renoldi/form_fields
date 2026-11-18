@@ -115,7 +115,7 @@ Future<void> main() async {
           taskName: 'form_fields_flush',
           // Android runs periodic work at most every 15 minutes; shorter
           // values are raised by the OS, so request the real interval.
-          frequency: Duration(minutes: 15),
+          frequency: Duration(minutes: 2),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -125,7 +125,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_current_location',
-          frequency: Duration(minutes: 15),
+          frequency: Duration(minutes: 2),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -135,7 +135,7 @@ Future<void> main() async {
         ),
         WorkerRegistration(
           taskName: 'send_random_event',
-          frequency: Duration(minutes: 15),
+          frequency: Duration(minutes: 2),
           initialDelay: Duration.zero,
           periodic: true,
           inputData: null,
@@ -152,10 +152,14 @@ Future<void> main() async {
         // 'migrations/v2_down.sql',
       ],
       dbVersion: 0,
-      // Flush pending submissions when the network returns (app running).
+      // Pending submissions stay on the device. They are sent only when a
+      // worker run is active, or when the user sends one item manually.
+      // The handler below is used by those worker runs, not by network events.
       foregroundFlushHandler: () async {
         await processPendingSubmissions();
       },
+      // No automatic flush when the network returns or the app resumes.
+      useConnectivity: false,
       // Invoke each registration's handlers immediately at startup.
       // Explicitly show startup trigger and iOS deferral options.
       triggerWorkerHandlersOnStart: true,
@@ -164,6 +168,10 @@ Future<void> main() async {
       // to false to keep legacy immediate behavior.
       deferStartupHandlersOnIos: true,
     );
+
+    // A submit only queues the row locally. Nothing is sent until a worker run
+    // or a manual send.
+    WorkmanagerService.instance.flushOnPendingAdded = false;
 
     // Register example flush handlers so `FlushApi` can invoke them.
     // try {

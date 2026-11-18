@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'main.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/src/service/flush_service.dart';
+
 // PluginUtilities no longer needed here
 
 class View extends PresenterState {
@@ -606,7 +607,24 @@ class View extends PresenterState {
                                           'sendCurrentLocation invoked';
                                     } catch (_) {}
                                     try {
-                                      // await sendCurrentLocationForeground();
+                                      // Ask only because the user asked for
+                                      // their location right now.
+                                      final granted =
+                                          await requestLocationPermission();
+                                      if (!context.mounted) return;
+                                      if (!granted) {
+                                        ScaffoldMessenger.maybeOf(
+                                          context,
+                                        )?.showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Location permission is required',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      await sendCurrentLocationForeground();
                                       await vm.loadPending();
                                       if (!context.mounted) return;
                                       ScaffoldMessenger.maybeOf(
@@ -625,6 +643,28 @@ class View extends PresenterState {
                                             'sendCurrentLocation threw: $e\n$st';
                                       } catch (_) {}
                                     }
+                                  },
+                                ),
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.my_location),
+                                  label: const Text(
+                                    'Allow background location',
+                                  ),
+                                  onPressed: () async {
+                                    final granted =
+                                        await requestBackgroundLocationPermission();
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.maybeOf(
+                                      context,
+                                    )?.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          granted
+                                              ? 'Background location allowed'
+                                              : 'Choose "Allow all the time" in app settings',
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                                 ElevatedButton.icon(

@@ -175,6 +175,8 @@ export 'src/fields/map/form_fields_map.dart'
         FormFieldsMapFindConfig,
         FormFieldsLocationPrediction,
         FormFieldsMapFeature;
+export 'src/providers/form_fields_change_notifier.dart'
+    show FormFieldsChangeNotifier, FormFieldsUploadProgressMixin, FormFieldsHandlerSlot;
 export 'src/providers/form_fields_map_notifier.dart' show FormFieldsMapNotifier;
 export 'src/controllers/map_controller.dart'
     show

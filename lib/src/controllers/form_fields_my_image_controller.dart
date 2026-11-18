@@ -1,8 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
-import 'package:form_fields/src/utils/safe_notify.dart';
+import 'package:form_fields/src/utilities/safe_notify.dart';
+import 'package:form_fields/src/providers/form_fields_change_notifier.dart';
 
-class FormFieldsMyImageController extends ChangeNotifier {
+class FormFieldsMyImageController extends FormFieldsChangeNotifier {
   FormFieldsMyImageController({List<MyImageResult>? initialImages})
       : _images = List<MyImageResult>.from(initialImages ?? const []);
 
@@ -56,23 +57,23 @@ class FormFieldsMyImageController extends ChangeNotifier {
   // ── Capture integration ──────────────────────────────────────────────────
 
   /// Registered by [FormFieldsLiveCameraCapture] when it mounts.
-  Future<MyImageResult?> Function()? _captureHandler;
-  VoidCallback? _resetHandler;
+  final FormFieldsHandlerSlot<Future<MyImageResult?> Function()> _capture =
+      FormFieldsHandlerSlot();
+  final FormFieldsHandlerSlot<VoidCallback> _reset = FormFieldsHandlerSlot();
 
   /// @internal — called by [FormFieldsLiveCameraCapture].
-  // ignore: use_setters_to_change_properties
   void registerCaptureHandler(
     Future<MyImageResult?> Function() onCapture,
     VoidCallback onReset,
   ) {
-    _captureHandler = onCapture;
-    _resetHandler = onReset;
+    _capture.register(onCapture);
+    _reset.register(onReset);
   }
 
   /// @internal — called by [FormFieldsLiveCameraCapture] on dispose.
   void unregisterCaptureHandler() {
-    _captureHandler = null;
-    _resetHandler = null;
+    _capture.unregister();
+    _reset.unregister();
   }
 
   /// Programmatically trigger a capture from the linked
@@ -81,32 +82,30 @@ class FormFieldsMyImageController extends ChangeNotifier {
   /// Returns [MyImageResult] on success, or `null` if no widget is attached
   /// or the camera is not ready.
   Future<MyImageResult?> capture() =>
-      _captureHandler?.call() ?? Future.value(null);
+      _capture.handler?.call() ?? Future.value(null);
 
   /// Programmatically reset the linked [FormFieldsLiveCameraCapture] widget
   /// back to live-preview mode and clear captured images.
-  void resetCapture() => _resetHandler?.call();
+  void resetCapture() => _reset.handler?.call();
 
   // ── FormFieldsMyImage pick integration ───────────────────────────────────
 
   /// Registered by [FormFieldsMyImage] when it mounts with an external controller.
-  Future<void> Function(String? source)? _pickImageHandler;
+  final FormFieldsHandlerSlot<Future<void> Function(String? source)> _pickImage =
+      FormFieldsHandlerSlot();
 
   /// @internal — called by [FormFieldsMyImage].
-  // ignore: use_setters_to_change_properties
   void registerPickImageHandler(Future<void> Function(String? source) handler) {
-    _pickImageHandler = handler;
+    _pickImage.register(handler);
   }
 
   /// @internal — called by [FormFieldsMyImage] on dispose.
-  void unregisterPickImageHandler() {
-    _pickImageHandler = null;
-  }
+  void unregisterPickImageHandler() => _pickImage.unregister();
 
   /// Programmatically open the image picker on the linked [FormFieldsMyImage].
   ///
   /// [source] can be `'camera'`, `'gallery'`, or `null` to show the
   /// bottom-sheet chooser. Returns immediately if no widget is attached.
   Future<void> pickImage({String? source}) =>
-      _pickImageHandler?.call(source) ?? Future.value();
+      _pickImage.handler?.call(source) ?? Future.value();
 }
