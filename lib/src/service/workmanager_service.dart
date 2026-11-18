@@ -242,12 +242,14 @@ class WorkmanagerService {
     bool periodic = true,
     Map<String, dynamic>? inputData,
     Duration? initialDelay,
+    ForegroundServiceConfig? foregroundServiceConfig,
   }) => _start(
     taskName: taskName,
     frequency: frequency,
     periodic: periodic,
     inputData: inputData,
     initialDelay: initialDelay,
+    foregroundServiceConfig: foregroundServiceConfig,
   );
 
   /// Schedules a one-off background run that starts after [delay]. Unlike an
@@ -257,10 +259,12 @@ class WorkmanagerService {
     required String uniqueName,
     Duration delay = Duration.zero,
     Map<String, dynamic>? inputData,
+    ForegroundServiceConfig? foregroundServiceConfig,
   }) => _scheduleOneOff(
     uniqueName: uniqueName,
     delay: delay,
     inputData: inputData,
+    foregroundServiceConfig: foregroundServiceConfig,
   );
 
   /// Cancels a run scheduled with [scheduleOneOff].
@@ -270,7 +274,12 @@ class WorkmanagerService {
   Future<String?> runOnceNowDetailed({
     String? taskName,
     Map<String, dynamic>? inputData,
-  }) => _runOnceNowDetailed(taskName: taskName, inputData: inputData);
+    ForegroundServiceConfig? foregroundServiceConfig,
+  }) => _runOnceNowDetailed(
+    taskName: taskName,
+    inputData: inputData,
+    foregroundServiceConfig: foregroundServiceConfig,
+  );
 
   /// Stop a specific task, or all tasks when [taskName] is null.
   ///

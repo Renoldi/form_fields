@@ -33,6 +33,7 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
     bool periodic = true,
     Map<String, dynamic>? inputData,
     Duration? initialDelay,
+    ForegroundServiceConfig? foregroundServiceConfig,
   }) async {
     await initialize();
 
@@ -79,6 +80,7 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
           frequency: frequency,
           inputData: data,
           initialDelay: initialDelay,
+          foregroundServiceConfig: foregroundServiceConfig,
         );
         // record metadata
         if (frequency != null) configuredFrequency = frequency;
@@ -126,7 +128,12 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
         } catch (_) {}
         _startCountdownTimer();
       } else {
-        await Workmanager().registerOneOffTask(name, name, inputData: data);
+        await Workmanager().registerOneOffTask(
+          name,
+          name,
+          inputData: data,
+          foregroundServiceConfig: foregroundServiceConfig,
+        );
         _scheduledAtPerTask[name] = DateTime.now();
         _scheduledFrequencyPerTask[name] = null;
         _addLog('task_registered (one-off): $name');
@@ -152,6 +159,7 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
   Future<String?> _runOnceNowDetailed({
     String? taskName,
     Map<String, dynamic>? inputData,
+    ForegroundServiceConfig? foregroundServiceConfig,
   }) async {
     final name =
         taskName ?? 'run_once_${DateTime.now().millisecondsSinceEpoch}';
@@ -171,7 +179,12 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
         }
       } catch (_) {}
 
-      await Workmanager().registerOneOffTask(name, name, inputData: data);
+      await Workmanager().registerOneOffTask(
+        name,
+        name,
+        inputData: data,
+        foregroundServiceConfig: foregroundServiceConfig,
+      );
       // A one-off run has no schedule and no name to wait for later. Keeping
       // it in `_registeredTasks` would only grow the registered list and the
       // countdown loop with every call, so it is not tracked there.
@@ -265,6 +278,7 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
     required String uniqueName,
     Duration delay = Duration.zero,
     Map<String, dynamic>? inputData,
+    ForegroundServiceConfig? foregroundServiceConfig,
   }) async {
     final data = _withCallbackHandle(
       inputData != null
@@ -278,6 +292,7 @@ extension _WorkmanagerLifecycleX on WorkmanagerService {
         inputData: data,
         initialDelay: delay,
         existingWorkPolicy: ExistingWorkPolicy.replace,
+        foregroundServiceConfig: foregroundServiceConfig,
       );
       _addLog('scheduled one-off: $uniqueName in ${delay.inSeconds}s');
     } catch (e) {

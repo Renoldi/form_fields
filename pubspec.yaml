@@ -23,7 +23,7 @@ dependencies:
   path: any
   path_provider: any
   crypto: any
-  workmanager: any
+  workmanager: ^0.10.10
   provider: any
   cunning_document_scanner: any
   image_picker: any

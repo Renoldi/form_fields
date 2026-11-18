@@ -125,6 +125,9 @@ export 'src/service/import_export_service.dart' show ImportExportService;
 export 'src/service/crypto_utils.dart' show CryptoUtils;
 export 'src/service/workmanager_service.dart'
     show WorkmanagerService, workmanagerCallbackDispatcher;
+// Configuration types for WorkmanagerService.start / runOnceNowDetailed.
+export 'package:workmanager/workmanager.dart'
+    show ForegroundServiceConfig, ForegroundServiceType;
 export 'src/service/init_service.dart'
     show FormFieldsInitializer, WorkerRegistration;
 // Firebase Cloud Messaging (FCM) service (internal - public API: FCMService)
