@@ -2,13 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:form_fields_example/data/models/post.dart';
 import 'package:logger/logger.dart';
 import 'package:form_fields/form_fields.dart';
+import 'flush_service.dart';
 import 'pending_submission_helper.dart';
 
 final Logger _sendRandomLogger = Logger();
 
 @pragma('vm:entry-point')
 Future<bool> sendRandomBackgroundHandler(
-    String task, Map<String, dynamic>? inputData) async {
+  String task,
+  Map<String, dynamic>? inputData,
+) async {
+  var acquiredHere = false;
   try {
     if (kDebugMode) {
       // ignore: avoid_print
@@ -16,11 +20,13 @@ Future<bool> sendRandomBackgroundHandler(
     }
     final skip = WorkmanagerService.isInCountdownInvocation;
     _sendRandomLogger.i(
-        'sendRandomBackgroundHandler: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
-    final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
+      'sendRandomBackgroundHandler: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}',
+    );
+    acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
     if (!skip && !acquiredHere) {
       _sendRandomLogger.i(
-          'sendRandomBackgroundHandler: another flush in progress — skipping');
+        'sendRandomBackgroundHandler: another flush in progress — skipping',
+      );
       return false;
     }
 
@@ -42,12 +48,21 @@ Future<bool> sendRandomBackgroundHandler(
 
     final id = await addPendingSubmission(post.toJson());
     if (id > 0) {
-      _sendRandomLogger.i('Foreground inserted pending random id=$id');
+      _sendRandomLogger.i('Background inserted pending random id=$id');
     }
+    // Release this handler's guard, then send what was just queued. Without
+    // this, the row waits for the next run.
+    if (acquiredHere) {
+      WorkmanagerService.releaseFlushGuard();
+      acquiredHere = false;
+    }
+    await processPendingSubmissions();
     return true;
   } catch (e, st) {
     _sendRandomLogger.w('Background handler failed: $e\n$st');
     return false;
+  } finally {
+    if (acquiredHere) WorkmanagerService.releaseFlushGuard();
   }
 }
 
@@ -55,11 +70,13 @@ Future<bool> sendRandomBackgroundHandler(
 Future<void> sendRandomForeground() async {
   final skip = WorkmanagerService.isInCountdownInvocation;
   _sendRandomLogger.i(
-      'sendRandomForeground: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}');
+    'sendRandomForeground: skip=$skip isFlushing=${WorkmanagerService.isFlushing} guardSetAt=${WorkmanagerService.flushGuardSetAt} inCountdown=${WorkmanagerService.isInCountdownInvocation}',
+  );
   final acquiredHere = WorkmanagerService.acquireFlushGuard(skip: skip);
   if (!skip && !acquiredHere) {
-    _sendRandomLogger
-        .i('sendRandomForeground: another flush in progress — skipping');
+    _sendRandomLogger.i(
+      'sendRandomForeground: another flush in progress — skipping',
+    );
     return;
   }
 

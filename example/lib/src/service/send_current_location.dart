@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:form_fields/form_fields.dart';
+import 'flush_service.dart';
 import 'pending_submission_helper.dart';
 
 final Logger _sendLocationLogger = Logger();
@@ -119,6 +120,12 @@ Future<bool> sendCurrentLocationBackgroundHandler(
       _sendLocationLogger.w('Failed to persist pending location');
     }
 
+    // Release this handler's guard, then send the row just queued.
+    if (acquiredHere) {
+      WorkmanagerService.releaseFlushGuard();
+      acquiredHere = false;
+    }
+    await processPendingSubmissions();
     return true;
   } catch (e, st) {
     _sendLocationLogger.w('Background handler failed: $e\n$st');
