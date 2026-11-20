@@ -562,11 +562,16 @@ class CanvasRawMarkerPainter extends CustomPainter {
         final pad = 4.0;
         final bgWidth = tp.width + pad * 2;
         final bgHeight = tp.height + pad * 2;
+        // Pins get their title above the head. Polygons, polylines and circles
+        // have no head, so their title sits on the shape's anchor (its centroid).
+        final labelCenter = drawPin
+            ? Offset(
+                headCenter.dx,
+                headCenter.dy - headRadius - bgHeight / 2 - 6,
+              )
+            : Offset(dx, dy);
         final bgRect = Rect.fromCenter(
-          center: Offset(
-            headCenter.dx,
-            headCenter.dy - headRadius - bgHeight / 2 - 6,
-          ),
+          center: labelCenter,
           width: bgWidth,
           height: bgHeight,
         );
