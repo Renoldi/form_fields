@@ -2,7 +2,7 @@ library;
 
 import 'package:material_ui/material_ui.dart';
 
-import 'app_button_enums.dart';
+import 'app_button.dart';
 
 /// Typed wrapper around Material 3 [SegmentedButton].
 class AppSegmentedButton<T> extends StatelessWidget {

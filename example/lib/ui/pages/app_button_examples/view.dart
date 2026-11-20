@@ -356,13 +356,13 @@ class View extends PresenterState {
                         type: AppButtonType.fab,
                         size: AppSize.medium,
                         icon: const Icon(Icons.add),
-                        onPressed: () {},
+                        onPressed: () => _fabFeedback(context, 'FAB +'),
                       ),
                       AppButton(
                         type: AppButtonType.extendedFab,
                         text: 'Extended FAB',
                         icon: const Icon(Icons.add_task_outlined),
-                        onPressed: () {},
+                        onPressed: () => _fabFeedback(context, 'Extended FAB'),
                       ),
                     ],
                   ),
@@ -640,21 +640,21 @@ class View extends PresenterState {
                         type: AppButtonType.fab,
                         size: AppSize.small,
                         icon: const Icon(Icons.edit_outlined),
-                        onPressed: () {},
+                        onPressed: () => _fabFeedback(context, 'FAB edit (small)'),
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.fab,
                         size: AppSize.medium,
                         icon: const Icon(Icons.edit),
-                        onPressed: () {},
+                        onPressed: () => _fabFeedback(context, 'FAB edit (medium)'),
                       ),
                       const SizedBox(width: 12),
                       AppButton(
                         type: AppButtonType.fab,
                         size: AppSize.large,
                         icon: const Icon(Icons.edit_note),
-                        onPressed: () {},
+                        onPressed: () => _fabFeedback(context, 'FAB edit (large)'),
                       ),
                     ],
                   ),
@@ -674,7 +674,7 @@ class View extends PresenterState {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SelectableText(
-                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "() {}"\n}',
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.small",\n  "icon": "Icons.edit_outlined",\n  "onPressed": "showSnackBar(FAB edit (small))"\n}',
                         style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
@@ -698,7 +698,7 @@ class View extends PresenterState {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SelectableText(
-                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.edit",\n  "onPressed": "() {}"\n}',
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.medium",\n  "icon": "Icons.edit",\n  "onPressed": "showSnackBar(FAB edit (medium))"\n}',
                         style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
@@ -722,7 +722,7 @@ class View extends PresenterState {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SelectableText(
-                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.edit_note",\n  "onPressed": "() {}"\n}',
+                        '{\n  "type": "AppButtonType.fab",\n  "size": "AppButtonSize.large",\n  "icon": "Icons.edit_note",\n  "onPressed": "showSnackBar(FAB edit (large))"\n}',
                         style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
@@ -737,7 +737,7 @@ class View extends PresenterState {
                       type: AppButtonType.extendedFab,
                       text: 'New task',
                       icon: const Icon(Icons.add),
-                      onPressed: () {},
+                      onPressed: () => _fabFeedback(context, 'New task'),
                     ),
                   ),
                   Text('Contoh Pengisian (JSON):',
@@ -756,7 +756,7 @@ class View extends PresenterState {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SelectableText(
-                        '{\n  "type": "AppButtonType.extendedFab",\n  "text": "New task",\n  "icon": "Icons.add",\n  "onPressed": "() {}"\n}',
+                        '{\n  "type": "AppButtonType.extendedFab",\n  "text": "New task",\n  "icon": "Icons.add",\n  "onPressed": "showSnackBar(New task)"\n}',
                         style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
@@ -1092,17 +1092,17 @@ class View extends PresenterState {
                         AppFabMenuItem(
                           label: 'First',
                           icon: const Icon(Icons.looks_one_outlined),
-                          onPressed: () {},
+                          onPressed: () => _fabFeedback(context, 'First'),
                         ),
                         AppFabMenuItem(
                           label: 'Second',
                           icon: const Icon(Icons.looks_two_outlined),
-                          onPressed: () {},
+                          onPressed: () => _fabFeedback(context, 'Second'),
                         ),
                         AppFabMenuItem(
                           label: 'Third',
                           icon: const Icon(Icons.looks_3_outlined),
-                          onPressed: () {},
+                          onPressed: () => _fabFeedback(context, 'Third'),
                         ),
                       ],
                     ),
@@ -1153,4 +1153,14 @@ class View extends PresenterState {
       },
     );
   }
+}
+
+/// Shows which FAB example was tapped, so the tap is visible in the example.
+void _fabFeedback(BuildContext context, String name) {
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+    SnackBar(
+      content: Text('$name ditekan'),
+      duration: const Duration(seconds: 1),
+    ),
+  );
 }

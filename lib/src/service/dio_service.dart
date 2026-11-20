@@ -1,11 +1,10 @@
-// ===================== Dio Utility =====================
-
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:form_fields/src/utilities/debug_log.dart';
 import 'package:logger/logger.dart';
-import 'package:form_fields/src/utils/debug_log.dart';
+
+// ===================== Dio Utility =====================
 
 /// Key set on [Response.extra] when a request failed before any HTTP response
 /// arrived (DNS failure, refused connection, timeout). Callers should check
@@ -13,6 +12,13 @@ import 'package:form_fields/src/utils/debug_log.dart';
 const String kDioNetworkErrorKey = 'form_fields.networkError';
 
 /// Utility class for file upload and download using Dio.
+/// The URL shown in request logs. Dio uses an absolute [path] as it is and
+/// only prefixes a relative one with [baseUrl], so logging must do the same.
+String requestUrlForLog(String baseUrl, String path) {
+  final isAbsolute = Uri.tryParse(path)?.hasScheme ?? false;
+  return isAbsolute || baseUrl.isEmpty ? path : '$baseUrl$path';
+}
+
 class DioUtil {
   static final Logger _logger = Logger(
     printer: PrettyPrinter(
@@ -238,7 +244,9 @@ class DioUtil {
     Map<String, dynamic>? queryParameters,
     Map<String, dynamic>? headers,
   }) async {
-    _logger.i('🌐 $method Request: ${_dio.options.baseUrl}$path');
+    _logger.i(
+      '🌐 $method Request: ${requestUrlForLog(_dio.options.baseUrl, path)}',
+    );
     try {
       return await _dio.request<T>(
         path,
@@ -277,7 +285,9 @@ class DioUtil {
     void Function(int received, int total)? onProgress,
     CancelToken? cancelToken,
   }) async {
-    _logger.i('📥 Download Request: ${_dio.options.baseUrl}$urlPath');
+    _logger.i(
+      '📥 Download Request: ${requestUrlForLog(_dio.options.baseUrl, urlPath)}',
+    );
     _logger.d('💾 Save to: $savePath');
     try {
       await _dio.download(
@@ -459,4 +469,25 @@ class DioUtil {
         ? 'download'
         : trimmed;
   }
+}
+
+/// High-level error classification for HTTP operations.
+enum ErrorType { validation, network, authentication, server }
+
+/// Exception wrapper that carries a user-facing message key and an
+/// `ErrorType` for UI classification. The original DioException is
+/// preserved for logging/diagnostics.
+class HttpException implements Exception {
+  final String messageKey;
+  final ErrorType type;
+  final DioException? originalError;
+
+  HttpException({
+    required this.messageKey,
+    required this.type,
+    this.originalError,
+  });
+
+  @override
+  String toString() => 'HttpException: $messageKey (type: $type)';
 }

@@ -43,71 +43,106 @@ class ViewModel extends ChangeNotifier {
   final List<FormFieldsLocationPrediction> externalSearchResults = (() {
     final base = <FormFieldsLocationPrediction>[
       FormFieldsLocationPrediction(
-          latLng: LatLng(-6.208763, 106.845599), address: 'Jakarta, Indonesia'),
+        latLng: LatLng(-6.208763, 106.845599),
+        address: 'Jakarta, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-6.914744, 107.609810), address: 'Bandung, Indonesia'),
+        latLng: LatLng(-6.914744, 107.609810),
+        address: 'Bandung, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-7.257472, 112.752088),
-          address: 'Surabaya, Indonesia'),
+        latLng: LatLng(-7.257472, 112.752088),
+        address: 'Surabaya, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-6.966667, 110.416664),
-          address: 'Semarang, Indonesia'),
+        latLng: LatLng(-6.966667, 110.416664),
+        address: 'Semarang, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-7.795580, 110.369490),
-          address: 'Yogyakarta, Indonesia'),
+        latLng: LatLng(-7.795580, 110.369490),
+        address: 'Yogyakarta, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(3.595197, 98.672223), address: 'Medan, Indonesia'),
+        latLng: LatLng(3.595197, 98.672223),
+        address: 'Medan, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-5.147665, 119.432732),
-          address: 'Makassar, Indonesia'),
+        latLng: LatLng(-5.147665, 119.432732),
+        address: 'Makassar, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-2.990934, 104.756554),
-          address: 'Palembang, Indonesia'),
+        latLng: LatLng(-2.990934, 104.756554),
+        address: 'Palembang, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-8.652000, 115.216700),
-          address: 'Denpasar, Indonesia'),
+        latLng: LatLng(-8.652000, 115.216700),
+        address: 'Denpasar, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-1.267800, 116.827000),
-          address: 'Balikpapan, Indonesia'),
+        latLng: LatLng(-1.267800, 116.827000),
+        address: 'Balikpapan, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(1.492700, 124.839900), address: 'Manado, Indonesia'),
+        latLng: LatLng(1.492700, 124.839900),
+        address: 'Manado, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-3.328600, 114.588700),
-          address: 'Banjarmasin, Indonesia'),
+        latLng: LatLng(-3.328600, 114.588700),
+        address: 'Banjarmasin, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-0.789275, 113.921327),
-          address: 'Kalimantan (Central)'),
+        latLng: LatLng(-0.789275, 113.921327),
+        address: 'Kalimantan (Central)',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-0.914, 100.460), address: 'Pekanbaru, Indonesia'),
+        latLng: LatLng(-0.914, 100.460),
+        address: 'Pekanbaru, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-7.250445, 112.768845), address: 'Malang, Indonesia'),
+        latLng: LatLng(-7.250445, 112.768845),
+        address: 'Malang, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-5.4341, 105.2671), address: 'Bengkulu, Indonesia'),
+        latLng: LatLng(-5.4341, 105.2671),
+        address: 'Bengkulu, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-4.0538, 119.4232), address: 'Mamuju, Indonesia'),
+        latLng: LatLng(-4.0538, 119.4232),
+        address: 'Mamuju, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-0.595, 100.354), address: 'Padang, Indonesia'),
+        latLng: LatLng(-0.595, 100.354),
+        address: 'Padang, Indonesia',
+      ),
       FormFieldsLocationPrediction(
-          latLng: LatLng(-6.1745, 106.8227), address: 'Jakarta City Center'),
+        latLng: LatLng(-6.1745, 106.8227),
+        address: 'Jakarta City Center',
+      ),
     ];
 
-    final generated =
-        List<FormFieldsLocationPrediction>.generate(120 - base.length, (i) {
-      final idx = i + 1;
-      final row = (i ~/ 10) - 6;
-      final col = (i % 10) - 5;
-      final lat = -6.208763 + row * 0.05 + (i % 3) * 0.002;
-      final lon = 106.845599 + col * 0.05 + ((i + 2) % 3) * 0.002;
-      return FormFieldsLocationPrediction(
+    final generated = List<FormFieldsLocationPrediction>.generate(
+      120 - base.length,
+      (i) {
+        final idx = i + 1;
+        final row = (i ~/ 10) - 6;
+        final col = (i % 10) - 5;
+        final lat = -6.208763 + row * 0.05 + (i % 3) * 0.002;
+        final lon = 106.845599 + col * 0.05 + ((i + 2) % 3) * 0.002;
+        return FormFieldsLocationPrediction(
           latLng: LatLng(lat, lon),
-          address: 'Demo Location ${idx + base.length}, Indonesia');
-    });
+          address: 'Demo Location ${idx + base.length}, Indonesia',
+        );
+      },
+    );
 
     return [...base, ...generated];
   })();
 
   bool useCanvasMarkers = false;
   bool showTitle = true;
+  // Whether the action panel is open. It starts closed so the map gets the
+  // space on screen.
+  bool actionsExpanded = false;
   // Whether a location-finding operation is in progress.
   bool _findingLocation = false;
 
@@ -141,8 +176,12 @@ class ViewModel extends ChangeNotifier {
   dynamic playbackLastShape;
 
   /// Update the last playback info and notify listeners so UI can refresh.
-  void setLastPlaybackInfo(
-      {String? polylineId, int? index, LatLng? point, dynamic shape}) {
+  void setLastPlaybackInfo({
+    String? polylineId,
+    int? index,
+    LatLng? point,
+    dynamic shape,
+  }) {
     playbackLastPolylineId = polylineId;
     playbackLastIndex = index;
     playbackLastPoint = point;
@@ -242,6 +281,11 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleActionsExpanded() {
+    actionsExpanded = !actionsExpanded;
+    notifyListeners();
+  }
+
   // Try to find latitude/longitude inside a possibly nested map/list structure.
   // Returns a map with keys 'lat' and 'lon' if found, otherwise null.
 
@@ -259,8 +303,10 @@ class ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> generateDemoData(
-      {int markerCount = 1000, int shapeCount = 5}) async {
+  Future<void> generateDemoData({
+    int markerCount = 1000,
+    int shapeCount = 5,
+  }) async {
     clearDemoData();
     totalMarkers = markerCount;
     totalPolygons = totalPolylines = totalCircles = shapeCount;
@@ -301,21 +347,26 @@ class ViewModel extends ChangeNotifier {
         final radiusDeg = 0.02 + rnd.nextDouble() * 0.06;
         for (var s = 0; s < sides; s++) {
           final ang = (s / sides) * math.pi * 2;
-          pts.add(LatLng(baseLat + math.sin(ang) * radiusDeg,
-              baseLng + math.cos(ang) * radiusDeg));
+          pts.add(
+            LatLng(
+              baseLat + math.sin(ang) * radiusDeg,
+              baseLng + math.cos(ang) * radiusDeg,
+            ),
+          );
         }
         final id = 'p\$${DateTime.now().microsecondsSinceEpoch}';
         // Build ShapeMeta containing the full polygon vertex list so the
         // widget can render polygons from ShapeMeta directly.
-        final pmList =
-            pts.map((p) => PointMeta.fromMap(p)).toList(growable: false);
+        final pmList = pts
+            .map((p) => PointMeta.fromMap(p))
+            .toList(growable: false);
         await mapController.appendRawMarkers([
           ShapeMeta(
             pointMetas: pmList,
             hit: (title: 'Polygon #${i + 1}', subtitle: null),
             id: id,
             shapeType: ShapeTypes.polygon,
-          )
+          ),
         ]);
         generatedPolygons = i + 1;
         notifyListeners();
@@ -334,7 +385,8 @@ class ViewModel extends ChangeNotifier {
   Future<void> generateMarkers({int markerCount = 1000, String? apiUrl}) async {
     if (FormFieldsMapController.enableBatchLogging) {
       debugPrint(
-          'generateMarkers called with count=$markerCount apiUrl=$apiUrl');
+        'generateMarkers called with count=$markerCount apiUrl=$apiUrl',
+      );
     }
     generatedMarkers = 0;
     totalMarkers = markerCount;
@@ -357,7 +409,8 @@ class ViewModel extends ChangeNotifier {
         raw = await EarthquakeFeed.fetchRawMarkers(apiUrl);
       } catch (e) {
         debugPrint(
-            'generateMarkers: failed to fetch/parse apiUrl=$apiUrl — $e');
+          'generateMarkers: failed to fetch/parse apiUrl=$apiUrl — $e',
+        );
         raw = <dynamic>[];
       }
       // If an API was used, update the total to the actual number of
@@ -379,7 +432,8 @@ class ViewModel extends ChangeNotifier {
       });
       swCompute.stop();
       debugPrint(
-          'generateMarkers: compute produced ${raw.length} items in ${swCompute.elapsedMilliseconds} ms');
+        'generateMarkers: compute produced ${raw.length} items in ${swCompute.elapsedMilliseconds} ms',
+      );
     }
 
     // Convert and append in batches on the main isolate.
@@ -396,35 +450,42 @@ class ViewModel extends ChangeNotifier {
       for (var m in slice) {
         final lat = (m['lat'] as num).toDouble();
         final lon = (m['lon'] as num).toDouble();
-        batch.add(ShapeMeta(
-          pointMetas: [
-            PointMeta.fromMap(LatLng(lat, lon))
-              ..hit = (
-                title: m['title'] as String?,
-                subtitle: m['subtitle'] as String?
-              )
-              ..id = m['id'] as String?
-          ],
-          id: m['id'] as String?,
-          shapeType: m['shapeType'] as String?,
-        ));
+        batch.add(
+          ShapeMeta(
+            pointMetas: [
+              PointMeta.fromMap(LatLng(lat, lon))
+                ..hit = (
+                  title: m['title'] as String?,
+                  subtitle: m['subtitle'] as String?,
+                )
+                ..id = m['id'] as String?,
+            ],
+            id: m['id'] as String?,
+            shapeType: m['shapeType'] as String?,
+          ),
+        );
       }
       await FormFieldsMapController.appendRawMarkers(
-          controllerId, List<dynamic>.from(batch),
-          createMarkerWidgets: false);
+        controllerId,
+        List<dynamic>.from(batch),
+        createMarkerWidgets: false,
+      );
       swBatch.stop();
       debugPrint(
-          'generateMarkers: appended batch ${++batchIndex} size=${batch.length} in ${swBatch.elapsedMilliseconds} ms (total elapsed=${swTotal.elapsedMilliseconds} ms)');
+        'generateMarkers: appended batch ${++batchIndex} size=${batch.length} in ${swBatch.elapsedMilliseconds} ms (total elapsed=${swTotal.elapsedMilliseconds} ms)',
+      );
       generatedMarkers = end;
       if (FormFieldsMapController.enableBatchLogging) {
         debugPrint(
-            'generateMarkers appended a batch, generated=$generatedMarkers');
+          'generateMarkers appended a batch, generated=$generatedMarkers',
+        );
       }
       try {
         if (FormFieldsMapController.enableBatchLogging) {
           final cur = mapController.getRawMarkers();
           debugPrint(
-              'generateMarkers after append, registry rawMarkers=${cur.length}');
+            'generateMarkers after append, registry rawMarkers=${cur.length}',
+          );
         }
       } catch (_) {}
       notifyListeners();
@@ -446,7 +507,8 @@ class ViewModel extends ChangeNotifier {
       if (FormFieldsMapController.enableBatchLogging) {
         final cur = mapController.getRawMarkers();
         debugPrint(
-            'generateMarkers complete, registry rawMarkers=${cur.length}');
+          'generateMarkers complete, registry rawMarkers=${cur.length}',
+        );
       }
     } catch (_) {}
     if (FormFieldsMapController.enableBatchLogging) {
@@ -457,8 +519,10 @@ class ViewModel extends ChangeNotifier {
     // } catch (_) {}
   }
 
-  Future<void> generatePolylines(
-      {int shapeCount = 5, bool useRoads = true}) async {
+  Future<void> generatePolylines({
+    int shapeCount = 5,
+    bool useRoads = true,
+  }) async {
     isLoading = true;
     generatingPolylines = true;
     notifyListeners();
@@ -528,8 +592,12 @@ class ViewModel extends ChangeNotifier {
           final segs = 3 + rnd.nextInt(5);
           final step = 0.02 + rnd.nextDouble() * 0.04;
           for (var s = 0; s < segs; s++) {
-            pts.add(LatLng(baseLat + (s - segs / 2) * step,
-                baseLng + (rnd.nextDouble() - 0.5) * step));
+            pts.add(
+              LatLng(
+                baseLat + (s - segs / 2) * step,
+                baseLng + (rnd.nextDouble() - 0.5) * step,
+              ),
+            );
           }
           final pmList = pts
               .map((p) => PointMeta(lat: p.latitude, lon: p.longitude))
@@ -548,7 +616,7 @@ class ViewModel extends ChangeNotifier {
                 'useStrokeWidthInMeter': false,
                 'color': Colors.red,
               },
-            )
+            ),
           ]);
         } else {
           // Use routePoints as the polyline
@@ -562,8 +630,12 @@ class ViewModel extends ChangeNotifier {
               enriched.add(a);
               for (var k = 1; k <= interpPerSegment; k++) {
                 final t = k / (interpPerSegment + 1);
-                enriched.add(LatLng(a.latitude + (b.latitude - a.latitude) * t,
-                    a.longitude + (b.longitude - a.longitude) * t));
+                enriched.add(
+                  LatLng(
+                    a.latitude + (b.latitude - a.latitude) * t,
+                    a.longitude + (b.longitude - a.longitude) * t,
+                  ),
+                );
               }
             }
             enriched.add(routePoints.last);
@@ -586,7 +658,7 @@ class ViewModel extends ChangeNotifier {
                 'useStrokeWidthInMeter': false,
                 'color': Colors.red,
               },
-            )
+            ),
           ]);
         }
 
@@ -607,9 +679,10 @@ class ViewModel extends ChangeNotifier {
   /// Start periodic updates of existing raw markers. Each tick will slightly
   /// perturb marker coordinates to simulate movement. Default interval is
   /// 1 minute.
-  void startPeriodicMarkerUpdates(
-      {Duration interval = const Duration(seconds: 30),
-      bool randomize = true}) {
+  void startPeriodicMarkerUpdates({
+    Duration interval = const Duration(seconds: 30),
+    bool randomize = true,
+  }) {
     stopPeriodicMarkerUpdates();
     markerUpdateInterval = interval;
     markerUpdateRemainingSeconds = interval.inSeconds;
@@ -664,6 +737,13 @@ class ViewModel extends ChangeNotifier {
         debugPrint('_updateMarkersOnce called, current=${current.length}');
       }
       if (current.isEmpty) return;
+
+      // Large registries are moved in place. Rebuilding every entry each tick
+      // (serialize, clear, append) was the main cost of an update.
+      if (!showVisualMarkerUpdates && current.length >= 5000) {
+        await _shiftRawMarkersInPlace(current);
+        return;
+      }
 
       // Preserve hit/title and properties for regeneration, then
       // serialize current entries to a plain-map form suitable for isolates.
@@ -746,7 +826,8 @@ class ViewModel extends ChangeNotifier {
       if (total >= regenerateThreshold) {
         try {
           debugPrint(
-              '_updateMarkersOnce: large update, regenerating markers (total=$total)');
+            '_updateMarkersOnce: large update, regenerating markers (total=$total)',
+          );
           // Build a map of base entries keyed by id so we can reconstruct
           // absolute coordinates using returned deltas.
           final baseById = <String, Map<String, dynamic>>{};
@@ -774,13 +855,14 @@ class ViewModel extends ChangeNotifier {
                 // If compute returned full pointMetas, use them directly.
                 if (u['pointMetas'] is List &&
                     (u['pointMetas'] as List).isNotEmpty) {
-                  final pms =
-                      (u['pointMetas'] as List).cast<Map<String, dynamic>>();
+                  final pms = (u['pointMetas'] as List)
+                      .cast<Map<String, dynamic>>();
                   final pmList = pms
                       .map((pm) => PointMeta.fromMap(pm))
                       .toList(growable: false);
                   final sid = u['id'] as String?;
-                  batch.add(ShapeMeta(
+                  batch.add(
+                    ShapeMeta(
                       pointMetas: pmList,
                       id: sid,
                       shapeType: u['shapeType'] as String?,
@@ -789,7 +871,9 @@ class ViewModel extends ChangeNotifier {
                           : null,
                       properties: sid != null && basePropsById.containsKey(sid)
                           ? basePropsById[sid]
-                          : null));
+                          : null,
+                    ),
+                  );
                   continue;
                 }
 
@@ -818,9 +902,10 @@ class ViewModel extends ChangeNotifier {
                     baseLon != null) {
                   final newLat = baseLat + (u['deltaLat'] as num).toDouble();
                   final newLon = baseLon + (u['deltaLon'] as num).toDouble();
-                  batch.add(ShapeMeta(
+                  batch.add(
+                    ShapeMeta(
                       pointMetas: [
-                        PointMeta.fromMap(LatLng(newLat, newLon))..id = idv
+                        PointMeta.fromMap(LatLng(newLat, newLon))..id = idv,
                       ],
                       id: idv,
                       shapeType: ShapeTypes.marker,
@@ -829,14 +914,17 @@ class ViewModel extends ChangeNotifier {
                           : null,
                       properties: basePropsById.containsKey(idv)
                           ? basePropsById[idv]
-                          : null));
+                          : null,
+                    ),
+                  );
                 } else if (u.containsKey('lat') && u.containsKey('lon')) {
                   final newLat = (u['lat'] as num).toDouble();
                   final newLon = (u['lon'] as num).toDouble();
                   final sid2 = u['id'] as String?;
-                  batch.add(ShapeMeta(
+                  batch.add(
+                    ShapeMeta(
                       pointMetas: [
-                        PointMeta.fromMap(LatLng(newLat, newLon))..id = sid2
+                        PointMeta.fromMap(LatLng(newLat, newLon))..id = sid2,
                       ],
                       id: sid2,
                       shapeType: ShapeTypes.marker,
@@ -845,8 +933,10 @@ class ViewModel extends ChangeNotifier {
                           : null,
                       properties:
                           sid2 != null && basePropsById.containsKey(sid2)
-                              ? basePropsById[sid2]
-                              : null));
+                          ? basePropsById[sid2]
+                          : null,
+                    ),
+                  );
                 } else {
                   // Unknown payload, skip.
                 }
@@ -856,30 +946,40 @@ class ViewModel extends ChangeNotifier {
             if (batch.isNotEmpty) {
               try {
                 await FormFieldsMapController.appendRawMarkers(
-                    cid, List<dynamic>.from(batch),
-                    createMarkerWidgets: showVisualMarkerUpdates);
+                  cid,
+                  List<dynamic>.from(batch),
+                  createMarkerWidgets: showVisualMarkerUpdates,
+                );
                 // Update UI counters so progress overlay reflects regeneration
                 for (final b in batch) {
                   try {
                     if (b is ShapeMeta) {
-                      final t =
-                          (b.shapeType ?? ShapeTypes.marker).toLowerCase();
+                      final t = (b.shapeType ?? ShapeTypes.marker)
+                          .toLowerCase();
                       if (t == ShapeTypes.marker) {
-                        generatedMarkers =
-                            (generatedMarkers + 1).clamp(0, totalMarkers);
+                        generatedMarkers = (generatedMarkers + 1).clamp(
+                          0,
+                          totalMarkers,
+                        );
                         lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.polygon) {
-                        generatedPolygons =
-                            (generatedPolygons + 1).clamp(0, totalPolygons);
+                        generatedPolygons = (generatedPolygons + 1).clamp(
+                          0,
+                          totalPolygons,
+                        );
                         // count polygons toward last updates as well
                         lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.polyline) {
-                        generatedPolylines =
-                            (generatedPolylines + 1).clamp(0, totalPolylines);
+                        generatedPolylines = (generatedPolylines + 1).clamp(
+                          0,
+                          totalPolylines,
+                        );
                         lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       } else if (t == ShapeTypes.circle) {
-                        generatedCircles =
-                            (generatedCircles + 1).clamp(0, totalCircles);
+                        generatedCircles = (generatedCircles + 1).clamp(
+                          0,
+                          totalCircles,
+                        );
                         lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                       }
                     }
@@ -901,7 +1001,8 @@ class ViewModel extends ChangeNotifier {
         } catch (e) {
           // If regeneration failed unexpectedly, fall through to normal path.
           debugPrint(
-              '_updateMarkersOnce: regeneration failed, falling back to patching — $e');
+            '_updateMarkersOnce: regeneration failed, falling back to patching — $e',
+          );
         }
       }
 
@@ -938,20 +1039,25 @@ class ViewModel extends ChangeNotifier {
               if (base['pointMetas'] is List &&
                   (base['pointMetas'] as List).isNotEmpty) {
                 try {
-                  final bpms =
-                      (base['pointMetas'] as List).cast<Map<String, dynamic>>();
+                  final bpms = (base['pointMetas'] as List)
+                      .cast<Map<String, dynamic>>();
                   final dLat = (u['deltaLat'] as num).toDouble();
                   final dLon = (u['deltaLon'] as num).toDouble();
-                  final pms = bpms.map((pm) {
-                    final pt = PointMeta.fromMap(pm);
-                    pt.lat = pt.lat + dLat;
-                    pt.lon = pt.lon + dLon;
-                    return pt;
-                  }).toList(growable: false);
-                  shapes.add(ShapeMeta(
+                  final pms = bpms
+                      .map((pm) {
+                        final pt = PointMeta.fromMap(pm);
+                        pt.lat = pt.lat + dLat;
+                        pt.lon = pt.lon + dLon;
+                        return pt;
+                      })
+                      .toList(growable: false);
+                  shapes.add(
+                    ShapeMeta(
                       pointMetas: pms,
                       id: idv,
-                      shapeType: (base['shapeType'] as String?)));
+                      shapeType: (base['shapeType'] as String?),
+                    ),
+                  );
                   continue;
                 } catch (_) {}
               }
@@ -962,9 +1068,15 @@ class ViewModel extends ChangeNotifier {
                   final baseLon = (base['lon'] as num).toDouble();
                   final newLat = baseLat + (u['deltaLat'] as num).toDouble();
                   final newLon = baseLon + (u['deltaLon'] as num).toDouble();
-                  shapes.add(ShapeMeta(pointMetas: [
-                    PointMeta(lat: newLat, lon: newLon, id: idv)
-                  ], id: idv, shapeType: ShapeTypes.marker));
+                  shapes.add(
+                    ShapeMeta(
+                      pointMetas: [
+                        PointMeta(lat: newLat, lon: newLon, id: idv),
+                      ],
+                      id: idv,
+                      shapeType: ShapeTypes.marker,
+                    ),
+                  );
                   continue;
                 }
               } catch (_) {}
@@ -976,19 +1088,28 @@ class ViewModel extends ChangeNotifier {
                   .cast<Map<String, dynamic>>()
                   .map((pm) => PointMeta.fromMap(pm))
                   .toList(growable: false);
-              shapes.add(ShapeMeta(
+              shapes.add(
+                ShapeMeta(
                   pointMetas: pms,
                   id: idv,
-                  shapeType: (u['shapeType'] as String?)));
+                  shapeType: (u['shapeType'] as String?),
+                ),
+              );
             } catch (_) {}
           } else if (u.containsKey('lat') && u.containsKey('lon')) {
             try {
               final p = PointMeta(
-                  lat: (u['lat'] as num).toDouble(),
-                  lon: (u['lon'] as num).toDouble(),
-                  id: idv);
-              shapes.add(ShapeMeta(
-                  pointMetas: [p], id: idv, shapeType: ShapeTypes.marker));
+                lat: (u['lat'] as num).toDouble(),
+                lon: (u['lon'] as num).toDouble(),
+                id: idv,
+              );
+              shapes.add(
+                ShapeMeta(
+                  pointMetas: [p],
+                  id: idv,
+                  shapeType: ShapeTypes.marker,
+                ),
+              );
             } catch (_) {}
           }
         }
@@ -1000,29 +1121,39 @@ class ViewModel extends ChangeNotifier {
               try {
                 final t = (s.shapeType ?? ShapeTypes.marker).toLowerCase();
                 if (t == ShapeTypes.marker) {
-                  generatedMarkers =
-                      (generatedMarkers + 1).clamp(0, totalMarkers);
+                  generatedMarkers = (generatedMarkers + 1).clamp(
+                    0,
+                    totalMarkers,
+                  );
                   lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.polygon) {
-                  generatedPolygons =
-                      (generatedPolygons + 1).clamp(0, totalPolygons);
+                  generatedPolygons = (generatedPolygons + 1).clamp(
+                    0,
+                    totalPolygons,
+                  );
                   lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.polyline) {
-                  generatedPolylines =
-                      (generatedPolylines + 1).clamp(0, totalPolylines);
+                  generatedPolylines = (generatedPolylines + 1).clamp(
+                    0,
+                    totalPolylines,
+                  );
                   lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 } else if (t == ShapeTypes.circle) {
-                  generatedCircles =
-                      (generatedCircles + 1).clamp(0, totalCircles);
+                  generatedCircles = (generatedCircles + 1).clamp(
+                    0,
+                    totalCircles,
+                  );
                   lastMarkerUpdatesApplied = lastMarkerUpdatesApplied + 1;
                 }
               } catch (_) {}
             }
             notifyListeners();
 
-            await mapController.processShapeMetaList(shapes,
-                createMarkerWidgets: showVisualMarkerUpdates,
-                useInPlaceMutation: true);
+            await mapController.processShapeMetaList(
+              shapes,
+              createMarkerWidgets: showVisualMarkerUpdates,
+              useInPlaceMutation: true,
+            );
           }
         } catch (_) {
           // Fallback: per-item update using controller convenience.
@@ -1032,8 +1163,11 @@ class ViewModel extends ChangeNotifier {
               if (sid == null) continue;
               if (s.pointMetas != null && s.pointMetas!.isNotEmpty) {
                 FormFieldsMapController.updateRawMarkerCoordinates(
-                    cid, sid, s.pointMetas!,
-                    createMarkerWidgets: showVisualMarkerUpdates);
+                  cid,
+                  sid,
+                  s.pointMetas!,
+                  createMarkerWidgets: showVisualMarkerUpdates,
+                );
               }
             } catch (_) {}
           }
@@ -1064,9 +1198,12 @@ class ViewModel extends ChangeNotifier {
         if (candidates.isNotEmpty) {
           final chosen = candidates[_updateRnd.nextInt(candidates.length)];
           try {
-            await mapController.animateCameraTo(chosen, 10,
-                duration: const Duration(milliseconds: 400),
-                curve: const FormFieldsMapPlaybackConfig().playbackCurve);
+            await mapController.animateCameraTo(
+              chosen,
+              10,
+              duration: const Duration(milliseconds: 400),
+              curve: const FormFieldsMapPlaybackConfig().playbackCurve,
+            );
           } catch (_) {}
         }
       } catch (_) {}
@@ -1079,6 +1216,77 @@ class ViewModel extends ChangeNotifier {
         mapController.setBlockingLoading(false);
       } catch (_) {}
     }
+  }
+
+  /// Moves every shape by a random delta by changing its coordinates in
+  /// place. The registry is not cleared or rebuilt. Only the random deltas are
+  /// computed off the main isolate, and they are passed as typed arrays.
+  Future<void> _shiftRawMarkersInPlace(List<dynamic> current) async {
+    final shapes = <ShapeMeta>[];
+    for (final m in current) {
+      if (m is ShapeMeta && (m.pointMetas?.isNotEmpty ?? false)) {
+        shapes.add(m);
+      }
+    }
+    if (shapes.isEmpty) return;
+
+    final sw = Stopwatch()..start();
+    final n = shapes.length;
+    final baseLat = Float64List(n);
+    final baseLon = Float64List(n);
+    for (var i = 0; i < n; i++) {
+      final p0 = shapes[i].pointMetas!.first;
+      baseLat[i] = p0.lat;
+      baseLon[i] = p0.lon;
+    }
+
+    final deltas = await compute(_computeInPlaceDeltasIsolate, {
+      'baseLat': baseLat,
+      'baseLon': baseLon,
+      'seed': _updateRnd.nextInt(1 << 32),
+      'centerLat': center.latitude,
+      'centerLng': center.longitude,
+      'randomize': markerUpdateRandomizeCoordinates,
+      'range': markerUpdateRandomRangeDegrees,
+    });
+
+    final nonMarkerUpdates = <Map<String, dynamic>>[];
+    for (var i = 0; i < n; i++) {
+      final shape = shapes[i];
+      final dLat = deltas[2 * i];
+      final dLon = deltas[2 * i + 1];
+      for (final pm in shape.pointMetas!) {
+        pm.lat = pm.lat + dLat;
+        pm.lon = pm.lon + dLon;
+      }
+      final isMarker =
+          (shape.shapeType ?? ShapeTypes.marker).toLowerCase() ==
+          ShapeTypes.marker;
+      if (!isMarker && shape.id != null) {
+        nonMarkerUpdates.add({
+          'id': shape.id,
+          'pointMetas': [
+            for (final pm in shape.pointMetas!) {'lat': pm.lat, 'lon': pm.lon},
+          ],
+        });
+      }
+    }
+
+    // Shapes other than markers also have derived layers that must be rebuilt.
+    if (nonMarkerUpdates.isNotEmpty) {
+      FormFieldsMapController.batchUpdateCoordinates(
+        controllerId,
+        nonMarkerUpdates,
+        createMarkerWidgets: showVisualMarkerUpdates,
+      );
+    }
+    FormFieldsMapController.refreshRawMarkers(controllerId);
+
+    lastMarkerUpdatesApplied = n;
+    notifyListeners();
+    debugPrint(
+      '_shiftRawMarkersInPlace: $n entries in ${sw.elapsedMilliseconds} ms',
+    );
   }
 
   /// Whether periodic marker updates are currently active.
@@ -1192,8 +1400,12 @@ class ViewModel extends ChangeNotifier {
         const double fallbackRadius = 0.04; // larger radius for longer route
         for (var s = 0; s < fallbackSegments; s++) {
           final ang = (s / fallbackSegments) * math.pi * 2;
-          pts.add(LatLng(baseLat + math.sin(ang) * fallbackRadius,
-              baseLng + math.cos(ang) * fallbackRadius));
+          pts.add(
+            LatLng(
+              baseLat + math.sin(ang) * fallbackRadius,
+              baseLng + math.cos(ang) * fallbackRadius,
+            ),
+          );
         }
         routePoints = pts;
       } else {
@@ -1209,8 +1421,12 @@ class ViewModel extends ChangeNotifier {
             enriched.add(a);
             for (var k = 1; k <= interpPerSegment; k++) {
               final t = k / (interpPerSegment + 1);
-              enriched.add(LatLng(a.latitude + (b.latitude - a.latitude) * t,
-                  a.longitude + (b.longitude - a.longitude) * t));
+              enriched.add(
+                LatLng(
+                  a.latitude + (b.latitude - a.latitude) * t,
+                  a.longitude + (b.longitude - a.longitude) * t,
+                ),
+              );
             }
           }
           enriched.add(routePoints.last);
@@ -1223,9 +1439,12 @@ class ViewModel extends ChangeNotifier {
         final start = routePoints.first;
         final double targetZoom =
             const FormFieldsMapPlaybackConfig().playbackZoom;
-        await mapController.animateCameraTo(start, targetZoom,
-            duration: const Duration(milliseconds: 600),
-            curve: const FormFieldsMapPlaybackConfig().playbackCurve);
+        await mapController.animateCameraTo(
+          start,
+          targetZoom,
+          duration: const Duration(milliseconds: 600),
+          curve: const FormFieldsMapPlaybackConfig().playbackCurve,
+        );
       } catch (_) {}
 
       final id = 'l\$${DateTime.now().microsecondsSinceEpoch}';
@@ -1234,8 +1453,9 @@ class ViewModel extends ChangeNotifier {
 
       // Append the full route as ShapeMeta so rendering and playback UI can
       // derive the polyline from ShapeMeta as the canonical source.
-      final pmList =
-          routePoints.map((p) => PointMeta.fromMap(p)).toList(growable: false);
+      final pmList = routePoints
+          .map((p) => PointMeta.fromMap(p))
+          .toList(growable: false);
       await mapController.appendRawMarkers([
         ShapeMeta(
           pointMetas: pmList,
@@ -1249,7 +1469,7 @@ class ViewModel extends ChangeNotifier {
             'useStrokeWidthInMeter': false,
             'color': Colors.lightGreen,
           },
-        )
+        ),
       ]);
       playbackPolylineId = id;
       generatedPolylines = generatedPolylines + 1;
@@ -1296,17 +1516,18 @@ class ViewModel extends ChangeNotifier {
         final id = 'c\$${DateTime.now().microsecondsSinceEpoch}';
         // Circle ShapeMeta: include center and carry radius in `rotation`.
         final centerPm = PointMeta(
-            lat: lat,
-            lon: lng,
-            rotation: c.radius,
-            id: id,
-            hit: (title: 'Circle #${i + 1}', subtitle: id));
+          lat: lat,
+          lon: lng,
+          rotation: c.radius,
+          id: id,
+          hit: (title: 'Circle #${i + 1}', subtitle: id),
+        );
         await mapController.appendRawMarkers([
           ShapeMeta(
             pointMetas: [centerPm],
             id: id,
             shapeType: ShapeTypes.circle,
-          )
+          ),
         ]);
         generatedCircles = i + 1;
         notifyListeners();
@@ -1326,8 +1547,11 @@ class ViewModel extends ChangeNotifier {
     _findingLocation = true;
     notifyListeners();
     try {
-      await mapController.animateCameraTo(center, 13,
-          duration: const Duration(milliseconds: 600));
+      await mapController.animateCameraTo(
+        center,
+        13,
+        duration: const Duration(milliseconds: 600),
+      );
     } catch (_) {}
     _findingLocation = false;
     notifyListeners();
@@ -1368,7 +1592,8 @@ List<Map<String, dynamic>> _generateMarkersIsolate(Map<String, dynamic> args) {
 // serializable items with new coordinates. This avoids doing CPU-bound
 // coordinate math on the main isolate.
 List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
-    Map<String, dynamic> args) {
+  Map<String, dynamic> args,
+) {
   final items = (args['items'] as List).cast<Map<String, dynamic>>();
   final randomSeed = args['seed'] as int? ?? 424242;
   final random = math.Random(randomSeed);
@@ -1425,6 +1650,36 @@ List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
     } catch (_) {
       out.add(m);
     }
+  }
+  return out;
+}
+
+/// Random coordinate deltas for [_shiftRawMarkersInPlace]. Returns
+/// `[dLat0, dLon0, dLat1, dLon1, ...]`. The same rules as
+/// [_computeUpdatedMarkersIsolate] apply: a random position near the center
+/// when `randomize` is set, otherwise a small random step.
+Float64List _computeInPlaceDeltasIsolate(Map<String, dynamic> args) {
+  final baseLat = args['baseLat'] as Float64List;
+  final baseLon = args['baseLon'] as Float64List;
+  final random = math.Random(args['seed'] as int? ?? 424242);
+  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
+  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
+  final randomize = args['randomize'] as bool? ?? true;
+  final range = (args['range'] as num?)?.toDouble() ?? 3.0;
+
+  final out = Float64List(baseLat.length * 2);
+  for (var i = 0; i < baseLat.length; i++) {
+    double newLat;
+    double newLon;
+    if (randomize) {
+      newLat = centerLat + (random.nextDouble() - 0.5) * range;
+      newLon = centerLng + (random.nextDouble() - 0.5) * range;
+    } else {
+      newLat = baseLat[i] + (random.nextDouble() - 0.5) * 0.01;
+      newLon = baseLon[i] + (random.nextDouble() - 0.5) * 0.01;
+    }
+    out[2 * i] = newLat - baseLat[i];
+    out[2 * i + 1] = newLon - baseLon[i];
   }
   return out;
 }

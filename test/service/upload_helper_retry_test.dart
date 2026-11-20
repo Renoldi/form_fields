@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:form_fields/src/service/dio_service.dart';
-import 'package:form_fields/src/utilities/upload_helper.dart';
+import 'package:form_fields/src/service/upload_helper.dart';
 
 import '../support/scripted_http_adapter.dart';
 

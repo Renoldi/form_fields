@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:form_fields/src/controllers/form_fields_my_image_controller.dart';
+import 'package:form_fields/src/state/image_field_states.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/service/offline_upload_manager.dart';
 import 'package:form_fields/src/utilities/enums.dart';

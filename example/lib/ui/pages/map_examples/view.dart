@@ -32,172 +32,101 @@ class View extends PresenterState {
               Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 8),
-                        Text(context.tr('mapExampleDescription')),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+                        Row(
                           children: [
-                            if (vm.selectedFeature ==
-                                FormFieldsMapFeature.map) ...[
-                              _ActionButton(
-                                label:
-                                    'Generate ${formatNumber(vm.createMarkers)} markers',
-                                icon: Icons.auto_awesome,
-                                onPressed: () => vm.generateMarkers(
-                                  markerCount: vm.createMarkers,
-                                ),
-                                loading: vm.generatingMarkers,
+                            Expanded(
+                              child: Text(
+                                context.tr('mapExampleDescription'),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              _ActionButton(
-                                label: 'Generate from API',
-                                icon: Icons.cloud_download,
-                                onPressed: () async {
-                                  final controller = TextEditingController(
-                                    text:
-                                        'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
-                                  );
-                                  final ok = await showDialog<bool?>(
-                                    context: context,
-                                    builder: (ctx) {
-                                      return AlertDialog(
-                                        title: const Text('API URL'),
-                                        content: TextField(
-                                          controller: controller,
-                                          decoration: const InputDecoration(
-                                            hintText:
-                                                'https://example.com/data.json',
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
-                                            child: const Text('OK'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                  if (ok == true &&
-                                      controller.text.trim().isNotEmpty) {
-                                    vm.generateMarkers(
-                                      apiUrl: controller.text.trim(),
-                                    );
-                                  }
-                                },
-                                loading: vm.fetchingFromApi,
-                              ),
-                              _ActionButton(
-                                label:
-                                    'Generate Polygons (${formatNumber(vm.createPolygons)})',
-                                icon: Icons.change_history,
-                                onPressed: () => vm.generatePolygons(
-                                  shapeCount: vm.createPolygons,
-                                ),
-                                loading: vm.generatingPolygons,
-                              ),
-                              _ActionButton(
-                                label:
-                                    'Generate Circles (${formatNumber(vm.createCircles)})',
-                                icon: Icons.circle,
-                                onPressed: () => vm.generateCircles(
-                                  shapeCount: vm.createCircles,
-                                ),
-                                loading: vm.generatingCircles,
-                              ),
-                              _ActionButton(
-                                label:
-                                    'Generate Polylines (${formatNumber(vm.createPolylines)})',
-                                icon: Icons.timeline,
-                                onPressed: () => vm.generatePolylines(
-                                  shapeCount: vm.createPolylines,
-                                ),
-                                loading: vm.generatingPolylines,
-                              ),
-                            ] else if (vm.selectedFeature ==
-                                FormFieldsMapFeature.playback) ...[
-                              _ActionButton(
-                                label: 'Generate 1 Polyline (for playback)',
-                                icon: Icons.add_road,
-                                onPressed: () => vm.generatePlaybackPolyline(),
-                                loading: vm.generatingPolylines,
-                              ),
-                            ] else if (vm.selectedFeature ==
-                                FormFieldsMapFeature.find) ...[
-                              _ActionButton(
-                                label: 'Find location',
-                                icon: Icons.search,
-                                onPressed: () => vm.findLocation(),
-                                loading: vm.findingLocation,
-                              ),
-                            ],
-                            _ActionButton(
-                              label: 'Clear',
-                              icon: Icons.clear,
-                              outlined: true,
-                              color: Colors.red,
-                              onPressed: () => vm.clearDemoData(),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('Show titles'),
-                                const SizedBox(width: 6),
-                                Switch.adaptive(
-                                  value: vm.showTitle,
-                                  onChanged: (v) => vm.setShowTitle(v),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('Feature'),
-                                const SizedBox(width: 6),
-                                Icon(
-                                  vm.selectedFeature ==
-                                          FormFieldsMapFeature.playback
-                                      ? Icons.play_arrow
-                                      : vm.selectedFeature ==
-                                            FormFieldsMapFeature.map
-                                      ? Icons.map
-                                      : Icons.search,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                DropdownButton<FormFieldsMapFeature?>(
-                                  value: vm.selectedFeature,
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: FormFieldsMapFeature.playback,
-                                      child: Text('Playback'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: FormFieldsMapFeature.map,
-                                      child: Text('Map'),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: FormFieldsMapFeature.find,
-                                      child: Text('Find'),
-                                    ),
-                                  ],
-                                  onChanged: (v) => vm.setSelectedFeature(v),
-                                ),
-                              ],
+                            TextButton.icon(
+                              onPressed: vm.toggleActionsExpanded,
+                              icon: Icon(
+                                vm.actionsExpanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                              ),
+                              label: Text(
+                                vm.actionsExpanded
+                                    ? 'Hide actions'
+                                    : 'Show actions',
+                              ),
                             ),
                           ],
+                        ),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          alignment: Alignment.topCenter,
+                          child: vm.actionsExpanded
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: _mapActionsPanel(
+                                    context,
+                                    vm,
+                                    optionsRows: [
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('Show titles'),
+                                          const SizedBox(width: 6),
+                                          Switch.adaptive(
+                                            value: vm.showTitle,
+                                            onChanged: (v) =>
+                                                vm.setShowTitle(v),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('Feature'),
+                                          const SizedBox(width: 6),
+                                          Icon(
+                                            vm.selectedFeature ==
+                                                    FormFieldsMapFeature
+                                                        .playback
+                                                ? Icons.play_arrow
+                                                : vm.selectedFeature ==
+                                                      FormFieldsMapFeature.map
+                                                ? Icons.map
+                                                : Icons.search,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          DropdownButton<FormFieldsMapFeature?>(
+                                            value: vm.selectedFeature,
+                                            items: const [
+                                              DropdownMenuItem(
+                                                value: FormFieldsMapFeature
+                                                    .playback,
+                                                child: Text('Playback'),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: FormFieldsMapFeature.map,
+                                                child: Text('Map'),
+                                              ),
+                                              DropdownMenuItem(
+                                                value:
+                                                    FormFieldsMapFeature.find,
+                                                child: Text('Find'),
+                                              ),
+                                            ],
+                                            onChanged: (v) =>
+                                                vm.setSelectedFeature(v),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
                         ),
                       ],
                     ),
@@ -925,11 +854,6 @@ class View extends PresenterState {
                               'Next update in: ${vm.markerUpdateCountdownFormatted}',
                             ),
                             const SizedBox(height: 6),
-                            if (vm.lastMarkerUpdatesApplied > 0)
-                              Text(
-                                'Last update: +${formatNumber(vm.lastMarkerUpdatesApplied)}',
-                              ),
-                            const SizedBox(height: 6),
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
@@ -940,6 +864,11 @@ class View extends PresenterState {
                                     : null,
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            if (vm.lastMarkerUpdatesApplied > 0)
+                              Text(
+                                'Updated ${formatNumber(vm.lastMarkerUpdatesApplied)} markers',
+                              ),
                           ],
                         ],
                       ),
@@ -983,99 +912,353 @@ Widget _interpButton(ViewModel vm, String label, int steps) {
   );
 }
 
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final IconData? icon;
-  final bool outlined;
-  final Color? color;
-  final bool loading;
+enum _ActionVariant { primary, secondary, danger }
 
-  const _ActionButton({
-    required this.label,
-    this.onPressed,
-    this.icon,
-    this.outlined = false,
-    this.color,
-    this.loading = false,
-  });
+/// Action buttons for the selected feature, grouped by purpose. The main
+/// action is filled, the others are tonal, and clearing is a danger action.
+Widget _mapActionsPanel(
+  BuildContext context,
+  ViewModel vm, {
+  required List<Widget> optionsRows,
+}) {
+  final feature = vm.selectedFeature;
+  final sections = <Widget>[];
+
+  if (feature == FormFieldsMapFeature.map) {
+    sections.add(
+      _ActionSection(
+        title: 'Data',
+        child: _ActionGrid(
+          children: [
+            _ActionButton(
+              label: 'Generate ${formatNumber(vm.createMarkers)} markers',
+              icon: Icons.auto_awesome,
+              variant: _ActionVariant.primary,
+              expand: true,
+              loading: vm.generatingMarkers,
+              onPressed: () =>
+                  vm.generateMarkers(markerCount: vm.createMarkers),
+            ),
+            _ActionButton(
+              label: 'Generate from API',
+              icon: Icons.cloud_download,
+              expand: true,
+              loading: vm.fetchingFromApi,
+              onPressed: () => _promptApiUrlAndGenerate(context, vm),
+            ),
+          ],
+        ),
+      ),
+    );
+    sections.add(
+      _ActionSection(
+        title: 'Shapes',
+        child: _ActionGrid(
+          children: [
+            _ActionButton(
+              label: 'Polygons (${formatNumber(vm.createPolygons)})',
+              icon: Icons.change_history,
+              loading: vm.generatingPolygons,
+              onPressed: () =>
+                  vm.generatePolygons(shapeCount: vm.createPolygons),
+            ),
+            _ActionButton(
+              label: 'Circles (${formatNumber(vm.createCircles)})',
+              icon: Icons.circle,
+              loading: vm.generatingCircles,
+              onPressed: () => vm.generateCircles(shapeCount: vm.createCircles),
+            ),
+            _ActionButton(
+              label: 'Polylines (${formatNumber(vm.createPolylines)})',
+              icon: Icons.timeline,
+              loading: vm.generatingPolylines,
+              onPressed: () =>
+                  vm.generatePolylines(shapeCount: vm.createPolylines),
+            ),
+          ],
+        ),
+      ),
+    );
+  } else if (feature == FormFieldsMapFeature.playback) {
+    sections.add(
+      _ActionSection(
+        title: 'Playback',
+        child: _ActionGrid(
+          children: [
+            _ActionButton(
+              label: 'Generate 1 polyline for playback',
+              icon: Icons.add_road,
+              variant: _ActionVariant.primary,
+              expand: true,
+              loading: vm.generatingPolylines,
+              onPressed: () => vm.generatePlaybackPolyline(),
+            ),
+          ],
+        ),
+      ),
+    );
+  } else if (feature == FormFieldsMapFeature.find) {
+    sections.add(
+      _ActionSection(
+        title: 'Find',
+        child: _ActionGrid(
+          children: [
+            _ActionButton(
+              label: 'Find location',
+              icon: Icons.search,
+              variant: _ActionVariant.primary,
+              expand: true,
+              loading: vm.findingLocation,
+              onPressed: () => vm.findLocation(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  sections.add(
+    _ActionSection(
+      title: 'Clear',
+      child: _ActionGrid(
+        children: [
+          _ActionButton(
+            label: 'Clear all demo data',
+            icon: Icons.delete_outline,
+            variant: _ActionVariant.danger,
+            expand: true,
+            onPressed: () => vm.clearDemoData(),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  final scheme = Theme.of(context).colorScheme;
+  sections.add(
+    Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: optionsRows,
+      ),
+    ),
+  );
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (var i = 0; i < sections.length; i++) ...[
+        if (i > 0) const SizedBox(height: 16),
+        sections[i],
+      ],
+    ],
+  );
+}
+
+/// Prompts for an API URL and starts loading markers from it.
+Future<void> _promptApiUrlAndGenerate(
+  BuildContext context,
+  ViewModel vm,
+) async {
+  final controller = TextEditingController(
+    text:
+        'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+  );
+  final ok = await showDialog<bool?>(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        title: const Text('API URL'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'https://example.com/data.json',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+  if (ok == true && controller.text.trim().isNotEmpty) {
+    vm.generateMarkers(apiUrl: controller.text.trim());
+  }
+}
+
+/// Small caps-style section title above a group of actions.
+class _ActionSection extends StatelessWidget {
+  const _ActionSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyle = const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-    );
-    if (outlined) {
-      return OutlinedButton.icon(
-        onPressed: loading ? null : onPressed,
-        icon: icon != null
-            ? Icon(icon, size: 18, color: color ?? theme.colorScheme.primary)
-            : const SizedBox.shrink(),
-        label: loading
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: textStyle.copyWith(
-                      color: color ?? theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                label,
-                style: textStyle.copyWith(
-                  color: color ?? theme.colorScheme.primary,
-                ),
-              ),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: scheme.onSurfaceVariant,
           ),
-          side: BorderSide(color: color ?? theme.colorScheme.primary),
         ),
-      );
-    }
-
-    return ElevatedButton.icon(
-      onPressed: loading ? null : onPressed,
-      icon: icon != null ? Icon(icon, size: 18) : const SizedBox.shrink(),
-      label: loading
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(label, style: textStyle),
-              ],
-            )
-          : Text(label, style: textStyle),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-        backgroundColor: color ?? theme.colorScheme.primary,
-      ),
+        const SizedBox(height: 8),
+        child,
+      ],
     );
+  }
+}
+
+/// Two equal columns. Buttons with `expand`, and an odd last button, take the
+/// full row so the grid never leaves a gap.
+class _ActionGrid extends StatelessWidget {
+  const _ActionGrid({required this.children});
+
+  final List<_ActionButton> children;
+
+  static const double _gap = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final half = (constraints.maxWidth - _gap) / 2;
+        final lastIsSingle = children.length.isOdd;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: _gap,
+          children: [
+            for (var i = 0; i < children.length; i++)
+              SizedBox(
+                width:
+                    children[i].expand ||
+                        (lastIsSingle && i == children.length - 1)
+                    ? constraints.maxWidth
+                    : half,
+                child: children[i],
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.variant = _ActionVariant.secondary,
+    this.loading = false,
+    this.expand = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final _ActionVariant variant;
+  final bool loading;
+  final bool expand;
+
+  static const Size _minSize = Size(0, 48);
+  static const EdgeInsets _padding = EdgeInsets.symmetric(horizontal: 16);
+  static const RoundedRectangleBorder _shape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final onTap = loading ? null : onPressed;
+    final spinnerColor = variant == _ActionVariant.primary
+        ? scheme.onPrimary
+        : scheme.primary;
+
+    final leading = loading
+        ? SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: spinnerColor,
+            ),
+          )
+        : (icon != null ? Icon(icon, size: 18) : null);
+    final text = Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+    );
+    final child = leading == null
+        ? text
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              leading,
+              const SizedBox(width: 8),
+              Flexible(child: text),
+            ],
+          );
+
+    switch (variant) {
+      case _ActionVariant.primary:
+        return FilledButton(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            minimumSize: _minSize,
+            padding: _padding,
+            shape: _shape,
+            elevation: 0,
+          ),
+          child: child,
+        );
+      case _ActionVariant.secondary:
+        return FilledButton.tonal(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+            minimumSize: _minSize,
+            padding: _padding,
+            shape: _shape,
+            elevation: 0,
+          ),
+          child: child,
+        );
+      case _ActionVariant.danger:
+        return OutlinedButton(
+          onPressed: onTap,
+          style: OutlinedButton.styleFrom(
+            minimumSize: _minSize,
+            padding: _padding,
+            shape: _shape,
+            foregroundColor: scheme.error,
+            side: BorderSide(color: scheme.error.withValues(alpha: 0.5)),
+          ),
+          child: child,
+        );
+    }
   }
 }
 

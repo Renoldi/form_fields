@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"^  static\\\\|^class\\\\|^[A-Za-z].*\\(\\\\s*$\\\\|^Map\\\\|^String\\\\|^Future\\\\|^bool\\\\|^void\" lib/src/utilities/upload_helper.dart)",
+      "Bash(git mv *)",
+      "Bash(rmdir lib/src/utils)",
+      "Bash(xargs sed -i '' 's#package:form_fields/src/utils/#package:form_fields/src/utilities/#g')",
+      "Bash(mkdir -p *)",
+      "Bash(awk '{print $2, $9, $10}')",
+      "Bash(python3 /private/tmp/claude-501/-Users-it-07-Documents-enerren-form-fields/47a05dcc-5744-402c-bc06-814e2041d9b4/scratchpad/split_tool.py list lib/src/fields/core/form_fields.dart _FormFieldsState)",
+      "Bash(python3 /private/tmp/claude-501/-Users-it-07-Documents-enerren-form-fields/47a05dcc-5744-402c-bc06-814e2041d9b4/scratchpad/split_tool.py list lib/src/fields/map/form_fields_map.dart FormFieldsMapState)"
+    ],
+    "additionalDirectories": [
+      "/dev"
+    ]
+  }
+}

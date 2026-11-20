@@ -77,12 +77,20 @@ Future<bool> processPendingSubmissions({SubmitHandler? submitHandler}) async {
 /// leaves rows in backoff schedules itself for the earliest due time.
 Timer? _retryTimer;
 
+/// Unique name of the background retry. A timer does not run while the app is
+/// in the background, so the same retry is also scheduled as a WorkManager
+/// one-off, which runs the background flush handler when it is due.
+const _retryTaskName = 'form_fields_retry';
+
 Future<void> _scheduleNextRetry(SubmitHandler? submitHandler) async {
   _retryTimer?.cancel();
   _retryTimer = null;
   try {
     final due = (await _nextAttemptById()).values;
-    if (due.isEmpty) return;
+    if (due.isEmpty) {
+      await WorkmanagerService.instance.cancelOneOff(_retryTaskName);
+      return;
+    }
     final earliest = due.reduce(math.min);
     final wait = earliest - DateTime.now().millisecondsSinceEpoch;
     final delay =
@@ -91,6 +99,10 @@ Future<void> _scheduleNextRetry(SubmitHandler? submitHandler) async {
     _retryTimer = Timer(
       delay,
       () => processPendingSubmissions(submitHandler: submitHandler),
+    );
+    await WorkmanagerService.instance.scheduleOneOff(
+      uniqueName: _retryTaskName,
+      delay: delay,
     );
   } catch (e, st) {
     _logger.w('scheduling retry failed: $e\n$st');

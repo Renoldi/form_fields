@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/service/dio_service.dart';
 import 'package:form_fields/src/utilities/persisted_headers.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
-import 'package:form_fields/src/utils/debug_log.dart';
+import 'package:form_fields/src/service/upload_response_mapper.dart';
+import 'package:form_fields/src/utilities/debug_log.dart';
 
 /// Callback type invoked when a payload is queued for a later retry. The
 /// boolean flag is `true` when the queueing was due to authentication (401)

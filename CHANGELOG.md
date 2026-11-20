@@ -15,6 +15,18 @@ All notable changes to the FormFields package will be documented in this file.
 - Upload resiliency: `DioUtil.uploadFile` adds short retry/backoff for transient DNS/connection errors and returns diagnostic responses on persistent failures.
 - `UploadService.uploadDirectPayload` returns a sanitized `DirectUploadPayload` when uploads are queued due to auth expiry (401) or network failures; new callback `onUploadQueued(DirectUploadPayload payload, bool authExpired)` notifies callers when a payload is queued (authExpired=true means 401).
 
+### Changed
+
+- **Dampak untuk pemakai package (SignaturePad dan LiveCameraCapture):** aturan pelaporan payload antrean sekarang satu untuk semua field.
+  - `onUploadQueued` dan `onFailDirectUploadPayload` pada `FormFieldsSignaturePad` dipanggil saat upload diantrekan, bukan saat export selesai. Akibatnya callback ini terpanggil sebelum `onExported`.
+  - Setiap payload antrean dilaporkan tepat sekali. Sebelumnya payload dari error server dan 401 pada SignaturePad dilaporkan dua kali, sekali saat upload dan sekali lagi saat export.
+  - Payload dari `FormFieldsLiveCameraCapture` yang tertanam di SignaturePad diteruskan satu per satu. Tidak lagi digabung menjadi satu daftar saat export. Pemakai yang mengandalkan daftar gabungan perlu menyesuaikan.
+  - `FormFieldsLiveCameraCapture` saat offline sekarang juga memanggil `onUploadQueued`. Sebelumnya hanya `onFailDirectUploadPayload`.
+  - `FormFieldsLiveCameraCapture` saat 401 yang diantrekan sekarang menampilkan dialog gagal, sama seperti SignaturePad.
+  - `FormFieldsLiveCameraCapture` saat error server yang bisa di-retry sekarang mengembalikan gambar berstatus `queued`, bukan `null`.
+  - `onFailDirectUploadList` tidak berubah. Tetap berisi ringkasan hasil export.
+  - Tidak ada perubahan pada nama atau signature callback publik. Pemakai tidak perlu mengubah kode pemanggilan, tetapi perlu memastikan logika mereka tidak bergantung pada urutan atau jumlah pemanggilan lama.
+
 ### Fixed
 
 - Queued upload payloads no longer keep an `Authorization` header in any letter case. The previous check was case-sensitive, so a token passed as `Authorization` was written to the offline queue.

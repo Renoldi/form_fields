@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'selection_field_common.dart';
 import '../../utilities/enums.dart';
 import '../../localization/form_fields_localizations.dart';
 import '../../utilities/extensions.dart';
@@ -65,18 +66,8 @@ class FormFieldsListTile extends StatelessWidget {
         return null;
       },
       builder: (FormFieldState<String> state) {
-        final titleWidget = title != null
-            ? DefaultTextStyle.merge(
-                style: textStyle ?? DefaultTextStyle.of(context).style,
-                child: title!,
-              )
-            : null;
-        final subtitleWidget = subtitle != null
-            ? DefaultTextStyle.merge(
-                style: textStyle ?? DefaultTextStyle.of(context).style,
-                child: subtitle!,
-              )
-            : null;
+        final titleWidget = buildTileText(context, title, textStyle);
+        final subtitleWidget = buildTileText(context, subtitle, textStyle);
         final child = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -94,20 +85,7 @@ class FormFieldsListTile extends StatelessWidget {
               onLongPress: readOnly ? null : onLongPress,
             ),
             if (state.errorText != null)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
-                  bottom: 8.0,
-                ),
-                child: Text(
-                  state.errorText!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+              buildTileErrorText(context, state.errorText!),
           ],
         );
 
@@ -133,12 +111,7 @@ class FormFieldsListTile extends StatelessWidget {
           );
         }
 
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: borderColor)),
-          ),
-          child: child,
-        );
+        return buildTileUnderline(context, child);
       },
     );
   }

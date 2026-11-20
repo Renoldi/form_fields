@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'main.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields_example/src/service/flush_service.dart';
+
 // PluginUtilities no longer needed here
 
 class View extends PresenterState {
@@ -314,12 +315,12 @@ class View extends PresenterState {
                                 ],
                               ),
                             ),
-                            Wrap(
-                              spacing: 8,
+                            _ActionGrid(
                               children: [
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.play_arrow),
                                   label: const Text('Start periodic'),
+                                  variant: _ActionVariant.primary,
                                   onPressed: () async {
                                     vm.setLoading(true);
                                     // Reuse previously scheduled frequency if available,
@@ -346,9 +347,10 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.playlist_play),
                                   label: const Text('Start All'),
+                                  variant: _ActionVariant.primary,
                                   onPressed: () async {
                                     vm.setLoading(true);
                                     try {
@@ -381,7 +383,7 @@ class View extends PresenterState {
                                     }
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.refresh),
                                   label: const Text('Refresh'),
                                   onPressed: () async {
@@ -398,9 +400,10 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.bolt),
                                   label: const Text('Run worker now'),
+                                  variant: _ActionVariant.primary,
                                   onPressed: () async {
                                     vm.setLoading(true);
                                     // Ensure periodic worker is started so status
@@ -478,7 +481,7 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.send),
                                   label: const Text('Run foreground flush'),
                                   onPressed: () async {
@@ -544,7 +547,7 @@ class View extends PresenterState {
                                     }
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.bug_report),
                                   label: const Text('Show debug'),
                                   onPressed: () {
@@ -594,7 +597,7 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.location_on),
                                   label: const Text('Send current location'),
                                   onPressed: () async {
@@ -606,7 +609,24 @@ class View extends PresenterState {
                                           'sendCurrentLocation invoked';
                                     } catch (_) {}
                                     try {
-                                      // await sendCurrentLocationForeground();
+                                      // Ask only because the user asked for
+                                      // their location right now.
+                                      final granted =
+                                          await requestLocationPermission();
+                                      if (!context.mounted) return;
+                                      if (!granted) {
+                                        ScaffoldMessenger.maybeOf(
+                                          context,
+                                        )?.showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Location permission is required',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      await sendCurrentLocationForeground();
                                       await vm.loadPending();
                                       if (!context.mounted) return;
                                       ScaffoldMessenger.maybeOf(
@@ -627,7 +647,29 @@ class View extends PresenterState {
                                     }
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
+                                  icon: const Icon(Icons.my_location),
+                                  label: const Text(
+                                    'Allow background location',
+                                  ),
+                                  onPressed: () async {
+                                    final granted =
+                                        await requestBackgroundLocationPermission();
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.maybeOf(
+                                      context,
+                                    )?.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          granted
+                                              ? 'Background location allowed'
+                                              : 'Choose "Allow all the time" in app settings',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _ActionButton(
                                   icon: const Icon(Icons.casino),
                                   label: const Text('Send random event'),
                                   onPressed: () async {
@@ -660,9 +702,10 @@ class View extends PresenterState {
                                     }
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.stop),
                                   label: const Text('Stop'),
+                                  variant: _ActionVariant.danger,
                                   onPressed: () async {
                                     await WorkmanagerService.instance.stop();
                                     if (!context.mounted) return;
@@ -673,9 +716,10 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.play_circle_fill),
                                   label: const Text('Run background task'),
+                                  variant: _ActionVariant.primary,
                                   onPressed: () async {
                                     vm.setLoading(true);
                                     try {
@@ -718,9 +762,10 @@ class View extends PresenterState {
                                     vm.setLoading(false);
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.stop_circle),
                                   label: const Text('Stop All'),
+                                  variant: _ActionVariant.danger,
                                   onPressed: () async {
                                     // Explicitly stop all registered tasks and
                                     // cancel auto-send.
@@ -735,7 +780,7 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.article_outlined),
                                   label: const Text('Show logs'),
                                   onPressed: () async {
@@ -812,7 +857,7 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.clear_all),
                                   label: const Text('Clear logs'),
                                   onPressed: () async {
@@ -827,9 +872,10 @@ class View extends PresenterState {
                                     );
                                   },
                                 ),
-                                ElevatedButton.icon(
+                                _ActionButton(
                                   icon: const Icon(Icons.delete_sweep),
                                   label: const Text('Remove All Pending'),
+                                  variant: _ActionVariant.danger,
                                   onPressed: vm.pending.isEmpty
                                       ? null
                                       : () async {
@@ -981,6 +1027,127 @@ class View extends PresenterState {
           );
         },
       ),
+    );
+  }
+}
+
+/// Visual weight of an action button in the worker demo.
+enum _ActionVariant {
+  /// Main actions that start work (filled, brand color).
+  primary,
+
+  /// Everyday utilities (outlined, neutral).
+  secondary,
+
+  /// Actions that stop or delete things (outlined, error color).
+  danger,
+}
+
+/// Consistent action button used across the worker demo.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.variant = _ActionVariant.secondary,
+  });
+
+  final Widget icon;
+  final Widget label;
+  final VoidCallback? onPressed;
+  final _ActionVariant variant;
+
+  static const _shape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+  );
+  static const _padding = EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+  static const _minimumSize = Size(0, 48);
+  static const _textStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    switch (variant) {
+      case _ActionVariant.primary:
+        return FilledButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          label: label,
+          style: FilledButton.styleFrom(
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
+            disabledBackgroundColor: scheme.onSurface.withValues(alpha: 0.08),
+            disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+            elevation: 0,
+            padding: _padding,
+            minimumSize: _minimumSize,
+            shape: _shape,
+            textStyle: _textStyle,
+          ),
+        );
+      case _ActionVariant.secondary:
+        return OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          label: label,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: scheme.onSurface,
+            disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+            side: BorderSide(color: scheme.outlineVariant),
+            padding: _padding,
+            minimumSize: _minimumSize,
+            shape: _shape,
+            textStyle: _textStyle,
+          ),
+        );
+      case _ActionVariant.danger:
+        return OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          label: label,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: scheme.error.withValues(alpha: 0.06),
+            foregroundColor: scheme.error,
+            disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
+            side: BorderSide(color: scheme.error.withValues(alpha: 0.4)),
+            padding: _padding,
+            minimumSize: _minimumSize,
+            shape: _shape,
+            textStyle: _textStyle,
+          ),
+        );
+    }
+  }
+}
+
+/// Two-column grid of equal-sized action buttons.
+class _ActionGrid extends StatelessWidget {
+  const _ActionGrid({required this.children});
+
+  final List<Widget> children;
+
+  static const _gap = 10.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - _gap) / 2;
+        return Wrap(
+          spacing: _gap,
+          runSpacing: _gap,
+          children: [
+            for (final child in children)
+              SizedBox(width: itemWidth, child: child),
+          ],
+        );
+      },
     );
   }
 }

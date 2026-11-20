@@ -23,26 +23,31 @@ form_fields_package/
 │       │   │   └── form_fields.dart          # Base FormFields widget
 │       │   ├── autocomplete/
 │       │   │   └── form_fields_autocomplete.dart
-│       │   └── selection/
+│       │   ├── selection/
 │       │       ├── form_fields_checkbox.dart
 │       │       ├── form_fields_dropdown.dart
 │       │       ├── form_fields_dropdown_multi.dart
 │       │       ├── form_fields_radio_button.dart
 │       │       └── form_fields_select.dart
+│       │   └── map/                       # Map field, controller, and stores
+│       │       ├── form_fields_map_api.dart
+│       │       ├── form_fields_map_notifier.dart
+│       │       ├── map_controller.dart
+│       │       └── map_stores.dart
 │       ├── localization/               # Localization support
 │       │   ├── form_fields_localizations.dart
 │       │   └── languages/
 │       │       ├── en_us.dart
 │       │       └── id_id.dart
-│       ├── providers/                  # State management
-│       │   ├── form_fields_dropdown_notifier.dart
-│       │   └── form_fields_notifier.dart
+│       ├── state/                      # ChangeNotifier state and controllers
+│       │   ├── form_fields_change_notifier.dart   # Shared base, upload mixin, handler slot
+│       │   ├── form_fields_states.dart            # FormFieldsController, FormFieldsNotifier
+│       │   └── image_field_states.dart            # MyImage, SignaturePad, LiveCameraCapture state
 │       ├── feedback/                   # Dialogs, loading, and progress
 │       │   ├── app_dialog_service.dart
 │       │   ├── app_dialog_service_types.dart
 │       │   ├── app_global_dialog_service.dart
-│       │   ├── app_loading_indicator.dart
-│       │   ├── app_progress_indicator.dart
+│       │   ├── app_indicators.dart           # AppLoadingIndicator, AppProgressIndicator
 │       │   └── app_loading_progress_enums.dart
 │       └── utilities/                  # Helpers & extensions
 │           ├── controller.dart
