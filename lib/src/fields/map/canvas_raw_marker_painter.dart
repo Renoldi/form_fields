@@ -229,6 +229,9 @@ class CanvasRawMarkerPainter extends CustomPainter {
     // part of a frame. Only a limited number are drawn each frame, so dense or
     // zoomed-out views stay responsive.
     var labelsDrawn = 0;
+    // Pin dedupe: one pin per cell of this size (see the pin draw below).
+    final pinCellSize = max(6.0, radius * 0.5);
+    final occupiedPinCells = <int>{};
 
     final centerX = worldX(center.longitude, zoom);
     final centerY = worldY(center.latitude, zoom);
@@ -394,6 +397,16 @@ class CanvasRawMarkerPainter extends CustomPainter {
       var isPlayback = false;
       if (m is Map && m['id'] == 'playback_marker') isPlayback = true;
       if (m is ShapeMeta && m.id == 'playback_marker') isPlayback = true;
+      // Pins that land in the same small screen cell as one already drawn
+      // this frame are skipped. Overlapping pins cost fill time on every
+      // frame, and a dense area can hold thousands of them. This keeps the
+      // per-frame draw count bounded by the screen size, not by the number
+      // of markers. Playback is never skipped.
+      if (drawPin && !isPlayback) {
+        final cx = (dx / pinCellSize).floor();
+        final cy = (dy / pinCellSize).floor();
+        if (!occupiedPinCells.add(cx * 100003 + cy)) continue;
+      }
       if (drawPin) {
         final rotationRad = rotationDeg * pi / 180.0;
         canvas.save();
