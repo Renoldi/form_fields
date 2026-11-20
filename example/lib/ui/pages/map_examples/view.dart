@@ -854,11 +854,6 @@ class View extends PresenterState {
                               'Next update in: ${vm.markerUpdateCountdownFormatted}',
                             ),
                             const SizedBox(height: 6),
-                            if (vm.lastMarkerUpdatesApplied > 0)
-                              Text(
-                                'Updated ${formatNumber(vm.lastMarkerUpdatesApplied)} markers',
-                              ),
-                            const SizedBox(height: 6),
                             SizedBox(
                               width: 180,
                               child: LinearProgressIndicator(
@@ -869,6 +864,11 @@ class View extends PresenterState {
                                     : null,
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            if (vm.lastMarkerUpdatesApplied > 0)
+                              Text(
+                                'Updated ${formatNumber(vm.lastMarkerUpdatesApplied)} markers',
+                              ),
                           ],
                         ],
                       ),

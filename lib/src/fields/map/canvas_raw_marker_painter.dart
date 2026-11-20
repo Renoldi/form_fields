@@ -403,9 +403,12 @@ class CanvasRawMarkerPainter extends CustomPainter {
       // per-frame draw count bounded by the screen size, not by the number
       // of markers. Playback is never skipped.
       if (drawPin && !isPlayback) {
-        final cx = (dx / pinCellSize).floor();
-        final cy = (dy / pinCellSize).floor();
-        if (!occupiedPinCells.add(cx * 100003 + cy)) continue;
+        // Cells use world coordinates, so they move with the map. A pin keeps
+        // its cell while the map is dragged, and the set of drawn pins does not
+        // change under the pointer.
+        final cx = (x / pinCellSize).floor();
+        final cy = (y / pinCellSize).floor();
+        if (!occupiedPinCells.add((cx << 32) | cy)) continue;
       }
       if (drawPin) {
         final rotationRad = rotationDeg * pi / 180.0;
