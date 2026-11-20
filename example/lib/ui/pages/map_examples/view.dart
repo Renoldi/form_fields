@@ -856,7 +856,7 @@ class View extends PresenterState {
                             const SizedBox(height: 6),
                             if (vm.lastMarkerUpdatesApplied > 0)
                               Text(
-                                'Last update: +${formatNumber(vm.lastMarkerUpdatesApplied)}',
+                                'Updated ${formatNumber(vm.lastMarkerUpdatesApplied)} markers',
                               ),
                             const SizedBox(height: 6),
                             SizedBox(
