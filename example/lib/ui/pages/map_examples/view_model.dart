@@ -665,6 +665,13 @@ class ViewModel extends ChangeNotifier {
       }
       if (current.isEmpty) return;
 
+      // Large registries are moved in place. Rebuilding every entry each tick
+      // (serialize, clear, append) was the main cost of an update.
+      if (!showVisualMarkerUpdates && current.length >= 5000) {
+        await _shiftRawMarkersInPlace(current);
+        return;
+      }
+
       // Preserve hit/title and properties for regeneration, then
       // serialize current entries to a plain-map form suitable for isolates.
       final baseHitById = <String, dynamic>{};
@@ -1081,6 +1088,76 @@ class ViewModel extends ChangeNotifier {
     }
   }
 
+  /// Moves every shape by a random delta by changing its coordinates in
+  /// place. The registry is not cleared or rebuilt. Only the random deltas are
+  /// computed off the main isolate, and they are passed as typed arrays.
+  Future<void> _shiftRawMarkersInPlace(List<dynamic> current) async {
+    final shapes = <ShapeMeta>[];
+    for (final m in current) {
+      if (m is ShapeMeta && (m.pointMetas?.isNotEmpty ?? false)) {
+        shapes.add(m);
+      }
+    }
+    if (shapes.isEmpty) return;
+
+    final sw = Stopwatch()..start();
+    final n = shapes.length;
+    final baseLat = Float64List(n);
+    final baseLon = Float64List(n);
+    for (var i = 0; i < n; i++) {
+      final p0 = shapes[i].pointMetas!.first;
+      baseLat[i] = p0.lat;
+      baseLon[i] = p0.lon;
+    }
+
+    final deltas = await compute(_computeInPlaceDeltasIsolate, {
+      'baseLat': baseLat,
+      'baseLon': baseLon,
+      'seed': _updateRnd.nextInt(1 << 32),
+      'centerLat': center.latitude,
+      'centerLng': center.longitude,
+      'randomize': markerUpdateRandomizeCoordinates,
+      'range': markerUpdateRandomRangeDegrees,
+    });
+
+    final nonMarkerUpdates = <Map<String, dynamic>>[];
+    for (var i = 0; i < n; i++) {
+      final shape = shapes[i];
+      final dLat = deltas[2 * i];
+      final dLon = deltas[2 * i + 1];
+      for (final pm in shape.pointMetas!) {
+        pm.lat = pm.lat + dLat;
+        pm.lon = pm.lon + dLon;
+      }
+      final isMarker = (shape.shapeType ?? ShapeTypes.marker).toLowerCase() ==
+          ShapeTypes.marker;
+      if (!isMarker && shape.id != null) {
+        nonMarkerUpdates.add({
+          'id': shape.id,
+          'pointMetas': [
+            for (final pm in shape.pointMetas!) {'lat': pm.lat, 'lon': pm.lon},
+          ],
+        });
+      }
+    }
+
+    // Shapes other than markers also have derived layers that must be rebuilt.
+    if (nonMarkerUpdates.isNotEmpty) {
+      FormFieldsMapController.batchUpdateCoordinates(
+        controllerId,
+        nonMarkerUpdates,
+        createMarkerWidgets: showVisualMarkerUpdates,
+      );
+    }
+    FormFieldsMapController.refreshRawMarkers(controllerId);
+
+    lastMarkerUpdatesApplied = n;
+    notifyListeners();
+    debugPrint(
+      '_shiftRawMarkersInPlace: $n entries in ${sw.elapsedMilliseconds} ms',
+    );
+  }
+
   /// Whether periodic marker updates are currently active.
   bool get markerUpdatesActive => _markerUpdateTimer != null;
 
@@ -1425,6 +1502,36 @@ List<Map<String, dynamic>> _computeUpdatedMarkersIsolate(
     } catch (_) {
       out.add(m);
     }
+  }
+  return out;
+}
+
+/// Random coordinate deltas for [_shiftRawMarkersInPlace]. Returns
+/// `[dLat0, dLon0, dLat1, dLon1, ...]`. The same rules as
+/// [_computeUpdatedMarkersIsolate] apply: a random position near the center
+/// when `randomize` is set, otherwise a small random step.
+Float64List _computeInPlaceDeltasIsolate(Map<String, dynamic> args) {
+  final baseLat = args['baseLat'] as Float64List;
+  final baseLon = args['baseLon'] as Float64List;
+  final random = math.Random(args['seed'] as int? ?? 424242);
+  final centerLat = (args['centerLat'] as num?)?.toDouble() ?? 0.0;
+  final centerLng = (args['centerLng'] as num?)?.toDouble() ?? 0.0;
+  final randomize = args['randomize'] as bool? ?? true;
+  final range = (args['range'] as num?)?.toDouble() ?? 3.0;
+
+  final out = Float64List(baseLat.length * 2);
+  for (var i = 0; i < baseLat.length; i++) {
+    double newLat;
+    double newLon;
+    if (randomize) {
+      newLat = centerLat + (random.nextDouble() - 0.5) * range;
+      newLon = centerLng + (random.nextDouble() - 0.5) * range;
+    } else {
+      newLat = baseLat[i] + (random.nextDouble() - 0.5) * 0.01;
+      newLon = baseLon[i] + (random.nextDouble() - 0.5) * 0.01;
+    }
+    out[2 * i] = newLat - baseLat[i];
+    out[2 * i + 1] = newLon - baseLon[i];
   }
   return out;
 }

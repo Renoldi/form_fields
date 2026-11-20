@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:form_fields/src/controllers/map_controller.dart';
+import 'package:form_fields/src/fields/map/map_controller.dart';
 
 void main() {
   test('remove() clears the per-id settings kept for a map', () {

@@ -6,6 +6,7 @@ import 'package:form_fields/src/service/permission_gate.dart';
 import 'package:form_fields/src/fields/core/form_fields_my_image_description_sheet.dart';
 import 'package:form_fields/src/utilities/base64_image.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'package:form_fields/src/fields/core/image_field_common.dart';
 // `UploadResponseMapper` is exported by `package:form_fields/form_fields.dart`.
 // Import removed to avoid unnecessary import lint.
 import 'package:provider/provider.dart';
@@ -13,16 +14,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:dio/dio.dart';
 import 'package:form_fields/src/utilities/network_status.dart';
-import 'package:form_fields/src/utilities/upload_request_helpers.dart';
+import 'package:form_fields/src/service/upload_helper.dart';
 import 'package:form_fields/src/widgets/form_field_label.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
-import 'package:form_fields/src/utilities/persisted_headers.dart';
 
 part 'form_fields_my_image_parts/sync.dart';
 part 'form_fields_my_image_parts/pick.dart';
 part 'form_fields_my_image_parts/upload.dart';
 part 'form_fields_my_image_parts/view.dart';
-part 'form_fields_my_image_parts/upload_request.dart';
 
 /// A form field widget that lets the user pick one or more images, with
 /// optional direct upload support.

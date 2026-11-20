@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:form_fields/src/controllers/form_fields_my_image_controller.dart';
-import 'package:form_fields/src/providers/form_fields_my_image_provider.dart';
+import 'package:form_fields/src/state/image_field_states.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
 import 'package:form_fields/src/utilities/enums.dart';
-import 'package:form_fields/src/utilities/upload_response_mapper.dart';
+import 'package:form_fields/src/service/upload_response_mapper.dart';
 import 'dart:convert';
 import 'dart:io';
 

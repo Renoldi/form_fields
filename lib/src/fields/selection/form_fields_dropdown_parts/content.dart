@@ -222,84 +222,19 @@ extension _FormFieldsDropdownContentX<T> on _FormFieldsDropdownState<T> {
               ),
             ),
           );
-          final theme = Theme.of(context);
-          Widget labelWidget = RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: widget.label.toTitleCases,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: widget.textStyle?.color ?? resolveTextColor(context),
-                  ),
-                ),
-                if (widget.isRequired)
-                  TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-              ],
+          return buildSelectionLayout(
+            labelPosition: widget.labelPosition,
+            label: buildSelectionLabel(
+              context: context,
+              label: widget.label,
+              isRequired: widget.isRequired,
+              hasError: false,
+              textStyle: widget.textStyle,
             ),
+            field: field,
+            sideGap: 12,
+            intrinsicLabel: false,
           );
-
-          switch (widget.labelPosition) {
-            case LabelPosition.top:
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [labelWidget, const SizedBox(height: 8), field],
-                ),
-              );
-            case LabelPosition.bottom:
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [field, const SizedBox(height: 8), labelWidget],
-                ),
-              );
-            case LabelPosition.left:
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    labelWidget,
-                    const SizedBox(width: 12),
-                    Expanded(child: field),
-                  ],
-                ),
-              );
-            case LabelPosition.right:
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: field),
-                    const SizedBox(width: 12),
-                    labelWidget,
-                  ],
-                ),
-              );
-            case LabelPosition.inBorder:
-              // Let InputDecoration handle floating label
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: field,
-              );
-            case LabelPosition.none:
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: field,
-              );
-          }
         }
 
         // Regular dropdown without filter
@@ -330,84 +265,18 @@ extension _FormFieldsDropdownContentX<T> on _FormFieldsDropdownState<T> {
           decoration: effectiveDecoration,
         );
 
-        final theme = Theme.of(context);
-        Widget labelWidget = RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: widget.label.toTitleCases,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: resolveTextColor(context),
-                ),
-              ),
-              if (widget.isRequired)
-                TextSpan(
-                  text: ' *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-            ],
+        return buildSelectionLayout(
+          labelPosition: widget.labelPosition,
+          label: buildSelectionLabel(
+            context: context,
+            label: widget.label,
+            isRequired: widget.isRequired,
+            hasError: false,
           ),
+          field: dropdown,
+          sideGap: 12,
+          intrinsicLabel: false,
         );
-
-        switch (widget.labelPosition) {
-          case LabelPosition.top:
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [labelWidget, const SizedBox(height: 8), dropdown],
-              ),
-            );
-          case LabelPosition.bottom:
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [dropdown, const SizedBox(height: 8), labelWidget],
-              ),
-            );
-          case LabelPosition.left:
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  labelWidget,
-                  const SizedBox(width: 12),
-                  Expanded(child: dropdown),
-                ],
-              ),
-            );
-          case LabelPosition.right:
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(child: dropdown),
-                  const SizedBox(width: 12),
-                  labelWidget,
-                ],
-              ),
-            );
-          case LabelPosition.inBorder:
-            // Let InputDecoration handle floating label
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: dropdown,
-            );
-          case LabelPosition.none:
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: dropdown,
-            );
-        }
       },
     );
   }

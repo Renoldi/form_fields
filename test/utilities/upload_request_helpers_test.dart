@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
-import 'package:form_fields/src/utilities/upload_request_helpers.dart';
+import 'package:form_fields/src/service/upload_helper.dart';
 
 void main() {
   group('buildUploadAuthHeaders', () {

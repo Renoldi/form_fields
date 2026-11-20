@@ -41,9 +41,138 @@ bool pointInPolygon(LatLng p, List<LatLng> polygon) {
 }
 
 /// Public painter extracted from `form_fields_map.dart` to enable reuse
+/// A composed pin: halo, white outline and tinted icon in one image. [size] is
+/// in device pixels.
+class _PinSprite {
+  const _PinSprite(this.image, this.size);
+
+  final ui.Image image;
+  final double size;
+}
+
+/// Composed pins by color and size. Dart maps keep insertion order, so a hit is
+/// moved to the end and the oldest entry is evicted. Evicted images are not
+/// disposed, because a picture recorded in the same frame may still use them.
+final Map<String, _PinSprite> _pinSpriteCache = <String, _PinSprite>{};
+const int _pinSpriteCacheSize = 48;
+
+_PinSprite _pinSprite(
+  ui.Image icon,
+  Color markerColor,
+  double haloAlpha,
+  double destSize,
+  double haloScale,
+  double devicePixelRatio,
+) {
+  final key =
+      '${identityHashCode(icon)}|${markerColor.toARGB32()}|$haloAlpha|'
+      '$destSize|$haloScale|$devicePixelRatio';
+  final hit = _pinSpriteCache.remove(key);
+  if (hit != null) {
+    _pinSpriteCache[key] = hit;
+    return hit;
+  }
+
+  final logicalSize = destSize * haloScale;
+  final pixels = (logicalSize * devicePixelRatio).ceil();
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(
+    recorder,
+    Rect.fromLTWH(0, 0, pixels.toDouble(), pixels.toDouble()),
+  );
+  canvas.scale(devicePixelRatio);
+  final src = Rect.fromLTWH(
+    0,
+    0,
+    icon.width.toDouble(),
+    icon.height.toDouble(),
+  );
+  final center = Offset(logicalSize / 2, logicalSize / 2);
+  Rect square(double side) =>
+      Rect.fromCenter(center: center, width: side, height: side);
+
+  canvas.drawImageRect(
+    icon,
+    src,
+    square(logicalSize),
+    Paint()
+      ..isAntiAlias = true
+      ..colorFilter = ColorFilter.mode(
+        markerColor.withValues(alpha: haloAlpha),
+        BlendMode.srcIn,
+      ),
+  );
+  canvas.drawImageRect(
+    icon,
+    src,
+    square(destSize * 1.5),
+    Paint()
+      ..isAntiAlias = true
+      ..colorFilter = const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+  );
+  canvas.drawImageRect(
+    icon,
+    src,
+    square(destSize),
+    Paint()
+      ..isAntiAlias = true
+      ..colorFilter = ColorFilter.mode(markerColor, BlendMode.srcIn),
+  );
+
+  final image = recorder.endRecording().toImageSync(pixels, pixels);
+  final sprite = _PinSprite(image, pixels.toDouble());
+  _pinSpriteCache[key] = sprite;
+  if (_pinSpriteCache.length > _pinSpriteCacheSize) {
+    _pinSpriteCache.remove(_pinSpriteCache.keys.first);
+  }
+  return sprite;
+}
+
+/// Laid-out titles, reused while the map is panned or zoomed. Without this,
+/// each visible title is laid out again on every frame. Dart maps keep their
+/// insertion order, so removing and re-inserting a key gives least-recently-used
+/// eviction. Evicted layouts are not disposed, because a picture recorded in
+/// the same frame may still reference them.
+final Map<String, TextPainter> _labelCache = <String, TextPainter>{};
+const int _labelCacheSize = 256;
+
+TextPainter _layoutLabel(List<String> lines, double fontSize, double maxWidth) {
+  final key = '$fontSize|$maxWidth|${lines.join('\u0001')}';
+  final hit = _labelCache.remove(key);
+  if (hit != null) {
+    _labelCache[key] = hit;
+    return hit;
+  }
+  final textStyle = TextStyle(
+    color: Colors.black,
+    fontSize: fontSize,
+    fontWeight: FontWeight.w600,
+  );
+  final tp = TextPainter(
+    textDirection: TextDirection.ltr,
+    textAlign: TextAlign.center,
+    text: TextSpan(
+      children: lines
+          .map((l) => TextSpan(text: '$l\n', style: textStyle))
+          .toList(),
+    ),
+  );
+  tp.layout(minWidth: 0, maxWidth: maxWidth);
+  _labelCache[key] = tp;
+  if (_labelCache.length > _labelCacheSize) {
+    _labelCache.remove(_labelCache.keys.first);
+  }
+  return tp;
+}
+
+/// Most titles drawn in one frame. Each title costs a text layout, so the cap
+/// keeps panning and zooming smooth when many markers are on screen.
+const int maxLabelsPerFrame = 60;
+
 class CanvasRawMarkerPainter extends CustomPainter {
   CanvasRawMarkerPainter({
     required this.rawMarkers,
+    this.rawRevision = 0,
     required this.center,
     required this.zoom,
     required this.radius,
@@ -59,6 +188,10 @@ class CanvasRawMarkerPainter extends CustomPainter {
   });
 
   final List<dynamic> rawMarkers;
+
+  /// Changes when the entries change in place. The list keeps its identity,
+  /// so the painter repaints on this value rather than on the list itself.
+  final int rawRevision;
   final LatLng center;
   final double zoom;
   final double radius;
@@ -87,6 +220,15 @@ class CanvasRawMarkerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
+    // Same style for every pin, so it is created once per frame.
+    final strokePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(1.0, devicePixelRatio * 0.6);
+    // Titles need a TextPainter layout per marker, which is the most expensive
+    // part of a frame. Only a limited number are drawn each frame, so dense or
+    // zoomed-out views stay responsive.
+    var labelsDrawn = 0;
 
     final centerX = worldX(center.longitude, zoom);
     final centerY = worldY(center.latitude, zoom);
@@ -240,10 +382,6 @@ class CanvasRawMarkerPainter extends CustomPainter {
       final Color markerColor =
           metaColor ?? defaultColor.withValues(alpha: 0.95);
       pinPaint.color = markerColor;
-      final strokePaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.0, devicePixelRatio * 0.6);
 
       final headCenter = Offset(dx, dy - radiusToUse * 0.6);
       final headRadius = radiusToUse * 0.9;
@@ -343,23 +481,24 @@ class CanvasRawMarkerPainter extends CustomPainter {
               // Draw original artwork on top without tint.
               canvas.drawImageRect(useImage, src, dst, paint);
             } else {
-              // Existing behavior: tint the rasterized icon to match markerColor
-              paint.colorFilter = ColorFilter.mode(
-                markerColor.withValues(alpha: haloAlpha),
-                BlendMode.srcIn,
-              );
-              canvas.drawImageRect(useImage, src, haloRect, paint);
-
-              paint.colorFilter = ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              );
-              canvas.drawImageRect(useImage, src, outlineRect, paint);
-              paint.colorFilter = ColorFilter.mode(
+              // The halo, outline and tinted icon are composed once into a
+              // sprite and drawn as one image. Tinting three times per marker
+              // with color filters was the main raster cost on dense maps.
+              final sprite = _pinSprite(
+                useImage,
                 markerColor,
-                BlendMode.srcIn,
+                haloAlpha,
+                destSize,
+                haloScale,
+                devicePixelRatio,
               );
-              canvas.drawImageRect(useImage, src, dst, paint);
+              paint.colorFilter = null;
+              canvas.drawImageRect(
+                sprite.image,
+                Rect.fromLTWH(0, 0, sprite.size, sprite.size),
+                haloRect,
+                paint,
+              );
               paint.colorFilter = oldFilter;
             }
           } else {
@@ -393,27 +532,19 @@ class CanvasRawMarkerPainter extends CustomPainter {
       }
 
       if (showTitle &&
+          labelsDrawn < maxLabelsPerFrame &&
           ((title != null && title.isNotEmpty) ||
               (subtitle != null && subtitle.isNotEmpty))) {
+        labelsDrawn++;
         final lines = <String>[];
         if (title != null && title.isNotEmpty) lines.add(title);
         if (subtitle != null && subtitle.isNotEmpty) lines.add(subtitle);
 
-        final tp = TextPainter(textDirection: TextDirection.ltr);
-        final textStyle = TextStyle(
-          color: Colors.black,
-          fontSize: max(10.0, devicePixelRatio * 6),
-          fontWeight: FontWeight.w600,
+        final tp = _layoutLabel(
+          lines,
+          max(10.0, devicePixelRatio * 6),
+          size.width,
         );
-
-        final span = TextSpan(
-          children: lines
-              .map((l) => TextSpan(text: '$l\n', style: textStyle))
-              .toList(),
-        );
-        tp.text = span;
-        tp.textAlign = TextAlign.center;
-        tp.layout(minWidth: 0, maxWidth: size.width);
 
         final pad = 4.0;
         final bgWidth = tp.width + pad * 2;
@@ -439,6 +570,7 @@ class CanvasRawMarkerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CanvasRawMarkerPainter oldDelegate) {
     return oldDelegate.rawMarkers != rawMarkers ||
+        oldDelegate.rawRevision != rawRevision ||
         oldDelegate.center != center ||
         oldDelegate.zoom != zoom ||
         oldDelegate.iconImage != iconImage ||

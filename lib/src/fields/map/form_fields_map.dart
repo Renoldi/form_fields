@@ -60,6 +60,23 @@ class FormFieldsMapState extends State<FormFieldsMap>
   String? _playbackPolylineId;
   int _playbackInterpolationSteps = 4;
 
+  // ShapeMeta entries grouped by type. Rebuilt only when the raw list changes
+  // (see `rawRevision`), so the layer builders do not scan every raw entry on
+  // each rebuild, which happens on every map camera move.
+  Object? _shapeIndexOwner;
+  int _shapeIndexRevision = -1;
+  _RawShapeIndex _shapeIndex = const _RawShapeIndex.empty();
+
+  _RawShapeIndex _rawShapeIndexFor(FormFieldsMapNotifier n) {
+    if (!identical(_shapeIndexOwner, n) ||
+        _shapeIndexRevision != n.rawRevision) {
+      _shapeIndex = _RawShapeIndex.build(n.rawMarkers);
+      _shapeIndexOwner = n;
+      _shapeIndexRevision = n.rawRevision;
+    }
+    return _shapeIndex;
+  }
+
   LatLng? _lastCenter;
   double? _lastZoom;
   ImageStream? _canvasMarkerImageStream;
@@ -345,4 +362,42 @@ class FormFieldsMapState extends State<FormFieldsMap>
       ],
     );
   }
+}
+
+/// Raw [ShapeMeta] entries grouped by shape type, in their original order.
+class _RawShapeIndex {
+  const _RawShapeIndex(
+    this.polygons,
+    this.polylines,
+    this.circles,
+    this.markers,
+  );
+
+  const _RawShapeIndex.empty() : this(const [], const [], const [], const []);
+
+  factory _RawShapeIndex.build(List<dynamic> raw) {
+    final polygons = <ShapeMeta>[];
+    final polylines = <ShapeMeta>[];
+    final circles = <ShapeMeta>[];
+    final markers = <ShapeMeta>[];
+    for (final r in raw) {
+      if (r is! ShapeMeta) continue;
+      final type = r.shapeType;
+      if (type == ShapeTypes.polygon) {
+        polygons.add(r);
+      } else if (type == ShapeTypes.polyline) {
+        polylines.add(r);
+      } else if (type == ShapeTypes.circle) {
+        circles.add(r);
+      } else if (type == ShapeTypes.marker) {
+        markers.add(r);
+      }
+    }
+    return _RawShapeIndex(polygons, polylines, circles, markers);
+  }
+
+  final List<ShapeMeta> polygons;
+  final List<ShapeMeta> polylines;
+  final List<ShapeMeta> circles;
+  final List<ShapeMeta> markers;
 }

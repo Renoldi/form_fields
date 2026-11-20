@@ -1,22 +1,17 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:form_fields/src/models/direct_upload_payload.dart';
 import 'package:form_fields/src/utilities/base64_image.dart';
-import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:camera/camera.dart';
 import 'package:signature/signature.dart';
 import 'package:form_fields/src/service/permission_gate.dart';
-import 'package:form_fields/src/utilities/network_status.dart';
-import 'package:form_fields/src/utilities/upload_request_helpers.dart';
 import 'package:form_fields/src/widgets/form_field_label.dart';
-import 'package:form_fields/src/utilities/signature_pad_export_nullable_result.dart';
+import 'package:form_fields/src/models/signature_pad_export_result.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
-import 'package:form_fields/src/utilities/persisted_headers.dart';
+import 'package:form_fields/src/fields/core/image_field_common.dart';
 import 'package:form_fields/src/utilities/url_origin.dart';
 part 'form_fields_signature_pad_parts/signature_pad_widget.dart';
 
@@ -25,9 +20,8 @@ part 'form_fields_signature_pad_parts/signature_pad_drawing.dart';
 part 'form_fields_signature_pad_parts/signature_pad_export.dart';
 part 'form_fields_signature_pad_parts/signature_pad_upload.dart';
 part 'form_fields_signature_pad_parts/signature_pad_view.dart';
-part 'form_fields_signature_pad_parts/default_camera_section.dart';
 
-// SignaturePadExportResult lives in lib/src/utilities/signature_pad_export_result.dart
+// SignaturePadExportResult lives in lib/src/models/signature_pad_export_result.dart
 // SignaturePadPreviewSource lives in lib/src/utilities/enums.dart
 
 class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
@@ -42,10 +36,6 @@ class _FormFieldsSignaturePadState extends State<FormFieldsSignaturePad> {
   bool _hasCaptured = false;
 
   late FormFieldsSignaturePadProvider _padProvider;
-  // Buffer for payloads emitted by the embedded live camera so we can
-  // merge them with signature export payloads and emit a single combined
-  // callback to the caller.
-  final List<DirectUploadPayload> _embeddedQueuedPayloads = [];
 
   final _formFieldKey = GlobalKey<FormFieldState<bool>>();
   FormFieldsLocalizations? _localizations;

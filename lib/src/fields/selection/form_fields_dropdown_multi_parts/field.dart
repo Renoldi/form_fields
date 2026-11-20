@@ -284,77 +284,12 @@ extension _FormFieldsDropdownMultiFieldX<T>
           )
         : const SizedBox.shrink();
 
-    switch (widget.labelPosition) {
-      case LabelPosition.top:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              labelWidget,
-              const SizedBox(height: 8),
-              field,
-              itemCountWidget,
-            ],
-          ),
-        );
-      case LabelPosition.bottom:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              field,
-              const SizedBox(height: 8),
-              labelWidget,
-              itemCountWidget,
-            ],
-          ),
-        );
-      case LabelPosition.left:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              IntrinsicWidth(child: labelWidget),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [field, itemCountWidget],
-                ),
-              ),
-            ],
-          ),
-        );
-      case LabelPosition.right:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [field, itemCountWidget],
-                ),
-              ),
-              const SizedBox(width: 8),
-              IntrinsicWidth(child: labelWidget),
-            ],
-          ),
-        );
-      case LabelPosition.inBorder:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: field,
-        );
-      case LabelPosition.none:
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: field,
-        );
-    }
+    return buildSelectionLayout(
+      labelPosition: widget.labelPosition,
+      label: labelWidget,
+      field: field,
+      error: itemCountWidget,
+      errorWhenBordered: false,
+    );
   }
 }

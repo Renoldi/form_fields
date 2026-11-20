@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:form_fields/src/providers/form_fields_map_notifier.dart';
+import 'package:form_fields/src/fields/map/form_fields_map_notifier.dart';
 
 /// Characterization tests for the shape collections of [FormFieldsMapNotifier]
 /// (polygons, polylines, circles, markers). They pin the observable behavior

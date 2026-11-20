@@ -7,7 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:form_fields/src/providers/form_fields_notifier.dart';
+import 'package:form_fields/src/state/form_fields_states.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:form_fields/src/utilities/phone_country_codes.dart'

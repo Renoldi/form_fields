@@ -1,18 +1,16 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/foundation.dart';
+import 'package:form_fields/src/service/db_service.dart';
+import 'package:form_fields/src/service/offline_upload_manager.dart';
+import 'package:form_fields/src/service/workmanager_service.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-
-import 'db_service.dart';
-import 'offline_upload_manager.dart';
-import 'workmanager_service.dart';
 import 'package:workmanager/workmanager.dart';
-import 'flush_types.dart';
+
 part 'init_service_parts/init_registration.dart';
 part 'init_service_parts/init_startup.dart';
 part 'init_service_parts/init_all.dart';
@@ -156,3 +154,19 @@ class FormFieldsInitializer {
     );
   }
 }
+
+typedef SubmitHandler =
+    Future<bool> Function(Map<String, dynamic> payload, int? id);
+
+typedef FlushAllHandler =
+    Future<bool> Function({
+      SubmitHandler? submitHandler,
+      bool skipFlushStateGuard,
+    });
+
+typedef FlushOneHandler =
+    Future<bool> Function(
+      int id, {
+      SubmitHandler? submitHandler,
+      required bool skipFlushStateGuard,
+    });

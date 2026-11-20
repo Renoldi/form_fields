@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:form_fields/form_fields.dart';
-import '../utilities/theme_helpers.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'app_dialog_service_parts/dialog_flow.dart';
 part 'app_dialog_service_parts/dialog_chrome.dart';
@@ -467,4 +467,15 @@ class AppDialogService {
 
   /// Hides the currently visible loading dialog, if any.
   void hideLoading() => _dismissLoadingIfVisible();
+}
+
+/// Error mapper to distinguish between warning (validation) and fail (error)
+/// Use in guard: mapError: customErrorMapper
+/// Throws [ValidationException] for validation warning.
+({String message, AppDialogType type}) customErrorMapper(Object error) {
+  if (error is ValidationException) {
+    return (message: error.message, type: AppDialogType.validation);
+  }
+  // Add more custom error mapping as needed
+  return (message: error.toString(), type: AppDialogType.server);
 }

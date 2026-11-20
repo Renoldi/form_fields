@@ -9,45 +9,16 @@ extension _FormFieldsMyImageViewX on _FormFieldsMyImageState {
     final myImageTheme =
         Theme.of(context).extension<FormFieldsMyImageThemeData>() ??
         const FormFieldsMyImageThemeData.fallback();
-    final loadingTheme =
-        Theme.of(context).extension<AppLoadingThemeData>() ??
-        const AppLoadingThemeData.fallback();
     final progressTheme = Theme.of(context).progressIndicatorTheme;
     final progressColor = myImageTheme.addTileBorderColor;
     final progressTrackColor =
         progressTheme.linearTrackColor ?? progressColor.withValues(alpha: .22);
-    return Container(
-      color: loadingTheme.overlayColor,
-      child: Align(
-        alignment: Alignment.center,
-        child: SizedBox(
-          width: cardWidth,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: .94),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: progressColor.withValues(alpha: .20)),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).shadowColor.withValues(alpha: .25),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: AppProgressIndicator(
-              type: AppProgressType.linear,
-              value: progress,
-              minHeight: 6,
-              color: progressColor,
-              trackColor: progressTrackColor,
-            ),
-          ),
-        ),
-      ),
+    return ImageUploadProgressOverlay(
+      progress: progress,
+      progressColor: progressColor,
+      trackColor: progressTrackColor,
+      width: cardWidth,
+      padding: 8,
     );
   }
 
@@ -255,35 +226,7 @@ extension _FormFieldsMyImageViewX on _FormFieldsMyImageState {
               Positioned(
                 top: 6,
                 left: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).shadowColor.withValues(alpha: .18),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    image.status == MyImageStatus.uploading
-                        ? Icons.cloud_upload
-                        : image.status == MyImageStatus.queued
-                        ? Icons.schedule
-                        : image.status == MyImageStatus.failed
-                        ? Icons.error_outline
-                        : Icons.check_circle,
-                    size: 14,
-                    color: image.status == MyImageStatus.failed
-                        ? Theme.of(context).colorScheme.error
-                        : resolveTextColor(context),
-                  ),
-                ),
+                child: ImageStatusBadge(status: image.status),
               ),
             if (image.description.trim().isNotEmpty)
               Positioned(

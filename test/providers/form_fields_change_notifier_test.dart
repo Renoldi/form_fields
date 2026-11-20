@@ -1,11 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:form_fields/src/controllers/form_fields_my_image_controller.dart';
-import 'package:form_fields/src/controllers/form_fields_signature_pad_controller.dart';
+import 'package:form_fields/src/state/image_field_states.dart';
 import 'package:form_fields/src/models/myimage_result.dart';
-import 'package:form_fields/src/providers/form_fields_change_notifier.dart';
-import 'package:form_fields/src/providers/form_fields_live_camera_capture_provider.dart';
-import 'package:form_fields/src/providers/form_fields_signature_pad_provider.dart';
+import 'package:form_fields/src/state/form_fields_change_notifier.dart';
 
 class _Counter extends FormFieldsChangeNotifier {}
 

@@ -7,8 +7,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'payload_utils.dart';
-import 'column_handler.dart';
 import 'payload_handler.dart' as payload_handler;
 import 'package:sqflite/sqflite.dart';
 
@@ -38,7 +36,8 @@ class DBService {
   Completer<Database>? _initCompleter;
 
   // Column handlers registry: table -> column -> handler.
-  final Map<String, Map<String, ColumnHandler>> _columnHandlers = {};
+  final Map<String, Map<String, payload_handler.ColumnHandler>>
+  _columnHandlers = {};
   // Cache of table -> column names, so PRAGMA table_info runs once per table.
   final Map<String, Set<String>> _tableColumnsCache = {};
 
@@ -47,7 +46,7 @@ class DBService {
   void registerColumnHandler(
     String table,
     String column,
-    ColumnHandler handler,
+    payload_handler.ColumnHandler handler,
   ) {
     _columnHandlers.putIfAbsent(table, () => {})[column] = handler;
   }
@@ -63,7 +62,7 @@ class DBService {
   }
 
   /// Returns true when a column should be treated as file-backed even when
-  /// no explicit ColumnHandler was registered (`payload` or `*_payload`).
+  /// no explicit payload_handler.ColumnHandler was registered (`payload` or `*_payload`).
   bool isColumnFileBacked(String table, String column) {
     if (_getHandler(table, column) != null) return true;
     return column == 'payload' || column.endsWith('_payload');

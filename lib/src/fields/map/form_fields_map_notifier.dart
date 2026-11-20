@@ -2,7 +2,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:logging/logging.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
-import 'package:form_fields/src/providers/map_stores.dart';
+import 'package:form_fields/src/fields/map/map_stores.dart';
 
 final _mapLog = Logger('FormFieldsMapNotifier');
 
@@ -108,6 +108,14 @@ class FormFieldsMapNotifier extends FormFieldsChangeNotifier {
   List<dynamic> get rawMarkers => _raw.rawMarkers;
 
   set rawMarkers(List<dynamic> coords) => _raw.rawMarkers = coords;
+
+  /// Changes on every raw marker mutation. Use it in `Selector`s instead of
+  /// `rawMarkers`, because the list object is reused and keeps its identity.
+  int get rawRevision => _raw.rawRevision;
+
+  /// Call after changing entries of [rawMarkers] in place, for example when a
+  /// caller updates `PointMeta` coordinates directly.
+  void touchRawMarkers() => _raw.touchRawMarkers();
 
   /// Append raw markers. When [createMarkerWidgets] is false, the notifier
   /// will skip constructing `Marker` widget entries in `markers.raw` which

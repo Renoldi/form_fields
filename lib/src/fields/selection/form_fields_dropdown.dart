@@ -1,7 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
-import 'package:form_fields/src/providers/form_fields_dropdown_notifier.dart';
+import 'package:form_fields/src/state/form_fields_states.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'selection_field_common.dart';
 import 'package:provider/provider.dart';
 
 part 'form_fields_dropdown_parts/content.dart';
@@ -79,13 +80,13 @@ class FormFieldsDropdown<T> extends StatefulWidget {
 
 class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
   late GlobalKey<FormFieldState<T>> _formKey;
-  late FormFieldsDropdownNotifier _notifier;
+  late FormFieldsNotifier _notifier;
 
   @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormFieldState<T>>();
-    _notifier = FormFieldsDropdownNotifier();
+    _notifier = FormFieldsNotifier();
   }
 
   @override
@@ -117,7 +118,7 @@ class _FormFieldsDropdownState<T> extends State<FormFieldsDropdown<T>> {
     final l = FormFieldsLocalizations.of(context);
     return ChangeNotifierProvider.value(
       value: _notifier,
-      child: Consumer<FormFieldsDropdownNotifier>(
+      child: Consumer<FormFieldsNotifier>(
         builder: (context, notifier, _) {
           return FormField<T>(
             key: _formKey,

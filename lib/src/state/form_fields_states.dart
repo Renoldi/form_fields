@@ -1,15 +1,15 @@
-/// State management controller for FormFields
+/// State holders for the core FormFields widget: the field controller and
+/// the notifier that rebuilds it on country or locale changes.
 library;
 
-import 'package:material_ui/material_ui.dart';
-import 'package:form_fields/src/utilities/safe_notify.dart';
 import 'package:form_fields/form_fields.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Controller for managing FormFields state
 class FormFieldsController extends FormFieldsChangeNotifier {
   /// Notify listeners of changes
   void commit() {
-    safeNotify(() => notifyListeners());
+    notifySafely();
   }
 
   /// Form value storage
@@ -81,5 +81,25 @@ class FormFieldsController extends FormFieldsChangeNotifier {
   void dispose() {
     controller.dispose();
     super.dispose();
+  }
+}
+
+/// Manages FormFields internal state including selected country code and locale changes
+class FormFieldsNotifier extends FormFieldsChangeNotifier {
+  String _selectedCountryCode = '';
+
+  String get selectedCountryCode => _selectedCountryCode;
+
+  void setSelectedCountryCode(String code) {
+    _selectedCountryCode = code;
+    notifySafely();
+  }
+
+  void rebuildOnLocaleChange() {
+    notifySafely();
+  }
+
+  void rebuildOnUpdate() {
+    notifySafely();
   }
 }

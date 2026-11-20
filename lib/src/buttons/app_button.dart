@@ -1,8 +1,6 @@
-library;
-
-import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
-import '../utilities/theme_helpers.dart';
+import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A flexible, theme-aware button wrapper used across the app.
 ///
@@ -89,9 +87,9 @@ class AppButton<T> extends StatelessWidget {
     this.useSafeArea = true,
     this.heroTag,
   }) : assert(
-          text != null || child != null || icon != null,
-          'Provide at least one of text, child, or icon.',
-        );
+         text != null || child != null || icon != null,
+         'Provide at least one of text, child, or icon.',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +110,8 @@ class AppButton<T> extends StatelessWidget {
   }
 
   Widget _buildButton(BuildContext context) {
-    final loadingTheme = Theme.of(context).extension<AppLoadingThemeData>() ??
+    final loadingTheme =
+        Theme.of(context).extension<AppLoadingThemeData>() ??
         const AppLoadingThemeData.fallback();
     final isIcon = type == AppButtonType.icon;
     final isFab = type == AppButtonType.fab;
@@ -214,20 +213,22 @@ class AppButton<T> extends StatelessWidget {
 
     final iconColor =
         effectiveMergedStyle.iconColor?.resolve(<WidgetState>{}) ??
-            effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
-            IconTheme.of(context).color;
+        effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
+        IconTheme.of(context).color;
 
     // Ensure icons inside non-icon buttons receive the button's foreground
     // color (e.g. white on filled buttons) by wrapping the content in an
     // IconTheme. Also apply a DefaultTextStyle merge using the resolved
     // foreground color so plain `Text` widgets inside `AppButtonContent`
     // pick up caller `textStyle.color` when provided.
-    final resolvedForegroundColor =
-        effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
+    final resolvedForegroundColor = effectiveMergedStyle.foregroundColor
+        ?.resolve(<WidgetState>{});
     final themedChild = DefaultTextStyle.merge(
       style: TextStyle(color: resolvedForegroundColor),
-      child:
-          IconTheme(data: IconThemeData(color: iconColor), child: childWidget),
+      child: IconTheme(
+        data: IconThemeData(color: iconColor),
+        child: childWidget,
+      ),
     );
 
     if (isIcon) {
@@ -238,35 +239,44 @@ class AppButton<T> extends StatelessWidget {
       // `side` for borders.
       // Prefer explicit caller-provided `style` values first, then
       // fall back to the merged/effective style and finally theme values.
-      final resolvedBg = style?.backgroundColor?.resolve(<WidgetState>{}) ??
+      final resolvedBg =
+          style?.backgroundColor?.resolve(<WidgetState>{}) ??
           effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
-      final resolvedIcon = style?.iconColor?.resolve(<WidgetState>{}) ??
+      final resolvedIcon =
+          style?.iconColor?.resolve(<WidgetState>{}) ??
           style?.foregroundColor?.resolve(<WidgetState>{}) ??
           effectiveMergedStyle.iconColor?.resolve(<WidgetState>{}) ??
           effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{}) ??
           IconTheme.of(context).color;
-      final resolvedSide = style?.side?.resolve(<WidgetState>{}) ??
+      final resolvedSide =
+          style?.side?.resolve(<WidgetState>{}) ??
           effectiveMergedStyle.side?.resolve(<WidgetState>{});
 
       // Merge base button style and ensure a square fixed size matching
       // our configured height so icon-only buttons align with fields.
       final height = _heightBySize;
-      _buttonStyle().merge(effectiveMergedStyle).merge(ButtonStyle(
-            padding: WidgetStatePropertyAll(EdgeInsets.zero),
-            fixedSize: WidgetStatePropertyAll(Size(height, height)),
-            backgroundColor:
-                resolvedBg != null ? WidgetStatePropertyAll(resolvedBg) : null,
-            foregroundColor: WidgetStatePropertyAll(resolvedIcon),
-            side: resolvedSide != null
-                ? WidgetStatePropertyAll(resolvedSide)
-                : null,
-          ));
+      _buttonStyle()
+          .merge(effectiveMergedStyle)
+          .merge(
+            ButtonStyle(
+              padding: WidgetStatePropertyAll(EdgeInsets.zero),
+              fixedSize: WidgetStatePropertyAll(Size(height, height)),
+              backgroundColor: resolvedBg != null
+                  ? WidgetStatePropertyAll(resolvedBg)
+                  : null,
+              foregroundColor: WidgetStatePropertyAll(resolvedIcon),
+              side: resolvedSide != null
+                  ? WidgetStatePropertyAll(resolvedSide)
+                  : null,
+            ),
+          );
 
       // Use an Ink + InkWell wrapper so background color and border are
       // visible even when platform button styles interfere. This preserves
       // Material ink splashes and taps while guaranteeing the decoration.
-      final resolvedShape =
-          effectiveMergedStyle.shape?.resolve(<WidgetState>{});
+      final resolvedShape = effectiveMergedStyle.shape?.resolve(
+        <WidgetState>{},
+      );
       BorderRadius? borderRadius;
       if (resolvedShape is RoundedRectangleBorder) {
         borderRadius = resolvedShape.borderRadius.resolve(TextDirection.ltr);
@@ -326,17 +336,20 @@ class AppButton<T> extends StatelessWidget {
       if (fabBgColor != null) resolvedFabBg = fabBgColor;
 
       // allow caller ButtonStyle to override when present
-      final styleBg =
-          effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
-      final styleFg =
-          effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
+      final styleBg = effectiveMergedStyle.backgroundColor?.resolve(
+        <WidgetState>{},
+      );
+      final styleFg = effectiveMergedStyle.foregroundColor?.resolve(
+        <WidgetState>{},
+      );
       if (styleBg != null) resolvedFabBg = styleBg;
       if (styleFg != null) resolvedFabFg = styleFg;
 
       final iconWidget = IconTheme(
         data: IconThemeData(
-            size: _iconSizeBySize,
-            color: resolvedFabFg ?? IconTheme.of(context).color),
+          size: _iconSizeBySize,
+          color: resolvedFabFg ?? IconTheme.of(context).color,
+        ),
         child: fabChild,
       );
 
@@ -372,17 +385,21 @@ class AppButton<T> extends StatelessWidget {
       Color? resolvedFabBgExt = floatingFabTheme.backgroundColor;
       Color? resolvedFabFgExt = floatingFabTheme.foregroundColor;
       if (fabBgColor != null) resolvedFabBgExt = fabBgColor;
-      final styleBgExt =
-          effectiveMergedStyle.backgroundColor?.resolve(<WidgetState>{});
-      final styleFgExt =
-          effectiveMergedStyle.foregroundColor?.resolve(<WidgetState>{});
+      final styleBgExt = effectiveMergedStyle.backgroundColor?.resolve(
+        <WidgetState>{},
+      );
+      final styleFgExt = effectiveMergedStyle.foregroundColor?.resolve(
+        <WidgetState>{},
+      );
       if (styleBgExt != null) resolvedFabBgExt = styleBgExt;
       if (styleFgExt != null) resolvedFabFgExt = styleFgExt;
 
-      final labelWidget = child ??
+      final labelWidget =
+          child ??
           DefaultTextStyle(
             style: TextStyle(
-                color: resolvedFabFgExt ?? IconTheme.of(context).color),
+              color: resolvedFabFgExt ?? IconTheme.of(context).color,
+            ),
             child: Text((text ?? 'Action').toTitleCases),
           );
 
@@ -397,30 +414,30 @@ class AppButton<T> extends StatelessWidget {
 
     final button = switch (type) {
       AppButtonType.filled => FilledButton(
-          onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(effectiveMergedStyle),
-          child: themedChild,
-        ),
+        onPressed: effectiveOnPressed,
+        style: _buttonStyle().merge(effectiveMergedStyle),
+        child: themedChild,
+      ),
       AppButtonType.filledTonal => FilledButton.tonal(
-          onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(effectiveMergedStyle),
-          child: themedChild,
-        ),
+        onPressed: effectiveOnPressed,
+        style: _buttonStyle().merge(effectiveMergedStyle),
+        child: themedChild,
+      ),
       AppButtonType.elevated => ElevatedButton(
-          onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(effectiveMergedStyle),
-          child: themedChild,
-        ),
+        onPressed: effectiveOnPressed,
+        style: _buttonStyle().merge(effectiveMergedStyle),
+        child: themedChild,
+      ),
       AppButtonType.outlined => OutlinedButton(
-          onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(effectiveMergedStyle),
-          child: themedChild,
-        ),
+        onPressed: effectiveOnPressed,
+        style: _buttonStyle().merge(effectiveMergedStyle),
+        child: themedChild,
+      ),
       AppButtonType.text => TextButton(
-          onPressed: effectiveOnPressed,
-          style: _buttonStyle().merge(effectiveMergedStyle),
-          child: themedChild,
-        ),
+        onPressed: effectiveOnPressed,
+        style: _buttonStyle().merge(effectiveMergedStyle),
+        child: themedChild,
+      ),
       AppButtonType.icon => const SizedBox.shrink(),
       AppButtonType.fab => const SizedBox.shrink(),
       AppButtonType.extendedFab => const SizedBox.shrink(),
@@ -490,3 +507,24 @@ class AppButton<T> extends StatelessWidget {
     }
   }
 }
+
+/// Defines the visual variant of [AppButton].
+enum AppButtonType {
+  filled,
+  filledTonal,
+  elevated,
+  outlined,
+  text,
+  icon,
+  fab,
+  extendedFab,
+}
+
+/// Backwards-compatible enum used across the codebase for button sizes.
+enum AppSize { small, medium, large, custom }
+
+// Centralized size constants so multiple widgets can share the same values.
+const double kFieldHeightSmall = 40.0;
+const double kFieldHeightMedium = 48.0;
+const double kFieldHeightLarge = 56.0;
+const double kFieldHeightDefault = kFieldHeightMedium;

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:form_fields/form_fields.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
+import 'selection_field_common.dart';
 part 'form_fields_dropdown_multi_parts/field.dart';
 
 class FormFieldsDropdownMulti<T> extends StatefulWidget {

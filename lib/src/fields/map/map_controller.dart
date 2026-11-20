@@ -129,6 +129,11 @@ class FormFieldsMapController {
   static void clearRawMarkers(String id) =>
       _MapRawMarkerOps.clearRawMarkers(id);
 
+  /// Call after changing entries of the raw list in place, so the map redraws
+  /// without the list being replaced.
+  static void refreshRawMarkers(String id) =>
+      _MapRawMarkerOps.refreshRawMarkers(id);
+
   /// Update a single raw marker by `markerId` for the controller `id`.
   ///
   /// This performs a targeted update without replacing the entire

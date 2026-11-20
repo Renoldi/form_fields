@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
@@ -12,17 +11,14 @@ import 'package:form_fields/src/utilities/base64_image.dart';
 import 'package:form_fields/src/utilities/theme_helpers.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:form_fields/src/utilities/network_status.dart';
-import 'package:form_fields/src/utilities/upload_request_helpers.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
-import 'package:form_fields/src/utilities/persisted_headers.dart';
 import 'package:form_fields/src/utilities/url_origin.dart';
+import 'package:form_fields/src/fields/core/image_field_common.dart';
 part 'form_fields_live_camera_capture_parts/live_camera_capture_widget.dart';
 
 part 'form_fields_live_camera_capture_parts/controller_sync.dart';
 part 'form_fields_live_camera_capture_parts/upload.dart';
-part 'form_fields_live_camera_capture_parts/camera_placeholder.dart';
-part 'form_fields_live_camera_capture_parts/captured_photo.dart';
+part 'form_fields_live_camera_capture_parts/live_camera_views.dart';
 part 'form_fields_live_camera_capture_parts/shared_camera_manager.dart';
 
 class FormFieldsLiveCameraCaptureState
@@ -293,47 +289,10 @@ class FormFieldsLiveCameraCaptureState
                   // Upload loading overlay
                   if (provider.isUploading)
                     Positioned.fill(
-                      child: Container(
-                        color: loadingTheme.overlayColor,
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: SizedBox(
-                            width: 170,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surface.withValues(alpha: .94),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: progressColor.withValues(alpha: .20),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).shadowColor.withValues(alpha: 0.25),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  AppProgressIndicator(
-                                    type: AppProgressType.linear,
-                                    value: provider.uploadProgress,
-                                    minHeight: 6,
-                                    color: progressColor,
-                                    trackColor: progressTrackColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+                      child: ImageUploadProgressOverlay(
+                        progress: provider.uploadProgress ?? 0.0,
+                        progressColor: progressColor,
+                        trackColor: progressTrackColor,
                       ),
                     ),
                   Positioned(
@@ -341,37 +300,8 @@ class FormFieldsLiveCameraCaptureState
                     left: 6,
                     child: provider.capturedResult == null
                         ? const SizedBox.shrink()
-                        : Builder(
-                            builder: (ctx) {
-                              final st = provider.capturedResult!.status;
-                              final icon = st == MyImageStatus.uploading
-                                  ? Icons.cloud_upload
-                                  : st == MyImageStatus.queued
-                                  ? Icons.schedule
-                                  : st == MyImageStatus.failed
-                                  ? Icons.error_outline
-                                  : Icons.check_circle;
-                              final iconColor = st == MyImageStatus.failed
-                                  ? Theme.of(context).colorScheme.error
-                                  : resolveTextColor(ctx);
-                              return Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Theme.of(
-                                        context,
-                                      ).shadowColor.withValues(alpha: .18),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(icon, size: 14, color: iconColor),
-                              );
-                            },
+                        : ImageStatusBadge(
+                            status: provider.capturedResult!.status,
                           ),
                   ),
                 ],

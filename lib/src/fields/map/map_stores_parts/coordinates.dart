@@ -156,28 +156,7 @@ extension MapRawMarkerCoordinatesX on MapRawMarkerStore {
 
     try {
       // Remove concrete entries for all updated ids first.
-      for (final id in updatedIds) {
-        try {
-          polygons.raw.remove(id);
-        } catch (e, st) {
-          _mapLog.fine('Ignored map update error', e, st);
-        }
-        try {
-          polylines.raw.remove(id);
-        } catch (e, st) {
-          _mapLog.fine('Ignored map update error', e, st);
-        }
-        try {
-          circles.raw.remove(id);
-        } catch (e, st) {
-          _mapLog.fine('Ignored map update error', e, st);
-        }
-        try {
-          markers.raw.remove(id);
-        } catch (e, st) {
-          _mapLog.fine('Ignored map update error', e, st);
-        }
-      }
+      _removeConcreteEntries(updatedIds);
 
       // Recreate concrete entries for updated ids by scanning rawMarkers
       // for those ids and registering only those entries.
@@ -196,112 +175,13 @@ extension MapRawMarkerCoordinatesX on MapRawMarkerStore {
           }
           if (raw == null) continue;
 
-          ShapeMeta? sm;
-          String? type;
-          if (raw is ShapeMeta) {
-            sm = raw;
-            type = sm.shapeType?.toLowerCase();
-          } else if (raw is Map) {
-            type = (raw['shapeType'] as String?)?.toLowerCase();
-          }
-
-          if (sm != null && sm.shapeType != null || type != null) {
-            final t = type ?? sm!.shapeType!.toLowerCase();
-            final pms = sm?.pointMetas;
-            if (t == ShapeTypes.polygon && pms != null && pms.isNotEmpty) {
-              final pts = pms.map((pm) => pm.point).toList(growable: false);
-              final opts = sm?.polygonOptions();
-              final poly = Polygon(
-                points: pts,
-                color: opts?.fillColor ?? Colors.transparent,
-                borderColor: opts?.borderColor ?? Colors.transparent,
-                borderStrokeWidth: opts?.borderStrokeWidth ?? 1.0,
-              );
-              final rid =
-                  sm!.id ?? 'p\$${DateTime.now().microsecondsSinceEpoch}';
-              sm.id ??= rid;
-              polygons.raw[rid] = poly;
-            } else if (t == ShapeTypes.polyline &&
-                pms != null &&
-                pms.isNotEmpty) {
-              final pts = pms.map((pm) => pm.point).toList(growable: false);
-              final opts = sm?.polylineOptions();
-              final pl = Polyline(
-                points: pts,
-                strokeWidth: opts?.strokeWidth ?? 2.0,
-                color: opts?.color ?? Colors.transparent,
-                useStrokeWidthInMeter: opts?.useStrokeWidthInMeter ?? true,
-              );
-              final rid =
-                  sm!.id ?? 'l\$${DateTime.now().microsecondsSinceEpoch}';
-              sm.id ??= rid;
-              polylines.raw[rid] = pl;
-            } else if (t == ShapeTypes.circle &&
-                pms != null &&
-                pms.isNotEmpty) {
-              final center = pms.first.point;
-              final rad = pms.first.rotation ?? 10.0;
-              final opts = sm?.circleOptions();
-              final c = CircleMarker(
-                point: center,
-                color: opts?.borderColor ?? Colors.transparent,
-                borderStrokeWidth: opts?.borderStrokeWidth ?? 0.0,
-                borderColor: opts?.borderColor ?? Colors.transparent,
-                useRadiusInMeter: opts?.useRadiusInMeter ?? true,
-                radius: opts?.radiusMeters ?? rad,
-              );
-              final rid =
-                  sm!.id ?? 'c\$${DateTime.now().microsecondsSinceEpoch}';
-              sm.id ??= rid;
-              circles.raw[rid] = c;
-            } else if (t == ShapeTypes.marker &&
-                pms != null &&
-                pms.isNotEmpty) {
-              final center = pms.first.point;
-              final opts = sm?.markerOptions();
-              final marker = Marker(
-                point: center,
-                width: opts?.width?.toDouble() ?? 40,
-                height: opts?.height?.toDouble() ?? 40,
-                child: const SizedBox.shrink(),
-              );
-              final rid =
-                  sm!.id ?? 'm\$${DateTime.now().microsecondsSinceEpoch}';
-              sm.id ??= rid;
-              if (createMarkerWidgets) markers.raw[rid] = marker;
-            }
-          } else if (raw is Map) {
-            final st = (raw['shapeType'] as String?)?.toLowerCase();
-            if (st == ShapeTypes.marker) {
-              final lat = (raw['lat'] as num?)?.toDouble();
-              final lon = (raw['lon'] as num?)?.toDouble();
-              if (lat != null && lon != null) {
-                final marker = Marker(
-                  point: LatLng(lat, lon),
-                  width: 40,
-                  height: 40,
-                  child: const SizedBox.shrink(),
-                );
-                final rid =
-                    (raw['id'] as String?) ??
-                    'm\$${DateTime.now().microsecondsSinceEpoch}';
-                raw['id'] ??= rid;
-                if (createMarkerWidgets) markers.raw[rid] = marker;
-              }
-            }
-          }
+          _registerConcreteEntry(raw, createMarkerWidgets: createMarkerWidgets);
         } catch (e, st) {
           _mapLog.fine('Ignored map update error', e, st);
         }
       }
 
-      // Rebuild caches once.
-      polygons.rebuildCache();
-      polylines.rebuildCache();
-      circles.rebuildCache();
-      if (createMarkerWidgets) {
-        markers.rebuildCache();
-      }
+      _rebuildConcreteCaches(createMarkerWidgets: createMarkerWidgets);
     } catch (e, st) {
       _mapLog.fine('Ignored map update error', e, st);
     }

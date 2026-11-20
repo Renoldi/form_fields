@@ -49,8 +49,10 @@ class UploadResponseMapper {
       final raw = data.trim();
       if (raw.isEmpty) return null;
 
-      final redirectRegex =
-          RegExp(r"redirect_link\s*=\s*'([^']+)'", multiLine: true);
+      final redirectRegex = RegExp(
+        r"redirect_link\s*=\s*'([^']+)'",
+        multiLine: true,
+      );
       final match = redirectRegex.firstMatch(raw);
       if (match != null) return match.group(1);
 
@@ -119,8 +121,10 @@ class UploadResponseMapper {
 
   /// Extract a description/caption from the server [data].
   /// [keys] is the preferred key to check first.
-  static String? extractDescription(dynamic data,
-      {String keys = 'description'}) {
+  static String? extractDescription(
+    dynamic data, {
+    String keys = 'description',
+  }) {
     if (data == null) return null;
 
     if (keys.isNotEmpty) {
@@ -133,7 +137,7 @@ class UploadResponseMapper {
         'note',
         'caption',
         'alt',
-        'title'
+        'title',
       ];
       for (final key in fallbackKeys) {
         final val = extractNestedValue(data, key);

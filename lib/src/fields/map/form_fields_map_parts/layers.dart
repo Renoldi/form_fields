@@ -26,6 +26,9 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
             tileProvider: _tileProvider,
             maxZoom: widget.maxZoom,
             minZoom: widget.minZoom,
+            // Tiles appear at once. The default fade-in animates every tile
+            // with its own layer, which is costly while the camera is moving.
+            tileDisplay: const TileDisplay.instantaneous(),
           ),
           Selector<FormFieldsMapNotifier, List<Polygon>>(
             selector: (_, n) => n.polygons,
@@ -58,8 +61,8 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                   .toList(growable: false);
               // Also accept polygons provided as ShapeMeta in rawMarkers
               final extraPolys = <Polygon>[];
-              for (final r in notifierLocal.rawMarkers) {
-                if (r is ShapeMeta && r.shapeType == ShapeTypes.polygon) {
+              for (final r in _rawShapeIndexFor(notifierLocal).polygons) {
+                if (r.shapeType == ShapeTypes.polygon) {
                   final pms = r.pointMetas;
                   if (pms == null || pms.isEmpty) continue;
                   final pts = pms.map((pm) => pm.point).toList(growable: false);
@@ -121,8 +124,8 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                   .toList(growable: false);
               // Also accept polylines provided as ShapeMeta in rawMarkers
               final extraPls = <Polyline>[];
-              for (final r in notifierLocal.rawMarkers) {
-                if (r is ShapeMeta && r.shapeType == ShapeTypes.polyline) {
+              for (final r in _rawShapeIndexFor(notifierLocal).polylines) {
+                if (r.shapeType == ShapeTypes.polyline) {
                   final pms = r.pointMetas;
                   if (pms == null || pms.isEmpty) continue;
                   final pts = pms.map((pm) => pm.point).toList(growable: false);
@@ -178,8 +181,8 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                   .toList(growable: false);
               // Also accept circles provided as ShapeMeta in rawMarkers
               final extraCircles = <CircleMarker>[];
-              for (final r in notifierLocal.rawMarkers) {
-                if (r is ShapeMeta && r.shapeType == ShapeTypes.circle) {
+              for (final r in _rawShapeIndexFor(notifierLocal).circles) {
+                if (r.shapeType == ShapeTypes.circle) {
                   final pms = r.pointMetas;
                   if (pms == null || pms.isEmpty) continue;
                   final center = pms.first.point;
@@ -257,25 +260,30 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                   .toList(growable: false);
               // Also accept markers provided as ShapeMeta in rawMarkers
               final extraMarkers = <Marker>[];
-              for (final r in notifierLocal.rawMarkers) {
-                if (r is ShapeMeta && r.shapeType == ShapeTypes.marker) {
-                  final pms = r.pointMetas;
-                  if (pms == null || pms.isEmpty) continue;
-                  final center = pms.first.point;
-                  // Build a default simple marker; consumer builder can
-                  // replace or modify this.
-                  final opts = r.markerOptions();
-                  final defaultMarker = Marker(
-                    point: center,
-                    width: opts.width ?? 40,
-                    height: opts.height ?? 40,
-                    rotate: opts.rotate,
-                    child: const SizedBox.shrink(),
-                  );
-                  final finalMarker = widget.markerBuilder != null
-                      ? widget.markerBuilder!(r, defaultMarker)
-                      : defaultMarker;
-                  extraMarkers.add(finalMarker);
+              // Default marker widgets are empty placeholders (no visible child and
+              // no gesture), so they are only built when a markerBuilder is given.
+              // Building one per raw entry was a large part of each rebuild.
+              if (widget.markerBuilder != null) {
+                for (final r in _rawShapeIndexFor(notifierLocal).markers) {
+                  if (r.shapeType == ShapeTypes.marker) {
+                    final pms = r.pointMetas;
+                    if (pms == null || pms.isEmpty) continue;
+                    final center = pms.first.point;
+                    // Build a default simple marker; consumer builder can
+                    // replace or modify this.
+                    final opts = r.markerOptions();
+                    final defaultMarker = Marker(
+                      point: center,
+                      width: opts.width ?? 40,
+                      height: opts.height ?? 40,
+                      rotate: opts.rotate,
+                      child: const SizedBox.shrink(),
+                    );
+                    final finalMarker = widget.markerBuilder != null
+                        ? widget.markerBuilder!(r, defaultMarker)
+                        : defaultMarker;
+                    extraMarkers.add(finalMarker);
+                  }
                 }
               }
               return MarkerLayer(markers: [...mapped, ...extraMarkers]);
@@ -287,9 +295,12 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                   _controllerId,
                 ),
             builder: (context, isBlocking, _) {
-              return Selector<FormFieldsMapNotifier, List<dynamic>>(
-                selector: (_, n) => n.rawMarkers,
-                builder: (context, rawMarkers, _) {
+              return Selector<FormFieldsMapNotifier, int>(
+                selector: (_, n) => n.rawRevision,
+                builder: (context, revision, _) {
+                  final rawMarkers = context
+                      .read<FormFieldsMapNotifier>()
+                      .rawMarkers;
                   if (rawMarkers.isEmpty) return const SizedBox.shrink();
                   final renderedRawMarkers =
                       rawMarkers.length > widget.maxRenderedRawMarkers
@@ -300,6 +311,7 @@ extension _FormFieldsMapLayersX on FormFieldsMapState {
                       child: CustomPaint(
                         painter: CanvasRawMarkerPainter(
                           rawMarkers: renderedRawMarkers,
+                          rawRevision: revision,
                           center: _lastCenter ?? widget.initialCenter,
                           zoom: _lastZoom ?? widget.initialZoom,
                           radius: _canvasMarkerRadiusEffective,

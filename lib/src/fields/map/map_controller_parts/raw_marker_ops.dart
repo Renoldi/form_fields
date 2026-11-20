@@ -191,6 +191,16 @@ class _MapRawMarkerOps {
     }
   }
 
+  /// Tell the map that entries of the raw list were changed in place (for
+  /// example `PointMeta` coordinates). Rebuilds the layers without copying.
+  static void refreshRawMarkers(String id) {
+    final n = _MapRegistry._getNotifier(id);
+    if (n == null) return;
+    try {
+      n.touchRawMarkers();
+    } catch (_) {}
+  }
+
   static void clearRawMarkers(String id) {
     final n = _MapRegistry._getNotifier(id);
     if (n == null) return;

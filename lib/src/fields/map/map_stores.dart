@@ -144,7 +144,14 @@ class MapRawMarkerStore {
   final void Function() ensureControlled;
   final void Function() onChanged;
 
-  List<dynamic> _rawMarkersCache = const [];
+  // Growable and owned by this store. Appends extend it in place, so a batch
+  // costs O(batch) instead of copying the whole list on every call.
+  List<dynamic> _rawMarkersCache = <dynamic>[];
+  int _rawRevision = 0;
+
+  /// Changes whenever the raw list or one of its entries changes. Widgets use
+  /// it to decide when to rebuild, because the list object itself is reused.
+  int get rawRevision => _rawRevision;
 
   void _ensureControlled() => ensureControlled();
 
@@ -154,7 +161,8 @@ class MapRawMarkerStore {
 
   set rawMarkers(List<dynamic> coords) {
     _ensureControlled();
-    _rawMarkersCache = coords;
+    _rawMarkersCache = List<dynamic>.of(coords);
+    _rawRevision++;
     _scheduleNotify();
   }
 
@@ -171,8 +179,8 @@ class MapRawMarkerStore {
     // entries into the concrete layer maps in batch to avoid repeated
     // full-map->list conversions on each single addition (which causes
     // O(n^2) behavior when appending many markers).
-    final combined = List<dynamic>.from(_rawMarkersCache)..addAll(coords);
-    _rawMarkersCache = List<dynamic>.from(combined);
+    _rawMarkersCache.addAll(coords);
+    _rawRevision++;
 
     try {
       // Collect into the internal maps directly and update caches once.
@@ -262,22 +270,32 @@ class MapRawMarkerStore {
 
   void clearRawMarkers() {
     _ensureControlled();
-    _rawMarkersCache = const [];
+    _rawMarkersCache = <dynamic>[];
+    _rawRevision++;
+    _scheduleNotify();
+  }
+
+  /// Signals that entries were changed in place (for example coordinates of
+  /// `PointMeta` updated by the caller). Rebuilds listeners without copying.
+  void touchRawMarkers() {
+    _ensureControlled();
+    _rawRevision++;
     _scheduleNotify();
   }
 
   bool removeRawMarker(String id) {
     _ensureControlled();
     final before = _rawMarkersCache.length;
-    _rawMarkersCache = _rawMarkersCache
-        .where((m) {
-          if (m is ShapeMeta) return m.id != id;
-          if (m is Map) return m['id'] != id;
-          return true;
-        })
-        .toList(growable: false);
+    _rawMarkersCache = _rawMarkersCache.where((m) {
+      if (m is ShapeMeta) return m.id != id;
+      if (m is Map) return m['id'] != id;
+      return true;
+    }).toList();
     final removed = _rawMarkersCache.length != before;
-    if (removed) _scheduleNotify();
+    if (removed) {
+      _rawRevision++;
+      _scheduleNotify();
+    }
     return removed;
   }
 }

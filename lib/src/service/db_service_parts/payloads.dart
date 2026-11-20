@@ -1,7 +1,7 @@
 part of '../db_service.dart';
 
 extension _DBServicePayloadsX on DBService {
-  ColumnHandler? _getHandler(String table, String column) {
+  payload_handler.ColumnHandler? _getHandler(String table, String column) {
     final byTable = _columnHandlers[table]?[column];
     if (byTable != null) return byTable;
     return _columnHandlers['*']?[column];

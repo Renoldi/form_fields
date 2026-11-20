@@ -1,11 +1,10 @@
-// ===================== Dio Utility =====================
-
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart';
 import 'package:form_fields/src/utilities/debug_log.dart';
+import 'package:logger/logger.dart';
+
+// ===================== Dio Utility =====================
 
 /// Key set on [Response.extra] when a request failed before any HTTP response
 /// arrived (DNS failure, refused connection, timeout). Callers should check
@@ -470,4 +469,25 @@ class DioUtil {
         ? 'download'
         : trimmed;
   }
+}
+
+/// High-level error classification for HTTP operations.
+enum ErrorType { validation, network, authentication, server }
+
+/// Exception wrapper that carries a user-facing message key and an
+/// `ErrorType` for UI classification. The original DioException is
+/// preserved for logging/diagnostics.
+class HttpException implements Exception {
+  final String messageKey;
+  final ErrorType type;
+  final DioException? originalError;
+
+  HttpException({
+    required this.messageKey,
+    required this.type,
+    this.originalError,
+  });
+
+  @override
+  String toString() => 'HttpException: $messageKey (type: $type)';
 }

@@ -64,64 +64,7 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
       // they can persist the payloads for later retry. Wrap the callback in
       // try/catch to avoid user-provided handlers from throwing and
       // interrupting the upload flow (which previously could wipe state).
-      try {
-        // Build payloads from all images that look uploadable so callers
-        // receive a consistent full list when offline.
-        var queued = provider.images
-            .where((i) => i.status == MyImageStatus.queued)
-            .toList();
-        final uploadable = provider.images.where((i) {
-          final hasFileInPayload =
-              (i.payload.isNotEmpty &&
-              (i.payload['file'] is Map || i.payload['filePath'] != null));
-          return i.status != MyImageStatus.uploaded &&
-              (i.path.trim().isNotEmpty ||
-                  i.base64.isNotEmpty ||
-                  hasFileInPayload);
-        }).toList();
-        if (queued.length < uploadable.length && uploadable.isNotEmpty) {
-          queued = uploadable;
-        }
-
-        if (kDebugMode) {
-          debugLog(
-            'FormFieldsMyImage: queuedImages=${queued.length} uploadable=${uploadable.length}',
-          );
-          for (var i = 0; i < queued.length; i++) {
-            try {
-              final qi = queued[i];
-              debugLog(
-                'FormFieldsMyImage: queued[$i] status=${qi.status} path=${qi.path} base64=${qi.base64.isNotEmpty} payloadFile=${qi.payload['file'] is Map}',
-              );
-            } catch (_) {}
-          }
-        }
-
-        final payloads = await UploadHelper.buildDirectUploadPayloadsFromImages(
-          queued,
-          defaultUrl: widget.uploadUrl,
-          fileFieldName: widget.uploadFileFieldName,
-          includeReqType: widget.uploadIncludeReqType,
-        );
-        if (payloads.isNotEmpty) {
-          if (kDebugMode) {
-            debugLog(
-              'FormFieldsMyImage: onFailDirectUploadPayload -> ${payloads.length} payload(s) (offline)',
-            );
-            for (var i = 0; i < payloads.length; i++) {
-              try {
-                final p = payloads[i];
-                debugLog(
-                  'FormFieldsMyImage: payload[offline][$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
-                );
-              } catch (_) {}
-            }
-          }
-          widget.onFailDirectUploadPayload?.call(payloads);
-        }
-      } catch (e, st) {
-        debugLog('FormFieldsMyImage.onFailDirectUploadPayload threw: $e\n$st');
-      }
+      await _reportQueuedPayloads(provider, source: 'offline');
 
       // Stop further processing when offline — avoid attempting the
       // network upload and potential race conditions that may overwrite
@@ -227,90 +170,7 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
             replaceLive(index, updatedImage);
             _syncControllerImages(provider);
 
-            try {
-              // Build payloads for all currently queued images and invoke
-              // the callback with the full list to match offline behavior.
-              // Prefer explicitly-queued images, but if none or fewer than
-              // the images that look uploadable, fall back to all images
-              // that appear to contain a file (path/base64/payload) and are
-              // not already uploaded. This ensures callers receive payloads
-              // for all selectable images when offline or when uploads are
-              // retried programmatically.
-              // Prefer explicitly-queued images, but if none or fewer than
-              // the images that look uploadable, fall back to all images
-              // that appear to contain a file (path/base64/payload) and are
-              // not already uploaded. This ensures callers receive payloads
-              // for all selectable images when an upload is queued.
-              var queued = provider.images
-                  .where((i) => i.status == MyImageStatus.queued)
-                  .toList();
-              final uploadable = provider.images.where((i) {
-                final hasFileInPayload =
-                    (i.payload.isNotEmpty &&
-                    (i.payload['file'] is Map ||
-                        i.payload['filePath'] != null));
-                return i.status != MyImageStatus.uploaded &&
-                    (i.path.trim().isNotEmpty ||
-                        i.base64.isNotEmpty ||
-                        hasFileInPayload);
-              }).toList();
-              if (queued.length < uploadable.length && uploadable.isNotEmpty) {
-                // If queued is smaller than the set of uploadable images,
-                // prefer the broader uploadable list so callers can persist
-                // all files they might expect to retry later.
-                queued = uploadable;
-              }
-
-              if (kDebugMode) {
-                debugLog(
-                  'FormFieldsMyImage:onUploadQueued queued=${queued.length} uploadable=${uploadable.length}',
-                );
-                for (var i = 0; i < queued.length; i++) {
-                  try {
-                    final qi = queued[i];
-                    debugLog(
-                      'FormFieldsMyImage:onUploadQueued queued[$i] status=${qi.status} path=${qi.path} base64=${qi.base64.isNotEmpty} payloadFile=${qi.payload['file'] is Map}',
-                    );
-                  } catch (_) {}
-                }
-              }
-              final payloads =
-                  await UploadHelper.buildDirectUploadPayloadsFromImages(
-                    queued,
-                    defaultUrl: widget.uploadUrl,
-                    fileFieldName: widget.uploadFileFieldName,
-                    includeReqType: widget.uploadIncludeReqType,
-                  );
-              if (payloads.isNotEmpty) {
-                if (kDebugMode) {
-                  debugLog(
-                    'FormFieldsMyImage: onFailDirectUploadPayload -> ${payloads.length} payload(s) (queued)',
-                  );
-                  for (var i = 0; i < payloads.length; i++) {
-                    try {
-                      final p = payloads[i];
-                      debugLog(
-                        'FormFieldsMyImage: payload[queued][$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
-                      );
-                    } catch (_) {}
-                  }
-                }
-                widget.onFailDirectUploadPayload?.call(payloads);
-              }
-
-              // final payloads =
-              //     await UploadHelper.buildDirectUploadPayloadsFromImages(
-              //   queued,
-              //   defaultUrl: widget.uploadUrl,
-              //   fileFieldName: widget.uploadFileFieldName,
-              //   includeReqType: widget.uploadIncludeReqType,
-              // );
-              // if (payloads.isNotEmpty) {
-              //   widget.onFailDirectUploadPayload?.call(payloads);
-              // }
-            } catch (e, st) {
-              debugLog('Failed to call onFailDirectUploadPayload: $e\n$st');
-            }
+            await _reportQueuedPayloads(provider, source: 'queued');
 
             if (authExpired) {
               try {
@@ -343,26 +203,22 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
     final afterUpload = locate();
     if (afterUpload == null) return;
     index = afterUpload;
-    final l = FormFieldsLocalizations.of(context);
+    final messages = ImageUploadMessages.resolve(
+      FormFieldsLocalizations.of(context),
+      successTitle: widget.uploadSuccessTitle,
+      failedTitle: widget.uploadFailedTitle,
+      errorTitle: widget.uploadErrorTitle,
+      successMessage: widget.uploadSuccessMessage,
+      failedMessage: widget.uploadFailedMessage,
+      errorMessage: widget.uploadErrorMessage,
+    );
     final dialog = AppDialogService(context);
-    final uploadSuccessTitle =
-        widget.uploadSuccessTitle ?? l.get('uploadSuccessTitle');
-    final uploadFailedTitle =
-        widget.uploadFailedTitle ?? l.get('uploadFailedTitle');
-    final uploadErrorTitle =
-        widget.uploadErrorTitle ?? l.get('uploadErrorTitle');
-    final uploadSuccessMessage =
-        widget.uploadSuccessMessage ?? l.get('uploadSuccessMessage');
-    final uploadFailedMessage =
-        widget.uploadFailedMessage ?? l.get('uploadFailedMessage');
-    final uploadErrorMessage =
-        widget.uploadErrorMessage ?? l.get('uploadErrorMessage');
     if (response == null) {
       provider.resetUploadProgress(index);
       if (widget.showUploadResultDialog) {
         await dialog.showError(
-          title: uploadFailedTitle,
-          message: uploadErrorMessage,
+          title: messages.failedTitle,
+          message: messages.errorMessage,
           dialogType: AppDialogType.network,
         );
       }
@@ -371,50 +227,24 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
     try {
       if (UploadResponseMapper.isSuccessfulStatus(response.statusCode)) {
         final data = response.data;
-        final uploadedLink = UploadResponseMapper.extractUploadedLink(
+        final extracted = extractUploadResponse(
           data,
-          keys: widget.uploadFileUrlKey,
+          fileUrlKey: widget.uploadFileUrlKey,
+          imageIdKey: widget.uploadImageIdKey,
+          descriptionKey: widget.descriptionField ?? 'description',
         );
-        final imageId = UploadResponseMapper.extractImageId(
-          data,
-          keys: widget.uploadImageIdKey,
-        );
-        final uploadedDescription = UploadResponseMapper.extractDescription(
-          data,
-          keys: widget.descriptionField ?? 'description',
-        );
-        final uploadedPath = UploadResponseMapper.extractFilePath(
-          data,
-          keys: 'filePath',
-        );
-        // Build absolute link if server provided only a relative path.
-        String? finalLink = (uploadedLink ?? live.link).trim();
-        if ((finalLink.isEmpty) &&
-            (uploadedPath != null && uploadedPath.trim().isNotEmpty)) {
-          try {
-            final base = Uri.parse(widget.uploadUrl!);
-            final p = uploadedPath.startsWith('/')
-                ? uploadedPath
-                : '/$uploadedPath';
-            finalLink = '${base.scheme}://${base.authority}$p';
-          } catch (_) {}
-        }
-
-        final resolvedPath =
-            (uploadedPath != null && uploadedPath.trim().isNotEmpty)
-            ? uploadedPath
-            : live.path;
-
         final updatedImage = MyImageResult(
-          link: finalLink ?? live.link,
+          link: resolveUploadedLink(
+            uploadedLink: extracted.link,
+            fallbackLink: live.link,
+            uploadedPath: extracted.path,
+            uploadUrl: widget.uploadUrl,
+          ),
           base64: live.base64,
-          // Preserve the local picked file path unless the server
-          // returned an absolute filesystem path (rare). Avoid
-          // overwriting with server-relative paths which are not
-          // accessible locally and cause PathNotFound errors.
-          path: resolvedPath,
-          imageId: imageId ?? live.imageId,
-          description: uploadedDescription ?? description ?? live.description,
+          // Keep the local picked file path unless the server returned one.
+          path: resolveUploadedPath(extracted.path, live.path),
+          imageId: extracted.imageId ?? live.imageId,
+          description: extracted.description ?? description ?? live.description,
           payload: data,
           status: MyImageStatus.uploaded,
         );
@@ -443,8 +273,8 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
         }
         if (widget.showUploadResultDialog) {
           await dialog.showSuccess(
-            title: uploadSuccessTitle,
-            message: uploadSuccessMessage,
+            title: messages.successTitle,
+            message: messages.successMessage,
           );
         }
       } else {
@@ -462,8 +292,9 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
         provider.resetUploadProgress(index);
         if (widget.showUploadResultDialog) {
           await dialog.showError(
-            title: uploadFailedTitle,
-            message: '$uploadFailedMessage ${response.statusMessage ?? ''}',
+            title: messages.failedTitle,
+            message:
+                '${messages.failedMessage} ${response.statusMessage ?? ''}',
             dialogType: AppDialogType.server,
           );
         }
@@ -486,11 +317,84 @@ extension _FormFieldsMyImageUploadX on _FormFieldsMyImageState {
       }
       if (widget.showUploadResultDialog) {
         await dialog.showError(
-          title: uploadErrorTitle,
-          message: '$uploadErrorMessage $e',
+          title: messages.errorTitle,
+          message: '$messages.errorMessage $e',
           dialogType: AppDialogType.server,
         );
       }
+    }
+  }
+}
+
+extension _FormFieldsMyImageUploadRequestX on _FormFieldsMyImageState {
+  /// Builds the headers, description and resumable payload for one image upload.
+  /// Shared by the online request and the offline queue. [index] is the image
+  /// position at the time of the call.
+  ({Map<String, String> headers, String? effDesc, Map<String, dynamic> payload})
+  _buildMyImageUploadRequest(
+    MyImageResult image,
+    String? description,
+    int index,
+  ) {
+    final headers = buildUploadAuthHeaders(widget.uploadToken);
+    final effDesc = resolveUploadDescription(image, explicit: description);
+    final payload = buildImageUploadPayload(
+      uploadUrl: widget.uploadUrl,
+      headers: headers,
+      image: image,
+      fileName: resolveUploadFileName(image),
+      description: effDesc,
+      formFields: descriptionFormFields(
+        effDesc,
+        widget.descriptionField ?? 'description',
+      ),
+      fileUrlKey: widget.uploadFileUrlKey,
+      imageIdKey: widget.uploadImageIdKey,
+      index: index,
+    );
+    return (headers: headers, effDesc: effDesc, payload: payload);
+  }
+
+  /// Reports every uploadable image that is queued (or about to be) through
+  /// [FormFieldsMyImage.onFailDirectUploadPayload], so callers can persist them.
+  /// Falls back to all uploadable images when fewer are marked queued.
+  Future<void> _reportQueuedPayloads(
+    FormFieldsMyImageProvider provider, {
+    required String source,
+  }) async {
+    try {
+      var queued = provider.images
+          .where((i) => i.status == MyImageStatus.queued)
+          .toList();
+      final uploadable = provider.images.where((i) {
+        final hasFileInPayload =
+            (i.payload.isNotEmpty &&
+            (i.payload['file'] is Map || i.payload['filePath'] != null));
+        return i.status != MyImageStatus.uploaded &&
+            (i.path.trim().isNotEmpty ||
+                i.base64.isNotEmpty ||
+                hasFileInPayload);
+      }).toList();
+      if (queued.length < uploadable.length && uploadable.isNotEmpty) {
+        queued = uploadable;
+      }
+      final payloads = await UploadHelper.buildDirectUploadPayloadsFromImages(
+        queued,
+        defaultUrl: widget.uploadUrl,
+        fileFieldName: widget.uploadFileFieldName,
+        includeReqType: widget.uploadIncludeReqType,
+      );
+      if (payloads.isNotEmpty) {
+        if (kDebugMode) {
+          debugLog(
+            'FormFieldsMyImage: onFailDirectUploadPayload -> '
+            '${payloads.length} payload(s) ($source)',
+          );
+        }
+        widget.onFailDirectUploadPayload?.call(payloads);
+      }
+    } catch (e, st) {
+      debugLog('FormFieldsMyImage.onFailDirectUploadPayload threw: $e\n$st');
     }
   }
 }

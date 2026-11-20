@@ -70,33 +70,7 @@ extension _FormFieldsSignaturePadViewX on _FormFieldsSignaturePadState {
           Positioned(
             top: 6,
             left: 6,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).shadowColor.withValues(alpha: .18),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                result.status == MyImageStatus.uploading
-                    ? Icons.cloud_upload
-                    : result.status == MyImageStatus.queued
-                    ? Icons.schedule
-                    : result.status == MyImageStatus.failed
-                    ? Icons.error_outline
-                    : Icons.check_circle,
-                size: 14,
-                color: result.status == MyImageStatus.failed
-                    ? Theme.of(context).colorScheme.error
-                    : resolveTextColor(context),
-              ),
-            ),
+            child: ImageStatusBadge(status: result.status),
           ),
       ],
     );
@@ -189,47 +163,10 @@ extension _FormFieldsSignaturePadViewX on _FormFieldsSignaturePadState {
             // Upload loading overlay
             if (provider.isUploading)
               Positioned.fill(
-                child: Container(
-                  color: loadingTheme.overlayColor,
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: SizedBox(
-                      width: 170,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surface.withValues(alpha: .94),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: progressColor.withValues(alpha: .20),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).shadowColor.withValues(alpha: .26),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AppProgressIndicator(
-                              type: AppProgressType.linear,
-                              value: provider.uploadProgress,
-                              minHeight: 6,
-                              color: progressColor,
-                              trackColor: progressTrackColor,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                child: ImageUploadProgressOverlay(
+                  progress: provider.uploadProgress ?? 0.0,
+                  progressColor: progressColor,
+                  trackColor: progressTrackColor,
                 ),
               ),
             Positioned(
@@ -274,29 +211,6 @@ extension _FormFieldsSignaturePadViewX on _FormFieldsSignaturePadState {
   }
 
   Widget _buildCameraWidget(BuildContext context) {
-    // Forward payload-based failures from the live camera to the
-    // signature pad's payload callback when provided. Use typed
-    // `DirectUploadPayload` objects.
-    // When the live camera is embedded, buffer its queued payloads so the
-    // signature pad can later emit a single combined list. If the caller
-    // provided an `onFailDirectUploadPayload` for the whole pad, suppress
-    // immediate passthrough and merge later. Otherwise, forward directly.
-    void failPayloadCb(List<DirectUploadPayload> list) {
-      try {
-        if (widget.onFailDirectUploadPayload != null) {
-          // Merge into buffer, avoiding duplicates by correlation id.
-          for (final p in list) {
-            final exists = _embeddedQueuedPayloads.any(
-              (e) => e.uploadCorrelationId == p.uploadCorrelationId,
-            );
-            if (!exists) _embeddedQueuedPayloads.add(p);
-          }
-        } else {
-          widget.onFailDirectUploadPayload?.call(list);
-        }
-      } catch (_) {}
-    }
-
     final preview = FormFieldsLiveCameraCapture(
       key: _liveCameraKey,
       height: widget.liveCameraHeight,
@@ -316,7 +230,8 @@ extension _FormFieldsSignaturePadViewX on _FormFieldsSignaturePadState {
       uploadErrorMessage: widget.uploadErrorMessage,
       uploadFileUrlKey: widget.uploadFileUrlKey,
       uploadImageIdKey: widget.uploadImageIdKey,
-      onFailDirectUploadPayload: failPayloadCb,
+      onFailDirectUploadPayload: widget.onFailDirectUploadPayload,
+      onUploadQueued: widget.onUploadQueued,
     );
     if (widget.liveCameraBuilder != null) {
       return widget.liveCameraBuilder!(context, preview);
@@ -332,6 +247,61 @@ extension _FormFieldsSignaturePadViewX on _FormFieldsSignaturePadState {
       ),
       padding: const EdgeInsets.all(8),
       child: _DefaultCameraSection(child: preview),
+    );
+  }
+}
+
+/// Default visual wrapper for the live camera section.
+class _DefaultCameraSection extends StatelessWidget {
+  final Widget child;
+  const _DefaultCameraSection({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = FormFieldsLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Icon(
+              Icons.camera_front_outlined,
+              size: 18,
+              color: colorScheme.primary,
+            ),
+            Text(
+              localizations.get('liveCaptureTitle'),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                localizations.get('liveCaptureAutoOnSign'),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
     );
   }
 }

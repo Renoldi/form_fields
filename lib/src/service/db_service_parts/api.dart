@@ -29,7 +29,7 @@ extension _DBServiceCrudX on DBService {
         offset: offset,
       )).map((e) => Map<String, dynamic>.from(e)).toList();
 
-      await PayloadUtils.inlinePayloadsForRows(
+      await payload_handler.PayloadUtils.inlinePayloadsForRows(
         table,
         rows,
         inlinePayloads: inlinePayloads,

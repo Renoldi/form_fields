@@ -129,60 +129,8 @@ extension _FormFieldsSignaturePadExportX on _FormFieldsSignaturePadState {
         // Legacy single-item callback removed; callers should use
         // `onFailDirectUploadList` or `onFailDirectUploadPayload`.
 
-        // Also provide upload-friendly payload maps for callers that prefer
-        // to persist a simplified shape consumable by `DioUtil.uploadFile`.
-        try {
-          final imgs = <MyImageResult>[];
-          if (nullable.signature != null) imgs.add(nullable.signature!);
-          if (nullable.liveCapture != null) imgs.add(nullable.liveCapture!);
-          final payloads =
-              await UploadHelper.buildDirectUploadPayloadsFromImages(
-                imgs,
-                defaultUrl: widget.uploadUrl,
-                fileFieldName: widget.uploadFileFieldName,
-                includeReqType: widget.uploadIncludeReqType,
-              );
-          if (payloads.isNotEmpty || _embeddedQueuedPayloads.isNotEmpty) {
-            // Merge with payloads buffered by the embedded live camera, so a
-            // capture that arrives on both paths is queued only once.
-            final merged = mergeQueuedPayloads(
-              _embeddedQueuedPayloads,
-              payloads,
-            );
-            if (kDebugMode) {
-              debugLog(
-                'FormFieldsSignaturePad: onFailDirectUploadPayload -> ${merged.length} payload(s) (merged)',
-              );
-              for (var i = 0; i < merged.length; i++) {
-                try {
-                  final p = merged[i];
-                  debugLog(
-                    'FormFieldsSignaturePad: merged payload[$i] correlation=${p.uploadCorrelationId} file=${p.fileName} path=${p.filePath}',
-                  );
-                } catch (_) {}
-              }
-            }
-            try {
-              widget.onFailDirectUploadPayload?.call(merged);
-            } catch (e, st) {
-              debugLog(
-                'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
-              );
-            }
-            // Per-payload notification as queued (network). Only call once per
-            // payload and clear the embedded buffer afterwards.
-            try {
-              for (final p in merged) {
-                widget.onUploadQueued?.call(p, false);
-              }
-            } catch (_) {}
-            _embeddedQueuedPayloads.clear();
-          }
-        } catch (e, st) {
-          debugLog(
-            'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
-          );
-        }
+        // Queued payloads were already reported when they were queued, so they
+        // are not reported again here.
       }
 
       // If preview shows both images and this is a direct upload, notify
@@ -210,10 +158,6 @@ extension _FormFieldsSignaturePadExportX on _FormFieldsSignaturePadState {
           } catch (_) {}
         }
       }
-      // Payloads the embedded camera queued earlier must still reach the
-      // caller, even when this export itself uploaded. Before, they waited in
-      // the buffer until some later export failed.
-      _flushEmbeddedQueuedPayloads();
       widget.signaturePadController?.updateFromWidget(finalResult);
       widget.onExported?.call(finalSignature);
       if (widget.onExportedResult != null) {
@@ -236,67 +180,5 @@ extension _FormFieldsSignaturePadExportX on _FormFieldsSignaturePadState {
         widget.onExportedResult!(exportedResult);
       }
     }
-  }
-
-  /// Reports and clears the payloads buffered from the embedded camera.
-  void _flushEmbeddedQueuedPayloads() {
-    if (_embeddedQueuedPayloads.isEmpty) return;
-    final pending = List<DirectUploadPayload>.of(_embeddedQueuedPayloads);
-    _embeddedQueuedPayloads.clear();
-    try {
-      widget.onFailDirectUploadPayload?.call(pending);
-    } catch (e, st) {
-      debugLog(
-        'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
-      );
-    }
-  }
-
-  /// Persists a failed upload through the queue callbacks so it is retried
-  /// later. Returns the queued result.
-  Future<MyImageResult?> _queueFailedUpload(
-    MyImageResult image,
-    Map<String, dynamic> payload, {
-    required bool authExpired,
-  }) async {
-    final queuedImage = MyImageResult(
-      link: image.link,
-      base64: image.base64,
-      path: image.path,
-      imageId: image.imageId,
-      description: image.description,
-      payload: payload,
-      status: MyImageStatus.queued,
-    );
-    try {
-      final direct = await UploadHelper.buildDirectUploadPayloadFromImage(
-        queuedImage,
-        defaultUrl: widget.uploadUrl,
-        fileFieldName: widget.uploadFileFieldName,
-        includeReqType: widget.uploadIncludeReqType,
-      );
-      if (direct != null) {
-        debugLog(
-          'FormFieldsSignaturePad: queued -> payload.correlation=${direct.uploadCorrelationId} file=${direct.fileName} path=${direct.filePath}',
-        );
-        try {
-          widget.onUploadQueued?.call(direct, authExpired);
-        } catch (e, st) {
-          debugLog('FormFieldsSignaturePad.onUploadQueued threw: $e\n$st');
-        }
-        try {
-          widget.onFailDirectUploadPayload?.call([direct]);
-        } catch (e, st) {
-          debugLog(
-            'FormFieldsSignaturePad.onFailDirectUploadPayload threw: $e\n$st',
-          );
-        }
-      }
-    } catch (e, st) {
-      debugLog(
-        'FormFieldsSignaturePad: error while building queued payload: $e\n$st',
-      );
-    }
-    return queuedImage;
   }
 }
