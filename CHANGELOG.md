@@ -29,6 +29,8 @@ All notable changes to the FormFields package will be documented in this file.
 
 ### Fixed
 
+- `ResponsiveMenuGrid` rows are now `height` (item height) plus `verticalSpacing` apart. Before, the row height followed the column width, so rows were taller than the items wherever a column was wider than an item. A 5-item grid at 411 px had rows 128 px apart instead of 108 px, with extra empty space below each row.
+  - **Dampak untuk pemakai package:** rows in grids with wide columns are shorter. A 3-column grid with 100 px items at phone width now has rows 108 px apart (was 118 px). Column layout and horizontal spacing are unchanged. No public parameter changed.
 - `ResponsiveMenuGrid` no longer spreads its spacing across columns that stay empty. With 5 items at 800 px and 1200 px the gap is now 25 px (it was about 17 px and 10 px), and the items stay in one row.
   - **Dampak untuk pemakai package:** a grid with fewer items than columns that fit now uses only as many columns as there are items, and is sized to that content. Two items at 380 px are 25 px apart (was 35 px), and a single item or a 2-item grid is 100 px tall (was 110 px). Items remain left-aligned when `alignLeft` is true. No public parameter changed.
 - Queued upload payloads no longer keep an `Authorization` header in any letter case. The previous check was case-sensitive, so a token passed as `Authorization` was written to the offline queue.

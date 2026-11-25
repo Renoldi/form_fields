@@ -69,15 +69,17 @@ class ResponsiveMenuGrid extends StatelessWidget {
 
         final grid = Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
-          child: GridView.count(
+          child: GridView(
             physics: allowScroll ? null : const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            crossAxisCount: countPerRow,
-            mainAxisSpacing: verticalSpacing,
-            crossAxisSpacing: crossAxisSpacing,
-            // Use the requested item width/height to determine the cell
-            // aspect ratio so items render at the expected size.
-            childAspectRatio: itemWidth / itemHeight,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: countPerRow,
+              mainAxisSpacing: verticalSpacing,
+              crossAxisSpacing: crossAxisSpacing,
+              // Fixed row height. The column width does not change it, so
+              // rows are itemHeight + verticalSpacing apart.
+              mainAxisExtent: itemHeight,
+            ),
             children: widgets
                 .map(
                   (w) => Align(
@@ -105,10 +107,9 @@ class ResponsiveMenuGrid extends StatelessWidget {
 
         // When columns were dropped because there are fewer items, size the
         // grid to its content. Otherwise GridView splits the full width between
-        // the remaining columns, and childAspectRatio makes each cell as tall as
-        // it is wide: one item would fill a full-width square. At the content
-        // width each cell is exactly itemWidth, so the row height stays at
-        // itemHeight.
+        // the remaining columns, and items sit at the top-left of their wide
+        // cells, so the visible gap grows. At the content width each cell is
+        // exactly itemWidth, so the visible gap equals crossAxisSpacing.
         if (countPerRow == fittingPerRow) {
           return grid;
         }

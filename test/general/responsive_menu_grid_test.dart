@@ -61,8 +61,9 @@ void main() {
   group('ResponsiveMenuGrid with 5 items', () {
     // (width, columns, items in the first row, visible gap 0->1, grid height)
     for (final (width, columns, firstRowItems, visibleGap, gridHeight) in [
-      // Phone: 3 columns fill the width. Visible gap and height are unchanged.
-      (380.0, 3, 3, 35.0, 228.0),
+      // Phone: 3 columns fill the width. Visible gap is unchanged. Rows are
+      // now 108 px apart (were 118 px), so two rows are 208 px tall.
+      (380.0, 3, 3, 35.0, 208.0),
       // Wide: fewer items than fit, so the grid is sized to its content.
       (800.0, 5, 5, 25.0, 100.0),
       (1200.0, 5, 5, 25.0, 100.0),
@@ -96,6 +97,20 @@ void main() {
         },
       );
     }
+  });
+
+  testWidgets('5 items at 411 px keep a 108 px row pitch', (tester) async {
+    await _pumpGrid(tester, width: 411, count: 5);
+
+    // Rows are itemHeight + verticalSpacing apart, whatever the column width.
+    final rowPitch = _itemRect(tester, 3).top - _itemRect(tester, 0).top;
+    expect(rowPitch, closeTo(_itemSize + _verticalSpacing, 0.001));
+
+    // The grid ends with the last row's item: no extra space below it.
+    expect(
+      tester.getSize(find.byType(GridView)).height,
+      closeTo(2 * _itemSize + _verticalSpacing, 0.001),
+    );
   });
 
   testWidgets('a single item keeps its own 100 px box at 380 px', (
@@ -161,5 +176,11 @@ void main() {
     final firstTop = _itemRect(tester, 0).top;
     expect(_itemRect(tester, 10).top, firstTop);
     expect(_itemRect(tester, 11).top, greaterThan(firstTop));
+
+    // Two rows of 100 px items with 8 px between them, as before the fix.
+    expect(
+      tester.getSize(find.byType(GridView)).height,
+      closeTo(2 * _itemSize + _verticalSpacing, 0.001),
+    );
   });
 }
