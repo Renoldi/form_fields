@@ -52,10 +52,14 @@ class ResponsiveMenuGrid extends StatelessWidget {
         final double itemWidth = width ?? itemSize;
         final double itemHeight = height ?? itemSize;
 
-        final int countPerRow = ((usableWidth + minHorizontalSpacing) /
+        final int fittingPerRow = ((usableWidth + minHorizontalSpacing) /
                 (itemWidth + minHorizontalSpacing))
             .floor()
             .clamp(1, 999);
+        // Never plan more columns than there are items. Otherwise the leftover
+        // width is divided across columns that stay empty, so the gap
+        // collapses on wide layouts.
+        final int countPerRow = fittingPerRow.clamp(1, widgets.length);
         final double extraWidth = usableWidth - (countPerRow * itemWidth);
         final double computedSpacing = countPerRow > 1
             ? (extraWidth / (countPerRow - 1)).clamp(0.0, double.infinity)
@@ -99,7 +103,24 @@ class ResponsiveMenuGrid extends StatelessWidget {
           ),
         );
 
-        return grid;
+        // When columns were dropped because there are fewer items, size the
+        // grid to its content. Otherwise GridView splits the full width between
+        // the remaining columns, and childAspectRatio makes each cell as tall as
+        // it is wide: one item would fill a full-width square. At the content
+        // width each cell is exactly itemWidth, so the row height stays at
+        // itemHeight.
+        if (countPerRow == fittingPerRow) {
+          return grid;
+        }
+        final double contentWidth =
+            countPerRow * itemWidth + (countPerRow - 1) * crossAxisSpacing;
+        return Align(
+          alignment: alignLeft ? Alignment.topLeft : Alignment.topCenter,
+          child: SizedBox(
+            width: contentWidth + 2 * horizontalMargin,
+            child: grid,
+          ),
+        );
       },
     );
   }

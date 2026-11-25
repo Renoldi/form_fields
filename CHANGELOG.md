@@ -29,6 +29,8 @@ All notable changes to the FormFields package will be documented in this file.
 
 ### Fixed
 
+- `ResponsiveMenuGrid` no longer spreads its spacing across columns that stay empty. With 5 items at 800 px and 1200 px the gap is now 25 px (it was about 17 px and 10 px), and the items stay in one row.
+  - **Dampak untuk pemakai package:** a grid with fewer items than columns that fit now uses only as many columns as there are items, and is sized to that content. Two items at 380 px are 25 px apart (was 35 px), and a single item or a 2-item grid is 100 px tall (was 110 px). Items remain left-aligned when `alignLeft` is true. No public parameter changed.
 - Queued upload payloads no longer keep an `Authorization` header in any letter case. The previous check was case-sensitive, so a token passed as `Authorization` was written to the offline queue.
 - `UploadHelper.uploadPersistedPayload` accepts `uploadTokenRefresher`. Retries from the offline queue now send a fresh token instead of going out without credentials. Stored headers that still hold an old token have it removed.
 - `distanceToSegmentMeters` measures segments that cross the antimeridian the short way.
