@@ -17,6 +17,8 @@ All notable changes to the FormFields package will be documented in this file.
 
 ### Changed
 
+- **Breaking:** `ResponsiveMenuGrid.horizontalMargin` is replaced by `margin` (`EdgeInsets?`, default `null`, which means `EdgeInsets.symmetric(horizontal: 20)`). `margin` also sets the space above the first row (`top`) and below the last row (`bottom`).
+  - **Dampak untuk pemakai package:** ganti `horizontalMargin: x` dengan `margin: EdgeInsets.symmetric(horizontal: x)`. Pemakai yang tidak mengisi margin tidak perlu mengubah kode dan tetap mendapat 20 px di kiri dan kanan.
 - **Dampak untuk pemakai package (SignaturePad dan LiveCameraCapture):** aturan pelaporan payload antrean sekarang satu untuk semua field.
   - `onUploadQueued` dan `onFailDirectUploadPayload` pada `FormFieldsSignaturePad` dipanggil saat upload diantrekan, bukan saat export selesai. Akibatnya callback ini terpanggil sebelum `onExported`.
   - Setiap payload antrean dilaporkan tepat sekali. Sebelumnya payload dari error server dan 401 pada SignaturePad dilaporkan dua kali, sekali saat upload dan sekali lagi saat export.

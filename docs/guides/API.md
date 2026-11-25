@@ -1538,7 +1538,7 @@ Responsive square grid that auto-calculates column count from available width an
 ResponsiveMenuGrid({
   required List<Widget> widgets,
   double itemSize = 80,
-  double horizontalMargin = 16,
+  EdgeInsets? margin,
   double verticalSpacing = 16,
   bool alignLeft = false,
 })
@@ -1546,12 +1546,12 @@ ResponsiveMenuGrid({
 
 ### Properties
 
-| Property           | Type           | Default | Description                         |
-| ------------------ | -------------- | ------- | ----------------------------------- |
-| `widgets`          | `List<Widget>` | —       | Grid children (required)            |
-| `itemSize`         | `double`       | `80`    | Fixed width and height of each cell |
-| `horizontalMargin` | `double`       | `16`    | Left and right margin               |
-| `verticalSpacing`  | `double`       | `16`    | Row gap                             |
+| Property          | Type           | Default                          | Description                                                                              |
+| ----------------- | -------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `widgets`         | `List<Widget>` | —                                | Grid children (required)                                                                 |
+| `itemSize`        | `double`       | `80`                             | Fixed width and height of each cell                                                      |
+| `margin`          | `EdgeInsets?`  | `EdgeInsets.symmetric(horizontal: 20)` | Left and right margin, space above the first row (`top`), and below the last row (`bottom`) |
+| `verticalSpacing` | `double`       | `20`                             | Row gap                                                                                  |
 | `alignLeft`        | `bool`         | `false` | Force left alignment                |
 
 ### Usage Example

@@ -4,7 +4,12 @@ class ResponsiveMenuGrid extends StatelessWidget {
   /// List of widgets to display in the grid.
   final List<Widget> widgets;
   final double itemSize;
-  final double horizontalMargin;
+
+  /// Space around the grid. `left` and `right` are the horizontal margins,
+  /// `top` is the space above the first row, and `bottom` is the space below
+  /// the last row. If null, defaults to `EdgeInsets.symmetric(horizontal: 20)`.
+  final EdgeInsets? margin;
+
   final double verticalSpacing;
   final double minHorizontalSpacing;
 
@@ -29,7 +34,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
     super.key,
     required this.widgets,
     this.itemSize = 80,
-    this.horizontalMargin = 20,
+    this.margin,
     this.verticalSpacing = 20,
     this.minHorizontalSpacing = 8,
     this.alignLeft = false,
@@ -44,11 +49,13 @@ class ResponsiveMenuGrid extends StatelessWidget {
     if (widgets.isEmpty) {
       return const SizedBox.shrink();
     }
+    final EdgeInsets effectiveMargin =
+        margin ?? const EdgeInsets.symmetric(horizontal: 20);
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxWidth = constraints.maxWidth;
-        final double usableWidth =
-            (maxWidth - 2 * horizontalMargin).clamp(0.0, double.infinity);
+        final double usableWidth = (maxWidth - effectiveMargin.horizontal)
+            .clamp(0.0, double.infinity);
         final double itemWidth = width ?? itemSize;
         final double itemHeight = height ?? itemSize;
 
@@ -68,7 +75,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
         final double crossAxisSpacing = computedSpacing.clamp(0.0, spacingCap);
 
         final grid = Padding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          padding: effectiveMargin,
           child: GridView(
             physics: allowScroll ? null : const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
@@ -118,7 +125,7 @@ class ResponsiveMenuGrid extends StatelessWidget {
         return Align(
           alignment: alignLeft ? Alignment.topLeft : Alignment.topCenter,
           child: SizedBox(
-            width: contentWidth + 2 * horizontalMargin,
+            width: contentWidth + effectiveMargin.horizontal,
             child: grid,
           ),
         );

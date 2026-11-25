@@ -11,6 +11,7 @@ Future<void> _pumpGrid(
   WidgetTester tester, {
   required double width,
   required int count,
+  EdgeInsets? margin = EdgeInsets.zero,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = Size(width, 800);
@@ -26,7 +27,7 @@ Future<void> _pumpGrid(
             child: ResponsiveMenuGrid(
               itemSize: _itemSize,
               verticalSpacing: _verticalSpacing,
-              horizontalMargin: 0,
+              margin: margin,
               alignLeft: true,
               widgets: [
                 for (var i = 0; i < count; i++)
@@ -113,6 +114,47 @@ void main() {
     );
   });
 
+  testWidgets('margin top and bottom add space above and below the rows', (
+    tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      width: 411,
+      count: 5,
+      margin: const EdgeInsets.only(top: 15, bottom: 15),
+    );
+
+    final gridTop = tester.getTopLeft(find.byType(ResponsiveMenuGrid)).dy;
+    expect(_itemRect(tester, 0).top - gridTop, closeTo(15, 0.001));
+
+    // 15 px above, two rows (208 px), 15 px below.
+    expect(
+      tester.getSize(find.byType(ResponsiveMenuGrid)).height,
+      closeTo(15 + 2 * _itemSize + _verticalSpacing + 15, 0.001),
+    );
+  });
+
+  testWidgets('margin left and right move the grid in from both edges', (
+    tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      width: 411,
+      count: 5,
+      margin: const EdgeInsets.only(left: 10, right: 30),
+    );
+
+    expect(_itemRect(tester, 0).left, closeTo(10, 0.001));
+  });
+
+  testWidgets('a null margin defaults to 20 px on the left and right', (
+    tester,
+  ) async {
+    await _pumpGrid(tester, width: 411, count: 5, margin: null);
+
+    expect(_itemRect(tester, 0).left, closeTo(20, 0.001));
+  });
+
   testWidgets('a single item keeps its own 100 px box at 380 px', (
     tester,
   ) async {
@@ -139,7 +181,7 @@ void main() {
           body: ResponsiveMenuGrid(
             itemSize: _itemSize,
             verticalSpacing: _verticalSpacing,
-            horizontalMargin: 0,
+            margin: EdgeInsets.zero,
             widgets: [SizedBox(key: const ValueKey('item0'))],
           ),
         ),

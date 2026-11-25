@@ -233,7 +233,7 @@ class View extends PresenterState {
                 width: 340,
                 child: ResponsiveMenuGrid(
                   itemSize: 100,
-                  horizontalMargin: 8,
+                  margin: EdgeInsets.symmetric(horizontal: 8),
                   verticalSpacing: 24,
                   alignLeft: true,
                   widgets: ViewModel.sampleMenu
@@ -249,7 +249,7 @@ class View extends PresenterState {
                 '{\n'
                 '  "widget": "ResponsiveMenuGrid",\n'
                 '  "itemSize": 100,\n'
-                '  "horizontalMargin": 8,\n'
+                '  "margin": "EdgeInsets.symmetric(horizontal: 8)",\n'
                 '  "verticalSpacing": 24,\n'
                 '  "alignLeft": true,\n'
                 '  "widgets": "[...list of Widget]"\n'
@@ -289,7 +289,7 @@ class View extends PresenterState {
               ),
               ResponsiveMenuGrid(
                 itemSize: vm.itemSize,
-                horizontalMargin: vm.horizontalMargin,
+                margin: EdgeInsets.symmetric(horizontal: vm.horizontalMargin),
                 verticalSpacing: vm.verticalSpacing,
                 alignLeft: vm.alignLeft,
                 widgets: ViewModel.sampleApps
@@ -304,7 +304,7 @@ class View extends PresenterState {
                 '{\n'
                 '  "widget": "ResponsiveMenuGrid",\n'
                 '  "itemSize": ${vm.itemSize.toStringAsFixed(0)},\n'
-                '  "horizontalMargin": ${vm.horizontalMargin.toStringAsFixed(0)},\n'
+                '  "margin": "EdgeInsets.symmetric(horizontal: ${vm.horizontalMargin.toStringAsFixed(0)})",\n'
                 '  "verticalSpacing": ${vm.verticalSpacing.toStringAsFixed(0)},\n'
                 '  "alignLeft": ${vm.alignLeft},\n'
                 '  "widgets": "[...list of Widget]"\n'
@@ -342,7 +342,7 @@ class View extends PresenterState {
                   Colors.purple.shade600),
               ResponsiveMenuGrid(
                 itemSize: 120,
-                horizontalMargin: 8,
+                margin: EdgeInsets.symmetric(horizontal: 8),
                 verticalSpacing: 20,
                 widgets: ViewModel.sampleApps
                     .take(6)
@@ -357,7 +357,7 @@ class View extends PresenterState {
                 '{\n'
                 '  "widget": "ResponsiveMenuGrid",\n'
                 '  "itemSize": 120,\n'
-                '  "horizontalMargin": 8,\n'
+                '  "margin": "EdgeInsets.symmetric(horizontal: 8)",\n'
                 '  "verticalSpacing": 20,\n'
                 '  "widgets": "[...6 items]"\n'
                 '}',

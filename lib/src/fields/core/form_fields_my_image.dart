@@ -380,7 +380,7 @@ class _FormFieldsMyImageState extends State<FormFieldsMyImage> {
                                   provider,
                                 ),
                                 itemSize: 100,
-                                horizontalMargin: 0,
+                                margin: EdgeInsets.zero,
                                 verticalSpacing: 12,
                                 minHorizontalSpacing: 8,
                                 alignLeft: true,

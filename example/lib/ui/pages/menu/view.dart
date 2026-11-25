@@ -153,7 +153,7 @@ class View extends PresenterState {
                                 ))
                             .toList(),
                         itemSize: 100,
-                        horizontalMargin: 8,
+                        margin: EdgeInsets.symmetric(horizontal: 8),
                         verticalSpacing: 8,
                         alignLeft: true,
                       ),
