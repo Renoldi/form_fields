@@ -26,7 +26,7 @@ class View extends PresenterState {
 
   Widget _fieldTitle(String title, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(

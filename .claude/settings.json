@@ -8,7 +8,12 @@
       "Bash(mkdir -p *)",
       "Bash(awk '{print $2, $9, $10}')",
       "Bash(python3 /private/tmp/claude-501/-Users-it-07-Documents-enerren-form-fields/47a05dcc-5744-402c-bc06-814e2041d9b4/scratchpad/split_tool.py list lib/src/fields/core/form_fields.dart _FormFieldsState)",
-      "Bash(python3 /private/tmp/claude-501/-Users-it-07-Documents-enerren-form-fields/47a05dcc-5744-402c-bc06-814e2041d9b4/scratchpad/split_tool.py list lib/src/fields/map/form_fields_map.dart FormFieldsMapState)"
+      "Bash(python3 /private/tmp/claude-501/-Users-it-07-Documents-enerren-form-fields/47a05dcc-5744-402c-bc06-814e2041d9b4/scratchpad/split_tool.py list lib/src/fields/map/form_fields_map.dart FormFieldsMapState)",
+      "Bash(echo \"format_exit=$?\")",
+      "Bash(echo \"original_format_exit=$?\")",
+      "Bash(echo \"current_format_exit=$?\")",
+      "Bash(git rev-list *)",
+      "Bash(timeout 600 flutter create --platforms macos --empty --org com.example.formfieldsexample .)"
     ],
     "additionalDirectories": [
       "/dev"
