@@ -46,7 +46,21 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   bool _otpCountdownFinished = false;
 
   late FormFieldsController model;
-  late Timer debounce;
+  // Debounce for sending the text typed into the field, and the text waiting
+  // for it. Pending text is sent when the timer fires, on blur, on submit, or
+  // when the field is removed.
+  Timer? _emitTimer;
+  String? _pendingInput;
+  FocusNode? _listenedFocusNode;
+  // Values sent through onChanged that the parent has not handed back yet, in
+  // order. A parent value equal to one of them is an echo of this field's input.
+  final List<Object?> _awaitingEcho = [];
+  static const int _kMaxAwaitingEcho = 20;
+  Object? _lastEmittedValue;
+  bool _hasLastEmitted = false;
+  // Set in didUpdateWidget when the parent echoes this field's own input. The
+  // post-frame update then leaves the text the user is typing alone.
+  bool _ignoreEcho = false;
   FocusNode? _internalFocusNode;
   late ValueNotifier<double> _effectiveFieldExtraBottom;
   String _selectedCountryCode = '';
@@ -66,7 +80,6 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   void initState() {
     super.initState();
     model = FormFieldsController();
-    debounce = Timer(Duration.zero, () {});
     _notifier = FormFieldsNotifier();
     _effectiveFieldExtraBottom = ValueNotifier<double>(0.0);
     if (_isPhoneType()) {
@@ -79,6 +92,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     // adjusts correctly when user types/deletes text (including manual
     // deletion, paste, or programmatic changes).
     model.controller.addListener(_onControllerTextChanged);
+    _listenToFocus();
     // Mulai countdown OTP jika verificationAsOtp aktif dan isOtpCountdown true
     if (_isVerificationType() &&
         widget.verificationAsOtp &&
@@ -97,6 +111,7 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
   @override
   void didUpdateWidget(covariant FormFields<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) _listenToFocus();
 
     final valueChanged = oldWidget.currentValue != widget.currentValue;
     final formatChanged = oldWidget.customFormat != widget.customFormat;
@@ -107,6 +122,20 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
     final verificationAsOtpChanged =
         oldWidget.verificationAsOtp != widget.verificationAsOtp;
     final formTypeChanged = oldWidget.formType != widget.formType;
+
+    if (valueChanged) {
+      // A value the parent hands back that this field sent is an echo: the text
+      // the user has typed since must not be rewritten. Any other value is the
+      // parent's own change and is applied as before.
+      final echoIndex = _awaitingEcho.lastIndexOf(widget.currentValue);
+      _ignoreEcho = echoIndex >= 0;
+      if (echoIndex >= 0) {
+        _awaitingEcho.removeRange(0, echoIndex + 1);
+      } else {
+        _awaitingEcho.clear();
+        _hasLastEmitted = false;
+      }
+    }
 
     if (formTypeChanged ||
         verificationLengthChanged ||
@@ -123,6 +152,11 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
       // Use post-frame callback to avoid setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+
+        if (_ignoreEcho) {
+          _ignoreEcho = false;
+          return;
+        }
 
         // Skip updates during active typing for non-separator numeric fields
         // to prevent cursor jumping, but only for value changes
@@ -198,11 +232,13 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
 
   @override
   void dispose() {
+    _flushPendingInputOnDispose();
+    _listenedFocusNode?.removeListener(_onFocusChanged);
+    _listenedFocusNode = null;
     _otpCountdownTimer?.cancel();
     _disposeVerificationInputs();
     model.controller.removeListener(_onControllerTextChanged);
     model.dispose();
-    debounce.cancel();
     _internalFocusNode?.dispose();
     _effectiveFieldExtraBottom.dispose();
     _notifier.dispose();
@@ -223,6 +259,145 @@ class _FormFieldsState<T> extends State<FormFields<T>> {
           ? _kExtraFieldBottom
           : 0.0;
     });
+  }
+
+  // ============================================================================
+  // TEXT INPUT -> onChanged
+  // ============================================================================
+
+  /// Called for every change of the text. The text is sent once typing pauses
+  /// (see [_emitDelay]), and at once on blur, on submit, or when the field is
+  /// removed, so the last text typed is never left behind.
+  void _onTextInput(String v) {
+    _pendingInput = v;
+    _emitTimer?.cancel();
+    _emitTimer = Timer(_emitDelay(), _commitPendingInput);
+  }
+
+  /// Debounce for sending: 50 ms for plain numbers, 500 ms otherwise.
+  Duration _emitDelay() {
+    final plainNumber =
+        (_isIntType() || _isDoubleType()) && !widget.stripSeparators;
+    return Duration(milliseconds: plainNumber ? 50 : 500);
+  }
+
+  /// Sends the pending text now. A formatted field is reformatted once the
+  /// value has actually been sent.
+  void _commitPendingInput() {
+    _emitTimer?.cancel();
+    _emitTimer = null;
+    final pending = _pendingInput;
+    if (pending == null) return;
+    _pendingInput = null;
+    final sent = _emitInput(pending);
+    if (sent && mounted && _isFormattedField()) {
+      _applyFormat(_lastEmittedValue);
+    }
+  }
+
+  /// Sends the pending text when the widget is removed. The send runs in a
+  /// microtask, so the parent is never notified while this widget is being torn
+  /// down.
+  void _flushPendingInputOnDispose() {
+    _emitTimer?.cancel();
+    _emitTimer = null;
+    final pending = _pendingInput;
+    if (pending == null) return;
+    _pendingInput = null;
+    scheduleMicrotask(() => _emitInput(pending));
+  }
+
+  /// Sends the pending text when focus leaves the field. Deferred to a
+  /// microtask, so it never runs in the middle of a focus change or a build.
+  void _onFocusChanged() {
+    if (!_effectiveFocusNode.hasFocus) {
+      scheduleMicrotask(_commitPendingInput);
+    }
+  }
+
+  /// Keeps the focus listener attached to the focus node the field uses.
+  void _listenToFocus() {
+    final node = _effectiveFocusNode;
+    if (identical(node, _listenedFocusNode)) return;
+    _listenedFocusNode?.removeListener(_onFocusChanged);
+    _listenedFocusNode = node;
+    node.addListener(_onFocusChanged);
+  }
+
+  /// Whether the text of this field is rewritten into a formatted form.
+  bool _isFormattedField() =>
+      _isPhoneType() ||
+      ((_isIntType() || _isDoubleType()) && widget.stripSeparators);
+
+  /// Writes the formatted text of [value] into the field.
+  void _applyFormat(Object? value) {
+    final text = _formatEmittedValue(value);
+    if (model.controller.text != text) {
+      model.setController = text;
+    }
+  }
+
+  /// The text a formatted field shows for [value].
+  String _formatEmittedValue(Object? value) {
+    if (value == null) return '';
+    if (_isPhoneType()) {
+      _initializePhoneCountryCode(value.toString());
+      return widget.formatPhone
+          ? _formatPhoneLocalOnly(value.toString())
+          : _extractLocalPhoneDigits(value.toString());
+    }
+    return _formatNumber(value as num);
+  }
+
+  /// Parses [v] for the field type and sends the result through onChanged.
+  /// Returns whether a value was sent.
+  bool _emitInput(String v) {
+    final trimmed = v.trim();
+    if (_isIntType()) {
+      final cleaned = widget.stripSeparators
+          ? _stripSeparatorsForParse(trimmed)
+          : trimmed;
+      if (cleaned.isEmpty || cleaned == '-') {
+        return _isNullable() && _emitChanged(null);
+      }
+      final parsed = int.tryParse(cleaned);
+      return parsed != null && _emitChanged(parsed);
+    }
+    if (_isDoubleType()) {
+      final cleaned = widget.stripSeparators
+          ? _stripSeparatorsForParse(trimmed)
+          : trimmed;
+      if (cleaned.isEmpty || cleaned == '-') {
+        return _isNullable() && _emitChanged(null);
+      }
+      if (cleaned.endsWith('.')) return false;
+      final parsed = double.tryParse(cleaned);
+      return parsed != null && _emitChanged(parsed);
+    }
+    if (_isPhoneType()) {
+      final formatted = _formatPhoneWithCode(trimmed);
+      return _emitChanged(_getPhoneWithoutFormatting(formatted));
+    }
+    if (_isDateTimeType() || _isTimeOfDayType() || _isDateTimeRangeType()) {
+      // Cannot cast a String to DateTime, TimeOfDay or DateTimeRange: skip.
+      return false;
+    }
+    return _emitChanged(trimmed);
+  }
+
+  /// Sends [value] through onChanged and records it, so the parent handing it
+  /// back can be recognised as an echo. A value equal to the last one sent is
+  /// not sent again.
+  bool _emitChanged(Object? value) {
+    if (_hasLastEmitted && value == _lastEmittedValue) return false;
+    _lastEmittedValue = value;
+    _hasLastEmitted = true;
+    _awaitingEcho.add(value);
+    if (_awaitingEcho.length > _kMaxAwaitingEcho) {
+      _awaitingEcho.removeAt(0);
+    }
+    widget.onChanged(value as T);
+    return true;
   }
 
   void _initializeValue() {

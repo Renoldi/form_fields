@@ -31,6 +31,11 @@ All notable changes to the FormFields package will be documented in this file.
 
 ### Fixed
 
+- `FormFields` text input no longer loses typed text:
+  - Text typed within the debounce window is sent when the field loses focus, is submitted, or is removed. Before, the last text could be dropped, for example when the user saved right after typing.
+  - When the parent hands back a value this field sent, the text the user has typed since is kept, including late echoes. Before, a trailing space, or keys typed while an echo was on its way, were erased.
+  - A value equal to the last one sent is not sent again.
+  - **Dampak untuk pemakai package:** no API change, and `onChanged` is still called after the same debounce as before. A value the parent sets on its own still replaces the text, and number fields with `stripSeparators` keep their separators.
 - `ResponsiveMenuGrid` rows are now `height` (item height) plus `verticalSpacing` apart. Before, the row height followed the column width, so rows were taller than the items wherever a column was wider than an item. A 5-item grid at 411 px had rows 128 px apart instead of 108 px, with extra empty space below each row.
   - **Dampak untuk pemakai package:** rows in grids with wide columns are shorter. A 3-column grid with 100 px items at phone width now has rows 108 px apart (was 118 px). Column layout and horizontal spacing are unchanged. No public parameter changed.
 - `ResponsiveMenuGrid` no longer spreads its spacing across columns that stay empty. With 5 items at 800 px and 1200 px the gap is now 25 px (it was about 17 px and 10 px), and the items stay in one row.

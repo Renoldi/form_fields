@@ -149,7 +149,10 @@ extension _FormFieldsFieldBodyX<T> on _FormFieldsState<T> {
       obscuringCharacter: '•',
       autovalidateMode: widget.autovalidateMode,
       focusNode: _effectiveFocusNode,
-      onFieldSubmitted: (_) => widget.nextFocusNode?.requestFocus(),
+      onFieldSubmitted: (_) {
+        _commitPendingInput();
+        widget.nextFocusNode?.requestFocus();
+      },
       keyboardType:
           _isDateTimeType() || _isTimeOfDayType() || _isDateTimeRangeType()
           ? TextInputType.none
@@ -165,52 +168,9 @@ extension _FormFieldsFieldBodyX<T> on _FormFieldsState<T> {
           ? TextInputType.text
           : TextInputType.multiline,
       inputFormatters: _getInputFormatters(),
-      onChanged: (v) {
-        if (debounce.isActive) debounce.cancel();
-        final useDebounce =
-            widget.stripSeparators || !(_isIntType() || _isDoubleType());
-        final delay = useDebounce
-            ? const Duration(milliseconds: 500)
-            : const Duration(milliseconds: 50);
-        debounce = Timer(delay, () {
-          final trimmed = v.trim();
-          if (_isIntType()) {
-            final cleaned = widget.stripSeparators
-                ? _stripSeparatorsForParse(trimmed)
-                : trimmed;
-            if (cleaned.isEmpty || cleaned == '-') {
-              if (_isNullable()) widget.onChanged(null as T);
-              return;
-            }
-            final parsed = int.tryParse(cleaned);
-            if (parsed != null) widget.onChanged(parsed as T);
-          } else if (_isDoubleType()) {
-            final cleaned = widget.stripSeparators
-                ? _stripSeparatorsForParse(trimmed)
-                : trimmed;
-            if (cleaned.isEmpty || cleaned == '-') {
-              if (_isNullable()) widget.onChanged(null as T);
-              return;
-            }
-            if (cleaned.endsWith('.')) return;
-            final parsed = double.tryParse(cleaned);
-            if (parsed != null) widget.onChanged(parsed as T);
-          } else if (_isPhoneType()) {
-            final formatted = _formatPhoneWithCode(trimmed);
-            final unformatted = _getPhoneWithoutFormatting(formatted);
-            widget.onChanged(unformatted as T);
-          } else if (_isDateTimeType() || _isTimeOfDayType()) {
-            // Do not cast String to DateTime or TimeOfDay, just skip
-            // Only update controller, not value
-          } else if (_isDateTimeRangeType()) {
-            // Do not cast String to DateTimeRange, just skip
-            // Only update controller, not value
-          } else {
-            widget.onChanged(trimmed as T);
-          }
-        });
-      },
+      onChanged: (v) => _onTextInput(v),
       onEditingComplete: () {
+        _commitPendingInput();
         // Trim whitespace from input
         vm.controller.text = vm.controller.text.trim();
 
